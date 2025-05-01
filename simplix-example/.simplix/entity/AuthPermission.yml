@@ -1,0 +1,99 @@
+entity: AuthPermission
+modulePath: common/auth
+
+idField: id
+nameField: name
+thymeleafBaseDir: auth/permission
+defaultSortField: name
+defaultSortDirection: asc
+
+fields:
+
+  id:
+    views: [list, detail]
+    searchOperators: [equals]
+
+  name:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+
+  description:
+    sortable: false
+    views: [list, detail, edit]
+    searchOperators: [contains]
+
+  useList:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useView:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useCreate:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useEdit:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useDelete:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useExtra1:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useExtra2:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useExtra3:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useExtra4:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  useExtra5:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra1Name:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  extra2Name:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  extra3Name:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  extra4Name:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  extra5Name:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]

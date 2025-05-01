@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${status + ' - ' + error}">Error</title>
+    <style>
+        body {
+            font-family: 'Consolas', monospace;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .error-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .error-header {
+            position: sticky;
+            top: 0;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #444;
+            padding: 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            min-height: fit-content;
+        }
+        .error-header-content {
+            flex: 1;
+        }
+        .error-info {
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .error-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .error-title {
+            font-size: 24px;
+            color: #ff6b6b;
+            margin: 0;
+        }
+        .error-message {
+            font-size: 18px;
+            color: #ff8f8f;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .error-messages {
+            font-size: 14px;
+            color: #ddd;
+            background-color: #252525;
+            border-radius: 4px;
+            padding: 15px;
+            border: 1px solid #333;
+        }
+        .error-messages ul {
+            list-style-type: disc;
+            padding: 0 0 0 20px;
+            margin: 0;
+            color: #888;
+        }
+        .error-messages li {
+            margin: 4px 0;
+            padding: 4px 0;
+            border-bottom: 1px solid #333;
+            color: #ddd;
+        }
+        .error-messages li:last-child {
+            border-bottom: none;
+        }
+        .error-messages li::marker {
+            color: #666;
+        }
+        .error-timestamp {
+            color: #888;
+            font-size: 14px;
+            padding: 10px 20px;
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #444;
+        }
+        .stack-trace {
+            background-color: #2d2d2d;
+            border-radius: 4px;
+            padding: 20px;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.5;
+            border: 1px solid #444;
+        }
+        .home-link {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #2d2d2d;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            border: 1px solid #444;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+        }
+        .home-link:hover {
+            background-color: #3d3d3d;
+            border-color: #666;
+        }
+        .home-link:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-header">
+            <div class="error-header-content">
+                <h1 class="error-title" th:text="${status + ' - ' + error}">500 - Internal Server Error</h1>
+                <p class="error-message" th:text="${message}">Error message</p>
+            </div>
+            <a href="/" class="home-link">← Back to Home</a>
+        </div>
+        <div class="error-info">
+            <div class="error-content">
+                <div class="error-messages" th:if="${errorMessages != null}">
+                    <ul>
+                        <li th:each="msg : ${errorMessages}" th:text="${msg}"></li>
+                    </ul>
+                </div>
+                <div class="stack-trace" th:if="${trace}" th:text="${trace}">
+                    Stack trace will be displayed here
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

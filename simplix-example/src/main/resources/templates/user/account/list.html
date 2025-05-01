@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+
+
+<head>
+    <title>사용자 계정 목록</title>
+</head>
+
+<body>
+    <th:block layout:fragment="page-title">사용자 계정 관리</th:block>
+
+    <th:block layout:fragment="page-actions">
+        <button class="btn btn-primary d-flex align-items-center gap-2" onclick="location.href='/user/account/create'">
+            <i class="ri-add-line"></i>
+            신규 등록
+        </button>
+    </th:block>
+
+    <div layout:fragment="content">
+        <div class="card">
+            <div class="card-header bg-white">
+                <form id="searchForm" class="row g-3 align-items-center">
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <input type="text" class="form-control" id="searchId" placeholder="ID" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <input type="text" class="form-control" id="searchUsername" placeholder="계정명" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <input type="text" class="form-control" id="searchRealName" placeholder="이름" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <input type="text" class="form-control" id="searchMobilePhone" placeholder="휴대전화" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <input type="text" class="form-control" id="searchOfficePhone" placeholder="사무실 전화" />
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <select id="searchEnabled" class="form-select">
+                            <option value="">- 계정상태 -</option>
+                            <option value="true">활성</option>
+                            <option value="false">비활성</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <select id="searchPosition" class="form-select">
+                            <option value="">- 직책 선택 -</option>
+                            <option th:each="refItem : ${position}"
+                                    th:value="${refItem.id}"
+                                    th:text="${refItem.name}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <select id="searchRoles" class="form-select">
+                            <option value="">- 권한 선택 -</option>
+                            <option th:each="refItem : ${roles}"
+                                    th:value="${refItem.id}"
+                                    th:text="${refItem.name}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto">
+                        <select id="searchOrganizations" class="form-select">
+                            <option value="">- 조직 선택 -</option>
+                            <option th:each="refItem : ${organizations}"
+                                    th:value="${refItem.id}"
+                                    th:text="${refItem.name}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-auto ms-md-auto">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-primary d-flex align-items-center gap-2" id="btnSearch">
+                            <i class="ri-search-line"></i>
+                            검색
+                        </button>
+                            <button type="button" class="btn btn-secondary d-flex align-items-center gap-2" id="btnReset">
+                            <i class="ri-refresh-line"></i>
+                        </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-body">
+                <div id="userGrid" class="ag-theme-alpine w-100"></div>
+            </div>
+        </div>
+
+        <!-- 배치 수정 모달 내용 템플릿 -->
+        <template id="batchEditFormTemplate">
+            <form id="batchEditForm">
+                <div class="d-flex flex-column gap-3">
+                    <!-- 계정 상태 변경 섹션 -->
+                    <div class="border rounded">
+                        <div class="section-header d-flex align-items-center gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input section-toggle" type="checkbox" 
+                                       data-target="enabledSection" id="enabledToggle">
+                            </div>
+                            <span class="section-header-text">계정 상태 변경</span>
+                        </div>
+                        <div class="dropdown-item-form" id="enabledSection">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch"
+                                       name="enabled" id="enabledSwitch" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 직책 변경 섹션 -->
+                    <div class="border rounded">
+                        <div class="section-header d-flex align-items-center gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input section-toggle" type="checkbox" 
+                                       data-target="positionSection" id="positionToggle">
+                            </div>
+                            <span class="section-header-text">직책 변경</span>
+                        </div>
+                        <div class="dropdown-item-form" id="positionSection">
+                            <select class="form-select form-select-sm" name="position" disabled>
+                                <option value="" selected>- 선택 안함 -</option>
+                                <th:block th:each="refItem: ${position}">
+                                    <option th:value="${refItem.id}" th:text="${refItem.name}"></option>
+                                </th:block>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 권한 변경 섹션 -->
+                    <div class="border rounded">
+                        <div class="section-header d-flex align-items-center gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input section-toggle" type="checkbox" 
+                                       data-target="rolesSection" id="rolesToggle">
+                            </div>
+                            <span class="section-header-text">권한 변경</span>
+                        </div>
+                        <div class="dropdown-item-form" id="rolesSection">
+                            <select class="form-select form-select-sm" name="roles" multiple disabled>
+                                <option value="" selected>- 선택 안함 -</option>
+                                <th:block th:each="refItem : ${roles}">
+                                    <option th:value="${refItem.id}" th:text="${refItem.name}"></option>
+                                </th:block>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 소속 조직 변경 섹션 -->
+                    <div class="border rounded">
+                        <div class="section-header d-flex align-items-center gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input section-toggle" type="checkbox" 
+                                       data-target="organizationsSection" id="organizationsToggle">
+                            </div>
+                            <span class="section-header-text">소속 조직 변경</span>
+                        </div>
+                        <div class="dropdown-item-form" id="organizationsSection">
+                            <select class="form-select form-select-sm" name="organizations" multiple disabled>
+                                <option value="" selected>- 선택 안함 -</option>
+                                <th:block th:each="refItem : ${organizations}">
+                                    <option th:value="${refItem.id}" th:text="${refItem.name}"></option>
+                                </th:block>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </template>
+    </div>
+
+    <th:block layout:fragment="script">
+        <!-- 필수 스크립트 로드 -->
+        <script th:src="@{/js/components/grid-manager.js}"></script>
+        <script th:src="@{/js/components/modal-manager.js}"></script>
+        <script th:src="@{/js/components/delete-confirm-modal.js}"></script>
+        <script th:src="@{/js/components/compare-modal.js}"></script>
+        <script th:src="@{/js/components/batch-edit-modal.js}"></script>
+        
+        <script th:inline="javascript">
+            // 모달 인스턴스 변수 선언
+            let deleteConfirmModal;
+            let batchEditModal;
+            let modalCompare;
+            let gridManager;  // GridManager 인스턴스 추가
+
+            document.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    // 그리드 매니저 초기화를 먼저 수행
+                    gridManager = new GridManager({
+                        gridElementId: 'userGrid',
+                        searchFormId: 'searchForm',
+                        searchUrl: '/api/user/account/search',
+                        storageKey: 'userAccountListState',
+                        pageSize: 10,
+                        // AG Grid 옵션
+                        gridOptions: {
+                            defaultColDef: {
+                                suppressHeaderMenuButton: true,
+                                headerClass: 'ag-header-center',
+                                flex: 1,
+                                cellClass: 'ag-center-cell',
+                                resizable: true,  // 컬럼 리사이즈 기능 추가
+                                minWidth: 50,     // 최소 너비 설정
+                            }
+                        },
+                        
+                        columnDefs: [
+                            { 
+                                field: 'id', 
+                                headerName: 'ID',
+                                flex: 2,
+                                hide: true
+                            },
+                            { 
+                                field: 'username', 
+                                headerName: '계정명',
+                                headerClass: 'ag-header-center ag-header-sortable',
+                                sortable: true
+                            },
+                            { 
+                                field: 'realName', 
+                                headerName: '이름',
+                                headerClass: 'ag-header-center ag-header-sortable',
+                                sortable: true
+                            },
+                            { 
+                                field: 'position.name', 
+                                headerName: '직책',
+                                sortable: false
+                            },
+                            {
+                                field: 'roles',
+                                headerName: '권한',
+                                flex: 2,
+                                sortable: false,
+                                cellRenderer: params => {
+                                    if (!params.value) return '';
+                                    return params.value
+                                        .map(role => `<span class="badge bg-primary-subtle text-primary me-1">
+                                            <i class="ri-shield-star-line me-1"></i>${role.name}</span>`)
+                                        .join(' ');
+                                }
+                            },
+                            {
+                                field: 'organizations',
+                                headerName: '소속',
+                                flex: 2,
+                                sortable: false,
+                                cellRenderer: params => {
+                                    if (!params.value) return '';
+                                    return params.value
+                                        .map(org => `<span class="badge bg-secondary-subtle text-secondary me-1">
+                                            <i class="ri-building-2-line me-1"></i>${org.name}</span>`)
+                                        .join(' ');
+                                }
+                            },
+                            {
+                                field: 'enabled',
+                                headerName: '상태',
+                                flex: 1,
+                                sortable: true,
+                                cellClass: 'ag-center-cell',
+                                cellRenderer: params => {
+                                    if (params.value == null) return '';
+                                    return params.value === 'true'
+                                        ? '<i class="ri-checkbox-circle-line text-success" title="활성"></i>'
+                                        : '<i class="ri-close-circle-line text-danger" title="비활성"></i>';
+                                },
+                                cellStyle: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.2rem'
+                                }
+                            },
+                            { 
+                                field: 'createdAt', 
+                                headerName: '등록일시',
+                                flex: 1,
+                                sortable: true,
+                                sort: 'desc',
+                                sortIndex: 0,
+                                cellRenderer: params => {
+                                    if (!params.value) return '';
+                                    const date = new Date(params.value);
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    return `${year}.${month}.${day}`;
+                                }
+                            },
+                            {
+                                headerName: '관리',
+                                sortable: false,
+                                filter: false,
+                                width: 100,
+                                headerClass: 'ag-header-center',
+                                cellClass: 'ag-center-cell',
+                                cellStyle: {
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '0',
+                                    overflow: 'visible'
+                                },
+                                cellRenderer: params => {
+                                    // 데이터가 없는 경우 빈 문자열 반환
+                                    if (!params.data) return '';
+                                    
+                                    return `<div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-info" onclick="viewItem('${params.data.id}')" title="조회">
+                                            <i class="ri-eye-line"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editItem('${params.data.id}')" title="수정">
+                                    <i class="ri-edit-line"></i>
+                                </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('${params.data.id}')" title="삭제">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                                    </div>`;
+                                }
+                            }
+                        ],
+                        
+                        // 커스텀 버튼 설정
+                        customButtons: [
+                            {
+                                id: 'btnBatchEdit',
+                                className: 'btn btn-primary btn-xs d-flex align-items-center gap-1',
+                                disabled: true,
+                                title: '일괄 수정',
+                                icon: 'ri-edit-line',
+                                text: '수정',
+                                onclick: () => showBatchEditModal()
+                            },
+                            {
+                                id: 'btnDeleteSelected',
+                                className: 'btn btn-danger btn-xs d-flex align-items-center gap-1',
+                                disabled: true,
+                                title: '선택 삭제',
+                                icon: 'ri-delete-bin-line',
+                                text: '삭제',
+                                onclick: () => batchDelete()
+                            },
+                            {
+                                id: 'btnCompareSelected',
+                                className: 'btn btn-secondary btn-xs d-flex align-items-center gap-1',
+                                onclick: () => compareSelected(),
+                                disabled: true,
+                                title: '비교',
+                                icon: 'ri-file-list-2-line',
+                                text: '비교'
+                            }
+                        ],
+
+                        // 검색 필드 설정
+                        searchFields: {
+                            'searchId': { field: 'id', operator: 'equals' },
+                            'searchUsername': { field: 'username', operator: 'contains' },
+                            'searchRealName': { field: 'realName', operator: 'contains' },
+                            'searchMobilePhone': { field: 'mobilePhone', operator: 'contains' },
+                            'searchOfficePhone': { field: 'officePhone', operator: 'contains' },
+                            'searchEnabled': { field: 'enabled', operator: 'equals' },
+                            'searchPosition': { field: 'position', operator: 'equals' },
+                            'searchRoles': { field: 'roles', operator: 'equals' },
+                            'searchOrganizations': { field: 'organizations', operator: 'equals' }
+                        },
+
+                        // 선택 변경 이벤트 핸들러 수정
+                        onSelectionChanged: (selectedRows) => {
+                            // 선택된 행 수에 따라 버튼 활성화/비활성화
+                            const editBtn = document.getElementById('btnBatchEdit');
+                            const deleteBtn = document.getElementById('btnDeleteSelected');
+                            const compareBtn = document.getElementById('btnCompareSelected');
+                            
+                            if (editBtn) {
+                                editBtn.disabled = selectedRows.length === 0;
+                            }
+                            if (deleteBtn) {
+                                deleteBtn.disabled = selectedRows.length === 0;
+                            }
+                            if (compareBtn) {
+                                compareBtn.disabled = selectedRows.length < 2;
+                            }
+
+                            // GridManager의 updateSelectedCount 사용
+                            gridManager.updateSelectedCount();
+                        }
+                    });
+
+                    // 모달 초기화
+                    deleteConfirmModal = new DeleteConfirmModal('deleteConfirmModal', { useConfirmCode: true }).init();
+
+                    batchEditModal = new BatchEditModal({
+                        modalId: 'batchEditModal',
+                        templateId: 'batchEditFormTemplate',
+                        onSave: async (requestData) => {
+                            const response = await fetch('/api/user/account/batch', {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(requestData)  // Set은 자동으로 배열로 직렬화됨
+                            });
+
+                            if (!response.ok) throw new Error('Update failed');
+                        }
+                    }).init();
+
+                    modalCompare = new CompareModalManager({
+                        modalId: 'compareModal',
+                        itemMinWidth: 450,
+                        maxWidthRatio: 0.9,
+                        maxHeightRatio: 0.8,
+                        getDetailUrl: (item) => `/user/account/brief/${item.id}`
+                    }).init();
+
+                } catch (error) {
+                    console.error('초기화 중 오류 발생:', error);
+                }
+            });
+
+            // 사용자 조회
+            function viewItem(id) {
+                location.href = `/user/account/detail/${id}`;
+            }
+
+            // 사용자 수정
+            function editItem(id) {
+                location.href = `/user/account/edit/${id}`;
+            }
+
+            // 삭제 관련 함수 수정
+            function deleteItem(id) {
+                deleteConfirmModal.show('정말 삭제하시겠습니까?', () => {
+                    fetch(`/api/user/account/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            SimpliXUtils.showToast('삭제되었습니다.', 'success');
+                            window.gridApi.refreshInfiniteCache();
+                        } else {
+                            throw new Error('삭제 실패');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        SimpliXUtils.showToast('삭제에 실패했습니다.', 'danger');
+                    });
+                });
+            }
+
+            function batchDelete() {
+                const selectedRows = window.gridApi.getSelectedRows();
+                if (selectedRows.length === 0) return;
+
+                deleteConfirmModal.show(
+                    `여러건의 데이터가 동시에 삭제됩니다. 정말 삭제하시겠습니까?`, 
+                    () => {
+                        const ids = selectedRows.map(row => row.id);
+                        const queryString = ids.map(id => `ids=${id}`).join('&');
+                        
+                        fetch(`/api/user/account/batch?${queryString}`, {
+                            method: 'DELETE'
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                SimpliXUtils.showToast('삭제되었습니다.', 'success');
+                                window.gridApi.refreshInfiniteCache();
+                            } else {
+                                throw new Error('삭제 실패');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            SimpliXUtils.showToast('삭제에 실패했습니다.', 'danger');
+                        });
+                    },
+                    selectedRows.length  // 선택된 항목 수 전달
+                );
+            }
+
+            // 배치 수정 관련 함수 수정
+            function showBatchEditModal() {
+                if (!batchEditModal || !gridManager) {
+                    console.error('Required components are not initialized');
+                    return;
+                }
+                const selectedCount = gridManager.updateSelectedCount();
+                batchEditModal.show(selectedCount);
+            }
+
+            // 비교 관련 함수 수정
+            async function compareSelected() {
+                if (!modalCompare) {
+                    console.error('CompareModalManager is not initialized');
+                    return;
+                }
+                const selectedRows = window.gridApi.getSelectedRows();
+                if (selectedRows.length < 2) {
+                    SimpliXUtils.showToast('2개 이상의 항목을 선택해주세요.', 'warning');
+                    return;
+                }
+                await modalCompare.compare(selectedRows);
+            }
+        </script>
+    </th:block>
+
+</body>
+</html> 

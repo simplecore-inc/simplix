@@ -1,0 +1,43 @@
+entity: UserOrganization
+modulePath: common/user
+
+idField: id
+nameField: name
+thymeleafBaseDir: user/organization
+defaultSortField: itemOrder
+defaultSortDirection: asc
+
+fields:
+
+  id:
+    views: [list, detail]
+    searchOperators: [equals]
+
+  name:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [contains, equals]
+
+  orgType:
+    sortable: true
+    views: [list, detail, edit, batchUpdate]
+
+  parent:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+    reference:
+      entity: UserOrganization
+      idField: id
+      idType: String
+      nameField: name
+
+  description:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  itemOrder:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, greaterThan, lessThan]

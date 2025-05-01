@@ -1,0 +1,145 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: simplix-example
+  jackson:
+    time-zone: Asia/Seoul
+  jpa:
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+  main:
+    allow-bean-definition-overriding: true
+  thymeleaf:
+    enabled: true
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+    mode: HTML
+    encoding: UTF-8
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+        - classpath:/vendor/
+      chain:
+        cache: false
+  mvc:
+    static-path-pattern: /**
+    format:
+      date-time: yyyy-MM-dd HH:mm
+      date: yyyy-MM-dd
+      time: HH:mm:ss
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: always
+  messages:
+    basename: |
+      messages/errors
+    encoding: UTF-8
+    fallback-to-system-locale: true
+
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        secure: false
+        path: /
+        same-site: lax
+      
+logging:
+  level:
+    root: INFO
+    dev.simplecore.simplix: DEBUG
+  charset:
+    console: UTF-8
+    file: UTF-8
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    urls:
+      - url: /v3/api-docs
+        name: SimpliX API
+    operations-sorter: alpha
+    tags-sorter: alpha
+    doc-expansion: none
+    default-models-expand-depth: 10
+    default-model-expand-depth: 10
+  packages-to-scan:
+    - dev.simplecore.simplix.demo
+    - dev.simplecore.simplix.auth
+  paths-to-match:
+    - /**
+
+mybatis:
+  mapper-locations: >
+    classpath*:mapper/**/*.xml,
+    classpath*:sql/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    call-setters-on-nulls: true
+
+management:
+  health:
+    rabbit:
+      enabled: false
+
+
+########################################
+# SimpliX
+########################################
+
+simplix:
+
+  event:
+    mq-type: in-memory
+  
+  auth:
+    enabled: true
+    security:
+      login-page-template: login
+      login-processing-url: /login
+      logout-url: /logout
+      permit-all-patterns: [
+          /swagger-ui.html, /swagger-ui/**, 
+          /v3/api-docs/**, /v3/api-docs.yaml, /swagger-resources/**, /api-docs/**, 
+          /webjars/swagger-ui/**
+        ]
+      # enable-cors: true  # default: true
+      enable-csrf: true
+      enable-xss-protection: true
+      # enable-hsts: false  # default: false
+      # require-https: false  # default: false
+      # hsts-max-age-seconds: 31536000  # default: 31536000 (1년)
+      csrf-ignore-patterns: ["/api/token/**", "/h2-console/**"]
+    cors:
+      # 허용할 출처 설정
+      allowed-origins:  # default: http://localhost:{server.port}
+        - http://localhost:3000
+        - http://localhost:4200
+      # allowed-methods: # default: "*" (모든 메서드 허용)
+      #   - GET
+      #   - POST
+      #   - PUT
+      #   - PATCH
+      #   - DELETE
+      #   - OPTIONS
+      # allowed-headers: "*"  # default: "*" (모든 헤더 허용)
+      exposed-headers:  # default: "Authorization"
+        - Authorization
+        - X-Custom-Header
+      # allow-credentials: true  # default: true (자격 증명(쿠키) 허용)
+      # max-age: 3600  # default: 3600 (1시간, preflight 요청 캐시 시간)
+    jwe:
+      algorithm: RSA-OAEP-256
+      encryption-method: A256GCM
+      encryption-key-location: classpath:/config/jwe-key.dev.json

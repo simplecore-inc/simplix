@@ -1,0 +1,29 @@
+entity: UserRole
+modulePath: common/user
+
+idField: id
+nameField: name
+thymeleafBaseDir: user/role
+
+fields:
+
+  id:
+    views: [list, detail]
+    searchOperators: [contains, equals]
+
+  name:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [contains, equals]
+
+  role:
+    views: [list, detail, edit]
+    searchOperators: [equals]
+
+  description:
+    views: [list, detail, edit]
+    searchOperators: [contains]
+
+  itemOrder:
+    sortable: true
+    views: [list, detail, edit]

@@ -1,0 +1,4 @@
+dev.simplecore.simplix.event.spi.impl.InMemoryBrokerProvider
+dev.simplecore.simplix.event.spi.impl.NatsBrokerProvider
+dev.simplecore.simplix.event.spi.impl.KafkaBrokerProvider
+dev.simplecore.simplix.event.spi.impl.RabbitBrokerProvider

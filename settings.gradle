@@ -1,0 +1,59 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        maven {
+            url "https://repo.spring.io/release"
+        }
+    }
+}
+
+rootProject.name = 'simplix'
+include 'simplix-core'
+include 'simplix-example'
+include 'spring-boot-starter-simplix'
+include 'spring-boot-starter-simplix-auth'
+include 'spring-boot-starter-simplix-event'
+include 'spring-boot-starter-simplix-mybatis'
+
+def props = new Properties()
+def propertiesFile = file("gradle.properties")
+if (propertiesFile.exists()) {
+    propertiesFile.withInputStream { props.load(it) }
+} else {
+    logger.warn("gradle.properties file not found. Using environment variables for GitHub credentials.")
+}
+
+// How to configure gradle.properties:
+//   gpr.user=your_github_username
+//   gpr.token=your_github_personal_access_token
+// 
+// How to generate GitHub Personal Access Token:
+//   1. GitHub -> Settings -> Developer settings -> Personal access tokens -> Tokens (classic)
+//   2. Generate new token
+//   3. Required permission: read:packages
+//   4. Set the generated token in gradle.properties as gpr.token
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
+            credentials {
+                username = props.getProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+        maven {
+            url = uri("https://maven.pkg.github.com/thkwag/searchable-jpa")
+            credentials {
+                username = props.getProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+        mavenCentral()
+        maven {
+            url "https://repo.spring.io/release"
+        }
+    }
+}

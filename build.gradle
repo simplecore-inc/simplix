@@ -1,0 +1,122 @@
+plugins {
+    id 'org.springframework.boot' version '2.7.18' apply false
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE' apply false
+    id 'java'
+    id 'maven-publish'
+}
+
+ext {
+    springBootVersion = '2.7.18'
+}
+
+allprojects {
+    group = 'dev.simplecore.simplix'
+    version = '0.1.1-SNAPSHOT'
+    
+    System.setProperty("spring.boot.version.check.enabled", "false")
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'java-library'
+    apply plugin: 'io.spring.dependency-management'
+    
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
+
+    if (project.name != 'simplix-example') {
+        apply plugin: 'maven-publish'
+        
+        publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    from components.java
+
+                    pom {
+                        def metadata = [
+                            'simplix-core': [
+                                name: 'SimpliX Core',
+                                description: 'Core library for SimpliX Framework'
+                            ],
+                            'spring-boot-starter-simplix': [
+                                    name: 'Spring Boot Starter for SimpliX',
+                                    description: 'Spring Boot Starter for SimpliX Framework'
+                            ],
+                            'spring-boot-starter-simplix-auth': [
+                                name: 'SimpliX Auth',
+                                description: 'Auth library for SimpliX Framework'
+                            ],
+                            'spring-boot-starter-simplix-event': [
+                                name: 'SimpliX Event',
+                                description: 'Event library for SimpliX Framework'
+                            ],
+                            'spring-boot-starter-simplix-mybatis': [
+                                name: 'Spring Boot Starter for SimpliX MyBatis',
+                                description: 'Spring Boot Starter for SimpliX MyBatis'
+                            ]
+                        ]
+                        if (metadata.containsKey(project.name)) {
+                            def projectMetadata = metadata[project.name]
+                            setName(projectMetadata['name'])
+                            setDescription(projectMetadata['description'])
+                        } else {
+                            throw new GradleException("No metadata found for project: ${project.name}")
+                        }
+                        url = 'https://github.com/simplecore-inc/simplix'
+                        
+                        licenses {
+                            license {
+                                name = 'SimpliX License, Version 1.0'
+                                url = 'https://github.com/simplecore-inc/simplix/LICENSE.txt'
+                            }
+                        }
+                        developers {
+                            developer {
+                                id = 'simplecore'
+                                name = 'SimpleCORE'
+                            }
+                        }
+                        scm {
+                            connection = 'scm:git:git://github.com/simplecore-inc/simplix.git'
+                            developerConnection = 'scm:git:ssh://github.com:simplecore-inc/simplix.git'
+                            url = 'https://github.com/simplecore-inc/simplix.git'
+                        }
+                    }
+                }
+            }
+            
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
+                    credentials {
+                        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                        password = project.findProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
+                    }
+                }
+            }
+        }
+    }
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.compilerArgs.addAll(['-parameters', "-Xlint:-deprecation", "-Xlint:-options"])
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+wrapper {
+    gradleVersion = '8.5'
+    distributionType = Wrapper.DistributionType.BIN
+}

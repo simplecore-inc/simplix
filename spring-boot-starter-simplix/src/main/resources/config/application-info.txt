@@ -1,0 +1,5 @@
+${AnsiColor.BRIGHT_BLUE} Profile:${AnsiColor.DEFAULT} %s
+${AnsiColor.BRIGHT_BLUE} Application URLs:${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_GREEN}  - Local     :${AnsiColor.DEFAULT} http://localhost:%s
+${AnsiColor.BRIGHT_GREEN}  - Swagger UI:${AnsiColor.DEFAULT} http://localhost:%s/swagger-ui.html
+${AnsiColor.BRIGHT_GREEN}  - API Docs  :${AnsiColor.DEFAULT} http://localhost:%s/v3/api-docs

@@ -1,0 +1,10 @@
+{
+    "baseTargetPath": "src/main/java/com/simplix/generated",
+    "targetPath": {
+        "repository": "domain/{modulePath}/repository",
+        "service": "web/{modulePath}/service",
+        "controllerRest": "web/{modulePath}/controller/rest",
+        "controllerWeb": "web/{modulePath}/controller/web",
+        "dto": "web/{modulePath}/dto"
+    }
+}

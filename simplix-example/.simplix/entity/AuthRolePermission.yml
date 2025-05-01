@@ -1,0 +1,103 @@
+entity: AuthRolePermission
+modulePath: common/auth
+
+idField: id
+nameField: permission.name
+thymeleafBaseDir: auth/role-permission
+defaultSortField: createdAt
+defaultSortDirection: desc
+
+fields:
+
+  id:
+    views: [list, detail]
+    searchOperators: [equals, contains]
+
+  permission:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+    reference:
+      entity: AuthPermission
+      idField: id
+      idType: String
+      nameField: name
+
+  targetType:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+
+  role:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+    reference:
+      entity: UserRole
+      idField: id
+      idType: String
+      nameField: name
+
+  organization:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+    reference:
+      entity: UserOrganization
+      idField: id
+      idType: String
+      nameField: name
+
+  userAccount:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+    reference:
+      entity: UserAccount
+      idField: id
+      idType: String
+      nameField: realName
+
+  listPermission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  viewPermission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  createPermission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  editPermission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  deletePermission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra1Permission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra2Permission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra3Permission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra4Permission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  extra5Permission:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  description:
+    views: [list, detail, edit]
+    searchOperators: [contains]

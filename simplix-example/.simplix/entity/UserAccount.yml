@@ -1,0 +1,94 @@
+entity: UserAccount
+modulePath: common/user
+idField: id
+nameField: UserName
+thymeleafBaseDir: user/account
+
+fields:
+  id:
+    views: [list, detail]
+    searchOperators: [equals]
+
+  username:
+    views: [list, detail]
+    searchOperators: [equals, contains]
+    sortable: true
+
+  password:
+    views: [detail, edit]
+
+  enabled:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  realName:
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+    sortable: true
+
+  profileImage:
+    views: [detail, edit]
+
+  profileImageType:
+    views: [detail, edit]
+
+  description:
+    views: [detail, edit]
+    searchOperators: [contains]
+
+  email:
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+    sortable: true
+
+  mobilePhone:
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+    sortable: true
+
+  officePhone:
+    views: [detail, edit]
+    searchOperators: [equals, contains]
+    sortable: true
+
+  postalCode:
+    views: [detail, edit]
+    searchOperators: [equals, contains]
+
+  address:
+    views: [detail, edit]
+    searchOperators: [contains]
+
+  addressDetail:
+    views: [detail, edit]
+    searchOperators: [contains]
+
+  position:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+    sortable: true
+    reference:
+      entity: UserPosition
+      idField: id
+      idType: String
+      nameField: name
+
+  roles:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+    reference:
+      entity: UserRole
+      idField: id
+      idType: String
+      nameField: name
+      multiple: true
+
+  organizations:
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+    reference:
+      entity: UserOrganization
+      idField: id
+      idType: String
+      nameField: name
+      multiple: true 

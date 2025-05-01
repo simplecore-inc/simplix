@@ -1,0 +1,5 @@
+${AnsiColor.BRIGHT_YELLOW}  ____ ___ __  __ ____  _     _____  __${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_YELLOW} / ___|_ _|  \/  |  _ \| |   |_ _\ \/ /${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_YELLOW} \___ \| || |\/| | |_) | |    | | \  / ${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_YELLOW}  ___) | || |  | |  __/| |___ | | /  \ ${AnsiColor.DEFAULT} ${AnsiColor.BRIGHT_BLUE}SimpliX Framework :${AnsiColor.DEFAULT} ${AnsiColor.GREEN}v@simplix.version@${AnsiColor.DEFAULT}
+${AnsiColor.BRIGHT_YELLOW} |____/___|_|  |_|_|   |_____|___/_/\_\${AnsiColor.DEFAULT} ${AnsiColor.BRIGHT_BLUE}Spring Boot      :${AnsiColor.DEFAULT} ${AnsiColor.GREEN}v@spring-boot.version@${AnsiColor.DEFAULT}

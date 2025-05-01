@@ -1,0 +1,25 @@
+entity: UserAccountLog
+
+modulePath: common/user
+idField: logId
+nameField: logMessage
+thymeleafBaseDir: user/accountlog
+defaultSortField: logId.createdAt
+defaultSortDirection: asc
+
+fields:
+
+  logId.userId:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals, contains]
+
+  logId.logTime:
+    sortable: true
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [between, greaterThan, lessThan]
+
+  logMessage:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [contains]

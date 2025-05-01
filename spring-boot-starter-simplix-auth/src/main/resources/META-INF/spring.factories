@@ -1,0 +1,5 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+dev.simplecore.simplix.auth.properties.SimpliXAuthEnvironmentPostProcessor
+
+org.springframework.security.config.annotation.web.configuration.EnableWebSecurity=\
+dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthSecurityConfiguration

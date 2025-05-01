@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>System Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .metric-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 45%;
+            min-width: 300px;
+        }
+        .metric-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .current-value {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .cpu-value {
+            color: #4e73df;
+        }
+        .memory-value {
+            color: #1cc88a;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>System Resource Monitoring</h1>
+        <p>SSE(Server-Sent Events) Example</p>
+    </div>
+    
+    <div class="dashboard">
+        <div class="metric-card">
+            <div class="metric-title">CPU Usage</div>
+            <div class="chart-container">
+                <canvas id="cpuChart"></canvas>
+            </div>
+            <div class="current-value cpu-value" id="currentCpu">0%</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-title">Memory Usage</div>
+            <div class="chart-container">
+                <canvas id="memoryChart"></canvas>
+            </div>
+            <div class="current-value memory-value" id="currentMemory">0%</div>
+        </div>
+    </div>
+
+    <script>
+        // Chart configuration and data
+        const MAX_DATA_POINTS = 60; // Display 60 seconds of data
+        
+        // CPU chart configuration
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        const cpuChart = new Chart(cpuCtx, {
+            type: 'line',
+            data: {
+                labels: Array(MAX_DATA_POINTS).fill(''),
+                datasets: [{
+                    label: 'CPU Usage (%)',
+                    data: Array(MAX_DATA_POINTS).fill(null),
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 10, // Initial maximum value (automatically adjusted based on data)
+                        adaptive: true,
+                        title: {
+                            display: true,
+                            text: 'Usage (%)'
+                        }
+                    },
+                    x: {
+                        display: false
+                    }
+                },
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // Memory chart configuration
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        const memoryChart = new Chart(memoryCtx, {
+            type: 'line',
+            data: {
+                labels: Array(MAX_DATA_POINTS).fill(''),
+                datasets: [{
+                    label: 'Memory Usage (%)',
+                    data: Array(MAX_DATA_POINTS).fill(null),
+                    borderColor: '#1cc88a',
+                    backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 10, // Initial maximum value (automatically adjusted based on data)
+                        adaptive: true,
+                        title: {
+                            display: true,
+                            text: 'Usage (%)'
+                        }
+                    },
+                    x: {
+                        display: false
+                    }
+                },
+                animation: {
+                    duration: 0
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        
+        // SSE connection and data handling
+        const eventSource = new EventSource('/api/system/metrics/stream');
+        
+        eventSource.addEventListener('INIT', function(event) {
+            console.log('SSE connected:', event.data);
+        });
+        
+        eventSource.addEventListener('system-metrics', function(event) {
+            const metrics = JSON.parse(event.data);
+            
+            // Update current values
+            document.getElementById('currentCpu').textContent = metrics.cpuUsage.toFixed(2) + '%';
+            document.getElementById('currentMemory').textContent = metrics.memoryUsage.toFixed(2) + '%';
+            
+            // Update chart data (flowing from right to left)
+            cpuChart.data.datasets[0].data.push(metrics.cpuUsage);
+            cpuChart.data.datasets[0].data.shift();
+            
+            memoryChart.data.datasets[0].data.push(metrics.memoryUsage);
+            memoryChart.data.datasets[0].data.shift();
+            
+            // Update charts
+            cpuChart.update();
+            memoryChart.update();
+        });
+        
+        // Connection error handling
+        eventSource.onerror = function(error) {
+            console.error('SSE connection error:', error);
+            eventSource.close();
+            
+            // Try to reconnect after 3 seconds
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        };
+    </script>
+</body>
+</html> 

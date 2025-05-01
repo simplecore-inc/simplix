@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "name": "SimpliX",
+  "type": "collection",
+  "scripts": {
+    "pkce-challenge": "node_modules/pkce-challenge"
+  },
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

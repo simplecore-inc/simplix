@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>실시간 메시지</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #messageForm {
+            margin-bottom: 20px;
+        }
+        #messageInput {
+            width: 70%;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <h1>실시간 메시지</h1>
+    <p>SSE(Server-Sent Events) 예제</p>
+    
+    <div id="messageForm">
+        <input type="text" id="messageInput" placeholder="메시지를 입력하세요">
+        <button onclick="sendMessage()">전송</button>
+    </div>
+    
+    <div id="messages"></div>
+
+    <script>
+        const eventSource = new EventSource('/api/messages/subscribe');
+        const messagesDiv = document.getElementById('messages');
+
+        eventSource.addEventListener('INIT', function(event) {
+            console.log('SSE connected:', event.data);
+        });
+
+        eventSource.addEventListener('sample-message', function(event) {
+            const message = JSON.parse(event.data);
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message';
+            messageElement.innerHTML = `
+                <div>${message.message}</div>
+                <div class="timestamp">${message.timestamp}</div>
+            `;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+            
+            if (!message) return;
+
+            fetch('/api/messages/publish', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message
+                })
+            });
+
+            messageInput.value = '';
+        }
+
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

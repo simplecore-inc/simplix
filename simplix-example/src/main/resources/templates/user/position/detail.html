@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+
+<head>
+    <title>직급 상세 정보</title>
+</head>
+
+<body>
+    <th:block layout:fragment="page-title">직급 상세 정보</th:block>
+
+    <th:block layout:fragment="page-actions">
+        <div class="btn-group">
+            <button class="btn btn-secondary d-flex align-items-center gap-2" 
+                    onclick="location.href='/user/position/list?restore=true'">
+                <i class="ri-arrow-left-line"></i>
+                목록
+            </button>
+            <button class="btn btn-primary d-flex align-items-center gap-2" 
+                    th:onclick="|location.href='@{/user/position/edit/{id}(id=${item.id})}'|">
+                <i class="ri-edit-line"></i>
+                수정
+            </button>
+            <button class="btn btn-danger d-flex align-items-center gap-2" onclick="deleteItem()">
+                <i class="ri-delete-bin-line"></i>
+                삭제
+            </button>
+        </div>
+    </th:block>
+
+    <div layout:fragment="content">
+        <div class="container-fluid px-4">
+            <div class="card border-0 rounded-3 shadow-sm">
+                <div class="card-body p-4">
+                    <!-- 기본 정보 -->
+                    <div class="mb-4">
+                        <h5 class="card-title d-flex align-items-center gap-2 mb-3">
+                            <i class="ri-information-line text-primary"></i>
+                            기본 정보
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <colgroup>
+                                    <col style="width: 180px;">
+                                    <col>
+                                    <col style="width: 180px;">
+                                    <col>
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <th class="table-light">직급 ID</th>
+                                        <td class="font-monospace" th:text="${item.id}">-</td>
+                                        <th class="table-light">직급명</th>
+                                        <td th:text="${item.name}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">순서</th>
+                                        <td th:text="${item.itemOrder}">-</td>
+                                        <th class="table-light">설명</th>
+                                        <td th:text="${item.description}">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 등록/수정 정보 -->
+                    <div>
+                        <h5 class="card-title d-flex align-items-center gap-2 mb-3">
+                            <i class="ri-history-line text-primary"></i>
+                            이력 정보
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <colgroup>
+                                    <col style="width: 180px;">
+                                    <col>
+                                    <col style="width: 180px;">
+                                    <col>
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <th class="table-light">등록자</th>
+                                        <td th:text="${item.createdBy}">-</td>
+                                        <th class="table-light">등록일시</th>
+                                        <td th:text="${#temporals.format(item.createdAt, 'yyyy-MM-dd HH:mm')}">-</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">수정자</th>
+                                        <td th:text="${item.updatedBy}">-</td>
+                                        <th class="table-light">수정일시</th>
+                                        <td th:text="${#temporals.format(item.updatedAt, 'yyyy-MM-dd HH:mm')}">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-fingerprint-line me-1 text-muted"></i>
+                                    <p class="text-muted small mb-0 copy-to-clipboard" th:text="${item.id}">ID</p>
+                                </div>
+                                <div class="text-muted small">
+                                    <span class="me-3">
+                                        <i class="ri-user-add-line me-1"></i>
+                                        등록: <span th:text="${item.createdBy}">등록자</span>
+                                        <span th:if="${item.createdAt != null}" 
+                                              th:text="${#temporals.format(item.createdAt, 'yyyy.MM.dd HH:mm')}">등록일시</span>
+                                    </span>
+                                    <span>
+                                        <i class="ri-edit-2-line me-1"></i>
+                                        수정: <span th:text="${item.updatedBy}">수정자</span>
+                                        <span th:if="${item.updatedAt != null}" 
+                                              th:text="${#temporals.format(item.updatedAt, 'yyyy.MM.dd HH:mm')}">수정일시</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <th:block layout:fragment="script">
+        <script th:inline="javascript">
+            function deleteItem() {
+                if (!confirm('정말 삭제하시겠습니까?')) return;
+
+                const id = /*[[${item.id}]]*/ '';
+                fetch(`/api/user/position/${id}`, { method: 'DELETE' })
+                    .then(response => {
+                        if (response.ok) {
+                            SimpliXUtils.showToast('삭제되었습니다.', 'success');
+                            setTimeout(() => {
+                                location.href = '/user/position/list?restore=true';
+                            }, 500);
+                        } else {
+                            throw new Error('삭제 실패');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        SimpliXUtils.showToast('삭제에 실패했습니다.', 'danger');
+                    });
+            }
+        </script>
+    </th:block>
+</body>
+</html> 
