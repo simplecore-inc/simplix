@@ -90,3 +90,4 @@ bin/
 **/config/jwe-key.json
 **/config/*.pem
 .cursor/rules/project-rule.mdc
+spring-boot-starter-simplix-excel/templates/default-template.xlsx

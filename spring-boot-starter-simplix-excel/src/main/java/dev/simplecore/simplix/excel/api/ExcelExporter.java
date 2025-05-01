@@ -68,4 +68,19 @@ public interface ExcelExporter<T> {
      * @throws IOException If an I/O error occurs
      */
     void export(Collection<T> items, OutputStream outputStream) throws IOException;
+    
+    /**
+     * Execute export (output to HTTP response) with custom filename
+     *
+     * @param items Collection of data to export
+     * @param response HTTP response object
+     * @param filename Download file name (UTF-8 safe)
+     * @throws IOException If an I/O error occurs
+     */
+    default void export(Collection<T> items, HttpServletResponse response, String filename) throws IOException {
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        String encodedFilename = java.net.URLEncoder.encode(filename, "UTF-8").replaceAll("\\+", "%20");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFilename + "\"");
+        export(items, response.getOutputStream());
+    }
 } 

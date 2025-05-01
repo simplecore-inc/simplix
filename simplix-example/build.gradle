@@ -7,6 +7,7 @@ dependencies {
     implementation project(':spring-boot-starter-simplix-auth')
     implementation project(':spring-boot-starter-simplix-event')
     implementation project(':spring-boot-starter-simplix-mybatis')
+    implementation project(':spring-boot-starter-simplix-excel')
 
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-java8time'
