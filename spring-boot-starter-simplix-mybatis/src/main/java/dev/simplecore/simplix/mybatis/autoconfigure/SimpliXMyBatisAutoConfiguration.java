@@ -1,4 +1,4 @@
-package dev.simplecore.simplix.auth.autoconfigure;
+package dev.simplecore.simplix.mybatis.autoconfigure;
 
 import javax.sql.DataSource;
 

@@ -1,4 +1,4 @@
-package dev.simplecore.simplix.auth.properties;
+package dev.simplecore.simplix.mybatis.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
