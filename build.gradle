@@ -56,6 +56,10 @@ subprojects {
                             'spring-boot-starter-simplix-mybatis': [
                                 name: 'Spring Boot Starter for SimpliX MyBatis',
                                 description: 'Spring Boot Starter for SimpliX MyBatis'
+                            ],
+                            'spring-boot-starter-simplix-excel': [
+                                name: 'Spring Boot Starter for SimpliX Excel',
+                                description: 'Spring Boot Starter for SimpliX Excel'
                             ]
                         ]
                         if (metadata.containsKey(project.name)) {

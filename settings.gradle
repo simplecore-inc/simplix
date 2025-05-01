@@ -15,6 +15,7 @@ include 'spring-boot-starter-simplix'
 include 'spring-boot-starter-simplix-auth'
 include 'spring-boot-starter-simplix-event'
 include 'spring-boot-starter-simplix-mybatis'
+include 'spring-boot-starter-simplix-excel'
 
 def props = new Properties()
 def propertiesFile = file("gradle.properties")
