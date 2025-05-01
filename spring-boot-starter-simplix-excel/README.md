@@ -9,8 +9,6 @@ Licensed under the SimpleCORE License 1.0
 Use allowed in own products. Redistribution or resale requires permission.
 
 ## Requirements
-- Java 17 or higher
-- Spring Boot 3.x
 - Apache POI 5.x
 
 ## Key Features
@@ -18,9 +16,11 @@ Use allowed in own products. Redistribution or resale requires permission.
 - **DTO Field Annotations**: Easy configuration using `@ExcelColumn` annotation
 - **Large Data Processing**: Memory-efficient processing with streaming mode support
 - **Flexible Styling**: Rich style settings including fonts, colors, and formats
-- **Type Conversion**: Comprehensive type conversion system with custom converter support
+- **Type Conversion**: Comprehensive type conversion system with core converter integration
 - **Auto Configuration**: Spring Boot auto-configuration support
 - **Performance Optimized**: Cached formatters and styles for better performance
+- **Excel Date Handling**: Accurate Excel date/time conversion with 1900 date system support
+- **Import Support**: Excel and CSV file import with type conversion and validation
 
 ## Module Structure
 ```
@@ -68,6 +68,11 @@ simplix.excel.export.default-sheet-name=Data
 simplix.excel.export.streaming-threshold=100000
 simplix.excel.export.batch-size=1000
 
+# Import Settings
+simplix.excel.import.skip-header=true
+simplix.excel.import.sheet-index=0
+simplix.excel.import.batch-size=1000
+
 # Format Settings
 simplix.excel.format.date=yyyy-MM-dd
 simplix.excel.format.datetime=yyyy-MM-dd HH:mm:ss
@@ -85,40 +90,71 @@ simplix.excel.style.data.font-size=10
 ### 1. Basic DTO Configuration
 ```java
 public class UserDto {
-    @ExcelColumn(title = "ID", order = 1)
+    @ExcelColumn(name = "ID", order = 1)
     private Long id;
     
-    @ExcelColumn(title = "Name", order = 2, 
+    @ExcelColumn(name = "Name", order = 2, 
                 fontName = "Arial", fontSize = 10, bold = true)
     private String name;
     
-    @ExcelColumn(title = "Created At", order = 3, 
-                dateFormat = "yyyy-MM-dd HH:mm:ss")
+    @ExcelColumn(name = "Created At", order = 3, 
+                format = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
     
-    @ExcelColumn(title = "Status", order = 4,
+    @ExcelColumn(name = "Status", order = 4,
                 backgroundColor = "#E6F3FF")
     private UserStatus status;  // Enum type
 }
 ```
 
-### 2. Custom Type Converter Registration
+### 2. Type Conversion Integration
 ```java
 @Configuration
 public class ExcelConfig {
     @PostConstruct
-    public void registerConverters() {
-        // Register enum value extractor
-        TypeConverter.registerEnumValueExtractor(UserStatus.class, 
-            status -> status.getDisplayName());
-            
-        // Date/Time converters are built-in and handled by
-        // DateConverter and TemporalConverter
+    public void configureConverters() {
+        // Core converters are automatically integrated:
+        // - BooleanConverter
+        // - DateTimeConverter
+        // - EnumConverter
+        
+        // Custom converters can be added if needed
+        TypeConverter.register(CustomType.class, new CustomTypeConverter());
     }
 }
 ```
 
-### 3. Style Management
+### 3. Excel Import
+```java
+@Service
+public class ExcelImportService {
+    public List<UserDto> importUsers(MultipartFile file) {
+        StandardExcelImporter<UserDto> importer = new StandardExcelImporter<>(UserDto.class);
+        
+        // Configure import options
+        importer.setSkipHeader(true);
+        importer.setSheetIndex(0);
+        
+        // Custom column mapping (optional)
+        Map<Integer, String> columnMapping = new HashMap<>();
+        columnMapping.put(0, "id");
+        columnMapping.put(1, "name");
+        columnMapping.put(2, "createdAt");
+        columnMapping.put(3, "status");
+        importer.setColumnMapping(columnMapping);
+        
+        // Import data
+        return importer.importFromExcel(file);
+    }
+    
+    public List<UserDto> importUsersFromCsv(MultipartFile file) {
+        StandardExcelImporter<UserDto> importer = new StandardExcelImporter<>(UserDto.class);
+        return importer.importFromCsv(file);
+    }
+}
+```
+
+### 4. Style Management
 ```java
 @Service
 public class ExcelService {
@@ -134,7 +170,7 @@ public class ExcelService {
 }
 ```
 
-### 4. Using FormatterCache
+### 5. Using FormatterCache
 ```java
 public class DateFormatter {
     public String formatDate(Date date, String pattern) {
@@ -155,11 +191,10 @@ public class DateFormatter {
 
 | Option          | Description                        | Default      |
 |----------------|------------------------------------|--------------|
-| title          | Column title                       | ""           |
+| name           | Column name                        | ""           |
 | order          | Column order (ascending)           | 0            |
 | width          | Column width (in characters)       | 15           |
-| dateFormat     | Date format                        | "yyyy-MM-dd" |
-| numberFormat   | Number format                      | "#,##0.###"  |
+| format         | Date/Number format pattern         | ""           |
 | fontName       | Font name                          | "Arial"      |
 | fontSize       | Font size                          | 10           |
 | bold           | Bold text                          | false        |
@@ -168,6 +203,7 @@ public class DateFormatter {
 | backgroundColor| Background color (hex)             | ""           |
 | fontColor      | Font color (hex)                   | ""           |
 | wrapText       | Allow text wrapping                | false        |
+| ignore         | Exclude from processing            | false        |
 
 ## Performance Considerations
 
@@ -186,6 +222,12 @@ public class DateFormatter {
 4. **Large Dataset Processing**
    - Use streaming mode for large exports
    - Consider batch size configuration for memory management
+   - Batch processing for imports to manage memory usage
+
+5. **Date/Time Handling**
+   - Excel 1900 date system support with leap year bug fix
+   - Millisecond precision for time values
+   - Efficient date/time conversion using core converters
 
 ## Error Handling
 
@@ -193,6 +235,35 @@ The module includes specialized exceptions:
 - `ExcelExportException`: General export errors
 - `ExcelFormatException`: Format/conversion errors
 - `ExcelTemplateException`: Template processing errors
+- `ExcelImportException`: Import processing errors
+
+## Recent Changes
+
+1. **Core Converter Integration**
+   - Removed custom converters in favor of core module integration
+   - Improved type conversion consistency across modules
+   - Better support for complex data types
+
+2. **Excel Date System**
+   - Fixed Excel 1900 date system leap year bug
+   - Improved millisecond precision for time values
+   - Better handling of fractional days
+
+3. **Annotation Updates**
+   - Renamed `title` to `name` for consistency
+   - Combined `dateFormat`/`numberFormat` into unified `format`
+   - Added `ignore` property for field exclusion
+
+4. **Performance Improvements**
+   - Optimized large dataset processing
+   - Enhanced formatter caching
+   - Improved memory usage in streaming mode
+
+5. **Import Features**
+   - Added Excel and CSV import support
+   - Flexible column mapping
+   - Type conversion and validation
+   - Batch processing for large files
 
 ## Contributing
 
