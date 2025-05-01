@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025 SimpleCORE
+ * Licensed under the SimpleCORE License 1.0 (see LICENSE)
+ * Use allowed in own products. Redistribution or resale requires permission.
+ */
 package dev.simplecore.simplix.excel.impl;
 
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
@@ -19,13 +24,13 @@ class UnifiedCsvExporterTest {
 
     @Test
     void testBasicCsvExport() throws IOException {
-        // 1. 테스트용 데이터 준비
+        // 1. Prepare test data
         List<TestUser> users = Arrays.asList(
-            new TestUser(1L, "홍길동", "user1@example.com", LocalDate.of(2023, 1, 15)),
-            new TestUser(2L, "김철수", "user2@example.com", LocalDate.of(2023, 2, 20))
+            new TestUser(1L, "John Doe", "user1@example.com", LocalDate.of(2023, 1, 15)),
+            new TestUser(2L, "Jane Smith", "user2@example.com", LocalDate.of(2023, 2, 20))
         );
         
-        // 2. 내보내기 실행
+        // 2. Execute export
         UnifiedCsvExporter<TestUser> exporter = new UnifiedCsvExporter<>(TestUser.class);
         exporter.filename("test.csv")
                 .delimiter(",")
@@ -35,26 +40,26 @@ class UnifiedCsvExporterTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         exporter.export(users, outputStream);
         
-        // 3. 결과 검증
+        // 3. Verify results
         String csvContent = outputStream.toString("UTF-8");
         assertNotNull(csvContent);
         
-        // 헤더 행이 있는지 확인
-        assertTrue(csvContent.contains("ID,이름,이메일,가입일"));
+        // Check header row
+        assertTrue(csvContent.contains("\"ID\",\"Name\",\"Email\",\"Created Date\""));
         
-        // 데이터 행이 있는지 확인
-        assertTrue(csvContent.contains("1,\"홍길동\",\"user1@example.com\",2023-01-15"));
-        assertTrue(csvContent.contains("2,\"김철수\",\"user2@example.com\",2023-02-20"));
+        // Check data rows
+        assertTrue(csvContent.contains("1,\"John Doe\",\"user1@example.com\",\"2023-01-15\""));
+        assertTrue(csvContent.contains("2,\"Jane Smith\",\"user2@example.com\",\"2023-02-20\""));
     }
     
     @Test
     void testCsvExportWithCustomDelimiter() throws IOException {
-        // 1. 테스트용 데이터 준비
+        // 1. Prepare test data
         List<TestUser> users = Arrays.asList(
-            new TestUser(1L, "홍길동", "user1@example.com", LocalDate.of(2023, 1, 15))
+            new TestUser(1L, "John Doe", "user1@example.com", LocalDate.of(2023, 1, 15))
         );
         
-        // 2. 내보내기 실행 (세미콜론 구분자 사용)
+        // 2. Execute export with semicolon delimiter
         UnifiedCsvExporter<TestUser> exporter = new UnifiedCsvExporter<>(TestUser.class);
         exporter.filename("test.csv")
                 .delimiter(";")
@@ -64,32 +69,32 @@ class UnifiedCsvExporterTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         exporter.export(users, outputStream);
         
-        // 3. 결과 검증
+        // 3. Verify results
         String csvContent = outputStream.toString("UTF-8");
         
-        // 세미콜론으로 구분된 헤더와 데이터 확인
-        assertTrue(csvContent.contains("ID;이름;이메일;가입일"));
-        assertTrue(csvContent.contains("1;\"홍길동\";\"user1@example.com\";2023-01-15"));
+        // Check header and data with semicolon delimiter
+        assertTrue(csvContent.contains("\"ID\";\"Name\";\"Email\";\"Created Date\""));
+        assertTrue(csvContent.contains("1;\"John Doe\";\"user1@example.com\";\"2023-01-15\""));
     }
     
     @Test
     void testHttpResponseExport() throws IOException {
-        // 1. 테스트용 데이터 준비
+        // 1. Prepare test data
         List<TestUser> users = Arrays.asList(
-            new TestUser(1L, "홍길동", "user1@example.com", LocalDate.of(2023, 1, 15))
+            new TestUser(1L, "John Doe", "user1@example.com", LocalDate.of(2023, 1, 15))
         );
         
-        // 2. Mock HttpServletResponse 준비
+        // 2. Prepare Mock HttpServletResponse
         MockHttpServletResponse response = new MockHttpServletResponse();
         
-        // 3. 내보내기 실행
+        // 3. Execute export
         UnifiedCsvExporter<TestUser> exporter = new UnifiedCsvExporter<>(TestUser.class);
         exporter.filename("test.csv")
                 .encoding("UTF-8");
         exporter.export(users, response);
         
-        // 4. 응답 확인
-        assertEquals("text/csv", response.getContentType());
+        // 4. Verify response
+        assertEquals("text/csv; charset=UTF-8", response.getContentType());
         assertEquals("attachment; filename=test.csv", 
                 response.getHeader("Content-Disposition"));
         assertTrue(response.getContentAsByteArray().length > 0);
@@ -99,16 +104,16 @@ class UnifiedCsvExporterTest {
     @NoArgsConstructor
     @AllArgsConstructor
     static class TestUser {
-        @ExcelColumn(title = "ID", order = 1)
+        @ExcelColumn(name = "ID", order = 1)
         private Long id;
         
-        @ExcelColumn(title = "이름", order = 2)
+        @ExcelColumn(name = "Name", order = 2)
         private String name;
         
-        @ExcelColumn(title = "이메일", order = 3)
+        @ExcelColumn(name = "Email", order = 3)
         private String email;
         
-        @ExcelColumn(title = "가입일", order = 4, dateFormat = "yyyy-MM-dd")
+        @ExcelColumn(name = "Created Date", order = 4, format = "yyyy-MM-dd")
         private LocalDate createdAt;
     }
 } 

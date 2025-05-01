@@ -6,20 +6,19 @@
 package dev.simplecore.simplix.excel.util;
 
 /**
- * String Utility
- * Utility class to remove dependency on Spring's StringUtils.
+ * Utility class for string operations.
  */
-public final class StringUtil {
-
+public class StringUtil {
+    
     private StringUtil() {
-        // Prevent utility class instantiation
+        // Prevent instantiation
     }
     
     /**
-     * Check if string has text
-     * 
-     * @param str String to check
-     * @return true if not empty
+     * Check if a string has text (not null and not empty after trimming).
+     *
+     * @param str the string to check
+     * @return true if the string has text, false otherwise
      */
     public static boolean hasText(String str) {
         return str != null && !str.trim().isEmpty();

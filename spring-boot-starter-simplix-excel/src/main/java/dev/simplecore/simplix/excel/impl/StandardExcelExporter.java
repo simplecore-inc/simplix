@@ -76,9 +76,10 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
         this.autoSizeColumns = false;
         this.useStreaming = false;
         
-        // Extract export fields (fields with @ExcelColumn annotation)
+        // Extract export fields (fields with @ExcelColumn annotation and not ignored)
         this.exportFields = Arrays.stream(dataClass.getDeclaredFields())
                 .filter(field -> field.isAnnotationPresent(ExcelColumn.class))
+                .filter(field -> !field.getAnnotation(ExcelColumn.class).ignore())
                 .sorted(Comparator.comparingInt(field -> 
                     field.getAnnotation(ExcelColumn.class).order()))
                 .collect(Collectors.toList());
@@ -377,9 +378,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
      */
     private void configureResponse(HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8.toString())
-                .replaceAll("\\+", "%20");
-        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFilename);
+        response.setHeader("Content-Disposition", "attachment; filename=" + filename);
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Expires", "0");
@@ -397,7 +396,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
             ExcelColumn column = field.getAnnotation(ExcelColumn.class);
             
             Cell cell = headerRow.createCell(i);
-            cell.setCellValue(column.title());
+            cell.setCellValue(column.name());
             cell.setCellStyle(headerStyle);
             
             // Set column width
@@ -477,33 +476,32 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
      */
     private void setCellValue(Cell cell, Object value) {
         if (value == null) {
-            cell.setCellValue("");
+            cell.setBlank();
             return;
         }
         
         if (value instanceof String) {
             cell.setCellValue((String) value);
         } else if (value instanceof Number) {
-            if (value instanceof Integer || value instanceof Long || 
-                value instanceof Short || value instanceof Byte) {
-                cell.setCellValue(((Number) value).doubleValue());
-            } else if (value instanceof Float || value instanceof Double) {
-                cell.setCellValue(((Number) value).doubleValue());
-            } else {
-                cell.setCellValue(((Number) value).doubleValue());
-            }
+            cell.setCellValue(((Number) value).doubleValue());
         } else if (value instanceof Boolean) {
             cell.setCellValue((Boolean) value);
+        } else if (value instanceof LocalDate) {
+            LocalDate localDate = (LocalDate) value;
+            cell.setCellValue(localDate);
+            CellStyle dateStyle = cell.getSheet().getWorkbook().createCellStyle();
+            dateStyle.setDataFormat((short) 14); // Excel date format: mm/dd/yyyy
+            cell.setCellStyle(dateStyle);
+        } else if (value instanceof LocalDateTime) {
+            LocalDateTime localDateTime = (LocalDateTime) value;
+            cell.setCellValue(localDateTime);
+            CellStyle dateTimeStyle = cell.getSheet().getWorkbook().createCellStyle();
+            dateTimeStyle.setDataFormat((short) 22); // Excel date/time format: mm/dd/yyyy hh:mm
+            cell.setCellStyle(dateTimeStyle);
         } else if (value instanceof Date) {
             cell.setCellValue((Date) value);
-        } else if (value instanceof Calendar) {
-            cell.setCellValue((Calendar) value);
-        } else if (value instanceof LocalDate) {
-            cell.setCellValue(Date.from(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        } else if (value instanceof LocalDateTime) {
-            cell.setCellValue(Date.from(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant()));
         } else {
-            cell.setCellValue(TypeConverter.toString(value, null));
+            cell.setCellValue(value.toString());
         }
     }
 } 

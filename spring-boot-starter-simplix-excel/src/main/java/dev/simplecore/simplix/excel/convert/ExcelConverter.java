@@ -58,7 +58,7 @@ public final class ExcelConverter {
     public static List<String> extractColumnTitles(Class<?> entityClass) {
         return COLUMN_CACHE.computeIfAbsent(entityClass, clazz -> 
             getExportFields(clazz).stream()
-                .map(field -> field.getAnnotation(ExcelColumn.class).title())
+                .map(field -> field.getAnnotation(ExcelColumn.class).name())
                 .collect(Collectors.toList())
         );
     }

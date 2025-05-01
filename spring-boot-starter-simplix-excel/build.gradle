@@ -26,20 +26,29 @@ sourceSets {
 dependencies {
     api project(':simplix-core')
 
+    // Spring Boot
+    api 'org.springframework.boot:spring-boot-starter'
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.data:spring-data-commons'
+
     // Excel
-    implementation 'org.apache.poi:poi:5.2.3'
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
-    implementation 'org.jxls:jxls:2.13.0'
-    implementation 'org.jxls:jxls-poi:2.13.0'
+    api 'org.apache.poi:poi:5.2.5'
+    api 'org.apache.poi:poi-ooxml:5.2.5'
+    api 'org.jxls:jxls:2.14.0'
+    api 'org.jxls:jxls-poi:2.14.0'
     implementation 'org.jxls:jxls-jexcel:1.0.9'
 
     // Utils
     api 'org.modelmapper:modelmapper:3.2.0'
     compileOnly 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 }

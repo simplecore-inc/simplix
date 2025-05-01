@@ -19,7 +19,7 @@ public @interface ExcelColumn {
     /**
      * Column title in Excel
      */
-    String title() default "";
+    String name() default "";
     
     /**
      * Column order (0-based)
@@ -29,12 +29,12 @@ public @interface ExcelColumn {
     /**
      * Date format pattern (for date fields)
      */
-    String dateFormat() default "yyyy-MM-dd";
+    String format() default "";
     
     /**
-     * Number format pattern (for number fields)
+     * Whether to ignore this column
      */
-    String numberFormat() default "#,##0";
+    boolean ignore() default false;
     
     /**
      * Column width in Excel units

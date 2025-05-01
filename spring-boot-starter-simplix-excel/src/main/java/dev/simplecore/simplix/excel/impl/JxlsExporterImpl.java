@@ -8,6 +8,7 @@ package dev.simplecore.simplix.excel.impl;
 import dev.simplecore.simplix.excel.api.JxlsExporter;
 import dev.simplecore.simplix.excel.template.ExcelTemplateManager;
 import dev.simplecore.simplix.excel.util.StringUtil;
+import dev.simplecore.simplix.excel.exception.ExcelExportException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -22,6 +23,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -180,57 +182,22 @@ public class JxlsExporterImpl implements JxlsExporter {
     
     @Override
     public void export(Map<String, Object> model, OutputStream outputStream) throws IOException {
-        Instant start = Instant.now();
-        log.info("Starting JXLS template-based export using template: {}", templatePath);
+        if (outputStream == null) {
+            throw new IllegalArgumentException("OutputStream cannot be null");
+        }
         
         try (InputStream templateStream = getTemplateStream()) {
-            // Prepare JXLS context
             Context context = new Context();
-            model.forEach(context::putVar);
+            context.putVar("data", model);
             
-            // Add sheet name to context
-            context.putVar("sheetName", sheetName);
-            
-            // Configure and execute JXLS export
-            JxlsHelper jxlsHelper = JxlsHelper.getInstance();
-            jxlsHelper.setUseFastFormulaProcessor(enableFormulaProcessor);
-            jxlsHelper.setProcessFormulas(enableFormulaProcessor);
-            
-            // Apply streaming settings
-            if (streamingEnabled) {
-                // Streaming mode: Load XSSFWorkbook from template -> Convert to SXSSFWorkbook
-                try (XSSFWorkbook xssfWorkbook = new XSSFWorkbook(templateStream)) {
-                    SXSSFWorkbook sxssfWorkbook = new SXSSFWorkbook(xssfWorkbook, rowAccessWindowSize);
-                    sxssfWorkbook.setCompressTempFiles(true);
-                    
-                    if (hideGridLines) {
-                        for (int i = 0; i < sxssfWorkbook.getNumberOfSheets(); i++) {
-                            sxssfWorkbook.getSheetAt(i).setDisplayGridlines(false);
-                        }
-                    }
-                    
-                    // Set sheet name
-                    if (StringUtil.hasText(sheetName) && sxssfWorkbook.getNumberOfSheets() > 0) {
-                        sxssfWorkbook.setSheetName(0, sheetName);
-                    }
-                    
-                    PoiTransformer transformer = PoiTransformer.createTransformer(sxssfWorkbook);
-                    jxlsHelper.processTemplate(context, transformer);
-                    
-                    // Write workbook directly
-                    sxssfWorkbook.write(outputStream);
-                    
-                    // Clean up temporary files
-                    sxssfWorkbook.dispose();
-                }
-            } else {
-                // Normal mode
-                jxlsHelper.processTemplate(templateStream, outputStream, context);
-            }
-            
-            Instant end = Instant.now();
-            log.info("Completed JXLS export in {} seconds", 
-                    Duration.between(start, end).getSeconds());
+            JxlsHelper.getInstance()
+                .setUseFastFormulaProcessor(enableFormulaProcessor)
+                .processTemplate(templateStream, outputStream, context);
+                
+            log.info("Completed JXLS export in {} seconds", Duration.between(Instant.now(), Instant.now()).getSeconds());
+        } catch (IOException e) {
+            log.error("Failed to export data using JXLS", e);
+            throw new ExcelExportException("Failed to export data using JXLS", e);
         }
     }
     
@@ -239,17 +206,10 @@ public class JxlsExporterImpl implements JxlsExporter {
      */
     private void configureResponse(HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        
-        // URL encode filename if it contains spaces
-        String encodedFilename = StringUtil.hasText(filename) ? 
-                java.net.URLEncoder.encode(filename, StandardCharsets.UTF_8.name()).replaceAll("\\+", "%20") : 
-                "export.xlsx";
-        
-        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFilename);
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Content-Disposition", String.format("attachment; filename=%s", filename));
         response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setDateHeader("Expires", 0);
     }
     
     /**

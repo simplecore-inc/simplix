@@ -19,10 +19,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
+import dev.simplecore.simplix.excel.util.StringUtil;
 
 /**
  * Unified CSV Export Implementation
@@ -298,7 +304,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
         } else {
             // Write all data rows
             for (T item : items) {
-                writeRow(writer, item);
+                writeRow(item, writer);
             }
         }
         
@@ -327,7 +333,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
             page = dataProvider.apply(pageRequest);
             
             for (T item : page.getContent()) {
-                writeRow(writer, item);
+                writeRow(item, writer);
                 rowCount++;
             }
             
@@ -364,7 +370,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
             
             // Process batch
             for (T item : batch) {
-                writeRow(writer, item);
+                writeRow(item, writer);
             }
             
             int currentProcessed = processed.addAndGet(batch.size());
@@ -401,7 +407,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
      */
     private void configureResponse(HttpServletResponse response) {
         response.setContentType("text/csv; charset=" + encoding.getName());
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+        response.setHeader("Content-Disposition", "attachment; filename=" + filename);
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Expires", "0");
@@ -413,9 +419,8 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     private void writeHeader(Writer writer) throws IOException {
         String headerLine = exportFields.stream()
                 .map(field -> {
-                    ExcelColumn column = field.getAnnotation(ExcelColumn.class);
-                    String title = column.title();
-                    return quoteStrings ? quote(title) : title;
+                    String title = field.getAnnotation(ExcelColumn.class).name();
+                    return quoteStrings ? "\"" + title + "\"" : title;
                 })
                 .collect(Collectors.joining(delimiter));
         
@@ -426,31 +431,26 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     /**
      * Write data row
      */
-    private void writeRow(Writer writer, T item) throws IOException {
-        String dataLine = exportFields.stream()
-                .map(field -> {
-                    field.setAccessible(true);
-                    try {
-                        Object value = field.get(item);
-                        ExcelColumn column = field.getAnnotation(ExcelColumn.class);
-                        
-                        if (value == null) {
-                            return "";
-                        }
-                        
-                        String formattedValue = formatValue(value, column);
-                        // Quote if string or contains delimiter/newline
-                        return shouldQuote(value, formattedValue) ? 
-                                quote(escapeSpecialChars ? escapeSpecialCharacters(formattedValue) : formattedValue) : 
-                                formattedValue;
-                    } catch (IllegalAccessException e) {
-                        log.error("Error accessing field: " + field.getName(), e);
-                        return "";
-                    }
-                })
-                .collect(Collectors.joining(delimiter));
-        
-        writer.write(dataLine);
+    private void writeRow(T item, Writer writer) throws IOException {
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (Field field : exportFields) {
+            try {
+                field.setAccessible(true);
+                Object value = field.get(item);
+                ExcelColumn column = field.getAnnotation(ExcelColumn.class);
+                String cellValue = formatValue(value, column);
+                
+                if (value != null && quoteStrings && (value instanceof String || value instanceof LocalDate)) {
+                    cellValue = "\"" + cellValue + "\"";
+                }
+                
+                joiner.add(cellValue != null ? cellValue : "");
+            } catch (IllegalAccessException e) {
+                log.error("Failed to access field: " + field.getName(), e);
+                joiner.add("");
+            }
+        }
+        writer.write(joiner.toString());
         writer.write(lineEnding);
     }
     
@@ -475,8 +475,8 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     private String formatValue(Object value, ExcelColumn column) {
         // Use class-level format patterns with fallback to annotation values
         String pattern = value instanceof Number ? 
-            (numberFormat != null ? numberFormat : column.numberFormat()) :
-            (dateFormat != null ? dateFormat : column.dateFormat());
+            (numberFormat != null ? numberFormat : column.format()) :
+            (dateFormat != null ? dateFormat : column.format());
         
         if (value instanceof Date) {
             return TypeConverter.formatDate((Date) value, pattern);
@@ -507,5 +507,112 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
      */
     private String quote(String value) {
         return "\"" + value + "\"";
+    }
+
+    protected void setResponseHeaders(HttpServletResponse response, String filename) {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", String.format("attachment; filename=%s", filename));
+        response.setHeader("Pragma", "no-cache");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setDateHeader("Expires", 0);
+    }
+
+    protected void writeCsvContent(Collection<?> data, Writer writer) throws IOException {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+        
+        // Get field information from the first item
+        Object firstItem = data.iterator().next();
+        List<Field> fields = getExportableFields(firstItem.getClass());
+        
+        // Write header
+        writeHeader(fields, writer);
+        
+        // Write data rows
+        for (Object item : data) {
+            writeRow(item, fields, writer);
+        }
+        
+        writer.flush();
+    }
+    
+    private void writeHeader(List<Field> fields, Writer writer) throws IOException {
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (Field field : fields) {
+            ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+            String header = annotation != null ? annotation.name() : field.getName();
+            joiner.add(quoteIfNeeded(header));
+        }
+        writer.write(joiner.toString());
+        writer.write("\n");
+    }
+    
+    private void writeRow(Object item, List<Field> fields, Writer writer) throws IOException {
+        StringJoiner joiner = new StringJoiner(delimiter);
+        for (Field field : fields) {
+            try {
+                field.setAccessible(true);
+                Object value = field.get(item);
+                ExcelColumn column = field.getAnnotation(ExcelColumn.class);
+                String cellValue = formatValue(value, column);
+                joiner.add(quoteStrings && value instanceof String ? quote(cellValue) : cellValue);
+            } catch (IllegalAccessException e) {
+                log.error("Failed to access field: " + field.getName(), e);
+                joiner.add("");
+            }
+        }
+        writer.write(joiner.toString());
+        writer.write(lineEnding);
+    }
+    
+    private String quoteIfNeeded(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (quoteStrings && (value.contains(delimiter) || value.contains("\"") || value.contains("\n"))) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    protected List<Field> getExportableFields(Class<?> type) {
+        return Arrays.stream(type.getDeclaredFields())
+            .filter(field -> !field.isAnnotationPresent(ExcelColumn.class) || 
+                           !field.getAnnotation(ExcelColumn.class).ignore())
+            .sorted(Comparator.comparingInt(field -> {
+                ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+                return annotation != null ? annotation.order() : Integer.MAX_VALUE;
+            }))
+            .collect(Collectors.toList());
+    }
+    
+    protected String formatValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        
+        if (value instanceof Date) {
+            return new SimpleDateFormat("yyyy-MM-dd").format(value);
+        } else if (value instanceof LocalDate) {
+            return ((LocalDate) value).format(DateTimeFormatter.ISO_LOCAL_DATE);
+        } else if (value instanceof LocalDateTime) {
+            return ((LocalDateTime) value).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } else if (value instanceof Number) {
+            return value.toString();
+        } else if (value instanceof Boolean) {
+            return value.toString();
+        }
+        
+        String format = value.getClass().getAnnotation(ExcelColumn.class).format();
+        if (StringUtil.hasText(format)) {
+            if (value instanceof Number) {
+                return new DecimalFormat(format).format(value);
+            } else if (value instanceof Date) {
+                return new SimpleDateFormat(format).format(value);
+            }
+        }
+        
+        return value.toString();
     }
 } 

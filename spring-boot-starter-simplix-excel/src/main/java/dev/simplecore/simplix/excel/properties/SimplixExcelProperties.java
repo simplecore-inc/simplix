@@ -53,9 +53,9 @@ public class SimplixExcelProperties {
     @Setter
     public static class TemplateProperties {
         /**
-         * Default template file path
+         * Template file path
          */
-        private String defaultPath = "templates/default-template.xlsx";
+        private String path = "templates/default-template.xlsx";
 
         /**
          * Default sheet name
@@ -92,7 +92,12 @@ public class SimplixExcelProperties {
         private int windowSize = 100;
 
         /**
-         * Whether to enable streaming mode by default
+         * Default sheet name
+         */
+        private String defaultSheetName = "Data";
+
+        /**
+         * Whether to enable streaming mode
          */
         private boolean streamingEnabled = false;
 
@@ -116,14 +121,14 @@ public class SimplixExcelProperties {
     @Setter
     public static class CsvProperties {
         /**
-         * CSV file delimiter
+         * CSV delimiter
          */
         private String delimiter = ",";
 
         /**
-         * CSV encoding (default: UTF-8 + BOM)
+         * CSV encoding
          */
-        private String encoding = "UTF8_BOM";
+        private String encoding = "UTF-8";
 
         /**
          * Whether to auto-quote strings

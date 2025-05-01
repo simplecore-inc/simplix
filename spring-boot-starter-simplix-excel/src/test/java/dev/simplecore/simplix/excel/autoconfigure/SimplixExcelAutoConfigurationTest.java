@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025 SimpleCORE
+ * Licensed under the SimpleCORE License 1.0 (see LICENSE)
+ * Use allowed in own products. Redistribution or resale requires permission.
+ */
 package dev.simplecore.simplix.excel.autoconfigure;
 
 import dev.simplecore.simplix.excel.api.CsvExporter;
@@ -24,9 +29,9 @@ class SimplixExcelAutoConfigurationTest {
             
             // 기본 속성값 확인
             SimplixExcelProperties properties = context.getBean(SimplixExcelProperties.class);
-            assertThat(properties.getDefaultTemplatePath()).isEqualTo("templates/default-template.xlsx");
-            assertThat(properties.getDefaultSheetName()).isEqualTo("Data");
-            assertThat(properties.getCsvDelimiter()).isEqualTo(",");
+            assertThat(properties.getTemplate().getPath()).isEqualTo("templates/default-template.xlsx");
+            assertThat(properties.getExport().getDefaultSheetName()).isEqualTo("Data");
+            assertThat(properties.getCsv().getDelimiter()).isEqualTo(",");
         });
     }
     
@@ -34,20 +39,20 @@ class SimplixExcelAutoConfigurationTest {
     void testCustomProperties() {
         contextRunner
             .withPropertyValues(
-                "simplix.excel.default-template-path=templates/custom-template.xlsx",
-                "simplix.excel.default-sheet-name=CustomSheet",
-                "simplix.excel.csv-delimiter=;",
-                "simplix.excel.csv-encoding=UTF-8",
-                "simplix.excel.streaming-mode-enabled=true"
+                "simplix.excel.template.path=templates/custom-template.xlsx",
+                "simplix.excel.export.default-sheet-name=CustomSheet",
+                "simplix.excel.csv.delimiter=;",
+                "simplix.excel.csv.encoding=UTF-8",
+                "simplix.excel.export.streaming-enabled=true"
             )
             .run(context -> {
                 // 사용자 정의 속성값 확인
                 SimplixExcelProperties properties = context.getBean(SimplixExcelProperties.class);
-                assertThat(properties.getDefaultTemplatePath()).isEqualTo("templates/custom-template.xlsx");
-                assertThat(properties.getDefaultSheetName()).isEqualTo("CustomSheet");
-                assertThat(properties.getCsvDelimiter()).isEqualTo(";");
-                assertThat(properties.getCsvEncoding()).isEqualTo("UTF-8");
-                assertThat(properties.isStreamingModeEnabled()).isTrue();
+                assertThat(properties.getTemplate().getPath()).isEqualTo("templates/custom-template.xlsx");
+                assertThat(properties.getExport().getDefaultSheetName()).isEqualTo("CustomSheet");
+                assertThat(properties.getCsv().getDelimiter()).isEqualTo(";");
+                assertThat(properties.getCsv().getEncoding()).isEqualTo("UTF-8");
+                assertThat(properties.getExport().isStreamingEnabled()).isTrue();
             });
     }
 } 

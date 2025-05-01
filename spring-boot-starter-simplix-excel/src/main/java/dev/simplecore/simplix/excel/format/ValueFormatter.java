@@ -168,9 +168,9 @@ public final class ValueFormatter {
         // Get pattern from column annotation
         String pattern = null;
         if (value instanceof Number) {
-            pattern = column.numberFormat();
+            pattern = column.format();
         } else if (value instanceof Date || value instanceof Calendar || value instanceof Temporal) {
-            pattern = column.dateFormat();
+            pattern = column.format();
         }
         
         return formatter.format(value, pattern);

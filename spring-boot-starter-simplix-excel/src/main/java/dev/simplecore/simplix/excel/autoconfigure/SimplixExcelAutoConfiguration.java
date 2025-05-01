@@ -50,7 +50,7 @@ public class SimplixExcelAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public JxlsExporter jxlsExporter() {
-        JxlsExporterImpl exporter = new JxlsExporterImpl(properties.getTemplate().getDefaultPath());
+        JxlsExporterImpl exporter = new JxlsExporterImpl(properties.getTemplate().getPath());
         
         // Configure template options
         exporter.sheetName(properties.getTemplate().getDefaultSheetName());
@@ -62,7 +62,7 @@ public class SimplixExcelAutoConfiguration {
                .enableFormulas(properties.getExport().isEnableFormulas());
         
         log.debug("JxlsExporter bean registered with configuration: template={}, streaming={}, windowSize={}",
-                properties.getTemplate().getDefaultPath(),
+                properties.getTemplate().getPath(),
                 properties.getExport().isStreamingEnabled(),
                 properties.getExport().getWindowSize());
         

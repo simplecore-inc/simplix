@@ -219,10 +219,10 @@ public class ExcelStyleManager {
         
         if (value instanceof Date || value instanceof Calendar || value instanceof Temporal) {
             // Date/Time format
-            style.setDataFormat(format.getFormat(column.dateFormat()));
+            style.setDataFormat(format.getFormat(column.format()));
         } else if (value instanceof Number) {
             // Number format
-            style.setDataFormat(format.getFormat(column.numberFormat()));
+            style.setDataFormat(format.getFormat(column.format()));
         }
     }
     
@@ -240,8 +240,8 @@ public class ExcelStyleManager {
                 column.fontName(), column.fontSize(), column.bold(), column.italic(),
                 column.alignment(), column.backgroundColor(), column.fontColor(),
                 column.wrapText(), valueType, 
-                value instanceof Date || value instanceof Temporal ? column.dateFormat() : 
-                value instanceof Number ? column.numberFormat() : "");
+                value instanceof Date || value instanceof Temporal ? column.format() : 
+                value instanceof Number ? column.format() : "");
     }
     
     /**

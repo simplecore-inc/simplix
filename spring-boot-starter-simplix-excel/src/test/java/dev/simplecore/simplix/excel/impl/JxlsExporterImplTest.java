@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2025 SimpleCORE
+ * Licensed under the SimpleCORE License 1.0 (see LICENSE)
+ * Use allowed in own products. Redistribution or resale requires permission.
+ */
 package dev.simplecore.simplix.excel.impl;
 
 import dev.simplecore.simplix.excel.template.DefaultTemplateInitializer;
@@ -67,7 +72,9 @@ class JxlsExporterImplTest {
         // 4. Verify response
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                 response.getContentType());
-        assertTrue(response.getHeader("Content-Disposition").contains("filename"));
+        String contentDisposition = response.getHeader("Content-Disposition");
+        assertNotNull(contentDisposition, "Content-Disposition header should not be null");
+        assertTrue(contentDisposition.contains("filename"));
         assertTrue(response.getContentAsByteArray().length > 0);
     }
     
