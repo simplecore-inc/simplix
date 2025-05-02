@@ -6,7 +6,6 @@
 package dev.simplecore.simplix.excel.convert;
 
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
-import dev.simplecore.simplix.excel.format.ValueFormatter;
 import dev.simplecore.simplix.excel.properties.SimplixExcelProperties;
 import lombok.extern.slf4j.Slf4j;
 
@@ -137,8 +136,7 @@ public final class ExcelConverter {
                 return "";
             }
             
-            ExcelColumn column = field.getAnnotation(ExcelColumn.class);
-            return ValueFormatter.formatValue(value, column);
+            return value.toString();
         } catch (IllegalAccessException e) {
             log.error("Error accessing field: {}", field.getName(), e);
             return "";

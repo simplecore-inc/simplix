@@ -8,13 +8,14 @@ package dev.simplecore.simplix.excel.api;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.Map;
 
 /**
  * JXLS Template-based Excel Export Interface
  * Exports data to Excel based on defined template files.
  */
-public interface JxlsExporter {
+public interface JxlsExporter<T> {
     
     /**
      * Set file name
@@ -22,7 +23,7 @@ public interface JxlsExporter {
      * @param filename File name
      * @return this instance (for method chaining)
      */
-    JxlsExporter filename(String filename);
+    JxlsExporter<T> filename(String filename);
     
     /**
      * Set template path
@@ -30,7 +31,7 @@ public interface JxlsExporter {
      * @param templatePath Template file path (relative to classpath)
      * @return this instance (for method chaining)
      */
-    JxlsExporter template(String templatePath);
+    JxlsExporter<T> template(String templatePath);
     
     /**
      * Set formula processor activation
@@ -38,7 +39,7 @@ public interface JxlsExporter {
      * @param enableFormulaProcessor Whether to enable formula processor
      * @return this instance (for method chaining)
      */
-    JxlsExporter enableFormulas(boolean enableFormulaProcessor);
+    JxlsExporter<T> enableFormulas(boolean enableFormulaProcessor);
     
     /**
      * Set streaming mode
@@ -46,7 +47,7 @@ public interface JxlsExporter {
      * @param streamingEnabled Whether to enable streaming mode
      * @return this instance (for method chaining)
      */
-    JxlsExporter streaming(boolean streamingEnabled);
+    JxlsExporter<T> streaming(boolean streamingEnabled);
     
     /**
      * Set grid lines visibility
@@ -54,7 +55,7 @@ public interface JxlsExporter {
      * @param hideGridLines Whether to hide grid lines
      * @return this instance (for method chaining)
      */
-    JxlsExporter hideGridLines(boolean hideGridLines);
+    JxlsExporter<T> hideGridLines(boolean hideGridLines);
     
     /**
      * Set row access window size
@@ -62,7 +63,7 @@ public interface JxlsExporter {
      * @param windowSize Window size
      * @return this instance (for method chaining)
      */
-    JxlsExporter rowAccessWindowSize(int windowSize);
+    JxlsExporter<T> rowAccessWindowSize(int windowSize);
     
     /**
      * Set sheet name
@@ -70,23 +71,50 @@ public interface JxlsExporter {
      * @param sheetName Sheet name
      * @return this instance (for method chaining)
      */
-    JxlsExporter sheetName(String sheetName);
+    JxlsExporter<T> sheetName(String sheetName);
+    
+    /**
+     * Add parameter to the export context
+     * 
+     * @param name Parameter name
+     * @param value Parameter value
+     * @return this instance (for method chaining)
+     */
+    JxlsExporter<T> parameter(String name, Object value);
+    
+    /**
+     * Add parameters to the export context
+     * 
+     * @param parameters Map of parameters
+     * @return this instance (for method chaining)
+     */
+    JxlsExporter<T> parameters(Map<String, Object> parameters);
     
     /**
      * Execute export (output to HTTP response)
      * 
-     * @param model Data model
+     * @param items Collection of items to export
      * @param response HTTP response object
      * @throws IOException If an I/O error occurs
      */
-    void export(Map<String, Object> model, HttpServletResponse response) throws IOException;
+    void export(Collection<T> items, HttpServletResponse response) throws IOException;
     
     /**
      * Execute export (output to OutputStream)
      * 
-     * @param model Data model
+     * @param items Collection of items to export
      * @param outputStream Output stream
      * @throws IOException If an I/O error occurs
      */
-    void export(Map<String, Object> model, OutputStream outputStream) throws IOException;
+    void export(Collection<T> items, OutputStream outputStream) throws IOException;
+    
+    /**
+     * Execute export with specified filename (output to HTTP response)
+     * 
+     * @param items Collection of items to export
+     * @param response HTTP response object
+     * @param filename File name
+     * @throws IOException If an I/O error occurs
+     */
+    void export(Collection<T> items, HttpServletResponse response, String filename) throws IOException;
 } 

@@ -5,13 +5,44 @@
  */
 package dev.simplecore.simplix.excel.annotation;
 
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for marking entity fields as Excel columns with enhanced styling options
+ * Annotation for marking entity fields as Excel columns with styling options.
+ * 
+ * <p>This annotation provides basic features for Excel export:</p>
+ * <ul>
+ *   <li><b>Basic properties:</b> Set column name, order, width, etc.</li>
+ *   <li><b>Styling options:</b> Control font, alignment, colors, etc.</li>
+ * </ul>
+ * 
+ * <h2>Usage Examples</h2>
+ * 
+ * <h3>Basic Usage</h3>
+ * <pre>
+ * // Simple field export
+ * &#64;ExcelColumn(name = "User Name", order = 1)
+ * private String username;
+ * </pre>
+ * 
+ * <h3>Styling Options</h3>
+ * <pre>
+ * // Column with custom styling
+ * &#64;ExcelColumn(
+ *     name = "Account Balance", 
+ *     order = 2,
+ *     alignment = HorizontalAlignment.RIGHT,
+ *     fontColor = IndexedColors.RED,
+ *     bold = true
+ * )
+ * private String balance;
+ * </pre>
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -25,11 +56,6 @@ public @interface ExcelColumn {
      * Column order (0-based)
      */
     int order() default Integer.MAX_VALUE;
-    
-    /**
-     * Date format pattern (for date fields)
-     */
-    String format() default "";
     
     /**
      * Whether to ignore this column
@@ -62,19 +88,22 @@ public @interface ExcelColumn {
     boolean italic() default false;
     
     /**
-     * Text alignment (LEFT, CENTER, RIGHT)
+     * Text alignment using HorizontalAlignment enum
+     * Example: alignment = HorizontalAlignment.CENTER
      */
-    String alignment() default "LEFT";
+    HorizontalAlignment alignment() default HorizontalAlignment.LEFT;
     
     /**
-     * Background color in hex format (e.g., "#FFFFFF")
+     * Background color using IndexedColors enum
+     * Example: backgroundColor = IndexedColors.YELLOW
      */
-    String backgroundColor() default "";
+    IndexedColors backgroundColor() default IndexedColors.AUTOMATIC;
     
     /**
-     * Font color in hex format (e.g., "#000000")
+     * Font color using IndexedColors enum
+     * Example: fontColor = IndexedColors.RED
      */
-    String fontColor() default "";
+    IndexedColors fontColor() default IndexedColors.AUTOMATIC;
     
     /**
      * Whether to wrap text in the column
@@ -82,14 +111,8 @@ public @interface ExcelColumn {
     boolean wrapText() default true;
     
     /**
-     * Whether to merge cells vertically when values are the same
+     * Format pattern for numbers and dates
+     * (e.g., "#,##0.00" for numbers, "yyyy-MM-dd" for dates)
      */
-    boolean mergeVertical() default false;
-    
-    /**
-     * Conditional formatting expression
-     * Format: "condition:style,condition:style"
-     * Example: "value > 1000:#FF0000,value < 0:#0000FF"
-     */
-    String conditionalFormat() default "";
+    String format() default "";
 } 

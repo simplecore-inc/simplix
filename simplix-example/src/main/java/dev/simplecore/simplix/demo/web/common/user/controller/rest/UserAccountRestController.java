@@ -5,15 +5,18 @@ import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.demo.permission.CustomUserDetails;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
+import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
 import dev.simplecore.simplix.demo.web.common.user.service.UserAccountService;
 import dev.simplecore.simplix.excel.api.ExcelExporter;
 import dev.simplecore.simplix.excel.impl.StandardExcelExporter;
 import com.github.thkwag.searchable.core.condition.SearchCondition;
+import com.github.thkwag.searchable.core.condition.parser.SearchableParamsParser;
 import com.github.thkwag.searchable.openapi.annotation.SearchableParams;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -236,10 +239,22 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
         @RequestParam(required = false) @SearchableParams(UserAccountSearchDTO.class) Map<String, String> params,
         HttpServletResponse response
     ) throws Exception {
-        Page<UserAccountListDTO> page = service.search(params);
-        ExcelExporter<UserAccountListDTO> exporter = new StandardExcelExporter<>(UserAccountListDTO.class);
+        SearchCondition<UserAccountSearchDTO> searchCondition =
+                new SearchableParamsParser<UserAccountSearchDTO>(UserAccountSearchDTO.class).convert(params);
+                
+        ExcelExporter<UserAccountListExcel> exporter = new StandardExcelExporter<>(UserAccountListExcel.class)
+            .streaming(true)
+            .pageSize(1000)
+            .dataProvider(pageRequest -> {
+                searchCondition.setPage(pageRequest.getPageNumber());
+                searchCondition.setSize(pageRequest.getPageSize());
+                
+                List<UserAccountListExcel> excelList = service.searchForExcel(searchCondition);
+                return new PageImpl<>(excelList, pageRequest, 
+                    service.search(searchCondition).getTotalElements());
+            });
         
-        exporter.export(page.getContent(), response, "UserAccount_List.xlsx");
+        exporter.export(null, response, "UserAccount_List.xlsx");
     }
 
     @PostMapping("/excel")
@@ -247,13 +262,22 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     @PreAuthorize("hasPermission('UserAccount', 'list')")
     public void exportExcelPost(
         @RequestBody @Validated SearchCondition<UserAccountSearchDTO> searchCondition,
-        HttpServletResponse response) throws Exception {
-        Page<UserAccountListDTO> page = service.search(searchCondition);
-        ExcelExporter<UserAccountListDTO> exporter = new StandardExcelExporter<>(UserAccountListDTO.class);
-        exporter.export(page.getContent(), response, "UserAccount_List.xlsx");
+        HttpServletResponse response
+    ) throws Exception {
+        ExcelExporter<UserAccountListExcel> exporter = new StandardExcelExporter<>(UserAccountListExcel.class)
+            .streaming(true)
+            .pageSize(1000)
+            .dataProvider(pageRequest -> {
+                searchCondition.setPage(pageRequest.getPageNumber());
+                searchCondition.setSize(pageRequest.getPageSize());
+                
+                List<UserAccountListExcel> excelList = service.searchForExcel(searchCondition);
+                return new PageImpl<>(excelList, pageRequest, 
+                    service.search(searchCondition).getTotalElements());
+            });
+        
+        exporter.export(null, response, "UserAccount_List.xlsx");
     }
-
-
 
 
     /**

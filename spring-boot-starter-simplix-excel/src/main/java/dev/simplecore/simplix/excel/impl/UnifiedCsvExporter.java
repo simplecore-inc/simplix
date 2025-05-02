@@ -17,18 +17,15 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
-import dev.simplecore.simplix.excel.util.StringUtil;
 
 /**
  * Unified CSV Export Implementation
@@ -37,7 +34,7 @@ import dev.simplecore.simplix.excel.util.StringUtil;
  * @param <T> Type of data to export
  */
 @Slf4j
-public class UnifiedCsvExporter<T> implements CsvExporter<T> {
+public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExporter<T> {
     
     /**
      * CSV Export Encoding Options
@@ -75,12 +72,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     // Default settings
     private static final int DEFAULT_PAGE_SIZE = 1000;
     
-    // Class and field information
-    private final Class<T> dataClass;
-    private List<Field> exportFields;
-    
-    // Output settings
-    private String filename;
+    // CSV format settings
     private String delimiter;
     private String dateFormat;
     private String numberFormat;
@@ -88,10 +80,8 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     private boolean quoteStrings;
     private String lineEnding;
     private Encoding encoding;
-    private boolean escapeSpecialChars;
     
-    // Streaming settings
-    private boolean useStreaming;
+    // Batch processing
     private int batchSize;
     private Function<PageRequest, Page<T>> dataProvider;
     
@@ -101,7 +91,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
      * @param dataClass Data class to export
      */
     public UnifiedCsvExporter(Class<T> dataClass) {
-        this.dataClass = dataClass;
+        super(dataClass);
         
         // Default settings
         this.filename = "export.csv";
@@ -112,21 +102,13 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
         this.quoteStrings = true;
         this.lineEnding = "\r\n";
         this.encoding = Encoding.UTF8;
-        this.escapeSpecialChars = true;
         this.useStreaming = false;
         this.batchSize = DEFAULT_PAGE_SIZE;
-        
-        // Extract export fields (fields with @ExcelColumn annotation)
-        this.exportFields = Arrays.stream(dataClass.getDeclaredFields())
-                .filter(field -> field.isAnnotationPresent(ExcelColumn.class))
-                .sorted(Comparator.comparingInt(field -> 
-                    field.getAnnotation(ExcelColumn.class).order()))
-                .collect(Collectors.toList());
     }
     
     @Override
     public UnifiedCsvExporter<T> filename(String filename) {
-        this.filename = filename;
+        super.filename(filename);
         return this;
     }
     
@@ -174,7 +156,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     
     @Override
     public UnifiedCsvExporter<T> streaming(boolean useStreaming) {
-        this.useStreaming = useStreaming;
+        super.streaming(useStreaming);
         return this;
     }
     
@@ -196,15 +178,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
         this.encoding = encoding;
         return this;
     }
-    
-    /**
-     * Set special characters escape option
-     */
-    public UnifiedCsvExporter<T> escapeSpecialChars(boolean escapeSpecialChars) {
-        this.escapeSpecialChars = escapeSpecialChars;
-        return this;
-    }
-    
+
     /**
      * Set batch size (for streaming mode)
      */
@@ -224,12 +198,9 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     @Override
     public void export(Collection<T> items, HttpServletResponse response) throws IOException {
         Instant start = Instant.now();
-        int totalItems = items != null ? items.size() : 0;
         
-        log.info("Starting CSV export of {} items of type {}", 
-                totalItems, dataClass.getSimpleName());
-        
-        configureResponse(response);
+        logExportStart(items, "Starting CSV export of {} items of type {}");
+        configureCsvResponse(response, encoding.getName());
         
         try (OutputStream os = response.getOutputStream()) {
             // Write BOM if needed
@@ -248,19 +219,15 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
                 }
             }
             
-            Instant end = Instant.now();
-            log.info("Completed CSV export in {} seconds", 
-                    Duration.between(start, end).getSeconds());
+            logExportCompletion(start);
         }
     }
     
     @Override
     public void export(Collection<T> items, OutputStream outputStream) throws IOException {
         Instant start = Instant.now();
-        int totalItems = items != null ? items.size() : 0;
         
-        log.info("Starting CSV export of {} items of type {} to OutputStream", 
-                totalItems, dataClass.getSimpleName());
+        logExportStart(items, "Starting CSV export of {} items of type {} to OutputStream");
         
         // Write BOM if needed
         if (encoding.isIncludeBom()) {
@@ -278,9 +245,7 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
             }
         }
         
-        Instant end = Instant.now();
-        log.info("Completed CSV export in {} seconds", 
-                Duration.between(start, end).getSeconds());
+        logExportCompletion(start);
     }
     
     /**
@@ -352,34 +317,12 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
      * Export data in batches
      */
     private void exportInBatches(Collection<T> items, Writer writer) throws IOException {
-        final int totalItems = items.size();
-        final AtomicInteger processed = new AtomicInteger(0);
-        
-        List<T> batch = new ArrayList<>(batchSize);
-        Iterator<T> iterator = items.iterator();
-        
-        while (iterator.hasNext()) {
-            batch.clear();
-            
-            // Fill batch
-            int count = 0;
-            while (iterator.hasNext() && count < batchSize) {
-                batch.add(iterator.next());
-                count++;
-            }
-            
-            // Process batch
+        processBatches(items, batchSize, batch -> {
             for (T item : batch) {
                 writeRow(item, writer);
             }
-            
-            int currentProcessed = processed.addAndGet(batch.size());
-            log.debug("Processed {}/{} items ({}%)", 
-                    currentProcessed, totalItems, (currentProcessed * 100 / totalItems));
-            
-            // Flush periodically to minimize memory usage
             writer.flush();
-        }
+        });
     }
     
     /**
@@ -400,17 +343,6 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
             os.write(0xFE);
             os.write(0xFF);
         }
-    }
-    
-    /**
-     * Configure HTTP response headers
-     */
-    private void configureResponse(HttpServletResponse response) {
-        response.setContentType("text/csv; charset=" + encoding.getName());
-        response.setHeader("Content-Disposition", "attachment; filename=" + filename);
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
     }
     
     /**
@@ -455,51 +387,30 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
     }
     
     /**
-     * Determine if value should be quoted
-     */
-    private boolean shouldQuote(Object value, String stringValue) {
-        if (quoteStrings && value instanceof String) {
-            return true;
-        }
-        
-        // Always quote if contains delimiter, quote, or newline characters
-        return stringValue.contains(delimiter) || 
-               stringValue.contains("\"") || 
-               stringValue.contains("\r") || 
-               stringValue.contains("\n");
-    }
-    
-    /**
      * Format value based on field type and annotation
      */
     private String formatValue(Object value, ExcelColumn column) {
-        // Use class-level format patterns with fallback to annotation values
-        String pattern = value instanceof Number ? 
-            (numberFormat != null ? numberFormat : column.format()) :
-            (dateFormat != null ? dateFormat : column.format());
-        
-        if (value instanceof Date) {
-            return TypeConverter.formatDate((Date) value, pattern);
-        } else if (value instanceof Calendar) {
-            return TypeConverter.formatDate(((Calendar) value).getTime(), pattern);
-        } else if (value instanceof Number) {
-            return TypeConverter.formatNumber((Number) value, pattern);
-        } else {
-            return TypeConverter.toString(value, pattern);
+        if (value == null) {
+            return "";
         }
-    }
-    
-    /**
-     * Escape special characters for CSV
-     */
-    private String escapeSpecialCharacters(String value) {
-        // Escape quotes by doubling them
-        String escaped = value.replace("\"", "\"\"");
         
-        // Remove control characters
-        escaped = escaped.replaceAll("[\\p{Cntrl}]", " ");
-        
-        return escaped;
+        // 간소화된 변환 로직 사용
+        if (value instanceof Date) {
+            return TypeConverter.formatDate((Date) value, dateFormat);
+        } else if (value instanceof Calendar) {
+            return TypeConverter.formatDate(((Calendar) value).getTime(), dateFormat);
+        } else if (value instanceof Number) {
+            return TypeConverter.formatNumber((Number) value, numberFormat);
+        } else if (value instanceof Enum<?>) {
+            // Check if implements SimpliXLabeledEnum
+            if (value instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
+                return ((dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) value).getLabel();
+            } else {
+                return ((Enum<?>) value).name();
+            }
+        } else {
+            return TypeConverter.toString(value, "");
+        }
     }
     
     /**
@@ -593,24 +504,15 @@ public class UnifiedCsvExporter<T> implements CsvExporter<T> {
         }
         
         if (value instanceof Date) {
-            return new SimpleDateFormat("yyyy-MM-dd").format(value);
+            return new SimpleDateFormat(dateFormat).format(value);
         } else if (value instanceof LocalDate) {
-            return ((LocalDate) value).format(DateTimeFormatter.ISO_LOCAL_DATE);
+            return ((LocalDate) value).format(DateTimeFormatter.ofPattern(dateFormat));
         } else if (value instanceof LocalDateTime) {
             return ((LocalDateTime) value).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         } else if (value instanceof Number) {
-            return value.toString();
+            return new DecimalFormat(numberFormat).format(value);
         } else if (value instanceof Boolean) {
             return value.toString();
-        }
-        
-        String format = value.getClass().getAnnotation(ExcelColumn.class).format();
-        if (StringUtil.hasText(format)) {
-            if (value instanceof Number) {
-                return new DecimalFormat(format).format(value);
-            } else if (value instanceof Date) {
-                return new SimpleDateFormat(format).format(value);
-            }
         }
         
         return value.toString();

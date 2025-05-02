@@ -5,30 +5,42 @@
  */
 package dev.simplecore.simplix.excel.impl;
 
-import dev.simplecore.simplix.excel.template.DefaultTemplateInitializer;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.junit.jupiter.api.BeforeAll;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JxlsExporterImplTest {
 
-    @BeforeAll
-    static void setup() {
-        // Initialize default template
-        DefaultTemplateInitializer.initializeDefaultTemplate();
+    @TempDir
+    static Path tempDir;
+    private static File templateFile;
+
+    @BeforeEach
+    void setupTemplate() throws IOException {
+        templateFile = tempDir.resolve("test-template.xlsx").toFile();
+        try (Workbook workbook = new XSSFWorkbook()) {
+            workbook.createSheet("Data");
+            try (FileOutputStream fos = new FileOutputStream(templateFile)) {
+                workbook.write(fos);
+            }
+        }
     }
 
     @Test
@@ -39,16 +51,13 @@ class JxlsExporterImplTest {
             new TestUser(2L, "Jane Smith", "user2@example.com", LocalDate.of(2023, 2, 20))
         );
         
-        Map<String, Object> model = new HashMap<>();
-        model.put("users", users);
-        model.put("title", "User List");
-        
         // 2. Execute export
-        JxlsExporterImpl exporter = new JxlsExporterImpl();
-        exporter.filename("test.xlsx");
+        JxlsExporterImpl<TestUser> exporter = new JxlsExporterImpl<>(TestUser.class);
+        exporter.filename("test.xlsx")
+                .template(templateFile.getAbsolutePath());
         
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        exporter.export(model, outputStream);
+        exporter.export(users, outputStream);
         
         // 3. Verify results
         byte[] excelData = outputStream.toByteArray();
@@ -58,16 +67,18 @@ class JxlsExporterImplTest {
     @Test
     void testHttpResponseExport() throws IOException {
         // 1. Prepare test data
-        Map<String, Object> model = new HashMap<>();
-        model.put("title", "Test Document");
+        List<TestUser> users = Arrays.asList(
+            new TestUser(1L, "Test User", "test@example.com", LocalDate.now())
+        );
         
         // 2. Prepare Mock HttpServletResponse
         MockHttpServletResponse response = new MockHttpServletResponse();
         
         // 3. Execute export
-        JxlsExporterImpl exporter = new JxlsExporterImpl();
-        exporter.filename("test.xlsx");
-        exporter.export(model, response);
+        JxlsExporterImpl<TestUser> exporter = new JxlsExporterImpl<>(TestUser.class);
+        exporter.filename("test.xlsx")
+                .template(templateFile.getAbsolutePath());
+        exporter.export(users, response);
         
         // 4. Verify response
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
@@ -80,10 +91,15 @@ class JxlsExporterImplTest {
     
     @Test
     void testCustomSettings() throws IOException {
+        // 1. Prepare test data
+        List<TestUser> users = Arrays.asList(
+            new TestUser(1L, "Test User", "test@example.com", LocalDate.now())
+        );
+        
         // Export with custom settings
-        JxlsExporterImpl exporter = new JxlsExporterImpl();
+        JxlsExporterImpl<TestUser> exporter = new JxlsExporterImpl<>(TestUser.class);
         exporter.filename("customized.xlsx")
-                .template("templates/default-template.xlsx")
+                .template(templateFile.getAbsolutePath())
                 .enableFormulas(false)
                 .streaming(true)
                 .hideGridLines(true)
@@ -96,8 +112,7 @@ class JxlsExporterImplTest {
         
         // Execute export
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Map<String, Object> model = new HashMap<>();
-        exporter.export(model, outputStream);
+        exporter.export(users, outputStream);
         
         assertTrue(outputStream.toByteArray().length > 0);
     }

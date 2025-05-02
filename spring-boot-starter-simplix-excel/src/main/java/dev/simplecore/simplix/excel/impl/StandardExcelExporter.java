@@ -7,7 +7,6 @@ package dev.simplecore.simplix.excel.impl;
 
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import dev.simplecore.simplix.excel.api.ExcelExporter;
-import dev.simplecore.simplix.excel.convert.TypeConverter;
 import dev.simplecore.simplix.excel.style.ExcelStyleManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -19,13 +18,11 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -38,24 +35,18 @@ import java.util.stream.Collectors;
  * @param <T> Type of data to export
  */
 @Slf4j
-public class StandardExcelExporter<T> implements ExcelExporter<T> {
+public class StandardExcelExporter<T> extends AbstractExporter<T> implements ExcelExporter<T> {
 
     // Default settings
     private static final int DEFAULT_PAGE_SIZE = 1000;
     private static final int DEFAULT_WINDOW_SIZE = 100;
     private static final String DEFAULT_SHEET_NAME = "Data";
     
-    // Class and field information
-    private final Class<T> dataClass;
-    private List<Field> exportFields;
-    
-    // Output settings
-    private String filename;
+    // Sheet settings
     private String sheetName;
     private int pageSize;
     private int windowSize;
     private boolean autoSizeColumns;
-    private boolean useStreaming;
     
     // Streaming settings
     private Function<PageRequest, Page<T>> dataProvider;
@@ -66,7 +57,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
      * @param dataClass Data class to export
      */
     public StandardExcelExporter(Class<T> dataClass) {
-        this.dataClass = dataClass;
+        super(dataClass);
         
         // Default settings
         this.filename = "export.xlsx";
@@ -75,19 +66,11 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
         this.windowSize = DEFAULT_WINDOW_SIZE;
         this.autoSizeColumns = false;
         this.useStreaming = false;
-        
-        // Extract export fields (fields with @ExcelColumn annotation and not ignored)
-        this.exportFields = Arrays.stream(dataClass.getDeclaredFields())
-                .filter(field -> field.isAnnotationPresent(ExcelColumn.class))
-                .filter(field -> !field.getAnnotation(ExcelColumn.class).ignore())
-                .sorted(Comparator.comparingInt(field -> 
-                    field.getAnnotation(ExcelColumn.class).order()))
-                .collect(Collectors.toList());
     }
     
     @Override
     public StandardExcelExporter<T> filename(String filename) {
-        this.filename = filename;
+        super.filename(filename);
         return this;
     }
     
@@ -121,7 +104,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
     
     @Override
     public StandardExcelExporter<T> streaming(boolean useStreaming) {
-        this.useStreaming = useStreaming;
+        super.streaming(useStreaming);
         return this;
     }
     
@@ -175,10 +158,8 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
     private void exportStandard(Collection<T> items, HttpServletResponse response) throws IOException {
         int totalItems = items != null ? items.size() : 0;
         
-        log.info("Starting Excel export of {} items of type {}", 
-                totalItems, dataClass.getSimpleName());
-        
-        configureResponse(response);
+        logExportStart(items, "Starting Excel export of {} items of type {}");
+        configureExcelResponse(response);
         
         try (OutputStream os = response.getOutputStream()) {
             exportStandard(items, os);
@@ -238,8 +219,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
         }
         
         log.info("Starting streaming Excel export of {} data", dataClass.getSimpleName());
-        
-        configureResponse(response);
+        configureExcelResponse(response);
         
         try (OutputStream os = response.getOutputStream()) {
             exportStreamingWithDataProvider(os);
@@ -296,8 +276,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
         int totalItems = items != null ? items.size() : 0;
         
         log.info("Starting streaming Excel export from collection with {} items", totalItems);
-        
-        configureResponse(response);
+        configureExcelResponse(response);
         
         try (OutputStream os = response.getOutputStream()) {
             exportStreamingFromCollection(items, os);
@@ -374,17 +353,6 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
     }
     
     /**
-     * Configure HTTP response headers
-     */
-    private void configureResponse(HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=" + filename);
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Expires", "0");
-    }
-    
-    /**
      * Create header row
      */
     private void createHeaderRow(Sheet sheet, ExcelStyleManager styleManager) {
@@ -456,7 +424,7 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
                 Object value = field.get(item);
                 ExcelColumn column = field.getAnnotation(ExcelColumn.class);
                 
-                setCellValue(cell, value);
+                setCellValue(cell, value, column);
                 
                 // Set style only if value exists
                 if (value != null) {
@@ -472,9 +440,9 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
     }
     
     /**
-     * Set cell value based on type
+     * Set cell value based on type with column configuration
      */
-    private void setCellValue(Cell cell, Object value) {
+    private void setCellValue(Cell cell, Object value, ExcelColumn column) {
         if (value == null) {
             cell.setBlank();
             return;
@@ -500,8 +468,110 @@ public class StandardExcelExporter<T> implements ExcelExporter<T> {
             cell.setCellStyle(dateTimeStyle);
         } else if (value instanceof Date) {
             cell.setCellValue((Date) value);
+        } else if (value instanceof Enum<?>) {
+            // Process Enum type
+            Enum<?> enumValue = (Enum<?>) value;
+            
+            // Check if implements SimpliXLabeledEnum
+            if (value instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
+                dev.simplecore.simplix.core.enums.SimpliXLabeledEnum labeledEnum = 
+                    (dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) value;
+                cell.setCellValue(labeledEnum.getLabel());
+            } else {
+                cell.setCellValue(enumValue.name());
+            }
+        } else if (value instanceof Collection<?>) {
+            // Process collection types (List, Set, etc.)
+            Collection<?> collection = (Collection<?>) value;
+            if (!collection.isEmpty()) {
+                // Convert each element to string and join with comma
+                String collectionStr = collection.stream()
+                    .map(item -> convertObjectToString(item, column))
+                    .filter(str -> str != null && !str.isEmpty())
+                    .collect(Collectors.joining(", "));
+                cell.setCellValue(collectionStr);
+            } else {
+                cell.setCellValue("");
+            }
         } else {
-            cell.setCellValue(value.toString());
+            // Extract identifier or name from object
+            String objectStr = convertObjectToString(value, column);
+            cell.setCellValue(objectStr);
+        }
+    }
+    
+    /**
+     * Convert object to string with column configuration
+     */
+    private String convertObjectToString(Object obj, ExcelColumn column) {
+        if (obj == null) {
+            return "";
+        }
+        
+        if (obj instanceof String) {
+            return (String) obj;
+        } else if (obj instanceof Enum<?>) {
+            // Check if implements SimpliXLabeledEnum
+            if (obj instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
+                dev.simplecore.simplix.core.enums.SimpliXLabeledEnum labeledEnum = 
+                    (dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) obj;
+                return labeledEnum.getLabel();
+            } else {
+                return ((Enum<?>) obj).name();
+            }
+        }
+        
+        // Try to extract ID or name from entity object
+        try {
+            // Check if has getId method
+            try {
+                Method getIdMethod = obj.getClass().getMethod("getId");
+                Object id = getIdMethod.invoke(obj);
+                if (id != null) {
+                    return String.valueOf(id);
+                }
+            } catch (NoSuchMethodException e) {
+                // No getId method, continue to next
+            }
+            
+            // Check if has getName method
+            try {
+                Method getNameMethod = obj.getClass().getMethod("getName");
+                Object name = getNameMethod.invoke(obj);
+                if (name != null) {
+                    return String.valueOf(name);
+                }
+            } catch (NoSuchMethodException e) {
+                // No getName method, continue to next
+            }
+            
+            // Check if has getTitle method
+            try {
+                Method getTitleMethod = obj.getClass().getMethod("getTitle");
+                Object title = getTitleMethod.invoke(obj);
+                if (title != null) {
+                    return String.valueOf(title);
+                }
+            } catch (NoSuchMethodException e) {
+                // No getTitle method, continue to next
+            }
+            
+            // Check if has getCode method
+            try {
+                Method getCodeMethod = obj.getClass().getMethod("getCode");
+                Object code = getCodeMethod.invoke(obj);
+                if (code != null) {
+                    return String.valueOf(code);
+                }
+            } catch (NoSuchMethodException e) {
+                // No getCode method, continue to next
+            }
+            
+            // Use toString method
+            return obj.toString();
+        } catch (Exception e) {
+            log.warn("Failed to convert object to string: {}", e.getMessage());
+            return obj.toString();
         }
     }
 } 

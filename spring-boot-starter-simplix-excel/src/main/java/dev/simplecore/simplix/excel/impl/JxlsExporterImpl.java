@@ -6,24 +6,19 @@
 package dev.simplecore.simplix.excel.impl;
 
 import dev.simplecore.simplix.excel.api.JxlsExporter;
-import dev.simplecore.simplix.excel.template.ExcelTemplateManager;
-import dev.simplecore.simplix.excel.util.StringUtil;
-import dev.simplecore.simplix.excel.exception.ExcelExportException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jxls.common.Context;
-import org.jxls.transform.poi.PoiTransformer;
 import org.jxls.util.JxlsHelper;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -31,76 +26,81 @@ import java.util.Map;
  * Exports data to Excel based on a defined template file.
  */
 @Slf4j
-public class JxlsExporterImpl implements JxlsExporter {
+public class JxlsExporterImpl<T> extends AbstractExporter<T> implements JxlsExporter<T> {
     
     private String templatePath;
-    private String filename;
     private boolean enableFormulaProcessor;
-    private boolean streamingEnabled;
     private boolean hideGridLines;
     private int rowAccessWindowSize;
     private String sheetName;
+    private Map<String, Object> parameters;
     
     /**
-     * Constructor using default template
+     * Creates a JXLS exporter for the specified data class
+     *
+     * @param dataClass The class of the data objects to export
      */
-    public JxlsExporterImpl() {
-        this("templates/default-template.xlsx");
-    }
-    
-    /**
-     * Constructor using specified template path
-     * 
-     * @param templatePath Template file path (relative to classpath)
-     */
-    public JxlsExporterImpl(String templatePath) {
-        this.templatePath = templatePath;
+    public JxlsExporterImpl(Class<T> dataClass) {
+        super(dataClass);
+        this.parameters = new HashMap<>();
         this.filename = "export.xlsx";
         this.enableFormulaProcessor = true;
-        this.streamingEnabled = false;
+        this.useStreaming = false;
         this.hideGridLines = false;
         this.rowAccessWindowSize = 100;
         this.sheetName = "Sheet1";
     }
     
     @Override
-    public JxlsExporterImpl filename(String filename) {
-        this.filename = filename;
-        return this;
-    }
-    
-    @Override
-    public JxlsExporterImpl template(String templatePath) {
+    public JxlsExporterImpl<T> template(String templatePath) {
         this.templatePath = templatePath;
         return this;
     }
     
     @Override
-    public JxlsExporterImpl enableFormulas(boolean enableFormulaProcessor) {
+    public JxlsExporterImpl<T> filename(String filename) {
+        super.filename(filename);
+        return this;
+    }
+    
+    @Override
+    public JxlsExporterImpl<T> parameters(Map<String, Object> parameters) {
+        this.parameters.putAll(parameters);
+        return this;
+    }
+    
+    @Override
+    public JxlsExporterImpl<T> parameter(String name, Object value) {
+        this.parameters.put(name, value);
+        return this;
+    }
+    
+    @Override
+    public JxlsExporterImpl<T> enableFormulas(boolean enableFormulaProcessor) {
         this.enableFormulaProcessor = enableFormulaProcessor;
         return this;
     }
     
     @Override
-    public JxlsExporterImpl streaming(boolean streamingEnabled) {
-        this.streamingEnabled = streamingEnabled;
+    public JxlsExporterImpl<T> streaming(boolean streamingEnabled) {
+        super.streaming(streamingEnabled);
         return this;
     }
     
     @Override
-    public JxlsExporterImpl hideGridLines(boolean hideGridLines) {
+    public JxlsExporterImpl<T> hideGridLines(boolean hideGridLines) {
         this.hideGridLines = hideGridLines;
         return this;
     }
     
     @Override
-    public JxlsExporterImpl rowAccessWindowSize(int windowSize) {
+    public JxlsExporterImpl<T> rowAccessWindowSize(int windowSize) {
         this.rowAccessWindowSize = windowSize;
         return this;
     }
     
     @Override
-    public JxlsExporterImpl sheetName(String sheetName) {
+    public JxlsExporterImpl<T> sheetName(String sheetName) {
         this.sheetName = sheetName;
         return this;
     }
@@ -138,7 +138,7 @@ public class JxlsExporterImpl implements JxlsExporter {
      * @return Streaming mode enabled status
      */
     public boolean isStreamingEnabled() {
-        return streamingEnabled;
+        return useStreaming;
     }
     
     /**
@@ -169,54 +169,63 @@ public class JxlsExporterImpl implements JxlsExporter {
     }
     
     @Override
-    public void export(Map<String, Object> model, HttpServletResponse response) throws IOException {
-        log.info("Starting JXLS template-based export using template: {}", templatePath);
-        
-        // Configure HTTP response
-        configureResponse(response);
-        
-        try (OutputStream os = response.getOutputStream()) {
-            export(model, os);
+    public void export(Collection<T> items, HttpServletResponse response) throws IOException {
+        if (templatePath == null || templatePath.isEmpty()) {
+            throw new IllegalStateException("Template path must be set");
+        }
+
+        configureExcelResponse(response);
+
+        try (OutputStream outputStream = response.getOutputStream()) {
+            export(items, outputStream);
         }
     }
     
     @Override
-    public void export(Map<String, Object> model, OutputStream outputStream) throws IOException {
-        if (outputStream == null) {
-            throw new IllegalArgumentException("OutputStream cannot be null");
+    public void export(Collection<T> items, OutputStream outputStream) throws IOException {
+        if (templatePath == null || templatePath.isEmpty()) {
+            throw new IllegalStateException("Template path must be set");
+        }
+
+        Instant start = Instant.now();
+        logExportStart(items, "Starting JXLS template export of {} items of type {}");
+
+        try (InputStream templateStream = getClass().getResourceAsStream(templatePath)) {
+            if (templateStream == null) {
+                // Try to load from file system if not found in classpath
+                try (FileInputStream fileInputStream = new FileInputStream(templatePath)) {
+                    processTemplate(fileInputStream, items, outputStream);
+                } catch (FileNotFoundException e) {
+                    throw new IllegalArgumentException("Template not found: " + templatePath, e);
+                }
+            } else {
+                processTemplate(templateStream, items, outputStream);
+            }
         }
         
-        try (InputStream templateStream = getTemplateStream()) {
-            Context context = new Context();
-            context.putVar("data", model);
-            
-            JxlsHelper.getInstance()
-                .setUseFastFormulaProcessor(enableFormulaProcessor)
-                .processTemplate(templateStream, outputStream, context);
-                
-            log.info("Completed JXLS export in {} seconds", Duration.between(Instant.now(), Instant.now()).getSeconds());
-        } catch (IOException e) {
-            log.error("Failed to export data using JXLS", e);
-            throw new ExcelExportException("Failed to export data using JXLS", e);
+        logExportCompletion(start);
+    }
+    
+    /**
+     * Process JXLS template
+     */
+    private void processTemplate(InputStream templateStream, Collection<?> items, OutputStream outputStream) throws IOException {
+        Context context = new Context();
+        context.putVar("items", items);
+
+        // Add all parameters to context
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            context.putVar(entry.getKey(), entry.getValue());
         }
+
+        JxlsHelper.getInstance()
+            .setUseFastFormulaProcessor(enableFormulaProcessor)
+            .processTemplate(templateStream, outputStream, context);
     }
     
-    /**
-     * Configure HTTP response headers
-     */
-    private void configureResponse(HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", String.format("attachment; filename=%s", filename));
-        response.setHeader("Pragma", "no-cache");
-        response.setHeader("Cache-Control", "no-cache");
-        response.setDateHeader("Expires", 0);
-    }
-    
-    /**
-     * Load template stream (with caching)
-     */
-    private InputStream getTemplateStream() throws IOException {
-        // Load template through ExcelTemplateManager (with caching)
-        return ExcelTemplateManager.getTemplateStream(templatePath);
+    @Override
+    public void export(Collection<T> items, HttpServletResponse response, String filename) throws IOException {
+        this.filename = filename;
+        export(items, response);
     }
 } 

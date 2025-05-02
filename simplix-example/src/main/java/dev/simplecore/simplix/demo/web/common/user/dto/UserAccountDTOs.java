@@ -16,7 +16,6 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import javax.validation.constraints.*;
 import org.hibernate.validator.constraints.Length;
-import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 
 import static com.github.thkwag.searchable.core.condition.operator.SearchOperator.*;
 
@@ -360,44 +359,34 @@ public class UserAccountDTOs {
     public static class UserAccountListDTO {
         
         @Schema(description = "사용자 ID")
-        @ExcelColumn(name = "사용자 ID", order = 1)
         private String id;
         
         @Schema(description = "로그인 계정")
-        @ExcelColumn(name = "로그인 계정", order = 2)
         private String username;
         
         @Schema(description = "계정상태")
-        @ExcelColumn(name = "계정상태", order = 3)
         private Boolean enabled;
         
         @Schema(description = "이름")
-        @ExcelColumn(name = "이름", order = 4)
         private String realName;
         
         @Schema(description = "이메일")
-        @ExcelColumn(name = "이메일", order = 5)
         private String email;
         
         @Schema(description = "휴대전화")
-        @ExcelColumn(name = "휴대전화", order = 6)
         private String mobilePhone;
         
         @Schema(description = "직급정보")
-        @ExcelColumn(name = "직급", order = 7)
         private UserPosition position;
         
         @Schema(description = "권한정보")
-        @ExcelColumn(name = "권한", order = 8)
         private Set<UserRole> roles;
         
         @Schema(description = "소속조직")
-        @ExcelColumn(name = "소속조직", order = 9)
         private Set<UserOrganization> organizations;
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        @ExcelColumn(name = "등록일시", order = 10, format = "yyyy-MM-dd HH:mm")
         private LocalDateTime createdAt;
     }
 } 

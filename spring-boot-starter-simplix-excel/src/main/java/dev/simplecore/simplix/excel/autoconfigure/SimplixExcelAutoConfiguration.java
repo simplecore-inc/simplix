@@ -49,8 +49,9 @@ public class SimplixExcelAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public JxlsExporter jxlsExporter() {
-        JxlsExporterImpl exporter = new JxlsExporterImpl(properties.getTemplate().getPath());
+    public JxlsExporter<?> jxlsExporter() {
+        JxlsExporterImpl<?> exporter = new JxlsExporterImpl<>(Object.class);
+        exporter.template(properties.getTemplate().getPath());
         
         // Configure template options
         exporter.sheetName(properties.getTemplate().getDefaultSheetName());

@@ -4,6 +4,7 @@ import dev.simplecore.simplix.demo.permission.CustomUserDetailsService;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
 import dev.simplecore.simplix.demo.domain.common.user.repository.UserAccountRepository;
+import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
 import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import com.github.thkwag.searchable.core.condition.SearchCondition;
 import com.github.thkwag.searchable.core.condition.parser.SearchableParamsParser;
@@ -145,6 +146,21 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
      */
     public Page<UserAccountListDTO> search(SearchCondition<UserAccountSearchDTO> searchCondition) {
         return findAllWithSearch(searchCondition, UserAccountListDTO.class);
+    }
+
+    /**
+     * Excel 내보내기를 위해 UserAccountListDTO를 UserAccountListExcel로 변환하여 반환
+     *
+     * @param searchCondition Search conditions for filtering UserAccount entities
+     * @return UserAccountListDTO를 UserAccountListExcel로 변환한 목록
+     */
+    public List<UserAccountListExcel> searchForExcel(SearchCondition<UserAccountSearchDTO> searchCondition) {
+        Page<UserAccount> page = findAllWithSearch(searchCondition);
+        
+        // UserAccountListDTO를 UserAccountListExcel로 변환
+        return page.getContent().stream()
+            .map(UserAccountListExcel::from)
+            .collect(java.util.stream.Collectors.toList());
     }
 
     /**

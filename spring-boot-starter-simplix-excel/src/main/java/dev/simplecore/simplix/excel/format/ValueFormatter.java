@@ -165,12 +165,12 @@ public final class ValueFormatter {
         // Get appropriate formatter
         Formatter<Object> formatter = (Formatter<Object>) getFormatter(value.getClass());
         
-        // Get pattern from column annotation
+        // Use default pattern based on value type
         String pattern = null;
         if (value instanceof Number) {
-            pattern = column.format();
+            pattern = getDefaultPattern(value.getClass());
         } else if (value instanceof Date || value instanceof Calendar || value instanceof Temporal) {
-            pattern = column.format();
+            pattern = getDefaultPattern(value.getClass());
         }
         
         return formatter.format(value, pattern);

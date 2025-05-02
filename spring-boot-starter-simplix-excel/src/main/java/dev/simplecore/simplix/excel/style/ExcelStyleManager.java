@@ -8,11 +8,7 @@ package dev.simplecore.simplix.excel.style;
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
-import org.apache.poi.xssf.usermodel.IndexedColorMap;
-import org.apache.poi.xssf.usermodel.XSSFColor;
 
-import java.awt.Color;
 import java.time.temporal.Temporal;
 import java.util.Calendar;
 import java.util.Date;
@@ -27,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class ExcelStyleManager {
     
-    private static final IndexedColorMap COLOR_MAP = new DefaultIndexedColorMap();
     private final Map<String, CellStyle> styleCache = new ConcurrentHashMap<>();
     private final Workbook workbook;
 
@@ -38,78 +33,6 @@ public class ExcelStyleManager {
      */
     public ExcelStyleManager(Workbook workbook) {
         this.workbook = workbook;
-    }
-    
-    /**
-     * Convert HEX color code to XSSFColor
-     */
-    public XSSFColor hexToColor(String hexColor) {
-        if (hexColor == null || hexColor.trim().isEmpty()) {
-            return null;
-        }
-        
-        try {
-            Color color = Color.decode(hexColor);
-            byte[] rgb = new byte[]{
-                (byte) color.getRed(), 
-                (byte) color.getGreen(), 
-                (byte) color.getBlue()
-            };
-            return new XSSFColor(rgb, COLOR_MAP);
-        } catch (NumberFormatException e) {
-            log.warn("Invalid color format: {}", hexColor);
-            return null;
-        }
-    }
-    
-    /**
-     * Find nearest IndexedColors for HEX color
-     */
-    public IndexedColors findNearestIndexedColor(String hexColor) {
-        if (hexColor == null || hexColor.trim().isEmpty()) {
-            return IndexedColors.AUTOMATIC;
-        }
-        
-        try {
-            Color color = Color.decode(hexColor);
-            IndexedColors nearest = IndexedColors.BLACK;
-            double minDistance = Double.MAX_VALUE;
-            
-            for (IndexedColors indexed : IndexedColors.values()) {
-                Color indexedColor = getColorFromIndex(indexed);
-                double distance = colorDistance(
-                    color.getRed(), color.getGreen(), color.getBlue(),
-                    indexedColor.getRed(), indexedColor.getGreen(), indexedColor.getBlue()
-                );
-                
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearest = indexed;
-                }
-            }
-            
-            return nearest;
-        } catch (NumberFormatException e) {
-            log.warn("Invalid color format: {}", hexColor);
-            return IndexedColors.AUTOMATIC;
-        }
-    }
-    
-    /**
-     * Get Color from IndexedColors
-     */
-    private Color getColorFromIndex(IndexedColors indexed) {
-        return new Color(indexed.getIndex());
-    }
-    
-    /**
-     * Calculate color distance (Euclidean)
-     */
-    private double colorDistance(int r1, int g1, int b1, int r2, int g2, int b2) {
-        int dr = r1 - r2;
-        int dg = g1 - g2;
-        int db = b1 - b2;
-        return Math.sqrt(dr * dr + dg * dg + db * db);
     }
     
     /**
@@ -165,11 +88,9 @@ public class ExcelStyleManager {
             font.setBold(column.bold());
             font.setItalic(column.italic());
             
-            // Set font color
-            if (!column.fontColor().isEmpty()) {
+            if (column.fontColor() != IndexedColors.AUTOMATIC) {
                 try {
-                    IndexedColors indexedColor = findNearestIndexedColor(column.fontColor());
-                    font.setColor(indexedColor.getIndex());
+                    font.setColor(column.fontColor().getIndex());
                 } catch (Exception e) {
                     log.warn("Failed to set font color: {}", column.fontColor(), e);
                 }
@@ -178,19 +99,15 @@ public class ExcelStyleManager {
             style.setFont(font);
             
             // Set alignment
-            if ("CENTER".equalsIgnoreCase(column.alignment())) {
-                style.setAlignment(HorizontalAlignment.CENTER);
-            } else if ("RIGHT".equalsIgnoreCase(column.alignment())) {
-                style.setAlignment(HorizontalAlignment.RIGHT);
-            } else {
-                style.setAlignment(HorizontalAlignment.LEFT);
-            }
+            style.setAlignment(column.alignment());
+            
+            // Set vertical alignment to CENTER
+            style.setVerticalAlignment(VerticalAlignment.CENTER);
             
             // Set background color
-            if (!column.backgroundColor().isEmpty()) {
+            if (column.backgroundColor() != IndexedColors.AUTOMATIC) {
                 try {
-                    IndexedColors indexedColor = findNearestIndexedColor(column.backgroundColor());
-                    style.setFillForegroundColor(indexedColor.getIndex());
+                    style.setFillForegroundColor(column.backgroundColor().getIndex());
                     style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
                 } catch (Exception e) {
                     log.warn("Failed to set background color: {}", column.backgroundColor(), e);
@@ -219,10 +136,14 @@ public class ExcelStyleManager {
         
         if (value instanceof Date || value instanceof Calendar || value instanceof Temporal) {
             // Date/Time format
-            style.setDataFormat(format.getFormat(column.format()));
+            if (!column.format().isEmpty()) {
+                style.setDataFormat(format.getFormat(column.format()));
+            }
         } else if (value instanceof Number) {
             // Number format
-            style.setDataFormat(format.getFormat(column.format()));
+            if (!column.format().isEmpty()) {
+                style.setDataFormat(format.getFormat(column.format()));
+            }
         }
     }
     
@@ -236,9 +157,9 @@ public class ExcelStyleManager {
     private String getStyleKey(ExcelColumn column, Object value) {
         String valueType = value != null ? value.getClass().getSimpleName() : "null";
         
-        return String.format("%s_%s_%s_%s_%s_%s_%s_%s_%s_%s",
+        return String.format("%s_%s_%s_%s_%s_%s_%s_%s_%s_%s_%s",
                 column.fontName(), column.fontSize(), column.bold(), column.italic(),
-                column.alignment(), column.backgroundColor(), column.fontColor(),
+                column.alignment(), "CENTER_VERTICAL", column.backgroundColor(), column.fontColor(),
                 column.wrapText(), valueType, 
                 value instanceof Date || value instanceof Temporal ? column.format() : 
                 value instanceof Number ? column.format() : "");
