@@ -3,7 +3,7 @@
  * Licensed under the SimpleCORE License 1.0 (see LICENSE)
  * Use allowed in own products. Redistribution or resale requires permission.
  */
-package dev.simplecore.simplix.excel.impl;
+package dev.simplecore.simplix.excel.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

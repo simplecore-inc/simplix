@@ -1,4 +1,9 @@
-package dev.simplecore.simplix.excel.impl;
+/*
+ * Copyright (c) 2025 SimpleCORE
+ * Licensed under the SimpleCORE License 1.0 (see LICENSE)
+ * Use allowed in own products. Redistribution or resale requires permission.
+ */
+package dev.simplecore.simplix.excel.impl.importer;
 
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import lombok.AllArgsConstructor;
