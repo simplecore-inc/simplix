@@ -6,7 +6,7 @@ on:
       branch:
         description: 'Release branch'
         required: true
-        default: 'master'
+        default: 'main'
       version:
         description: 'Release version (e.g. 1.0.0)'
         required: true
