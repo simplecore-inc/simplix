@@ -170,7 +170,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     public List<T> findSiblings(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
         Optional<T> entity = findById(id);
-        if (entity.isEmpty()) {
+        if (!entity.isPresent()) {
             return Collections.emptyList();
         }
 
