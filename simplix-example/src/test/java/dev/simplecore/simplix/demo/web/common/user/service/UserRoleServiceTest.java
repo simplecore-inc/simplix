@@ -38,7 +38,8 @@ import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDeta
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleListDTO;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleSearchDTO;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleUpdateDTO;
-import com.github.javafaker.Faker;
+import net.datafaker.Faker;
+
 import com.github.thkwag.searchable.core.condition.SearchCondition;
 
 @ExtendWith(MockitoExtension.class)

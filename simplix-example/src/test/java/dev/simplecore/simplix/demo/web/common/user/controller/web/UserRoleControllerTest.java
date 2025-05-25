@@ -26,7 +26,7 @@ import org.springframework.web.util.NestedServletException;
 
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
 import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
-import com.github.javafaker.Faker;
+import net.datafaker.Faker;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleControllerTest {
