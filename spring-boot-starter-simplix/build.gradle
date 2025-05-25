@@ -105,10 +105,13 @@ test {
 compileJava.inputs.files(processResources)
 
 processResources {
+    def projectVersion = project.version
+    def springBootVer = springBootVersion
+    
     filesMatching(['**/banner.txt', '**/config/application-info.txt']) {
         filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [
-            'simplix.version': project.version,
-            'spring-boot.version': springBootVersion
+            'simplix.version': projectVersion,
+            'spring-boot.version': springBootVer
         ])
     }
 }

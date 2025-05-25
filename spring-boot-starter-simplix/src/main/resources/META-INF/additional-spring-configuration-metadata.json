@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "simplix.tree-repository.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable SimpliX tree repository functionality. When enabled, provides JdbcTemplate and tree repository configuration support.",
+      "defaultValue": true
+    }
+  ]
+} 
