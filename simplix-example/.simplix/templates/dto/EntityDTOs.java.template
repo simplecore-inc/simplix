@@ -1,6 +1,5 @@
 package <%= packagePaths['dto'] %>;
 
-// import <%= entityPackage %>.<%= entityName %>;
 <% if (hasEmbeddedId) { %>
 import <%= entityPackage %>.<%= entityName %>.<%= embeddedIdType %>;
 <% } %>
@@ -12,9 +11,10 @@ const importedTypes = new Set();
 // 엔티티 필드에서 참조 타입 찾기
 fields.forEach(field => {
     if (field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne') {
-        const entityImport = field.importPath || `${entityPackage}.${field.type}`;
-        if (!importedTypes.has(field.type)) {
-            importedTypes.add(field.type); %>
+        const entityType = field.isCollection ? field.actualType : field.type;
+        const entityImport = field.importPath || `${entityPackage}.${entityType}`;
+        if (!importedTypes.has(entityType)) {
+            importedTypes.add(entityType); %>
 import <%= entityImport %>;<%
         }
     }
@@ -28,7 +28,8 @@ import <%= enumImport %>;<%
     }
 }); %>
 import java.util.*;
-import java.time.LocalDateTime;
+import java.time.*;
+import java.math.*;
 import com.github.thkwag.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -56,31 +57,44 @@ public class <%= entityName %>DTOs {
     @Setter
     public static class <%= entityName %>SearchDTO {
         <% if (hasEmbeddedId) { 
-            // embeddedIdSearchFields 변수 사용 - 이 변수는 제너레이터 JS 코드에서 미리 준비됨
             if (embeddedIdSearchFields && embeddedIdSearchFields.length > 0) {
                 embeddedIdSearchFields.forEach(field => { %>
         @Schema(description = "<%= field.comment %>")
         @SearchableField(entityField = "<%= field.entityField %>", operators = {<%= field.operators %>}<% if (field.sortable) { %>, sortable = true<% } %>)
         private <%= field.type %> <%= field.name %>;
-        <% });
-            } else { %>
-        // 복합키 필드 정보를 찾을 수 없습니다. 코드 생성기에서 필드 정보를 제공해야 합니다.
-        <% }
-        } else { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
-        @SearchableField(operators = {EQUALS})
-        private <%= idType %> id;
+                <% });
+            }
+        } else { 
+            const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %>")
+        @SearchableField(<% if (idFieldInfo?.entityField) { %>entityField = "<%= idFieldInfo.entityField %>", <% } %>operators = {<%= idFieldInfo?.operators || 'EQUALS' %>}<% if (idFieldInfo?.sortable) { %>, sortable = true<% } %>)
+        private <%= idFieldInfo?.type || idType %> <%= ymlConfig.idField %>;
         <% } %>
-        <% 
-        // entitySearchFields 변수 사용 - 제너레이터에서 미리 준비된 일반 필드 검색 정보
-        if (entitySearchFields && entitySearchFields.length > 0) {
-            entitySearchFields.forEach(field => { %>
+        <% if (entitySearchFields && entitySearchFields.length > 0) {
+            entitySearchFields
+                .filter(field => field.name !== ymlConfig.idField && !hasEmbeddedId)
+                .forEach(field => { %>
         @Schema(description = "<%= field.comment %>")
         @SearchableField(<% if (field.entityField) { %>entityField = "<%= field.entityField %>", <% } %>operators = {<%= field.operators %>}<% if (field.sortable) { %>, sortable = true<% } %>)
         private <%= field.type %> <%= field.name %>;
-        <% });
+            <% });
         } %>
+        
+        //----------
+
+        @Schema(description = "등록자")
+        private String createdBy;
+
+        @Schema(description = "등록일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime createdAt;
+
+        @Schema(description = "수정자")
+        private String updatedBy;
+
+        @Schema(description = "수정일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime updatedAt;
     }
 
     //----------------------------------
@@ -91,68 +105,128 @@ public class <%= entityName %>DTOs {
     public static class <%= entityName %>CreateDTO {
         <% if (hasEmbeddedId) { %>
         <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
-        private <%= embeddedIdType %> id;
         <% } %>
-        <% for (let field of entityFields) { 
+        <% 
+        for (let field of entityFields) { 
             const ymlField = ymlConfig.fields[field.name];
             if (ymlField?.views?.includes('edit') && field.name !== ymlConfig.idField) { 
-              // 레퍼런스 필드는 ID 타입 사용
-              const fieldType = ymlField.reference 
-                ? (ymlField.reference.multiple ? `Set<${ymlField.reference.idType || 'String'}>` : ymlField.reference.idType || 'String') 
-                : field.type;
+              let fieldType = field.type;
+              let fieldName = field.name;
+              let comment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
+              
+              // 참조 필드인 경우
+              if (ymlField?.reference) {
+                const collectionType = ymlField.reference.multiple ? 'Set' : null;
+                fieldType = collectionType 
+                  ? `${collectionType}<${ymlField.reference.idType || 'String'}>`
+                  : ymlField.reference.idType || 'String';
+                fieldName = ymlField.reference.multiple
+                  ? `${ymlField.reference.idField}s`
+                  : ymlField.reference.idField;
+                comment = `${comment} ID`;
+              }
+              // 컬렉션 필드인 경우
+              else if (field.isCollection) {
+                if (field.collectionType === 'Map') {
+                  fieldType = field.type;  // Map<String, String> 형태의 원본 타입 사용
+                } else {
+                  fieldType = `${field.collectionType || 'List'}<${field.actualType || 'String'}>`;
+                }
+              }
         %>
-        @Schema(description = "<%= field.comment.split(':')[0] %>")
-        private <%- fieldType %> <%= field.name %>;
+        @Schema(description = "<%= comment %>")
+        private <%- fieldType %> <%= fieldName %>;
         <% }} %>
     }
 
     @Data
     public static class <%= entityName %>UpdateDTO {
-        <% if (hasEmbeddedId) { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
+        <% if (hasEmbeddedId) { 
+            const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %>")
         @NotNull(message = "ID는 필수 입력값입니다")
-        private <%= embeddedIdType %> id;
-        <% } else { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
+        private <%= embeddedIdType %> <%= ymlConfig.idField %>;
+        <% } else { 
+            const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %>")
         @NotBlank(message = "ID는 필수 입력값입니다")
-        private <%= idFieldConfig?.type || 'String' %> <%= ymlConfig.idField || 'id' %>;
+        private <%= idFieldInfo?.type || idType %> <%= ymlConfig.idField %>;
         <% } %>
         <% for (let field of entityFields) { 
             const ymlField = ymlConfig.fields[field.name];
             if (ymlField?.views?.includes('edit') && field.name !== ymlConfig.idField) { 
-              // 레퍼런스 필드는 ID 타입 사용
-              const fieldType = ymlField.reference 
-                ? (ymlField.reference.multiple ? `Set<${ymlField.reference.idType || 'String'}>` : ymlField.reference.idType || 'String') 
-                : field.type;
+              let fieldType = field.type;
+              let fieldName = field.name;
+              let comment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
+              
+              // 참조 필드인 경우
+              if (ymlField?.reference) {
+                const collectionType = ymlField.reference.multiple ? 'Set' : null;
+                fieldType = collectionType 
+                  ? `${collectionType}<${ymlField.reference.idType || 'String'}>`
+                  : ymlField.reference.idType || 'String';
+                fieldName = ymlField.reference.multiple
+                  ? `${ymlField.reference.idField}s`
+                  : ymlField.reference.idField;
+                comment = `${comment} ID`;
+              }
+              // 컬렉션 필드인 경우
+              else if (field.isCollection) {
+                if (field.collectionType === 'Map') {
+                  fieldType = field.type;  // Map<String, String> 형태의 원본 타입 사용
+                } else {
+                  fieldType = `${field.collectionType || 'List'}<${field.actualType || 'String'}>`;
+                }
+              }
         %>
-        @Schema(description = "<%= field.comment.split(':')[0] %>")
-        private <%- fieldType %> <%= field.name %>;
+        @Schema(description = "<%= comment %>")
+        private <%- fieldType %> <%= fieldName %>;
         <% }} %>
     }
 
     @Data
     public static class <%= entityName %>BatchUpdateDTO {
-        <% if (hasEmbeddedId) { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= (idFieldConfig?.comment || `${entityName} ID`) %> 목록")
-        private Set<<%= embeddedIdType %>> ids;
-        <% } else { %>
-        @Schema(description = "<%= entityName %> ID 목록")
-        private Set<<%= idType %>> ids;
+        <% if (hasEmbeddedId) { 
+            const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> 목록")
+        private Set<<%= embeddedIdType %>> <%= ymlConfig.idField %>s;
+        <% } else { 
+            const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> 목록")
+        private Set<<%= idFieldInfo?.type || idType %>> <%= ymlConfig.idField %>s;
         <% } %>
         <% for (let field of entityFields) { 
             const ymlField = ymlConfig.fields[field.name];
             if (ymlField?.views?.includes('batchUpdate')) { 
-              // 레퍼런스 필드는 ID 타입 사용
-              const fieldType = ymlField.reference 
-                ? (ymlField.reference.multiple ? `Set<${ymlField.reference.idType || 'String'}>` : ymlField.reference.idType || 'String') 
-                : field.type;
+              if (field.name === ymlConfig.idField) {
+                continue;
+              }
+              let fieldType = field.type;
+              let fieldName = field.name;
+              let comment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
+              
+              // 참조 필드인 경우
+              if (ymlField?.reference) {
+                const collectionType = ymlField.reference.multiple ? 'Set' : null;
+                fieldType = collectionType 
+                  ? `${collectionType}<${ymlField.reference.idType || 'String'}>`
+                  : ymlField.reference.idType || 'String';
+                fieldName = ymlField.reference.multiple
+                  ? `${ymlField.reference.idField}s`
+                  : ymlField.reference.idField;
+                comment = `${comment} ID`;
+              }
+              // 컬렉션 필드인 경우
+              else if (field.isCollection) {
+                if (field.collectionType === 'Map') {
+                  fieldType = field.type;  // Map<String, String> 형태의 원본 타입 사용
+                } else {
+                  fieldType = `${field.collectionType || 'List'}<${field.actualType || 'String'}>`;
+                }
+              }
         %>
-        @Schema(description = "<%= field.comment.split(':')[0] %>")
-        private <%- fieldType %> <%= field.name %>;
+        @Schema(description = "<%= comment %>")
+        private <%- fieldType %> <%= fieldName %>;
         <% }} %>
     }
 
@@ -162,41 +236,61 @@ public class <%= entityName %>DTOs {
 
     @Data
     public static class <%= entityName %>DetailDTO {
-        <% if (hasEmbeddedId) { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
-        private <%= embeddedIdType %> id;
-        <% } %>
         <% for (let field of entityFields) { 
             const ymlField = ymlConfig.fields[field.name];
             if (ymlField?.views?.includes('detail')) { 
-              // 레퍼런스 필드는 ID 타입 사용
-              const fieldType = ymlField.reference 
-                ? (ymlField.reference.multiple ? `Set<${ymlField.reference.idType || 'String'}>` : ymlField.reference.idType || 'String') 
-                : field.type;
+              let fieldType = field.type;
+              let fieldName = field.name;
+              let comment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
         %>
-        @Schema(description = "<%= field.comment.split(':')[0] %>")
-        private <%- fieldType %> <%= field.name %>;
+        @Schema(description = "<%= comment %>")
+        private <%- fieldType %> <%= fieldName %>;
         <% }} %>
+        
+        //----------
+
+        @Schema(description = "등록자")
+        private String createdBy;
+
+        @Schema(description = "등록일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime createdAt;
+
+        @Schema(description = "수정자")
+        private String updatedBy;
+
+        @Schema(description = "수정일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime updatedAt;
     }
 
     @Data
     public static class <%= entityName %>ListDTO {
-        <% if (hasEmbeddedId) { %>
-        <% const idFieldConfig = ymlConfig.fields[ymlConfig.idField]; %>
-        @Schema(description = "<%= idFieldConfig?.comment || `${entityName} ID` %>")
-        private <%= embeddedIdType %> id;
-        <% } %>
         <% for (let field of entityFields) { 
             const ymlField = ymlConfig.fields[field.name];
             if (ymlField?.views?.includes('list')) { 
-              // 레퍼런스 필드는 ID 타입 사용
-              const fieldType = ymlField.reference 
-                ? (ymlField.reference.multiple ? `Set<${ymlField.reference.idType || 'String'}>` : ymlField.reference.idType || 'String') 
-                : field.type;
+              let fieldType = field.type;
+              let fieldName = field.name;
+              let comment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
         %>
-        @Schema(description = "<%= field.comment.split(':')[0] %>")
-        private <%- fieldType %> <%= field.name %>;
+        @Schema(description = "<%= comment %>")
+        private <%- fieldType %> <%= fieldName %>;
         <% }} %>
+        
+        //----------
+        
+        @Schema(description = "등록자")
+        private String createdBy;
+
+        @Schema(description = "등록일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime createdAt;
+
+        @Schema(description = "수정자")
+        private String updatedBy;
+
+        @Schema(description = "수정일시")
+        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
+        private LocalDateTime updatedAt;
     }
 } 

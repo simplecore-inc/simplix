@@ -3,7 +3,7 @@ import { extractComment } from '../utils/comment-extractor.js';
 
 export function analyzeEntity(entityContent) {
   // Extract ID field information
-  const { idType, embeddedIdField } = extractIdInfo(entityContent);
+  const { idType, embeddedIdField, idField } = extractIdInfo(entityContent);
 
   // Extract package and imports
   const packageMatch = entityContent.match(/package\s+([\w.]+);/);
@@ -23,6 +23,7 @@ export function analyzeEntity(entityContent) {
   return {
     fields: analyzedFields,
     idType,
+    idField,
     imports: importInfo,
     embeddedIdFields,
     embeddedIdField,
@@ -32,6 +33,7 @@ export function analyzeEntity(entityContent) {
 function extractIdInfo(entityContent) {
   let idType = 'String';
   let embeddedIdField = null;
+  let idField = null;
 
   const contentLines = entityContent.split('\n');
   let isIdField = false;
@@ -56,9 +58,11 @@ function extractIdInfo(entityContent) {
         if (isEmbeddedIdField) {
           embeddedIdField = fieldMatch[2]; // field name
           idType = fieldMatch[1]; // field type
+          idField = embeddedIdField;
           console.log(`Found EmbeddedId field: ${embeddedIdField} of type ${idType}`);
         } else {
           idType = fieldMatch[1];
+          idField = fieldMatch[2];
         }
 
         break;
@@ -76,7 +80,7 @@ function extractIdInfo(entityContent) {
     }
   }
 
-  return { idType, embeddedIdField };
+  return { idType, embeddedIdField, idField };
 }
 
 function processImports(entityContent) {
@@ -266,14 +270,21 @@ function analyzeFields(contentLines, imports, basePackage, entityContent) {
       });
 
       if (field) {
-        // @ManyToOne 관계의 필드는 무조건 entity로 처리하고 import 정보 설정
-        if (currentFieldAnnotations.some(a => a.includes('@ManyToOne'))) {
+        // @Id 어노테이션 체크
+        field.isId = currentFieldAnnotations.some(a => a === '@Id');
+
+        // 모든 관계 어노테이션 처리
+        const relationType = getRelationType(currentFieldAnnotations);
+        if (relationType) {
           field.typeKind = 'entity';
           field.isRelation = true;
-          field.relationType = 'ManyToOne';
+          field.relationType = relationType;
+
+          // actualType에서 엔티티 타입 추출 (컬렉션인 경우 제네릭 타입)
+          const entityType = field.isCollection ? field.actualType : field.actualType;
 
           // import 경로 찾기
-          const importMatch = entityContent.match(new RegExp(`import\\s+([\\w.]+\\.entity\\.${field.type});`));
+          const importMatch = entityContent.match(new RegExp(`import\\s+([\\w.]+\\.entity\\.${entityType});`));
           if (importMatch) {
             field.importPath = importMatch[1];
             field.importPackage = importMatch[1].substring(0, importMatch[1].lastIndexOf('.'));
@@ -304,18 +315,94 @@ function getRelationType(annotations) {
 }
 
 function extractFieldInfo({ line, annotations, imports, basePackage, entityContent }) {
-  const fieldMatch = line.match(/private\s+(?:Set<)?([^\s<>]+)(?:<([^>]+)>)?\s+(\w+)/);
+  // Java 컬렉션 타입들
+  const collectionTypes = [
+    'Set',
+    'List',
+    'Collection',
+    'Iterable',
+    'Queue',
+    'Deque',
+    'ArrayList',
+    'LinkedList',
+    'HashSet',
+    'TreeSet',
+    'LinkedHashSet',
+    'Map',
+  ].join('|');
+
+  // Map 타입을 먼저 체크
+  const mapMatch = line.match(/private\s+(Map\s*<[^>]+>)\s+(\w+)/);
+  if (mapMatch) {
+    const [, fullType, name] = mapMatch;
+    // HTML 엔티티 디코딩
+    const decodedType = fullType.trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    return {
+      name,
+      type: decodedType,
+      actualType: name,
+      typeKind: 'basic',
+      isCollection: true,
+      collectionType: 'Map',
+      comment: extractComment(entityContent, name) || name,
+      importPath: '',
+      importPackage: basePackage,
+      isRelation: false,
+      relationType: null,
+    };
+  }
+
+  const fieldMatch = line.match(
+    new RegExp(`private\\s+(?:(?:${collectionTypes})<)?([^\\s<>]+)(?:<([^>]+)>)?\\s+(\\w+)`)
+  );
   if (!fieldMatch) return null;
 
   const [, type, genericType, name] = fieldMatch;
-  const isCollection = line.includes('Set<');
+  const collectionMatch = line.match(new RegExp(`(${collectionTypes})<`));
+  const isCollection = Boolean(collectionMatch);
   const baseType = isCollection ? genericType : type;
+  const collectionType = collectionMatch ? collectionMatch[1] : null;
 
   let importInfo = imports.get(baseType);
   let typeKind = 'basic';
+  let actualType = baseType;
 
   const relationType = getRelationType(annotations);
   const isRelation = Boolean(relationType);
+
+  // Java 내장 타입들을 기본 타입으로 처리
+  const javaBuiltInTypes = [
+    'LocalDateTime',
+    'LocalDate',
+    'LocalTime',
+    'ZonedDateTime',
+    'OffsetDateTime',
+    'Instant',
+    'Duration',
+    'Period',
+    'UUID',
+    'BigDecimal',
+    'BigInteger',
+  ];
+
+  if (javaBuiltInTypes.includes(baseType)) {
+    typeKind = 'basic';
+    // 컬렉션인 경우 전체 타입을 반환
+    const finalType = isCollection ? `${collectionType}<${baseType}>` : baseType;
+    return {
+      name,
+      type: finalType,
+      actualType,
+      typeKind,
+      isCollection,
+      collectionType,
+      comment: extractComment(entityContent, name) || name,
+      importPath: importInfo?.path || '',
+      importPackage: importInfo?.package || basePackage,
+      isRelation,
+      relationType,
+    };
+  }
 
   // @ManyToOne 어노테이션이 있으면 무조건 entity로 처리
   if (isRelation) {
@@ -335,13 +422,16 @@ function extractFieldInfo({ line, annotations, imports, basePackage, entityConte
     typeKind = 'enum';
   }
 
+  // 최종 타입 결정: 컬렉션인 경우 전체 타입 반환
+  const finalType = isCollection ? `${collectionType}<${baseType}>` : baseType;
+
   return {
     name,
-    type: baseType,
-    actualType: 'String',
+    type: finalType,
+    actualType,
     typeKind,
     isCollection,
-    collectionType: isCollection ? 'Set' : null,
+    collectionType,
     comment: extractComment(entityContent, name) || name,
     importPath: importInfo?.path || '',
     importPackage: importInfo?.package || basePackage,

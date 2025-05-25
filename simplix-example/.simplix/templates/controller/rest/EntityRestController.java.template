@@ -1,8 +1,8 @@
 package <%= packagePaths['controllerRest'] %>;
 
-import controller.web.dev.simplecore.simplix.SimpliXBaseController;
-import controller.web.dev.simplecore.simplix.SimpliXStandardApi;
-import model.dev.simplecore.simplix.core.SimpliXApiResponse;
+import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
+import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import <%= packagePaths['dto'] %>.<%= entityName %>DTOs.*;
 import <%= entityPackage %>.<%= entityName %>;
 <% if (hasEmbeddedId) { %>
@@ -30,7 +30,7 @@ function generatePathVariableParams() {
             return `@PathVariable String ${field.name}${index < embeddedIdFields.length - 1 ? ',' : ''}`;
         }).join(' ');
     } else {
-        return `@PathVariable ${idType} id`;
+        return `@PathVariable ${idType} ${ymlConfig.idField}`;
     }
 }
 %>
@@ -86,22 +86,24 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
      * Updates an existing <%= entityName %> entity
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to update<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to update<% } %>
      * @param updateDto The DTO containing the updated data
      * @return ResponseEntity containing the updated <%= entityName %>DetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @PutMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @PutMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @Operation(summary = "Update <%= entityName %>", description = "Updates existing <%= entityComment.split(':')[0].toLowerCase() %>")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('<%= entityName %>', 'edit')")
     public ResponseEntity<SimpliXApiResponse<<%= entityName %>DetailDTO>> update(
         <%= generatePathVariableParams() %>, 
         @RequestBody @Validated <%= entityName %>UpdateDTO updateDto) {
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);
-        updateDto.setId(id)<% } else { %>id<% } %>;
+        <% if (hasEmbeddedId) { %>
+        <%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);
+        updateDto.setId(<%= ymlConfig.idField %>);
+        <% } %>
         
-        return service.findById(id)
+        return service.findById(<%= ymlConfig.idField %>)
                 .map(entity -> ResponseEntity.ok(SimpliXApiResponse.success(service.update(entity, updateDto))))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "<%= entityName %> not found")));
     }
@@ -129,21 +131,21 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
      * Deletes a <%= entityName %> by its ID
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to delete<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to delete<% } %>
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @DeleteMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @DeleteMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @Operation(summary = "Delete <%= entityName %>", description = "Deletes <%= entityComment.split(':')[0].toLowerCase() %> by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('<%= entityName %>', 'delete')")
     public ResponseEntity<SimpliXApiResponse<Void>> delete(
         <%= generatePathVariableParams() %>) {
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>)<% } else { %>id<% } %>;
-        if (!service.existsById(id)) {
+        <% if (hasEmbeddedId) { %><%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);<% } %>
+        if (!service.existsById(<%= ymlConfig.idField %>)) {
             return ResponseEntity.ok(SimpliXApiResponse.failure(null, "<%= entityName %> not found"));
         }
-        service.delete(id);
+        service.delete(<%= ymlConfig.idField %>);
         
         return ResponseEntity.ok(SimpliXApiResponse.success(null, "<%= entityName %> deleted successfully"));
     }
@@ -152,19 +154,21 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
      * Retrieves a <%= entityName %> by its ID
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to retrieve<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to retrieve<% } %>
      * @return ResponseEntity containing the found <%= entityName %>DetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @GetMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @GetMapping("/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @Operation(summary = "Get <%= entityName %>", description = "Retrieves <%= entityComment.split(':')[0].toLowerCase() %> by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('<%= entityName %>', 'view')")
     public ResponseEntity<SimpliXApiResponse<<%= entityName %>DetailDTO>> get(
         <%= generatePathVariableParams() %>) {
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>)<% } else { %>id<% } %>;
+        <% if (hasEmbeddedId) { %>
+        <%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);
+        <% } %>
         
-        return service.findById(id, <%= entityName %>DetailDTO.class)
+        return service.findById(<%= ymlConfig.idField %>, <%= entityName %>DetailDTO.class)
                 .map(result -> ResponseEntity.ok(SimpliXApiResponse.success(result)))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "<%= entityName %> not found")));
     }
@@ -193,7 +197,7 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
      * Deletes multiple <%= entityName %> entities by their IDs
      * <% if (hasEmbeddedId) { %>
      * @param compositeIds List of composite key strings (format: ["<%= embeddedIdFields.map(f => f.name).join('__') %>", ...])<% } else { %>
-     * @param ids List of IDs of the <%= entityName %> entities to delete<% } %>
+     * @param <%= ymlConfig.idField %>s List of IDs of the <%= entityName %> entities to delete<% } %>
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
@@ -202,10 +206,10 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('<%= entityName %>', 'delete')")
     public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(<% if (hasEmbeddedId) { %>@RequestParam List<String> compositeIds) {
-        List<<%= idType %>> ids = compositeIds.stream()
+        List<<%= idType %>> <%= ymlConfig.idField %>s = compositeIds.stream()
                 .map(compositeId -> (new <%= embeddedIdType %>()).fromCompositeId(compositeId))
-                .collect(Collectors.toList());<% } else { %>@RequestParam List<<%= idType %>> ids) {<% } %>
-        service.batchDelete(ids);
+                .collect(Collectors.toList());<% } else { %>@RequestParam List<<%= idType %>> <%= ymlConfig.idField %>s) {<% } %>
+        service.batchDelete(<%= ymlConfig.idField %>s);
         
         return ResponseEntity.ok(SimpliXApiResponse.success(null, "<%= entityName %>s deleted successfully"));
     }

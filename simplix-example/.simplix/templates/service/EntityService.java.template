@@ -14,17 +14,22 @@ const importedDTOs = new Set();
 // 엔티티 필드에서 참조 타입 찾기
 fields.forEach(field => {
     if (field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne') {
-        const entityImport = field.importPath || `${entityPackage}.${field.type}`;
-        const servicePath = `${packagePaths['service']}.${field.type}Service`;
+        const entityType = field.isCollection ? field.actualType : field.type;
+        const entityImport = field.importPath || `${entityPackage}.${entityType}`;
+        // domain.module.submodule.entity -> web.module.submodule.service
+        const servicePath = entityImport
+            .replace('.domain.', '.web.')
+            .replace('.entity.', '.')
+            .replace(entityType, `service.${entityType}Service`);
         
-        if (!importedServices.has(field.type)) {
-            importedServices.add(field.type); %>
+        if (!importedServices.has(entityType)) {
+            importedServices.add(entityType); %>
 import <%= servicePath %>;<%
         }
     }
 }); %>
 
-import service.web.dev.simplecore.simplix.SimpliXBaseService;
+import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import com.github.thkwag.searchable.core.condition.SearchCondition;
 import com.github.thkwag.searchable.core.condition.parser.SearchableParamsParser;
 import org.springframework.beans.factory.ObjectProvider;
@@ -55,41 +60,48 @@ import java.util.*;
 public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName %>, <%= idType %>> {
     <%
     // Reference service member variables
-    for (const field of entityFields) {
-        const ymlField = ymlConfig.fields[field.name];
-        if (ymlField?.reference) { %>
-    private final ObjectProvider<<%= ymlField.reference.entity %>Service> <%= _.camelCase(ymlField.reference.entity + 'Service') %>Provider;
-    <% }} %>
+    const addedServices = new Set();
+    fields.forEach(field => {
+        const ymlField = ymlConfig.fields?.[field.name];
+        if ((field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne')) {
+            const entityType = field.isCollection ? field.actualType : field.type;
+            if (!addedServices.has(entityType)) {
+                addedServices.add(entityType); %>
+    private final ObjectProvider<<%= entityType %>Service> <%= _.camelCase(entityType + 'Service') %>Provider;
+    <% }
+        }
+    }); 
+    
+    // yml 설정에서 추가 참조 타입 찾기
+    if (ymlConfig && ymlConfig.fields) {
+        Object.values(ymlConfig.fields).forEach(field => {
+            if (field.reference && field.reference.entity && !addedServices.has(field.reference.entity)) {
+                addedServices.add(field.reference.entity); %>
+    private final ObjectProvider<<%= field.reference.entity %>Service> <%= _.camelCase(field.reference.entity + 'Service') %>Provider;
+    <% }
+        });
+    } %>
 
     /**
      * Constructs a new <%= entityName %>Service with required dependencies.
      *
      * @param repository The repository for <%= entityName %> entities
      * @param entityManager JPA EntityManager for database operations<%
-     for (const field of entityFields) {
-         const ymlField = ymlConfig.fields[field.name];
-         if (ymlField?.reference) { %>
-     * @param <%= _.camelCase(ymlField.reference.entity + 'Service') %>Provider Provider for <%= ymlField.reference.entity %> service<%
-         }
-     } %>
+     Array.from(addedServices).forEach(entity => { %>
+     * @param <%= _.camelCase(entity + 'Service') %>Provider Provider for <%= entity %> service<%
+     }); %>
      */
     public <%= entityName %>Service(
         <%= entityName %>Repository repository,
         EntityManager entityManager<%
-        for (const field of entityFields) {
-            const ymlField = ymlConfig.fields[field.name];
-            if (ymlField?.reference) { %>,
-        ObjectProvider<<%= ymlField.reference.entity %>Service> <%= _.camelCase(ymlField.reference.entity + 'Service') %>Provider<%
-            }
-        } %>
+        Array.from(addedServices).forEach(entity => { %>,
+        ObjectProvider<<%= entity %>Service> <%= _.camelCase(entity + 'Service') %>Provider<%
+        }); %>
     ) {
         super(repository, entityManager);
-        <% for (const field of entityFields) {
-            const ymlField = ymlConfig.fields[field.name];
-            if (ymlField?.reference) { %>
-        this.<%= _.camelCase(ymlField.reference.entity + 'Service') %>Provider = <%= _.camelCase(ymlField.reference.entity + 'Service') %>Provider;<%
-            }
-        } %>
+        <% Array.from(addedServices).forEach(entity => { %>
+        this.<%= _.camelCase(entity + 'Service') %>Provider = <%= _.camelCase(entity + 'Service') %>Provider;<%
+        }); %>
     }
 
     /**
@@ -106,7 +118,10 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         return saveAndGetProjection(entity<% 
         Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
             if (field.reference) {
-                %>, createDTO.get<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>()<%
+                const entityField = fields.find(f => f.name === fieldName);
+                const isCollection = entityField && (entityField.isCollection || entityField.type?.startsWith('Set<') || entityField.type?.startsWith('List<') || entityField.relationType === 'ManyToMany');
+                const referenceFieldName = isCollection ? `${field.reference.idField}s` : field.reference.idField;
+                %>, createDTO.get<%= referenceFieldName.charAt(0).toUpperCase() + referenceFieldName.slice(1) %>()<%
             }
         }); %>);
     }
@@ -125,7 +140,10 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         return saveAndGetProjection(entity<% 
         Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
             if (field.reference) {
-                %>, updateDto.get<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>()<%
+                const entityField = fields.find(f => f.name === fieldName);
+                const isCollection = entityField && (entityField.isCollection || entityField.type?.startsWith('Set<') || entityField.type?.startsWith('List<') || entityField.relationType === 'ManyToMany');
+                const referenceFieldName = isCollection ? `${field.reference.idField}s` : field.reference.idField;
+                %>, updateDto.get<%= referenceFieldName.charAt(0).toUpperCase() + referenceFieldName.slice(1) %>()<%
             }
         }); %>);
     }
@@ -133,21 +151,21 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
     /**
      * Deletes a <%= entityName %> entity by its ID.
      *
-     * @param id The ID of the <%= entityName %> to delete
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to delete
      */
     @Transactional
-    public void delete(<%= idType %> id) {
-        deleteById(id);
+    public void delete(<%= idType %> <%= ymlConfig.idField %>) {
+        deleteById(<%= ymlConfig.idField %>);
     }
 
     /**
      * Deletes multiple <%= entityName %> entities by their IDs.
      *
-     * @param ids List of <%= entityName %> IDs to delete
+     * @param <%= ymlConfig.idField %>s List of <%= entityName %> IDs to delete
      */
     @Transactional
-    public void batchDelete(List<<%= idType %>> ids) {
-        deleteAllByIds(ids);
+    public void batchDelete(List<<%= idType %>> <%= ymlConfig.idField %>s) {
+        deleteAllByIds(<%= ymlConfig.idField %>s);
     }
 
     /**
@@ -184,11 +202,11 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         List<<%= entityName %>DetailDTO> updatedEntities = new ArrayList<>();
 
         for (<%= entityName %>UpdateDTO updateDto : updateDtos) {
-            if (updateDto.getId() == null) {
+            if (updateDto.get<%= ymlConfig.idField.charAt(0).toUpperCase() + ymlConfig.idField.slice(1) %>() == null) {
                 continue;
             }
 
-            Optional<<%= entityName %>> entityOpt = findById(updateDto.getId());
+            Optional<<%= entityName %>> entityOpt = findById(updateDto.get<%= ymlConfig.idField.charAt(0).toUpperCase() + ymlConfig.idField.slice(1) %>());
             if (entityOpt.isPresent()) {
                 <%= entityName %> entity = entityOpt.get();
                 <%= entityName %>DetailDTO updatedEntity = update(entity, updateDto);
@@ -207,36 +225,49 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
      */
     @Transactional
     public void batchUpdate(<%= entityName %>BatchUpdateDTO dto) {
-        List<<%= entityName %>> entities = findAllById(dto.getIds());
-
-        entities.forEach(entity -> {
-            <% fields.forEach(field => {
-                // yml 설정에서 batchUpdate가 허용된 필드만 처리
-                const ymlField = ymlConfig.fields?.[field.name];
-                if (!ymlField?.views?.includes('batchUpdate')) return;
-
-                const upperFieldName = field.name.charAt(0).toUpperCase() + field.name.slice(1);
-                if (field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne') { 
-                    if (field.isCollection || field.relationType === 'ManyToMany') { %>
-            if (dto.get<%= upperFieldName %>() != null) {
-                entity.set<%= upperFieldName %>(new HashSet<>(
-                    Objects.requireNonNull(<%= _.camelCase(field.type + 'Service') %>Provider.getIfAvailable()).findAllByIds(dto.get<%= upperFieldName %>())
-                ));
-            }
-            <%      } else { %>
-            if (dto.get<%= upperFieldName %>() != null) {
-                Objects.requireNonNull(<%= _.camelCase(field.type + 'Service') %>Provider.getIfAvailable()).findById(dto.get<%= upperFieldName %>())
-                    .ifPresent(entity::set<%= upperFieldName %>);
-            }
-            <%      }
-                } else { %>
-            if (dto.get<%= upperFieldName %>() != null) {
-                entity.set<%= upperFieldName %>(dto.get<%= upperFieldName %>());
-            }
-            <% }}); %>
+        <% 
+        // batchUpdate가 허용된 필드가 있는지 확인
+        const hasBatchUpdateFields = fields.some(field => {
+            const ymlField = ymlConfig.fields?.[field.name];
+            return ymlField?.views?.includes('batchUpdate');
         });
+        
+        if (hasBatchUpdateFields) { %>List<<%= entityName %>> entities = findAllById(dto.get<%= ymlConfig.idField.charAt(0).toUpperCase() + ymlConfig.idField.slice(1) %>s());
 
-        saveAll(entities);
+        if (!entities.isEmpty()) {
+            entities.forEach(entity -> {
+                <% fields.forEach(field => {
+                    // yml 설정에서 batchUpdate가 허용된 필드만 처리
+                    const ymlField = ymlConfig.fields?.[field.name];
+                    if (!ymlField?.views?.includes('batchUpdate')) return;
+
+                    const upperFieldName = field.name.charAt(0).toUpperCase() + field.name.slice(1);
+                    if (field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne') { 
+                        const idFieldName = ymlField.reference.idField;
+                        const upperIdFieldName = idFieldName.charAt(0).toUpperCase() + idFieldName.slice(1);
+                        if (field.isCollection || field.relationType === 'ManyToMany') { %>
+                if (dto.get<%= upperIdFieldName %>s() != null) {
+                    <%
+                    const collectionImpl = field.collectionType === 'List' ? 'ArrayList' : 'HashSet';
+                    const entityType = field.isCollection ? field.actualType : field.type;
+                    %>
+                    entity.set<%= upperFieldName %>(new <%= collectionImpl %><>(<%= _.camelCase(entityType + 'Service') %>Provider.getIfAvailable().findAllById(dto.get<%= upperIdFieldName %>s())));
+                }
+                <%      } else { %>
+                if (dto.get<%= upperIdFieldName %>() != null) {
+                    Objects.requireNonNull(<%= _.camelCase(field.type + 'Service') %>Provider.getIfAvailable()).findById(dto.get<%= upperIdFieldName %>())
+                        .ifPresent(entity::set<%= upperFieldName %>);
+                }
+                <%      }
+                    } else { %>
+                if (dto.get<%= upperFieldName %>() != null) {
+                    entity.set<%= upperFieldName %>(dto.get<%= upperFieldName %>());
+                }
+                <% }}); %>
+            });
+
+            saveAll(entities);
+        }<% } %>
     }
 
     //----------------------------------
@@ -245,16 +276,26 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
      * Saves a <%= entityName %> entity and returns its projection.
      * Handles the relationships with other entities.
      *
-     * @param entity The <%= entityName %> entity to save
-     * @param dto The DTO containing relationship data
+     * @param entity The <%= entityName %> entity to save<%
+     Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
+         if (field.reference) {
+             const idFieldName = field.reference.idField;
+             if (field.reference.multiple) { %>
+     * @param <%= idFieldName %>s The <%= field.reference.entity %> IDs to set<%
+             } else { %>
+     * @param <%= idFieldName %> The <%= field.reference.entity %> ID to set<%
+             }
+         }
+     }); %>
      * @return <%= entityName %>DetailDTO of the saved entity
      * @throws RuntimeException if saving fails or if related entities are not found
      */
     private <%= entityName %>DetailDTO saveAndGetProjection(<%= entityName %> entity<% 
     Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
         if (field.reference) {
-            if (field.reference.multiple) { %>, Set<String> <%= fieldName %><% }
-            else { %>, String <%= fieldName %><% }
+            const idFieldName = field.reference.idField;
+            if (field.reference.multiple) { %>, Set<String> <%= idFieldName %>s<% }
+            else { %>, String <%= idFieldName %><% }
         }
     }); 
     %>) {
@@ -266,12 +307,13 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
             if (field.reference && !field.reference.multiple) {
                 const serviceVar = _.camelCase(field.reference.entity);
+                const idFieldName = field.reference.idField;
         %>
         // <%= field.reference.entity %>
-        if (<%= fieldName %> != null) {
+        if (<%= idFieldName %> != null) {
             <%= field.reference.entity %>Service <%= serviceVar %>Service = <%= serviceVar %>ServiceProvider.getIfAvailable();
             if (<%= serviceVar %>Service != null) {
-                entity.set<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>(<%= serviceVar %>Service.findById(<%= fieldName %>)
+                entity.set<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>(<%= serviceVar %>Service.findById(<%= idFieldName %>)
                     .orElseThrow(() -> new RuntimeException("<%= field.reference.entity %> not found")));
             }
         }
@@ -286,12 +328,17 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         Object.entries(ymlConfig.fields || {}).forEach(([fieldName, field]) => {
             if (field.reference && field.reference.multiple) {
                 const serviceVar = _.camelCase(field.reference.entity);
+                const idFieldName = field.reference.idField;
         %>
         // <%= field.reference.entity %>
-        if (<%= fieldName %> != null) {
+        if (<%= idFieldName %>s != null) {
             <%= field.reference.entity %>Service <%= serviceVar %>Service = <%= serviceVar %>ServiceProvider.getIfAvailable();
             if (<%= serviceVar %>Service != null) {
-                entity.set<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>(new HashSet<>(<%= serviceVar %>Service.findAllByIds(<%= fieldName %>)));
+                <%
+                const entityField = fields.find(f => f.name === fieldName);
+                const collectionImpl = entityField?.collectionType === 'List' ? 'ArrayList' : 'HashSet';
+                %>
+                entity.set<%= fieldName.charAt(0).toUpperCase() + fieldName.slice(1) %>(new <%= collectionImpl %><>(<%= serviceVar %>Service.findAllById(<%= idFieldName %>s)));
             }
         }
                 <%
@@ -310,19 +357,19 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
      * Checks if the current user has the specified permission for the entity.
      *
      * @param permission The permission to check (e.g., "view", "edit", "delete")
-     * @param id The ID of the entity to check permissions for. Can be null for new entities
-     * @param dto The DTO object containing entity data. Used when id is null
+     * @param <%= ymlConfig.idField %> The ID of the entity to check permissions for. Can be null for new entities
+     * @param dto The DTO object containing entity data. Used when <%= ymlConfig.idField %> is null
      * @return true if the user has the permission, false otherwise
-     * @throws RuntimeException if the entity is not found with the given id
+     * @throws RuntimeException if the entity is not found with the given <%= ymlConfig.idField %>
      */
     @Override
-    public boolean hasOwnerPermission(String permission, <%= idType %> id, Object dto) {
+    public boolean hasOwnerPermission(String permission, <%= idType %> <%= ymlConfig.idField %>, Object dto) {
         // TODO must be implemented
 
         // // Example implementation
         // <%= entityName %> entity = new <%= entityName %>();
-        // if (id != null) {
-        //     entity = findById(id).orElseThrow(() -> new RuntimeException("<%= entityName %> not found"));
+        // if (<%= ymlConfig.idField %> != null) {
+        //     entity = findById(<%= ymlConfig.idField %>).orElseThrow(() -> new RuntimeException("<%= entityName %> not found"));
         // } else {
         //     modelMapper.map(dto, entity);
         // }

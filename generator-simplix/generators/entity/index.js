@@ -328,7 +328,9 @@ export default class extends Generator {
       // Read template and render with EJS
       try {
         const template = fs.readFileSync(templatePath, 'utf8');
-        let rendered = ejs.render(template, templateVars);
+        let rendered = ejs.render(template, templateVars, {
+          escape: str => str,
+        });
 
         // 연속된 빈 줄을 하나로 정리
         rendered = rendered.replace(/\n\s*\n\s*\n/g, '\n\n');
@@ -547,16 +549,27 @@ export default class extends Generator {
       ? this.entityConfig?.fields?.[`${this.entityConfig.idField}.${fieldName}`] || {}
       : this.entityConfig?.fields?.[fieldName] || {};
 
-    const fieldType = reference ? reference.idType : field.type;
+    let outputFieldName = fieldName;
+    let outputFieldType = field.type;
+    let entityFieldPath;
+
+    if (reference) {
+      outputFieldName = reference.idField;
+      outputFieldType = reference.idType;
+      entityFieldPath = `${fieldName}.${reference.idField}`; // codeGroup.codeGroupId
+    } else if (isEmbedded) {
+      entityFieldPath = `id.${fieldName}`;
+    }
+
     const searchOperators = ymlField.searchOperators || ['equals'];
     const operators = this.getOperatorsString(searchOperators);
     const fieldComment = field.comment ? field.comment.split(':')[0] : ymlField.comment || fieldName;
 
     return {
-      name: fieldName,
-      type: fieldType,
+      name: outputFieldName,
+      type: outputFieldType,
       comment: fieldComment,
-      entityField: isEmbedded ? `id.${fieldName}` : reference ? `${fieldName}.id` : undefined,
+      entityField: entityFieldPath,
       operators,
       sortable: ymlField.sortable || false,
     };

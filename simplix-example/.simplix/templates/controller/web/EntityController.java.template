@@ -15,10 +15,19 @@ const importedDTOs = new Set();
 // 엔티티 필드에서 참조 타입 찾기
 fields.forEach(field => {
     if (field.typeKind === 'entity' || field.isRelation || field.relationType === 'ManyToOne') {
-        const servicePath = `${packagePaths['service']}.${field.type}Service`;
-        const dtoPath = `${packagePaths['dto']}.${field.type}DTOs.*`;
-        if (!importedServices.has(field.type)) {
-            importedServices.add(field.type); %>
+        const entityType = field.isCollection ? field.actualType : field.type;
+        const entityImport = field.importPath || `${entityPackage}.${entityType}`;
+        const servicePath = entityImport
+            .replace('.domain.', '.web.')
+            .replace('.entity.', '.')
+            .replace(entityType, `service.${entityType}Service`);
+        const dtoPath = entityImport
+            .replace('.domain.', '.web.')
+            .replace('.entity.', '.')
+            .replace(entityType, `dto.${entityType}DTOs.*`);
+        
+        if (!importedServices.has(entityType)) {
+            importedServices.add(entityType); %>
 import <%= servicePath %>;
 import <%= dtoPath %>;<%
         }
@@ -28,14 +37,19 @@ import <%= dtoPath %>;<%
 // yml 설정에서 추가 참조 타입 찾기
 if (ymlConfig && ymlConfig.fields) {
     Object.entries(ymlConfig.fields).forEach(([fieldName, field]) => {
-        if (field.reference && field.reference.entity) {
+        if (field.reference && field.reference.entity && field.reference.import && !importedServices.has(field.reference.entity)) {
             const entityImport = field.reference.import;
-            if (entityImport && !importedServices.has(field.reference.entity)) {
-                importedServices.add(field.reference.entity);
-                const servicePath = entityImport.replace('.entity.', '.service.').replace(field.reference.entity, `${field.reference.entity}Service`); %>
+            importedServices.add(field.reference.entity);
+            const servicePath = entityImport
+                .replace('.domain.', '.web.')
+                .replace('.entity.', '.')
+                .replace(field.reference.entity, `service.${field.reference.entity}Service`);
+            const dtoPath = entityImport
+                .replace('.domain.', '.web.')
+                .replace('.entity.', '.')
+                .replace(field.reference.entity, `dto.${field.reference.entity}DTOs.*`); %>
 import <%= servicePath %>;
-import <%= entityImport.replace('.entity.', '.dto.').replace(field.reference.entity, `${field.reference.entity}DTOs.*`) %>;<%
-            }
+import <%= dtoPath %>;<%
         }
     });
 } %>
@@ -43,7 +57,7 @@ import <%= entityImport.replace('.entity.', '.dto.').replace(field.reference.ent
 // 템플릿 기본 경로 설정
 const templatePath = ymlConfig?.thymeleafBaseDir ? ymlConfig.thymeleafBaseDir : _.kebabCase(entityName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase());
 %>
-import controller.web.dev.simplecore.simplix.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXBaseController;
 import com.github.thkwag.searchable.core.condition.SearchCondition;
 import com.github.thkwag.searchable.core.condition.SearchConditionBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -119,17 +133,17 @@ if (ymlConfig && ymlConfig.fields) {
      * Displays the detail page for a <%= entityName %> entity
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to display<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to display<% } %>
      * @param model Spring MVC Model
      * @return The view name for the detail page or redirect to list
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @GetMapping("/detail/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @GetMapping("/detail/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @PreAuthorize("hasPermission('<%= entityName %>', 'view')")
-    public String detail(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> id<% } %>, Model model) {
+    public String detail(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> <%= ymlConfig.idField %><% } %>, Model model) {
         model.addAttribute("pageTitle", "<%= entityComment.split(':')[0] %> 상세 정보");
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>)<% } else { %>id<% } %>;
-        return service.findById(id, <%= entityName %>DetailDTO.class)
+        <% if (hasEmbeddedId) { %><%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);<% }%>
+        return service.findById(<%= ymlConfig.idField %>, <%= entityName %>DetailDTO.class)
             .map(item -> {
                 model.addAttribute("item", item);
                 return "<%= templatePath %>/detail";
@@ -141,16 +155,16 @@ if (ymlConfig && ymlConfig.fields) {
      * Returns the brief content fragment for a <%= entityName %> entity
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to display<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to display<% } %>
      * @param model Spring MVC Model
      * @return The fragment name for brief content
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @GetMapping("/brief/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @GetMapping("/brief/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @PreAuthorize("hasPermission('<%= entityName %>', 'view')")
-    public String getBrief(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> id<% } %>, Model model) {
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>)<% } else { %>id<% } %>;
-        service.findById(id, <%= entityName %>DetailDTO.class)
+    public String getBrief(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> <%= ymlConfig.idField %><% } %>, Model model) {
+        <% if (hasEmbeddedId) { %><%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);<% }%>
+        service.findById(<%= ymlConfig.idField %>, <%= entityName %>DetailDTO.class)
             .ifPresent(item -> model.addAttribute("item", item));
         return "<%= templatePath %>/detail :: brief-content";
     }
@@ -159,16 +173,16 @@ if (ymlConfig && ymlConfig.fields) {
      * Displays the edit page for a <%= entityName %> entity
      *<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field) { %>
      * @param <%= field.name %> <%= field.comment %><% }); %><% } else { %>
-     * @param id The ID of the <%= entityName %> to edit<% } %>
+     * @param <%= ymlConfig.idField %> The ID of the <%= entityName %> to edit<% } %>
      * @param model Spring MVC Model
      * @return The view name for the edit page
      * @generated SimpliX Generator Version 1.0.0 - <%= generatedAt %>
      */
-    @GetMapping("/edit/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : 'id' %>}")
+    @GetMapping("/edit/{<%= hasEmbeddedId ? embeddedIdFields.map(f => f.name).join('}__{') : ymlConfig.idField %>}")
     @PreAuthorize("hasPermission('<%= entityName %>', 'edit')")
-    public String edit(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> id<% } %>, Model model) {
-        <%= idType %> id = <% if (hasEmbeddedId) { %>(new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>)<% } else { %>id<% } %>;
-        <%= entityName %>DetailDTO item = service.findById(id, <%= entityName %>DetailDTO.class)
+    public String edit(<% if (hasEmbeddedId) { %><% embeddedIdFields.forEach(function(field, index) { %>@PathVariable String <%= field.name %><%= index < embeddedIdFields.length - 1 ? ',' : '' %><% }); %><% } else { %>@PathVariable <%= idType %> <%= ymlConfig.idField %><% } %>, Model model) {
+        <% if (hasEmbeddedId) { %><%= idType %> <%= ymlConfig.idField %> = (new <%= embeddedIdType %>()).fromPathVariables(<%= embeddedIdFields.map(f => f.name).join(', ') %>);<% }%>
+        <%= entityName %>DetailDTO item = service.findById(<%= ymlConfig.idField %>, <%= entityName %>DetailDTO.class)
             .orElseThrow(() -> new RuntimeException("<%= entityName %> not found"));
 
         model.addAttribute("item", item);
@@ -212,7 +226,7 @@ if (ymlConfig && ymlConfig.fields) {
             .create(<%= entity %>SearchDTO.class)
             .build();
         model.addAttribute(
-            "<%= fieldName %>",
+            "<%= _.camelCase(entity) %>s",
             <%= _.camelCase(entity) %>Service.findAllWithSearch(<%= _.camelCase(entity) %>Condition).getContent()
         );
 <%  }); %>

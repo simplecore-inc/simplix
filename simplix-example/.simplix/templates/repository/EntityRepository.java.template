@@ -10,7 +10,7 @@ if (importsArray && importsArray.length > 0) {
 import <%= importPath %>;<%
   });
 } %>
-import repository.web.dev.simplecore.simplix.SimpliXBaseRepository;
+import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
 import org.springframework.stereotype.Repository;
 
 /**
