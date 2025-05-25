@@ -25,8 +25,8 @@ sourceSets {
 dependencies {
     api 'javax.persistence:javax.persistence-api'
     api 'javax.validation:validation-api'
-    api 'com.github.thkwag.searchable:searchable-jpa-core:0.0.2'
-    api 'com.github.thkwag.searchable:searchable-jpa-openapi:0.0.2'
+    api 'com.github.thkwag.searchable:searchable-jpa-core:0.0.3'
+    api 'com.github.thkwag.searchable:searchable-jpa-openapi:0.0.3'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter'
