@@ -38,6 +38,7 @@ if (propertiesFile.exists()) {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        mavenLocal()
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
             credentials {
@@ -52,9 +53,9 @@ dependencyResolutionManagement {
                 password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
             }
         }
-        mavenCentral()
         maven {
             url "https://repo.spring.io/release"
         }
+        mavenCentral()
     }
 }

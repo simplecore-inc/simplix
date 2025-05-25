@@ -21,6 +21,20 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     
+    tasks.withType(JavaCompile) {
+        outputs.cacheIf { true }
+    }
+    
+    tasks.withType(Test) {
+        outputs.cacheIf { false }
+        outputs.upToDateWhen { false }
+    }
+    
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    }
+    
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
@@ -108,19 +122,36 @@ subprojects {
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        withSourcesJar()
+    }
+    
+    javadoc {
+        options.addStringOption('Xdoclint:none', '-quiet')
+        options.encoding = 'UTF-8'
+        failOnError = false
     }
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
         options.compilerArgs.addAll(['-parameters', "-Xlint:-deprecation", "-Xlint:-options"])
+        options.incremental = true
+        options.fork = true
+        options.forkOptions.jvmArgs = ['-Xmx2g']
     }
 
     test {
         useJUnitPlatform()
+        maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+        forkEvery = 100
+        jvmArgs = ['-Xmx1g', '-XX:MaxMetaspaceSize=256m']
+        testLogging {
+            events "passed", "skipped", "failed"
+            exceptionFormat "short"
+        }
     }
 }
 
 wrapper {
-    gradleVersion = '8.5'
+    gradleVersion = '8.12'
     distributionType = Wrapper.DistributionType.BIN
 }

@@ -68,6 +68,9 @@ dependencies {
     api 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Additional dependencies
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
 }
 
 bootJar {
