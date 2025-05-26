@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
 import org.modelmapper.ModelMapper;
+import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -23,6 +24,7 @@ public class SimpliXModelMapperAutoConfiguration {
         ModelMapper modelMapper = new ModelMapper();
         
         modelMapper.getConfiguration()
+            .setMatchingStrategy(MatchingStrategies.STRICT)
             .setSkipNullEnabled(true)
             .setFieldMatchingEnabled(true)
             .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
