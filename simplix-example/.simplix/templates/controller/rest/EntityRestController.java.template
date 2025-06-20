@@ -10,8 +10,8 @@ import <%= entityPackage %>.<%= entityName %>.<%= embeddedIdType %>;
 import java.util.stream.Collectors;
 <% } %>
 import <%= packagePaths['service'] %>.<%= entityName %>Service;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
-import com.github.thkwag.searchable.openapi.annotation.SearchableParams;
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.openapi.annotation.SearchableParams;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;

@@ -49,7 +49,7 @@ import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
 import net.datafaker.Faker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.condition.SearchCondition;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleRestControllerTest {

@@ -8,8 +8,8 @@ import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccountLog.User
 import dev.simplecore.simplix.demo.domain.common.user.repository.UserAccountLogRepository;
 
 import dev.simplecore.simplix.web.service.SimpliXBaseService;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
-import com.github.thkwag.searchable.core.condition.parser.SearchableParamsParser;
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.condition.parser.SearchableParamsParser;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

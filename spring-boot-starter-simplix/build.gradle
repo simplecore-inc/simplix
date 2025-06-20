@@ -27,7 +27,6 @@ dependencies {
     api project(':simplix-core')
 
     // External Libraries
-    api 'com.github.thkwag.searchable:spring-boot-starter-searchable-jpa:0.0.2'
     api 'org.modelmapper:modelmapper:3.2.0'
     
     // Spring Boot Dependencies
@@ -59,8 +58,6 @@ dependencies {
     // Additional Dependencies
     api 'javax.persistence:javax.persistence-api'
     api 'javax.validation:validation-api'
-    api 'com.github.thkwag.searchable:searchable-jpa-core:0.0.2'
-    api 'com.github.thkwag.searchable:searchable-jpa-openapi:0.0.2'
 
     implementation 'org.hibernate.validator:hibernate-validator'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'

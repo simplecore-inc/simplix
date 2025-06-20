@@ -6,8 +6,8 @@ import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
 import dev.simplecore.simplix.demo.domain.common.user.repository.UserAccountRepository;
 import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
 import dev.simplecore.simplix.web.service.SimpliXBaseService;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
-import com.github.thkwag.searchable.core.condition.parser.SearchableParamsParser;
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.condition.parser.SearchableParamsParser;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;

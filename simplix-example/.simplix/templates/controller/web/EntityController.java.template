@@ -58,8 +58,8 @@ import <%= dtoPath %>;<%
 const templatePath = ymlConfig?.thymeleafBaseDir ? ymlConfig.thymeleafBaseDir : _.kebabCase(entityName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase());
 %>
 import dev.simplecore.simplix.web.controller.SimpliXBaseController;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
-import com.github.thkwag.searchable.core.condition.SearchConditionBuilder;
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.condition.SearchConditionBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;

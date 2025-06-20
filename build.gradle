@@ -67,7 +67,7 @@ subprojects {
                             setName(projectMetadata['name'])
                             setDescription(projectMetadata['description'])
                         } else {
-                            throw new GradleException("No metadata found for project: ${project.name}")
+                            throw new RuntimeException("No metadata found for project: ${project.name}")
                         }
                         url = 'https://github.com/simplecore-inc/simplix'
                         
@@ -122,6 +122,6 @@ subprojects {
 }
 
 wrapper {
-    gradleVersion = '8.12'
+    gradleVersion = '8.5'
     distributionType = Wrapper.DistributionType.BIN
 }

@@ -6,6 +6,7 @@ import dev.simplecore.simplix.demo.domain.common.user.enums.OrganizationType;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Comment;
 
 import javax.persistence.*;
@@ -39,6 +40,7 @@ public class UserOrganization extends AuditingBaseEntity<String> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @BatchSize(size = 50)
     private UserOrganization parent;
 
     @Column(length = 500)

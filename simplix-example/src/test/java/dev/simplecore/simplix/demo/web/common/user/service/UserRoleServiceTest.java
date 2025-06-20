@@ -40,7 +40,7 @@ import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleSear
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleUpdateDTO;
 import net.datafaker.Faker;
 
-import com.github.thkwag.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.condition.SearchCondition;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleServiceTest {

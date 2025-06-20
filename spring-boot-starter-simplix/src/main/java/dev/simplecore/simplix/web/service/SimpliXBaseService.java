@@ -1,8 +1,8 @@
 package dev.simplecore.simplix.web.service;
 
 import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
-import com.github.thkwag.searchable.core.service.DefaultSearchableService;
-import com.github.thkwag.searchable.core.condition.SearchCondition;
+import dev.simplecore.searchable.core.service.DefaultSearchableService;
+import dev.simplecore.searchable.core.condition.SearchCondition;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

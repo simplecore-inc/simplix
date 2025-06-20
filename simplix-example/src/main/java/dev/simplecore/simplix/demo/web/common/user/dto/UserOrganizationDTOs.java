@@ -7,14 +7,14 @@ import javax.validation.constraints.NotBlank;
 
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserOrganization;
 import dev.simplecore.simplix.demo.domain.common.user.enums.OrganizationType;
-import com.github.thkwag.searchable.core.annotation.SearchableField;
+import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import static com.github.thkwag.searchable.core.condition.operator.SearchOperator.*;
+import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

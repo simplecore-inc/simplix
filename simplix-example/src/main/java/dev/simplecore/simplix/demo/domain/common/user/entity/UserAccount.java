@@ -5,6 +5,7 @@ import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Comment;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -83,14 +84,15 @@ public class UserAccount extends AuditingBaseEntity<String> {
     private String addressDetail;
 
     // 사용자는 하나의 직급만 가질 수 있음 (1:N 관계)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_id")
     @Comment("직급정보: 사용자의 조직 내 직급")
     private UserPosition position;
 
     // 사용자는 여러 개의 역할(직책 포함)을 가질 수 있음 (N:M 관계)
     @JsonManagedReference
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @JoinTable(
         name = "user_account_roles",
         joinColumns = @JoinColumn(name = "user_id"),
@@ -101,7 +103,8 @@ public class UserAccount extends AuditingBaseEntity<String> {
 
     // 사용자는 여러 조직(부서/그룹)에 속할 수 있음 (N:M 관계)
     @JsonManagedReference
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @JoinTable(
         name = "user_account_organizations",
         joinColumns = @JoinColumn(name = "user_id"),

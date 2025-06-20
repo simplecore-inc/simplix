@@ -39,6 +39,10 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenLocal()
+        mavenCentral()
+        maven {
+            url "https://repo.spring.io/release"
+        }        
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
             credentials {
@@ -47,15 +51,11 @@ dependencyResolutionManagement {
             }
         }
         maven {
-            url = uri("https://maven.pkg.github.com/thkwag/searchable-jpa")
+            url = uri("https://maven.pkg.github.com/simplecore-inc/searchable-jpa")
             credentials {
                 username = props.getProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
                 password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
             }
         }
-        maven {
-            url "https://repo.spring.io/release"
-        }
-        mavenCentral()
     }
 }

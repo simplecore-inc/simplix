@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.web.service;
 
-import com.github.thkwag.searchable.core.service.SearchableService;
+import dev.simplecore.searchable.core.service.SearchableService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
