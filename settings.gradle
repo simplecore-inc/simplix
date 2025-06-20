@@ -39,23 +39,41 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenLocal()
+        
+        // GitHub Packages - SimpliX (특정 그룹만)
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
             credentials {
                 username = props.getProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
                 password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
             }
+            content {
+                includeGroup "dev.simplecore.simplix"
+            }
         }
+        
+        // GitHub Packages - Searchable JPA (특정 그룹만)
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/searchable-jpa")
             credentials {
                 username = props.getProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
                 password = props.getProperty("gpr.token") ?: System.getenv("GITHUB_TOKEN")
             }
+            content {
+                includeGroup "dev.simplecore.searchable"
+            }
         }
+        
+        // Spring Repository (dev.simplecore 그룹 제외)
         maven {
             url "https://repo.spring.io/release"
+            content {
+                excludeGroup "dev.simplecore.searchable"
+                excludeGroup "dev.simplecore.simplix"
+            }
         }
+        
+        // Maven Central
         mavenCentral()
     }
 }
