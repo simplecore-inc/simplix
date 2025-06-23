@@ -39,8 +39,16 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenLocal()
-        
-        // GitHub Packages - SimpliX (특정 그룹만)
+        mavenCentral()
+
+        maven {
+            url "https://repo.spring.io/release"
+            content {
+                excludeGroup "dev.simplecore.searchable"
+                excludeGroup "dev.simplecore.simplix"
+            }
+        }
+
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/simplix")
             credentials {
@@ -50,9 +58,12 @@ dependencyResolutionManagement {
             content {
                 includeGroup "dev.simplecore.simplix"
             }
+            metadataSources {
+                gradleMetadata()
+                mavenPom()
+            }
         }
-        
-        // GitHub Packages - Searchable JPA (특정 그룹만)
+
         maven {
             url = uri("https://maven.pkg.github.com/simplecore-inc/searchable-jpa")
             credentials {
@@ -62,18 +73,10 @@ dependencyResolutionManagement {
             content {
                 includeGroup "dev.simplecore.searchable"
             }
-        }
-        
-        // Spring Repository (dev.simplecore 그룹 제외)
-        maven {
-            url "https://repo.spring.io/release"
-            content {
-                excludeGroup "dev.simplecore.searchable"
-                excludeGroup "dev.simplecore.simplix"
+            metadataSources {
+                gradleMetadata()
+                mavenPom()
             }
         }
-        
-        // Maven Central
-        mavenCentral()
     }
 }
