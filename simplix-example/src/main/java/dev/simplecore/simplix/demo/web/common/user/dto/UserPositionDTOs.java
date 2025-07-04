@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
@@ -45,7 +45,7 @@ public class UserPositionDTOs {
         
         @Schema(description = "등록일시")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -116,14 +116,14 @@ public class UserPositionDTOs {
 
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
         @Schema(description = "수정자")
         private String updatedBy;
 
         @Schema(description = "수정일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
@@ -143,6 +143,6 @@ public class UserPositionDTOs {
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 } 

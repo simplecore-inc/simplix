@@ -4,6 +4,7 @@ import liquibase.integration.spring.SpringLiquibase;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
@@ -11,6 +12,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableAutoConfiguration(exclude = LiquibaseAutoConfiguration.class)
+@Profile("dev")
 public class LiquibaseConfiguration {
     
     private final DataSource dataSource;

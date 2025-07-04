@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.demo.web.common.auth.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthPermission;
@@ -38,73 +38,73 @@ public class AuthRolePermissionDTOs {
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String id;
         
-        @Schema(description = "권한")
+        @Schema(description = "Permission")
         @SearchableField(entityField = "permission.id", operators = {EQUALS}, sortable = true)
         private String permission;
         
-        @Schema(description = "권한 범위")
+        @Schema(description = "Permission Scope")
         @SearchableField(operators = {EQUALS}, sortable = true)
         private PermissionTargetType targetType;
         
-        @Schema(description = "역할")
+        @Schema(description = "Role")
         @SearchableField(entityField = "role.id", operators = {EQUALS}, sortable = true)
         private String role;
         
-        @Schema(description = "조직")
+        @Schema(description = "Organization")
         @SearchableField(entityField = "organization.id", operators = {EQUALS}, sortable = true)
         private String organization;
         
-        @Schema(description = "사용자")
+        @Schema(description = "User")
         @SearchableField(entityField = "userAccount.id", operators = {EQUALS}, sortable = true)
         private String userAccount;
         
-        @Schema(description = "목록 조회 권한")
+        @Schema(description = "List View Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean listPermission;
         
-        @Schema(description = "상세 조회 권한")
+        @Schema(description = "Detail View Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean viewPermission;
         
-        @Schema(description = "생성 권한")
+        @Schema(description = "Create Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean createPermission;
         
-        @Schema(description = "수정 권한")
+        @Schema(description = "Edit Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean editPermission;
         
-        @Schema(description = "삭제 권한")
+        @Schema(description = "Delete Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean deletePermission;
         
-        @Schema(description = "추가 기능 1 권한")
+        @Schema(description = "Extra Function 1 Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean extra1Permission;
         
-        @Schema(description = "추가 기능 2 권한")
+        @Schema(description = "Extra Function 2 Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean extra2Permission;
         
-        @Schema(description = "추가 기능 3 권한")
+        @Schema(description = "Extra Function 3 Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean extra3Permission;
         
-        @Schema(description = "추가 기능 4 권한")
+        @Schema(description = "Extra Function 4 Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean extra4Permission;
         
-        @Schema(description = "추가 기능 5 권한")
+        @Schema(description = "Extra Function 5 Permission")
         @SearchableField(operators = {EQUALS})
         private Boolean extra5Permission;
         
-        @Schema(description = "설명")
+        @Schema(description = "Description")
         @SearchableField(operators = {CONTAINS})
         private String description;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registered Date Time")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -117,89 +117,89 @@ public class AuthRolePermissionDTOs {
         @Schema(description = "AuthRolePermission ID")
         private String id;
         
-        @Schema(description = "권한")
+        @Schema(description = "Permission")
         private String permission;
         
-        @Schema(description = "권한 범위")
+        @Schema(description = "Permission Scope")
         private PermissionTargetType targetType;
         
-        @Schema(description = "역할")
+        @Schema(description = "Role")
         private String role;
         
-        @Schema(description = "조직")
+        @Schema(description = "Organization")
         private String organization;
         
-        @Schema(description = "사용자")
+        @Schema(description = "User")
         private String userAccount;
         
-        @Schema(description = "목록 조회 권한")
+        @Schema(description = "List View Permission")
         private Boolean listPermission;
         
-        @Schema(description = "상세 조회 권한")
+        @Schema(description = "Detail View Permission")
         private Boolean viewPermission;
         
-        @Schema(description = "생성 권한")
+        @Schema(description = "Create Permission")
         private Boolean createPermission;
         
-        @Schema(description = "수정 권한")
+        @Schema(description = "Edit Permission")
         private Boolean editPermission;
         
-        @Schema(description = "삭제 권한")
+        @Schema(description = "Delete Permission")
         private Boolean deletePermission;
         
-        @Schema(description = "추가 기능 1 권한")
+        @Schema(description = "Extra Function 1 Permission")
         private Boolean extra1Permission;
         
-        @Schema(description = "추가 기능 2 권한")
+        @Schema(description = "Extra Function 2 Permission")
         private Boolean extra2Permission;
         
-        @Schema(description = "추가 기능 3 권한")
+        @Schema(description = "Extra Function 3 Permission")
         private Boolean extra3Permission;
         
-        @Schema(description = "추가 기능 4 권한")
+        @Schema(description = "Extra Function 4 Permission")
         private Boolean extra4Permission;
         
-        @Schema(description = "추가 기능 5 권한")
+        @Schema(description = "Extra Function 5 Permission")
         private Boolean extra5Permission;
         
-        @Schema(description = "설명")
+        @Schema(description = "Description")
         private String description;
         
     }
 
     @Data
     public static class AuthRolePermissionBatchUpdateDTO {
-        @Schema(description = "AuthRolePermission ID 목록")
+        @Schema(description = "AuthRolePermission ID List")
         private Set<String> ids;
         
-        @Schema(description = "목록 조회 권한")
+        @Schema(description = "List View Permission")
         private Boolean listPermission;
         
-        @Schema(description = "상세 조회 권한")
+        @Schema(description = "Detail View Permission")
         private Boolean viewPermission;
         
-        @Schema(description = "생성 권한")
+        @Schema(description = "Create Permission")
         private Boolean createPermission;
         
-        @Schema(description = "수정 권한")
+        @Schema(description = "Edit Permission")
         private Boolean editPermission;
         
-        @Schema(description = "삭제 권한")
+        @Schema(description = "Delete Permission")
         private Boolean deletePermission;
         
-        @Schema(description = "추가 기능 1 권한")
+        @Schema(description = "Extra Function 1 Permission")
         private Boolean extra1Permission;
         
-        @Schema(description = "추가 기능 2 권한")
+        @Schema(description = "Extra Function 2 Permission")
         private Boolean extra2Permission;
         
-        @Schema(description = "추가 기능 3 권한")
+        @Schema(description = "Extra Function 3 Permission")
         private Boolean extra3Permission;
         
-        @Schema(description = "추가 기능 4 권한")
+        @Schema(description = "Extra Function 4 Permission")
         private Boolean extra4Permission;
         
-        @Schema(description = "추가 기능 5 권한")
+        @Schema(description = "Extra Function 5 Permission")
         private Boolean extra5Permission;
         
     }
@@ -214,67 +214,67 @@ public class AuthRolePermissionDTOs {
         @Schema(description = "ID")
         private String id;
         
-        @Schema(description = "권한")
+        @Schema(description = "Permission")
         private AuthPermission permission;
         
-        @Schema(description = "권한 범위")
+        @Schema(description = "Permission Scope")
         private PermissionTargetType targetType;
         
-        @Schema(description = "역할")
+        @Schema(description = "Role")
         private UserRole role;
         
-        @Schema(description = "조직")
+        @Schema(description = "Organization")
         private UserOrganization organization;
         
-        @Schema(description = "사용자")
+        @Schema(description = "User")
         private UserAccount userAccount;
         
-        @Schema(description = "목록 조회 권한")
+        @Schema(description = "List View Permission")
         private Boolean listPermission;
         
-        @Schema(description = "상세 조회 권한")
+        @Schema(description = "Detail View Permission")
         private Boolean viewPermission;
         
-        @Schema(description = "생성 권한")
+        @Schema(description = "Create Permission")
         private Boolean createPermission;
         
-        @Schema(description = "수정 권한")
+        @Schema(description = "Edit Permission")
         private Boolean editPermission;
         
-        @Schema(description = "삭제 권한")
+        @Schema(description = "Delete Permission")
         private Boolean deletePermission;
         
-        @Schema(description = "추가 기능 1 권한")
+        @Schema(description = "Extra Function 1 Permission")
         private Boolean extra1Permission;
         
-        @Schema(description = "추가 기능 2 권한")
+        @Schema(description = "Extra Function 2 Permission")
         private Boolean extra2Permission;
         
-        @Schema(description = "추가 기능 3 권한")
+        @Schema(description = "Extra Function 3 Permission")
         private Boolean extra3Permission;
         
-        @Schema(description = "추가 기능 4 권한")
+        @Schema(description = "Extra Function 4 Permission")
         private Boolean extra4Permission;
         
-        @Schema(description = "추가 기능 5 권한")
+        @Schema(description = "Extra Function 5 Permission")
         private Boolean extra5Permission;
         
-        @Schema(description = "설명")
+        @Schema(description = "Description")
         private String description;
         
-        @Schema(description = "등록자")
+        @Schema(description = "Created By")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Registered Date Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated By")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated Date Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
@@ -283,56 +283,56 @@ public class AuthRolePermissionDTOs {
         @Schema(description = "ID")
         private String id;
         
-        @Schema(description = "권한")
+        @Schema(description = "Permission")
         private AuthPermission permission;
         
-        @Schema(description = "권한 범위")
+        @Schema(description = "Permission Scope")
         private PermissionTargetType targetType;
         
-        @Schema(description = "역할")
+        @Schema(description = "Role")
         private UserRole role;
         
-        @Schema(description = "조직")
+        @Schema(description = "Organization")
         private UserOrganization organization;
         
-        @Schema(description = "사용자")
+        @Schema(description = "User")
         private UserAccount userAccount;
         
-        @Schema(description = "목록 조회 권한")
+        @Schema(description = "List View Permission")
         private Boolean listPermission;
         
-        @Schema(description = "상세 조회 권한")
+        @Schema(description = "Detail View Permission")
         private Boolean viewPermission;
         
-        @Schema(description = "생성 권한")
+        @Schema(description = "Create Permission")
         private Boolean createPermission;
         
-        @Schema(description = "수정 권한")
+        @Schema(description = "Edit Permission")
         private Boolean editPermission;
         
-        @Schema(description = "삭제 권한")
+        @Schema(description = "Delete Permission")
         private Boolean deletePermission;
         
-        @Schema(description = "추가 기능 1 권한")
+        @Schema(description = "Extra Function 1 Permission")
         private Boolean extra1Permission;
         
-        @Schema(description = "추가 기능 2 권한")
+        @Schema(description = "Extra Function 2 Permission")
         private Boolean extra2Permission;
         
-        @Schema(description = "추가 기능 3 권한")
+        @Schema(description = "Extra Function 3 Permission")
         private Boolean extra3Permission;
         
-        @Schema(description = "추가 기능 4 권한")
+        @Schema(description = "Extra Function 4 Permission")
         private Boolean extra4Permission;
         
-        @Schema(description = "추가 기능 5 권한")
+        @Schema(description = "Extra Function 5 Permission")
         private Boolean extra5Permission;
         
-        @Schema(description = "설명")
+        @Schema(description = "Description")
         private String description;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registered Date Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 } 

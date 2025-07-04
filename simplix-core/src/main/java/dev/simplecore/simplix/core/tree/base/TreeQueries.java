@@ -8,7 +8,7 @@ import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn.ColumnType;
 
 /**
- * 트리 구조를 가진 엔티티를 위한 데이터베이스별 쿼리 생성기
+ * Database-specific query generator for tree-structured entities
  */
 @Slf4j
 public class TreeQueries {
@@ -99,7 +99,7 @@ public class TreeQueries {
     }
 
     /**
-     * 추가 조회 조건으로 항목을 조회하는 쿼리를 생성
+     * Generates a query to retrieve items with additional search conditions
      */
     public String getLookupQuery(Map<String, String> parameters, String dbType) {
         String condition = buildLookupCondition(parameters, dbType);
@@ -108,7 +108,7 @@ public class TreeQueries {
     }
 
     /**
-     * 전체 계층 구조를 조회하는 쿼리를 생성
+     * Generates a query to retrieve the entire hierarchy
      */
     public String getHierarchyQuery(String dbType) {
         try {
@@ -182,7 +182,7 @@ public class TreeQueries {
     }
 
     /**
-     * 특정 항목의 모든 하위 항목을 조회하는 쿼리를 생성
+     * Generates a query to retrieve all descendants of a specific item
      */
     public String getDescendantsQuery(String dbType) {
         try {
@@ -261,7 +261,7 @@ public class TreeQueries {
     }
 
     /**
-     * 최상위 항목들을 조회하는 쿼리를 생성
+     * Generates a query to retrieve root items
      */
     public String getRootItemsQuery() {
         return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
@@ -269,7 +269,7 @@ public class TreeQueries {
     }
 
     /**
-     * 특정 항목의 직계 자식 항목들을 조회하는 쿼리를 생성
+     * Generates a query to retrieve direct children of a specific item
      */
     public String getDirectChildrenQuery() {
         return String.format("SELECT * FROM %s WHERE %s = ?1 %s",
@@ -277,7 +277,7 @@ public class TreeQueries {
     }
 
     /**
-     * 특정 항목의 모든 상위 항목을 조회하는 쿼리를 생성
+     * Generates a query to retrieve all ancestors of a specific item
      */
     public String getAncestorsQuery(String dbType) {
         try {
@@ -349,7 +349,7 @@ public class TreeQueries {
     }
 
     /**
-     * 특정 항목의 형제 항목들을 조회하는 쿼리를 생성
+     * Generates a query to retrieve siblings of a specific item
      */
     public String getSiblingsQuery() {
         return String.format(
@@ -362,7 +362,7 @@ public class TreeQueries {
     }
 
     /**
-     * 자식이 없는 말단 노드들을 조회하는 쿼리를 생성
+     * Generates a query to retrieve leaf nodes (items with no children)
      */
     public String getLeafNodesQuery() {
         return String.format(

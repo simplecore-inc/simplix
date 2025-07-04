@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Slf4j
 @Service
@@ -53,7 +53,7 @@ public class SystemMetricsService {
                 .totalMemory(totalMemory)
                 .usedMemory(usedMemory)
                 .memoryUsage(memoryUsage)
-                .timestamp(LocalDateTime.now())
+                .timestamp(OffsetDateTime.now())
                 .build();
     }
 } 

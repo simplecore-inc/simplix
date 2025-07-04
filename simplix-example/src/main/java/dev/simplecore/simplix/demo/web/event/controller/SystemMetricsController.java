@@ -11,7 +11,7 @@ import dev.simplecore.simplix.demo.web.event.receiver.SystemMetricsEventReceiver
 
 @RestController
 @RequestMapping("/api/system")
-@Tag(name = "event.system", description = "실시간 시스템 이벤트")
+@Tag(name = "event.system", description = "Real-time System Events")
 @RequiredArgsConstructor
 public class SystemMetricsController {
 

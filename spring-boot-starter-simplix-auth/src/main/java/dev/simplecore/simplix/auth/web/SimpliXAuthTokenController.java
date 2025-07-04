@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.auth.web;
 
-import dev.simplecore.simplix.auth.exception.InvalidTokenException;
+import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import com.nimbusds.jose.JOSEException;
@@ -116,9 +116,12 @@ public class SimpliXAuthTokenController {
         try {
             String refreshToken = request.getHeader("X-Refresh-Token");
             if (refreshToken == null) {
-                throw new InvalidTokenException(
+                throw new TokenValidationException(
                     messageSource.getMessage("token.refresh.header.missing", null,
                         "Missing refresh token header",
+                        LocaleContextHolder.getLocale()),
+                    messageSource.getMessage("token.refresh.header.missing.detail", null,
+                        "The X-Refresh-Token header must be provided",
                         LocaleContextHolder.getLocale())
                 );
             }
@@ -131,9 +134,12 @@ public class SimpliXAuthTokenController {
 
             return ResponseEntity.ok(tokens);
         } catch (Exception e) {
-            throw new InvalidTokenException(
+            throw new TokenValidationException(
                 messageSource.getMessage("token.refresh.invalid", null,
                     "Invalid refresh token",
+                    LocaleContextHolder.getLocale()),
+                messageSource.getMessage("token.refresh.invalid.detail", null,
+                    "The refresh token is not valid or has expired",
                     LocaleContextHolder.getLocale())
             );
         }

@@ -25,8 +25,8 @@ sourceSets {
 dependencies {
     api 'javax.persistence:javax.persistence-api'
     api 'javax.validation:validation-api'
-    api 'dev.simplecore.searchable:searchable-jpa-core:0.1.6'
-    api 'dev.simplecore.searchable:searchable-jpa-openapi:0.1.6'
+    api 'dev.simplecore.searchable:searchable-jpa-core:0.1.7-SNAPSHOT'
+    api 'dev.simplecore.searchable:searchable-jpa-openapi:0.1.7-SNAPSHOT'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter'
@@ -35,7 +35,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.modelmapper:modelmapper:3.2.0'
 
-    // OpenAPI/Swagger 의존성 추가
+    // OpenAPI/Swagger
     implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
     implementation 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
     implementation 'org.springdoc:springdoc-openapi-javadoc:1.7.0'

@@ -2,6 +2,7 @@ package dev.simplecore.simplix.demo.domain.common.user.entity;
 
 import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import dev.simplecore.simplix.demo.domain.common.user.enums.OrganizationType;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -18,37 +19,44 @@ import java.util.UUID;
 @Table(name = "user_organization")
 @org.hibernate.annotations.Table(
     appliesTo = "user_organization",
-    comment = "사용자 조직: 부서 또는 프로젝트 그룹과 같은 조직 단위 정보"
+    comment = "User Organization: Information about organizational units such as departments or project groups"
 )
+@I18nTitle({"ko=사용자 조직", "en=User Organization", "ja=ユーザー組織"})
 public class UserOrganization extends AuditingBaseEntity<String> {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(generator = "tsid")
+    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
     @Column(name="organization_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("조직 ID: 시스템에서 사용하는 고유 UUID")
+    @Comment("Organization ID: Unique UUID used in the system")
+    @I18nTitle({"ko=조직 ID", "en=Organization ID", "ja=組織ID"})
     private String organizationId;
 
     @Column(nullable = false, unique = true)
-    @Comment("조직명: 부서 또는 그룹의 이름")
+    @Comment("Organization Name: Name of the department or group")
+    @I18nTitle({"ko=조직명", "en=Organization Name", "ja=組織名"})
     private String name;  // 예: 개발팀, 인사부, 프로젝트A팀
 
     @Enumerated(EnumType.STRING)
     @Column(name = "org_type", nullable = false)
-    @Comment("조직유형: 조직의 종류 (DEPARTMENT: 부서, GROUP: 그룹)")
+    @Comment("Organization Type: Type of organization (DEPARTMENT: Department, GROUP: Group)")
+    @I18nTitle({"ko=조직 유형", "en=Organization Type", "ja=組織タイプ"})
     private OrganizationType orgType;  // DEPARTMENT or GROUP
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     @BatchSize(size = 50)
+    @I18nTitle({"ko=상위 조직", "en=Parent Organization", "ja=上位組織"})
     private UserOrganization parent;
 
     @Column(length = 500)
-    @Comment("조직설명: 조직의 상세 설명 및 용도")
+    @Comment("Organization Description: Detailed description and purpose of the organization")
+    @I18nTitle({"ko=조직 설명", "en=Organization Description", "ja=組織説明"})
     private String description;
 
     @Column(name = "item_order", nullable = false, unique = true)
-    @Comment("순서")
+    @Comment("Order")
+    @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
     private Integer itemOrder;
 
         
@@ -62,12 +70,5 @@ public class UserOrganization extends AuditingBaseEntity<String> {
     @Override
     public void setId(String id) {
         this.organizationId = id;
-    }
-
-    @PrePersist
-    public void generateId() {
-        if (this.organizationId == null) {
-            this.organizationId = UUID.randomUUID().toString();
-        }
     }
 }

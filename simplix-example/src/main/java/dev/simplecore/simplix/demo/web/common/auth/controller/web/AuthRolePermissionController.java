@@ -27,7 +27,7 @@ import org.springframework.ui.Model;
  */
 
 /**
- * 역할별 권한 설정
+ * Role-based Permission Settings
  *
  */
 @Controller
@@ -69,7 +69,7 @@ public class AuthRolePermissionController extends SimpliXBaseController<AuthRole
      */
     @GetMapping("/list")
     public String list(Model model) {
-        model.addAttribute("pageTitle", "역할별 권한 설정 관리");
+        model.addAttribute("pageTitle", "Role-based Permission Settings Management");
         addSelectData(model);
         return "auth-role-permission/list";
     }
@@ -84,7 +84,7 @@ public class AuthRolePermissionController extends SimpliXBaseController<AuthRole
      */
     @GetMapping("/detail/{id}")
     public String detail(@PathVariable String id, Model model) {
-        model.addAttribute("pageTitle", "역할별 권한 설정 상세 정보");
+        model.addAttribute("pageTitle", "Role-based Permission Settings Details");
         return service.findById(id, AuthRolePermissionDetailDTO.class)
             .map(item -> {
                 model.addAttribute("item", item);
@@ -122,7 +122,7 @@ public class AuthRolePermissionController extends SimpliXBaseController<AuthRole
             .orElseThrow(() -> new RuntimeException("AuthRolePermission not found"));
         
         model.addAttribute("item", item);
-        model.addAttribute("pageTitle", "역할별 권한 설정 수정");
+        model.addAttribute("pageTitle", "Edit Role-based Permission Settings");
         addSelectData(model);
         
         return "auth-role-permission/edit";
@@ -137,7 +137,7 @@ public class AuthRolePermissionController extends SimpliXBaseController<AuthRole
      */
     @GetMapping("/create")
     public String create(Model model) {
-        model.addAttribute("pageTitle", "역할별 권한 설정 등록");
+        model.addAttribute("pageTitle", "Register Role-based Permission Settings");
         addSelectData(model);
 
         return "auth-role-permission/edit";

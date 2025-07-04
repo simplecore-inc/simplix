@@ -51,11 +51,21 @@ public class StandardDateTimeConverter implements DateTimeConverter {
             "HHmm"                           // Short compact format
         });
         FORMATS.put(ZonedDateTime.class, new String[] {
-            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // ISO-8601 with timezone
-            "yyyy-MM-dd'T'HH:mm:ssXXX",      // ISO-8601 with timezone, no millis
-            "yyyy-MM-dd HH:mm:ss z",         // Human readable with timezone
-            "yyyy.MM.dd HH:mm:ss z",         // Dot format with timezone
-            "yyyy/MM/dd HH:mm:ss z"          // Slash format with timezone
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX'['VV']'",  // ISO-8601 with zone ID
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",         // ISO-8601 with offset
+            "yyyy-MM-dd'T'HH:mm:ssXXX",             // ISO-8601 with offset, no millis
+            "yyyy-MM-dd HH:mm:ss z",                // Human readable with timezone
+            "yyyy.MM.dd HH:mm:ss z",                // Dot format with timezone
+            "yyyy/MM/dd HH:mm:ss z"                 // Slash format with timezone
+        });
+        FORMATS.put(OffsetDateTime.class, new String[] {
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // ISO-8601 with offset
+            "yyyy-MM-dd'T'HH:mm:ssXXX",      // ISO-8601 with offset, no millis
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",    // ISO-8601 with short offset
+            "yyyy-MM-dd'T'HH:mm:ssX",        // ISO-8601 with short offset, no millis
+            "yyyy-MM-dd HH:mm:ss XXX",       // Human readable with offset
+            "yyyy.MM.dd HH:mm:ss XXX",       // Dot format with offset
+            "yyyy/MM/dd HH:mm:ss XXX"        // Slash format with offset
         });
         FORMATS.put(Instant.class, new String[] {
             "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",  // ISO-8601 with timezone
@@ -66,6 +76,7 @@ public class StandardDateTimeConverter implements DateTimeConverter {
     }
     
     private final ZoneId zoneId;
+    private final ZoneOffset zoneOffset;
 
     /**
      * Creates converter with system default timezone
@@ -81,6 +92,7 @@ public class StandardDateTimeConverter implements DateTimeConverter {
      */
     public StandardDateTimeConverter(ZoneId zoneId) {
         this.zoneId = zoneId;
+        this.zoneOffset = ZoneOffset.from(zoneId.getRules().getOffset(Instant.now()));
     }
 
     @Override
@@ -105,6 +117,8 @@ public class StandardDateTimeConverter implements DateTimeConverter {
                     return targetType.cast(LocalTime.parse(value, formatter));
                 } else if (targetType == ZonedDateTime.class) {
                     return targetType.cast(ZonedDateTime.parse(value, formatter).withZoneSameInstant(zoneId));
+                } else if (targetType == OffsetDateTime.class) {
+                    return targetType.cast(OffsetDateTime.parse(value, formatter).withOffsetSameInstant(zoneOffset));
                 } else if (targetType == Instant.class) {
                     return targetType.cast(Instant.from(formatter.parse(value)));
                 }
@@ -113,7 +127,92 @@ public class StandardDateTimeConverter implements DateTimeConverter {
             }
         }
 
-        throw new IllegalArgumentException("Unable to parse datetime value: " + value);
+        // Fallback: try to parse as other types and convert
+        try {
+            return convertFromFallback(value, targetType);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Unable to parse datetime value: " + value + " to " + targetType.getSimpleName(), e);
+        }
+    }
+
+    /**
+     * Fallback conversion method
+     */
+    private <T extends Temporal> T convertFromFallback(String value, Class<T> targetType) {
+        // Try parsing as different types and convert
+        try {
+            // Try ZonedDateTime first (most complete)
+            ZonedDateTime zdt = ZonedDateTime.parse(value);
+            return convertFromZonedDateTime(zdt, targetType);
+        } catch (Exception ignored) {}
+        
+        try {
+            // Try OffsetDateTime
+            OffsetDateTime odt = OffsetDateTime.parse(value);
+            return convertFromOffsetDateTime(odt, targetType);
+        } catch (Exception ignored) {}
+        
+        try {
+            // Try LocalDateTime with default zone
+            LocalDateTime ldt = LocalDateTime.parse(value);
+            return convertFromLocalDateTime(ldt, targetType);
+        } catch (Exception ignored) {}
+        
+        throw new IllegalArgumentException("Unable to parse: " + value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Temporal> T convertFromZonedDateTime(ZonedDateTime zdt, Class<T> targetType) {
+        if (targetType == ZonedDateTime.class) {
+            return (T) zdt.withZoneSameInstant(zoneId);
+        } else if (targetType == OffsetDateTime.class) {
+            return (T) zdt.toOffsetDateTime().withOffsetSameInstant(zoneOffset);
+        } else if (targetType == LocalDateTime.class) {
+            return (T) zdt.withZoneSameInstant(zoneId).toLocalDateTime();
+        } else if (targetType == LocalDate.class) {
+            return (T) zdt.withZoneSameInstant(zoneId).toLocalDate();
+        } else if (targetType == LocalTime.class) {
+            return (T) zdt.withZoneSameInstant(zoneId).toLocalTime();
+        } else if (targetType == Instant.class) {
+            return (T) zdt.toInstant();
+        }
+        throw new IllegalArgumentException("Unsupported conversion to: " + targetType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Temporal> T convertFromOffsetDateTime(OffsetDateTime odt, Class<T> targetType) {
+        if (targetType == OffsetDateTime.class) {
+            return (T) odt.withOffsetSameInstant(zoneOffset);
+        } else if (targetType == ZonedDateTime.class) {
+            return (T) odt.atZoneSameInstant(zoneId);
+        } else if (targetType == LocalDateTime.class) {
+            return (T) odt.withOffsetSameInstant(zoneOffset).toLocalDateTime();
+        } else if (targetType == LocalDate.class) {
+            return (T) odt.withOffsetSameInstant(zoneOffset).toLocalDate();
+        } else if (targetType == LocalTime.class) {
+            return (T) odt.withOffsetSameInstant(zoneOffset).toLocalTime();
+        } else if (targetType == Instant.class) {
+            return (T) odt.toInstant();
+        }
+        throw new IllegalArgumentException("Unsupported conversion to: " + targetType);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Temporal> T convertFromLocalDateTime(LocalDateTime ldt, Class<T> targetType) {
+        if (targetType == LocalDateTime.class) {
+            return (T) ldt;
+        } else if (targetType == ZonedDateTime.class) {
+            return (T) ldt.atZone(zoneId);
+        } else if (targetType == OffsetDateTime.class) {
+            return (T) ldt.atOffset(zoneOffset);
+        } else if (targetType == LocalDate.class) {
+            return (T) ldt.toLocalDate();
+        } else if (targetType == LocalTime.class) {
+            return (T) ldt.toLocalTime();
+        } else if (targetType == Instant.class) {
+            return (T) ldt.atZone(zoneId).toInstant();
+        }
+        throw new IllegalArgumentException("Unsupported conversion to: " + targetType);
     }
 
     @Override
@@ -127,6 +226,9 @@ public class StandardDateTimeConverter implements DateTimeConverter {
             } else if (value instanceof ZonedDateTime) {
                 return DateTimeFormatter.ofPattern(ISO_FORMAT)
                     .format(((ZonedDateTime) value).withZoneSameInstant(zoneId));
+            } else if (value instanceof OffsetDateTime) {
+                return DateTimeFormatter.ofPattern(ISO_FORMAT)
+                    .format(((OffsetDateTime) value).withOffsetSameInstant(zoneOffset));
             } else if (value instanceof Instant) {
                 return DateTimeFormatter.ofPattern(ISO_FORMAT)
                     .format(((Instant) value).atZone(zoneId));

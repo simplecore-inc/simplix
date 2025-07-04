@@ -3,7 +3,7 @@ package dev.simplecore.simplix.event.model;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * Represents a message event in the SimpliX Event system.
@@ -21,7 +21,7 @@ public class SimpliXMessageEvent {
     private String eventId = UUID.randomUUID().toString();
     
     /** Timestamp when the event was created */
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private OffsetDateTime timestamp = OffsetDateTime.now();
     
     /** Source of the event */
     private String source;
@@ -68,7 +68,7 @@ public class SimpliXMessageEvent {
         return eventId;
     }
 
-    public LocalDateTime getTimestamp() {
+    public OffsetDateTime getTimestamp() {
         return timestamp;
     }
 

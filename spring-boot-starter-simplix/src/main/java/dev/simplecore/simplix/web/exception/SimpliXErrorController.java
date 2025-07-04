@@ -6,12 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.autoconfigure.web.servlet.error.AbstractErrorController;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
@@ -28,20 +33,25 @@ import java.util.Set;
 @RequestMapping("${server.error.path:/error}")
 public class SimpliXErrorController extends AbstractErrorController {
 
+    private static final Logger log = LoggerFactory.getLogger(SimpliXErrorController.class);
+
     private final SimpliXExceptionHandler<SimpliXApiResponse<Object>> exceptionHandler;
     private final ObjectMapper objectMapper;
     private final ServerProperties serverProperties;
+    private final MessageSource messageSource;
 
     public SimpliXErrorController(
         ErrorAttributes errorAttributes,
         SimpliXExceptionHandler<SimpliXApiResponse<Object>> exceptionHandler,
         ObjectMapper objectMapper,
-        ServerProperties serverProperties
+        ServerProperties serverProperties,
+        MessageSource messageSource
     ) {
         super(errorAttributes);
         this.exceptionHandler = exceptionHandler;
         this.objectMapper = objectMapper;
         this.serverProperties = serverProperties;
+        this.messageSource = messageSource;
     }
 
     @RequestMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -145,25 +155,52 @@ public class SimpliXErrorController extends AbstractErrorController {
             String requestUri = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
             String errorServletName = (String) request.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
             
-            StringBuilder detail = new StringBuilder();
-            if (requestUri != null) {
-                detail.append("Failed URL: ").append(requestUri);
-            }
-            if (errorServletName != null) {
-                detail.append(detail.length() > 0 ? ", " : "");
+            // Handle specific HTTP status codes
+            String errorCode;
+            String message;
+            String detail = null;
+            
+            if (statusCode == 403) {
+                // Access Denied / Forbidden
+                errorCode = "AUTHZ_INSUFFICIENT_PERMISSIONS";
+                message = messageSource.getMessage("error.insufficientPermissions", null, LocaleContextHolder.getLocale());
+                detail = messageSource.getMessage("error.insufficientPermissions.detail", null, LocaleContextHolder.getLocale());
+            } else if (statusCode == 401) {
+                // Unauthorized
+                errorCode = "AUTH_AUTHENTICATION_REQUIRED"; 
+                message = messageSource.getMessage("error.authenticationFailed", null, LocaleContextHolder.getLocale());
+                detail = messageSource.getMessage("error.authenticationFailed.detail", null, LocaleContextHolder.getLocale());
+            } else if (statusCode == 404) {
+                // Not Found
+                errorCode = "GEN_NOT_FOUND";
+                message = messageSource.getMessage("error.notFound", null, LocaleContextHolder.getLocale());
+                if (requestUri != null) {
+                    detail = messageSource.getMessage("error.notFound.detail", new Object[]{requestUri}, LocaleContextHolder.getLocale());
+                }
+            } else {
+                // Other errors
+                errorCode = "GEN_INTERNAL_SERVER_ERROR";
+                message = errorMessage != null ? errorMessage : messageSource.getMessage("error.unknownError", null, LocaleContextHolder.getLocale());
+                if (requestUri != null) {
+                    detail = messageSource.getMessage("error.unknownError.detail", new Object[]{requestUri}, LocaleContextHolder.getLocale());
+                }
             }
             
-            errorResponse = SimpliXApiResponse.error(
-                errorMessage != null ? errorMessage : "Unknown error occurred",
-                "UnknownError",
-                detail.length() > 0 ? detail.toString() : null
-            );
+            errorResponse = SimpliXApiResponse.error(message, errorCode, detail);
         }
         
         // Set response status and content type
         response.setStatus(statusCode);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
+        
+        // Log error with trace ID
+        if (errorResponse.getTraceId() != null) {
+            MDC.put("traceId", errorResponse.getTraceId());
+            log.error("Error response sent - TraceId: {}, Status: {}, Path: {}", 
+                errorResponse.getTraceId(), statusCode, request.getRequestURI());
+        }
+        
         objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 } 

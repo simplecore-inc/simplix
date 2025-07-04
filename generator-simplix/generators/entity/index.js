@@ -374,7 +374,7 @@ export default class extends Generator {
 
       const typeName = field.type.trim();
 
-      if (['LocalDateTime', 'LocalDate', 'LocalTime', 'ZonedDateTime', 'Instant'].includes(typeName)) {
+      if (['LocalDateTime', 'LocalDate', 'LocalTime', 'ZonedDateTime', 'OffsetDateTime', 'Instant'].includes(typeName)) {
         neededImports.add(`java.time.${typeName}`);
       } else if (typeName === 'Date') {
         neededImports.add('java.util.Date');

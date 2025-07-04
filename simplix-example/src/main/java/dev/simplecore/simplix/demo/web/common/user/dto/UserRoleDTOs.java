@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
@@ -31,25 +31,25 @@ public class UserRoleDTOs {
     @Setter
     public static class UserRoleSearchDTO {
         
-        @Schema(description = "역할 ID")
+        @Schema(description = "Role ID")
         @SearchableField(operators = {CONTAINS, EQUALS})
         private String id;
         
-        @Schema(description = "역할명")
+        @Schema(description = "Role Name")
         @SearchableField(operators = {CONTAINS, EQUALS}, sortable = true)
         private String name;
         
-        @Schema(description = "역할코드")
+        @Schema(description = "Role Code")
         @SearchableField(operators = {EQUALS})
         private String role;
         
-        @Schema(description = "역할설명")
+        @Schema(description = "Role Description")
         @SearchableField(operators = {CONTAINS})
         private String description;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration Date/Time")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -58,16 +58,16 @@ public class UserRoleDTOs {
 
     @Data
     public static class UserRoleCreateDTO {
-        @Schema(description = "역할명")
+        @Schema(description = "Role Name")
         private String name;
         
-        @Schema(description = "역할코드")
+        @Schema(description = "Role Code")
         private String role;
         
-        @Schema(description = "역할설명")
+        @Schema(description = "Role Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
     }
@@ -76,26 +76,26 @@ public class UserRoleDTOs {
     public static class UserRoleUpdateDTO {
         
         @Schema(description = "UserRole ID")
-        @NotBlank(message = "ID는 필수 입력값입니다")
+        @NotBlank(message = "ID is a required input value")
         private String id;
         
-        @Schema(description = "역할명")
+        @Schema(description = "Role Name")
         private String name;
         
-        @Schema(description = "역할코드")
+        @Schema(description = "Role Code")
         private String role;
         
-        @Schema(description = "역할설명")
+        @Schema(description = "Role Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
     }
 
     @Data
     public static class UserRoleBatchUpdateDTO {
-        @Schema(description = "UserRole ID 목록")
+        @Schema(description = "UserRole ID List")
         private Set<String> ids;
         
     }
@@ -107,56 +107,56 @@ public class UserRoleDTOs {
     @Data
     public static class UserRoleDetailDTO {
         
-        @Schema(description = "역할 ID")
+        @Schema(description = "Role ID")
         private String id;
         
-        @Schema(description = "역할명")
+        @Schema(description = "Role Name")
         private String name;
         
-        @Schema(description = "역할코드")
+        @Schema(description = "Role Code")
         private String role;
         
-        @Schema(description = "역할설명")
+        @Schema(description = "Role Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
-        @Schema(description = "등록자")
+        @Schema(description = "Registered By")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration Date/Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Modified By")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Modification Date/Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
     public static class UserRoleListDTO {
         
-        @Schema(description = "역할 ID")
+        @Schema(description = "Role ID")
         private String id;
         
-        @Schema(description = "역할명")
+        @Schema(description = "Role Name")
         private String name;
         
-        @Schema(description = "역할코드")
+        @Schema(description = "Role Code")
         private String role;
         
-        @Schema(description = "역할설명")
+        @Schema(description = "Role Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration Date/Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 } 

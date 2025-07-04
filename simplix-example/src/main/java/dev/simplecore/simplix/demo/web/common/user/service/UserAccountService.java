@@ -150,10 +150,10 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
     }
 
     /**
-     * Excel 내보내기를 위해 UserAccountListDTO를 UserAccountListExcel로 변환하여 반환
+     * Converts UserAccountListDTO to UserAccountListExcel for Excel export
      *
      * @param searchCondition Search conditions for filtering UserAccount entities
-     * @return UserAccountListDTO를 UserAccountListExcel로 변환한 목록
+     * @return List of UserAccountListExcel converted from UserAccountListDTO
      */
     public List<UserAccountListExcel> searchForExcel(SearchCondition<UserAccountSearchDTO> searchCondition) {
         Page<UserAccount> page = findAllWithSearch(searchCondition);

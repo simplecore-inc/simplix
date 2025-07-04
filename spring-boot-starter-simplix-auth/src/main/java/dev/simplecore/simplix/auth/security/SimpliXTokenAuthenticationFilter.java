@@ -95,7 +95,7 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 
-                throw new TokenValidationException(e.getMessage(), e.getDetail());
+                throw new TokenValidationException(e.getMessage(), e.getDetail() != null ? e.getDetail().toString() : null);
             } catch (Exception e) {
                 logger.error("Authentication failed", e);
                 SecurityContextHolder.clearContext();

@@ -3,6 +3,8 @@ package dev.simplecore.simplix.auth.autoconfigure;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter;
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
+import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
+import dev.simplecore.simplix.auth.security.SimpliXAccessDeniedHandler;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -38,15 +40,21 @@ public class SimpliXAuthSecurityConfiguration {
     private final SimpliXAuthProperties properties;
     private final SimpliXUserDetailsService userDetailsService;
     private final SimpliXTokenAuthenticationFilter tokenAuthenticationFilter;
+    private final SimpliXAuthenticationEntryPoint authenticationEntryPoint;
+    private final SimpliXAccessDeniedHandler accessDeniedHandler;
 
     public SimpliXAuthSecurityConfiguration(
             SimpliXAuthProperties properties,
             SimpliXUserDetailsService userDetailsService,
             SimpliXTokenAuthenticationFilter tokenAuthenticationFilter,
+            SimpliXAuthenticationEntryPoint authenticationEntryPoint,
+            SimpliXAccessDeniedHandler accessDeniedHandler,
             ServerProperties serverProperties) {
         this.properties = properties;
         this.userDetailsService = userDetailsService;
         this.tokenAuthenticationFilter = tokenAuthenticationFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -96,7 +104,10 @@ public class SimpliXAuthSecurityConfiguration {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()));
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler));
         
         return http.build();
     }

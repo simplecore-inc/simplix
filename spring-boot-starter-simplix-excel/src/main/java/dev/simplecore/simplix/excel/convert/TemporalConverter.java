@@ -22,7 +22,15 @@ import java.util.concurrent.ConcurrentMap;
 @Slf4j
 public class TemporalConverter implements Converter<Object> {
     
-    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    private static ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    
+    /**
+     * Set the default zone for temporal conversions.
+     * This should be called during application startup to use application timezone.
+     */
+    public static void setDefaultZone(ZoneId zoneId) {
+        DEFAULT_ZONE = zoneId != null ? zoneId : ZoneId.systemDefault();
+    }
     private static final ConcurrentMap<String, DateTimeFormatter> FORMATTERS = new ConcurrentHashMap<>();
     private static final Map<Class<?>, List<String>> FORMAT_PATTERNS = new HashMap<>();
     

@@ -27,7 +27,15 @@ public final class TypeConverter {
     private static final TemporalConverter TEMPORAL_CONVERTER = new TemporalConverter();
     
     private static final Map<String, DecimalFormat> NUMBER_FORMATTERS = new ConcurrentHashMap<>();
-    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    private static ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    
+    /**
+     * Set the default zone for type conversions.
+     * This should be called during application startup to use application timezone.
+     */
+    public static void setDefaultZone(ZoneId zoneId) {
+        DEFAULT_ZONE = zoneId != null ? zoneId : ZoneId.systemDefault();
+    }
     
     // Common patterns to try when converting date formats
     private static final List<String> COMMON_DATE_PATTERNS = Arrays.asList(

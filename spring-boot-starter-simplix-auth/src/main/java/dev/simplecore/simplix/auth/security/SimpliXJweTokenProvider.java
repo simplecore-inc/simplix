@@ -1,8 +1,8 @@
 package dev.simplecore.simplix.auth.security;
 
-import dev.simplecore.simplix.auth.exception.InvalidTokenException;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
+import dev.simplecore.simplix.core.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
@@ -131,9 +131,13 @@ public class SimpliXJweTokenProvider {
 
             // Token validation
             if (!validateToken(refreshToken, remoteAddr, userAgent)) {
-                throw new InvalidTokenException(
+                throw new TokenValidationException(
                     messageSource.getMessage("token.refresh.invalid", null,
-                        "Invalid refresh token", LocaleContextHolder.getLocale()));
+                        "Invalid refresh token", LocaleContextHolder.getLocale()),
+                    messageSource.getMessage("token.refresh.invalid.detail", null,
+                        "The refresh token is not valid or has been tampered with",
+                        LocaleContextHolder.getLocale())
+                );
             }
 
             // Generate new token pair
@@ -155,10 +159,11 @@ public class SimpliXJweTokenProvider {
             return tokens;
         } catch (Exception ex) {
             SecurityContextHolder.clearContext();
-            throw new InvalidTokenException(
+            throw new TokenValidationException(
                 messageSource.getMessage("token.refresh.failed", null,
                     "Failed to refresh tokens", LocaleContextHolder.getLocale()),
-                ex);
+                ex.getMessage()
+            );
         }
     }
 
@@ -176,6 +181,7 @@ public class SimpliXJweTokenProvider {
             Date expirationTime = claims.getExpirationTime();
             if (expirationTime != null && expirationTime.before(new Date())) {
                 throw new TokenValidationException(
+                    ErrorCode.AUTH_TOKEN_EXPIRED,
                     messageSource.getMessage("token.expired", null, 
                         "Token is expired",
                         LocaleContextHolder.getLocale()),

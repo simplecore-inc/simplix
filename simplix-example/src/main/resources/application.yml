@@ -50,11 +50,18 @@ server:
         secure: false
         path: /
         same-site: lax
+  error:
+    include-exception: false
+    include-stacktrace: never
+    include-message: always
+    whitelabel:
+      enabled: false
       
 logging:
   level:
     root: INFO
     dev.simplecore.simplix: DEBUG
+    dev.simplecore.simplix.web.config.SwaggerI18nCustomizer: DEBUG
   charset:
     console: UTF-8
     file: UTF-8
@@ -99,7 +106,14 @@ management:
 ########################################
 
 simplix:
-
+  date-time:
+    # Use Asia/Seoul as default timezone for the application
+    # This will be used when timezone information is not available
+    default-timezone: Asia/Seoul
+    # Store all datetime values in UTC in the database
+    use-utc-for-database: true
+    # Normalize timezone-less datetime values to application timezone
+    normalize-timezone: true
   event:
     mq-type: in-memory
   
@@ -119,26 +133,26 @@ simplix:
       enable-xss-protection: true
       # enable-hsts: false  # default: false
       # require-https: false  # default: false
-      # hsts-max-age-seconds: 31536000  # default: 31536000 (1년)
+      # hsts-max-age-seconds: 31536000  # default: 31536000 (1 year)
       csrf-ignore-patterns: ["/api/token/**", "/h2-console/**"]
     cors:
-      # 허용할 출처 설정
+      # Allowed origins
       allowed-origins:  # default: http://localhost:{server.port}
         - http://localhost:3000
         - http://localhost:4200
-      # allowed-methods: # default: "*" (모든 메서드 허용)
+      # allowed-methods: # default: "*" (all methods allowed)
       #   - GET
       #   - POST
       #   - PUT
       #   - PATCH
       #   - DELETE
       #   - OPTIONS
-      # allowed-headers: "*"  # default: "*" (모든 헤더 허용)
+      # allowed-headers: "*"  # default: "*" (all headers allowed)
       exposed-headers:  # default: "Authorization"
         - Authorization
         - X-Custom-Header
-      # allow-credentials: true  # default: true (자격 증명(쿠키) 허용)
-      # max-age: 3600  # default: 3600 (1시간, preflight 요청 캐시 시간)
+      # allow-credentials: true  # default: true (allow credentials/cookies)
+      # max-age: 3600  # default: 3600 (1 hour, preflight cache)
     jwe:
       algorithm: RSA-OAEP-256
       encryption-method: A256GCM

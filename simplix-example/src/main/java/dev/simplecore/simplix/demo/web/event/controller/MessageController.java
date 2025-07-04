@@ -11,12 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/messages")
-@Tag(name = "event.message", description = "실시간 이벤트 처리")
+@Tag(name = "event.message", description = "Real-time Event Processing")
 @RequiredArgsConstructor
 public class MessageController {
 
@@ -26,7 +26,7 @@ public class MessageController {
 
     @PostMapping(path = "/publish")
     public ResponseEntity<SampleMessage> publishMessage(@RequestBody SampleMessage sampleMessage) {
-        sampleMessage.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        sampleMessage.setTimestamp(OffsetDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         
         SimpliXMessageEvent messageEvent = new SimpliXMessageEvent(sampleMessage, TOPIC);
         eventGateway.sendEvent(messageEvent);

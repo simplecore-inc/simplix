@@ -17,9 +17,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -372,7 +370,11 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
                 ExcelColumn column = field.getAnnotation(ExcelColumn.class);
                 String cellValue = formatValue(value, column);
                 
-                if (value != null && quoteStrings && (value instanceof String || value instanceof LocalDate)) {
+                if (value != null && quoteStrings && (value instanceof String || 
+                    value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime ||
+                    value instanceof OffsetDateTime || value instanceof OffsetTime || value instanceof ZonedDateTime ||
+                    value instanceof Instant || value instanceof Year || value instanceof YearMonth || 
+                    value instanceof MonthDay || value instanceof Duration || value instanceof Period)) {
                     cellValue = "\"" + cellValue + "\"";
                 }
                 
@@ -509,6 +511,26 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
             return ((LocalDate) value).format(DateTimeFormatter.ofPattern(dateFormat));
         } else if (value instanceof LocalDateTime) {
             return ((LocalDateTime) value).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } else if (value instanceof LocalTime) {
+            return ((LocalTime) value).format(DateTimeFormatter.ISO_LOCAL_TIME);
+        } else if (value instanceof OffsetDateTime) {
+            return ((OffsetDateTime) value).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        } else if (value instanceof OffsetTime) {
+            return ((OffsetTime) value).format(DateTimeFormatter.ISO_OFFSET_TIME);
+        } else if (value instanceof ZonedDateTime) {
+            return ((ZonedDateTime) value).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        } else if (value instanceof Instant) {
+            return ((Instant) value).toString();
+        } else if (value instanceof Year) {
+            return ((Year) value).toString();
+        } else if (value instanceof YearMonth) {
+            return ((YearMonth) value).toString();
+        } else if (value instanceof MonthDay) {
+            return ((MonthDay) value).toString();
+        } else if (value instanceof Duration) {
+            return ((Duration) value).toString();
+        } else if (value instanceof Period) {
+            return ((Period) value).toString();
         } else if (value instanceof Number) {
             return new DecimalFormat(numberFormat).format(value);
         } else if (value instanceof Boolean) {

@@ -82,19 +82,19 @@ public class <%= entityName %>DTOs {
         
         //----------
 
-        @Schema(description = "등록자")
+        @Schema(description = "Created by")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Created at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated by")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     //----------------------------------
@@ -144,12 +144,12 @@ public class <%= entityName %>DTOs {
         <% if (hasEmbeddedId) { 
             const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
         @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %>")
-        @NotNull(message = "ID는 필수 입력값입니다")
+        @NotNull(message = "ID is required")
         private <%= embeddedIdType %> <%= ymlConfig.idField %>;
         <% } else { 
             const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
         @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %>")
-        @NotBlank(message = "ID는 필수 입력값입니다")
+        @NotBlank(message = "ID is required")
         private <%= idFieldInfo?.type || idType %> <%= ymlConfig.idField %>;
         <% } %>
         <% for (let field of entityFields) { 
@@ -188,11 +188,11 @@ public class <%= entityName %>DTOs {
     public static class <%= entityName %>BatchUpdateDTO {
         <% if (hasEmbeddedId) { 
             const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
-        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> 목록")
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> list")
         private Set<<%= embeddedIdType %>> <%= ymlConfig.idField %>s;
         <% } else { 
             const idFieldInfo = entitySearchFields.find(f => f.name === ymlConfig.idField); %>
-        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> 목록")
+        @Schema(description = "<%= idFieldInfo?.comment || `${entityName} ID` %> list")
         private Set<<%= idFieldInfo?.type || idType %>> <%= ymlConfig.idField %>s;
         <% } %>
         <% for (let field of entityFields) { 
@@ -249,19 +249,19 @@ public class <%= entityName %>DTOs {
         
         //----------
 
-        @Schema(description = "등록자")
+        @Schema(description = "Created by")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Created at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated by")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
@@ -279,18 +279,18 @@ public class <%= entityName %>DTOs {
         
         //----------
         
-        @Schema(description = "등록자")
+        @Schema(description = "Created by")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Created at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated by")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated at")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 } 

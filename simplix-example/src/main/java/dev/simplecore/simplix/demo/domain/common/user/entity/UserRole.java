@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 
 import org.hibernate.annotations.Comment;
 
@@ -17,31 +18,37 @@ import java.util.UUID;
 @Table(name = "user_role")
 @org.hibernate.annotations.Table(
     appliesTo = "user_role",
-    comment = "사용자 역할: 권한 그룹 또는 직책 정보"
+    comment = "User Role: Group of permissions or job title information"
 )
+@I18nTitle({"ko=사용자 역할", "en=User Role", "ja=ユーザー役割"})
 public class UserRole extends AuditingBaseEntity<String> {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(generator = "tsid")
+    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
     @Column(name="role_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("역할 ID: 시스템에서 사용하는 고유 UUID")
+    @Comment("Role ID: Unique UUID used in the system")
+    @I18nTitle({"ko=역할 ID", "en=Role ID", "ja=役割ID"})
     private String roleId;
 
     @Column(nullable = false, unique = true)
-    @Comment("역할명: 시스템에서 사용하는 고유 역할명")
+    @Comment("Role Name: Unique role name used in the system")
+    @I18nTitle({"ko=역할명", "en=Role Name", "ja=役割名"})
     private String name;  // 예: 팀장, 프로젝트 매니저
 
     @Column(nullable = false, unique = true)
-    @Comment("역할코드: 시스템에서 사용하는 고유 역할 코드명")
+    @Comment("Role Code: Unique role code name used in the system")
+    @I18nTitle({"ko=역할 코드", "en=Role Code", "ja=役割コード"})
     private String role;  // 예: ROLE_ADMIN, ROLE_MANAGER, ROLE_USER, ROLE_GUEST, ROLE_TEAM_LEAD, ROLE_PM, ...
 
     @Column(length = 500)
-    @Comment("역할설명: 역할에 대한 상세 설명 및 용도")
+    @Comment("Role Description: Detailed description and purpose of the role")
+    @I18nTitle({"ko=역할 설명", "en=Role Description", "ja=役割説明"})
     private String description;
 
     @Column(name = "item_order", nullable = false, unique = true)
-    @Comment("순서")
+    @Comment("Order")
+    @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
     private Integer itemOrder;
 
         
@@ -55,12 +62,5 @@ public class UserRole extends AuditingBaseEntity<String> {
     @Override
     public void setId(String id) {
         this.roleId = id;
-    }
-
-    @PrePersist
-    public void generateId() {
-        if (this.roleId == null) {
-            this.roleId = UUID.randomUUID().toString();
-        }
     }
 }

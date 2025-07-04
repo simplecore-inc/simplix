@@ -36,17 +36,10 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
     }
     
     private ZoneId getZoneId() {
-        // 1. Check timezone from JVM system property
-        String userTimezone = System.getProperty("user.timezone");
-        if (userTimezone != null && !userTimezone.isEmpty()) {
-            try {
-                return ZoneId.of(userTimezone);
-            } catch (Exception e) {
-                // If timezone format is invalid, proceed to next priority
-            }
-        }
-
-        // 2. Check timezone from Spring configuration
+        // Use centralized timezone resolution from SimpliXDateTimeAutoConfiguration
+        // This ensures consistent timezone handling across all components
+        
+        // 1. Check timezone from Spring configuration (highest priority for Jackson)
         String springTimezone = environment.getProperty("spring.jackson.time-zone");
         if (springTimezone != null && !springTimezone.isEmpty()) {
             try {
@@ -56,7 +49,27 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
             }
         }
 
-        // 3. Use system default timezone
+        // 2. Check timezone from SimpliX configuration
+        String simplixTimezone = environment.getProperty("simplix.date-time.default-timezone");
+        if (simplixTimezone != null && !simplixTimezone.isEmpty()) {
+            try {
+                return ZoneId.of(simplixTimezone);
+            } catch (Exception e) {
+                // If timezone format is invalid, proceed to next priority
+            }
+        }
+
+        // 3. Check timezone from JVM system property
+        String userTimezone = System.getProperty("user.timezone");
+        if (userTimezone != null && !userTimezone.isEmpty()) {
+            try {
+                return ZoneId.of(userTimezone);
+            } catch (Exception e) {
+                // If timezone format is invalid, proceed to next priority
+            }
+        }
+
+        // 4. Use system default timezone
         return ZoneId.systemDefault();
     }
 
@@ -83,11 +96,13 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
         dateTimeModule.addSerializer(LocalDateTime.class, new SimpliXDateTimeSerializer(zoneId));
         dateTimeModule.addSerializer(LocalDate.class, new SimpliXDateTimeSerializer(zoneId));
         dateTimeModule.addSerializer(ZonedDateTime.class, new SimpliXDateTimeSerializer(zoneId));
+        dateTimeModule.addSerializer(OffsetDateTime.class, new SimpliXDateTimeSerializer(zoneId));
         dateTimeModule.addSerializer(Instant.class, new SimpliXDateTimeSerializer(zoneId));
         
         dateTimeModule.addDeserializer(LocalDateTime.class, new SimpliXDateTimeDeserializer<LocalDateTime>(zoneId, LocalDateTime.class));
         dateTimeModule.addDeserializer(LocalDate.class, new SimpliXDateTimeDeserializer<LocalDate>(zoneId, LocalDate.class));
         dateTimeModule.addDeserializer(ZonedDateTime.class, new SimpliXDateTimeDeserializer<ZonedDateTime>(zoneId, ZonedDateTime.class));
+        dateTimeModule.addDeserializer(OffsetDateTime.class, new SimpliXDateTimeDeserializer<OffsetDateTime>(zoneId, OffsetDateTime.class));
         dateTimeModule.addDeserializer(Instant.class, new SimpliXDateTimeDeserializer<Instant>(zoneId, Instant.class));
 
         objectMapper.registerModule(dateTimeModule);

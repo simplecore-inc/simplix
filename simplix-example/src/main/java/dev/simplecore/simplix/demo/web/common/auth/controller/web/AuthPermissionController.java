@@ -18,7 +18,7 @@ import org.springframework.ui.Model;
  */
 
 /**
- * 권한 설정
+ * Permission Settings
  *
  */
 @Controller
@@ -48,7 +48,7 @@ public class AuthPermissionController extends SimpliXBaseController<AuthPermissi
      */
     @GetMapping("/list")
     public String list(Model model) {
-        model.addAttribute("pageTitle", "권한 설정 관리");
+        model.addAttribute("pageTitle", "Permission Settings Management");
         addSelectData(model);
         return "auth/permission/list";
     }
@@ -63,7 +63,7 @@ public class AuthPermissionController extends SimpliXBaseController<AuthPermissi
      */
     @GetMapping("/detail/{id}")
     public String detail(@PathVariable String id, Model model) {
-        model.addAttribute("pageTitle", "권한 설정 상세 정보");
+        model.addAttribute("pageTitle", "Permission Settings Details");
         return service.findById(id, AuthPermissionDetailDTO.class)
             .map(item -> {
                 model.addAttribute("item", item);
@@ -101,7 +101,7 @@ public class AuthPermissionController extends SimpliXBaseController<AuthPermissi
             .orElseThrow(() -> new RuntimeException("AuthPermission not found"));
         
         model.addAttribute("item", item);
-        model.addAttribute("pageTitle", "권한 설정 수정");
+        model.addAttribute("pageTitle", "Edit Permission Settings");
         addSelectData(model);
         
         return "auth/permission/edit";
@@ -116,7 +116,7 @@ public class AuthPermissionController extends SimpliXBaseController<AuthPermissi
      */
     @GetMapping("/create")
     public String create(Model model) {
-        model.addAttribute("pageTitle", "권한 설정 등록");
+        model.addAttribute("pageTitle", "Register Permission Settings");
         addSelectData(model);
 
         return "auth/permission/edit";

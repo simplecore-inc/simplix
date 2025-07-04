@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -466,6 +463,45 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             CellStyle dateTimeStyle = cell.getSheet().getWorkbook().createCellStyle();
             dateTimeStyle.setDataFormat((short) 22); // Excel date/time format: mm/dd/yyyy hh:mm
             cell.setCellStyle(dateTimeStyle);
+        } else if (value instanceof LocalTime) {
+            LocalTime localTime = (LocalTime) value;
+            cell.setCellValue(localTime.toString());
+        } else if (value instanceof OffsetDateTime) {
+            OffsetDateTime offsetDateTime = (OffsetDateTime) value;
+            cell.setCellValue(offsetDateTime.toLocalDateTime());
+            CellStyle dateTimeStyle = cell.getSheet().getWorkbook().createCellStyle();
+            dateTimeStyle.setDataFormat((short) 22); // Excel date/time format: mm/dd/yyyy hh:mm
+            cell.setCellStyle(dateTimeStyle);
+        } else if (value instanceof OffsetTime) {
+            OffsetTime offsetTime = (OffsetTime) value;
+            cell.setCellValue(offsetTime.toString());
+        } else if (value instanceof ZonedDateTime) {
+            ZonedDateTime zonedDateTime = (ZonedDateTime) value;
+            cell.setCellValue(zonedDateTime.toLocalDateTime());
+            CellStyle dateTimeStyle = cell.getSheet().getWorkbook().createCellStyle();
+            dateTimeStyle.setDataFormat((short) 22); // Excel date/time format: mm/dd/yyyy hh:mm
+            cell.setCellStyle(dateTimeStyle);
+        } else if (value instanceof Instant) {
+            Instant instant = (Instant) value;
+            cell.setCellValue(Date.from(instant));
+            CellStyle dateTimeStyle = cell.getSheet().getWorkbook().createCellStyle();
+            dateTimeStyle.setDataFormat((short) 22); // Excel date/time format: mm/dd/yyyy hh:mm
+            cell.setCellStyle(dateTimeStyle);
+        } else if (value instanceof Year) {
+            Year year = (Year) value;
+            cell.setCellValue(year.getValue());
+        } else if (value instanceof YearMonth) {
+            YearMonth yearMonth = (YearMonth) value;
+            cell.setCellValue(yearMonth.toString());
+        } else if (value instanceof MonthDay) {
+            MonthDay monthDay = (MonthDay) value;
+            cell.setCellValue(monthDay.toString());
+        } else if (value instanceof Duration) {
+            Duration duration = (Duration) value;
+            cell.setCellValue(duration.toString());
+        } else if (value instanceof Period) {
+            Period period = (Period) value;
+            cell.setCellValue(period.toString());
         } else if (value instanceof Date) {
             cell.setCellValue((Date) value);
         } else if (value instanceof Enum<?>) {

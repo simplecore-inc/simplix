@@ -37,7 +37,8 @@ class UserRoleRepositoryTest {
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
-        itemOrderCounter = new AtomicInteger(1);
+        // Use current time + random number to ensure uniqueness across test runs
+        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
     }
     
     /**
@@ -45,8 +46,8 @@ class UserRoleRepositoryTest {
      */
     private UserRole createRandomUserRole() {
         UserRole userRole = new UserRole();
-        userRole.setName(faker.lorem().word());
-        userRole.setRole(faker.lorem().word());
+        userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
+        userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
         userRole.setItemOrder(itemOrderCounter.getAndIncrement());
         return userRole;

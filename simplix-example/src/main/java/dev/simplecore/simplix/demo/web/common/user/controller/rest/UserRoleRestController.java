@@ -29,14 +29,14 @@ import java.util.Set;
  */
 
 /**
- * 사용자 역할 REST Controller
+ * REST Controller for user roles.
  *
  * @author thkwag
  * @since 2025-02-06
  */
 @RestController
 @RequestMapping("/api/user/role")
-@Tag(name = "common.user.UserRole", description = "사용자 역할")
+@Tag(name = "common.user.UserRole", description = "User Role")
 public class UserRoleRestController extends SimpliXBaseController<UserRole, String> {
 
     private final UserRoleService service;
@@ -61,7 +61,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @PostMapping("/create")
-    @Operation(summary = "Create UserRole", description = "Creates a new 사용자 역할")
+    @Operation(summary = "Create UserRole", description = "Creates a new user role")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'create')")
     public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> create(
@@ -79,7 +79,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @PutMapping("/{id}")
-    @Operation(summary = "Update UserRole", description = "Updates existing 사용자 역할")
+    @Operation(summary = "Update UserRole", description = "Updates existing user role")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'edit')")
     public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> update(
@@ -99,7 +99,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
       * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
       */
       @PatchMapping
-      @Operation(summary = "Update Multiple UserRole", description = "Updates multiple existing 사용자 역할s")
+      @Operation(summary = "Update Multiple UserRole", description = "Updates multiple existing user roles")
       @SimpliXStandardApi
       @PreAuthorize("hasPermission('UserRole', 'edit')")
       public ResponseEntity<SimpliXApiResponse<List<UserRoleDetailDTO>>> multiUpdate(
@@ -117,7 +117,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete UserRole", description = "Deletes 사용자 역할 by ID")
+    @Operation(summary = "Delete UserRole", description = "Deletes user role by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'delete')")
     public ResponseEntity<SimpliXApiResponse<Void>> delete(@PathVariable String id) {
@@ -137,7 +137,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @GetMapping("/{id}")
-    @Operation(summary = "Get UserRole", description = "Retrieves 사용자 역할 by ID")
+    @Operation(summary = "Get UserRole", description = "Retrieves user role by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'view')")
     public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> get(@PathVariable String id) {
@@ -155,7 +155,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @PatchMapping("/batch")
-    @Operation(summary = "Batch Update UserRoles", description = "Updates multiple 사용자 역할s")
+    @Operation(summary = "Batch Update UserRoles", description = "Updates multiple user roles")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'edit')")
     public ResponseEntity<SimpliXApiResponse<Void>> batchUpdate(@RequestBody @Validated UserRoleBatchUpdateDTO batchUpdateDto) {
@@ -175,7 +175,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @DeleteMapping("/batch")
-    @Operation(summary = "Delete multiple UserRoles", description = "Deletes multiple 사용자 역할s by their IDs")
+    @Operation(summary = "Delete multiple UserRoles", description = "Deletes multiple user roles by their IDs")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'delete')")
     public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> ids) {
@@ -200,10 +200,10 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @GetMapping("/search")
-    @Operation(summary = "Search UserRole list (GET)", description = "Searches 사용자 역할s with various conditions using GET method")
+    @Operation(summary = "Search UserRole list (GET)", description = "Searches user roles with various conditions using GET method")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'list')")
-    public ResponseEntity<SimpliXApiResponse<Page<UserRoleListDTO>>> search(
+    public ResponseEntity<SimpliXApiResponse<Page<UserRoleListDTO>>> simpleSearch(
         @RequestParam(required = false) @SearchableParams(UserRoleSearchDTO.class) Map<String, String> params
     ) {
         return ResponseEntity.ok(SimpliXApiResponse.success(service.search(params)));
@@ -217,7 +217,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
     @PostMapping("/search")
-    @Operation(summary = "Search UserRole list (POST)", description = "Searches 사용자 역할s with various conditions using POST method")
+    @Operation(summary = "Search UserRole list (POST)", description = "Searches user roles with various conditions using POST method")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'list')")
     public ResponseEntity<SimpliXApiResponse<Page<UserRoleListDTO>>> search(

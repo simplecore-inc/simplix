@@ -2,8 +2,9 @@ package dev.simplecore.simplix.demo.web.common.user.dto;
 
 
 import java.util.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 import dev.simplecore.simplix.core.validator.ValidateWith;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserOrganization;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserPosition;
@@ -36,65 +37,65 @@ public class UserAccountDTOs {
     @Setter
     public static class UserAccountSearchDTO {
         
-        @Schema(description = "사용자 ID")
+        @Schema(description = "User ID")
         @SearchableField(operators = {EQUALS})
         private String id;
         
-        @Schema(description = "로그인 계정")
+        @Schema(description = "Login Account")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String username;
         
-        @Schema(description = "계정상태")
+        @Schema(description = "Account Status")
         @SearchableField(operators = {EQUALS})
         private Boolean enabled;
         
-        @Schema(description = "이름")
+        @Schema(description = "Name")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String realName;
         
-        @Schema(description = "자기소개")
+        @Schema(description = "Self-introduction")
         @SearchableField(operators = {CONTAINS})
         private String description;
         
-        @Schema(description = "이메일")
+        @Schema(description = "Email")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String email;
         
-        @Schema(description = "휴대전화")
+        @Schema(description = "Mobile Phone")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String mobilePhone;
         
-        @Schema(description = "사무실 전화")
+        @Schema(description = "Office Phone")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String officePhone;
         
-        @Schema(description = "우편번호")
+        @Schema(description = "Postal Code")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String postalCode;
         
-        @Schema(description = "주소")
+        @Schema(description = "Address")
         @SearchableField(operators = {CONTAINS})
         private String address;
         
-        @Schema(description = "상세주소")
+        @Schema(description = "Detailed Address")
         @SearchableField(operators = {CONTAINS})
         private String addressDetail;
         
-        @Schema(description = "직급정보")
+        @Schema(description = "Position Information")
         @SearchableField(entityField = "position.positionId", operators = {EQUALS}, sortable = true)
         private String position;
         
-        @Schema(description = "권한정보")
+        @Schema(description = "Permission Information")
         @SearchableField(entityField = "roles.roleId", operators = {EQUALS})
         private String roles;
         
-        @Schema(description = "소속조직")
+        @Schema(description = "Affiliated Organization")
         @SearchableField(entityField = "organizations.organizationId", operators = {EQUALS})
         private String organizations;
         
-        @Schema(description = "등록일시")
-        @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        @Schema(description = "Registration Date/Time")
+        @SearchableField(operators = {GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO, BETWEEN}, sortable = true)
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -104,78 +105,76 @@ public class UserAccountDTOs {
     @Data
     public static class UserAccountCreateDTO {
         
-        @Schema(description = "사용자명")
-        @NotBlank(message = "사용자명은 필수 입력값입니다")
-        @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", 
-                message = "사용자명은 영문자, 숫자, 점(.), 하이픈(-), 언더스코어(_)만 사용하여 4~20자로 입력해주세요")
-        @Length(min = 4, max = 20, message = "사용자명은 4~20자 사이로 입력해주세요")
+        @Schema(description = "Username")
+        @NotBlank(message = "{validation.username.required}")
+        @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", message = "{validation.username.pattern}")
+        @Length(min = 4, max = 20, message = "{validation.username.length}")
         private String username;
 
-        @Schema(description = "비밀번호")
-        @NotBlank(message = "비밀번호는 반드시 입력하여야합니다.")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$",
-                message = "비밀번호는 5자 이상, 영문, 숫자, 특수문자를 포함해야 합니다")
+        @Schema(description = "Password")
+        @NotBlank(message = "{validation.password.required}")
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
         private String password;
         
-        @Schema(description = "계정상태")
-        @NotNull(message = "계정상태는 필수 입력값입니다")
+        @Schema(description = "Account Status")
+        @NotNull(message = "{validation.enabled.required}")
         private Boolean enabled;
         
-        @Schema(description = "이름")
-        @NotBlank(message = "이름은 필수 입력값입니다")
-        @Length(min = 2, max = 50, message = "이름은 2~50자 사이로 입력해주세요")
+        @Schema(description = "Name")
+        @NotBlank(message = "{validation.realName.required}")
+        @Length(min = 2, max = 50, message = "{validation.realName.length}")
         private String realName;
         
-        @Schema(description = "프로필 이미지")
-        @Size(max = 5242880, message = "프로필 이미지는 5MB 이하만 가능합니다")
+        @Schema(description = "Profile Image")
+        @Size(max = 5242880, message = "{validation.profileImage.size}")
         private byte[] profileImage;
         
-        @Schema(description = "프로필 이미지 타입")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "지원하지 않는 이미지 형식입니다")
+        @Schema(description = "Profile Image Type")
+        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.profileImageType.pattern}")
         private String profileImageType;
         
-        @Schema(description = "자기소개")
-        @Length(max = 500, message = "자기소개는 500자 이내로 입력해주세요")
+        @Schema(description = "Self-introduction")
+        @Length(max = 500, message = "{validation.description.length}")
         private String description;
         
-        @Schema(description = "이메일")
-        @NotBlank(message = "이메일은 필수 입력값입니다")
-        @Email(message = "올바른 이메일 형식이 아닙니다")
+        @Schema(description = "Email")
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.format}")
         private String email;
         
-        @Schema(description = "휴대전화")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        @Schema(description = "Mobile Phone")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.mobilePhone.pattern}")
         private String mobilePhone;
         
-        @Schema(description = "사무실 전화")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        @Schema(description = "Office Phone")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.officePhone.pattern}")
         private String officePhone;
         
-        @Schema(description = "우편번호")
-        @Pattern(regexp = "^\\d{5}$", message = "올바른 우편번호 형식이 아닙니다")
+        @Schema(description = "Postal Code")
+        @Pattern(regexp = "^\\d{5}$", message = "{validation.postalCode.pattern}")
         private String postalCode;
         
-        @Schema(description = "주소")
-        @Length(max = 200, message = "주소는 200자 이내로 입력해주세요")
+        @Schema(description = "Address")
+        @Length(max = 200, message = "{validation.address.length}")
         private String address;
         
-        @Schema(description = "상세주소")
-        @Length(max = 200, message = "상세주소는 200자 이내로 입력해주세요")
+        @Schema(description = "Detailed Address")
+        @Length(max = 200, message = "{validation.addressDetail.length}")
         private String addressDetail;
         
-        @Schema(description = "직급정보")
-        @NotBlank(message = "직급정보는 필수 입력값입니다")
-        @ValidateWith(service = "userPositionService.validateId", message = "존재하지 않는 직급정보입니다.")
+        @Schema(description = "Position Information")
+        @NotBlank(message = "{validation.position.required}")
+        @ValidateWith(service = "userPositionService.validateId", message = "{validation.position.invalid}")
         private String position;
         
-        @Schema(description = "권한정보")
-        @NotEmpty(message = "최소 하나 이상의 권한이 필요합니다")
-        @Size(min = 1, max = 10, message = "권한은 1~10개까지 지정 가능합니다")
+        @Schema(description = "Permission Information")
+        @NotEmpty(message = "{validation.roles.required}")
+        @Size(min = 1, max = 10, message = "{validation.roles.size}")
         private Set<String> roles;
         
-        @Schema(description = "소속조직")
-        @NotEmpty(message = "최소 하나 이상의 소속조직이 필요합니다")
-        @Size(min = 1, max = 10, message = "소속조직은 1~10개까지 지정 가능합니다")
+        @Schema(description = "Affiliated Organization")
+        @NotEmpty(message = "{validation.organizations.required}")
+        @Size(min = 1, max = 10, message = "{validation.organizations.size}")
         private Set<String> organizations;
         
     }
@@ -185,99 +184,97 @@ public class UserAccountDTOs {
     public static class UserAccountUpdateDTO {
         
         @Schema(description = "UserAccount ID")
-        @NotBlank(message = "ID는 필수 입력값입니다")
+        @NotBlank(message = "{validation.id.required}")
         private String id;
 
-        @Schema(description = "사용자명")
-        @NotBlank(message = "사용자명은 필수 입력값입니다")
-        @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", 
-                message = "사용자명은 영문자, 숫자, 점(.), 하이픈(-), 언더스코어(_)만 사용하여 4~20자로 입력해주세요")
-        @Length(min = 4, max = 20, message = "사용자명은 4~20자 사이로 입력해주세요")
+        @Schema(description = "Username")
+        @NotBlank(message = "{validation.username.required}")
+        @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", message = "{validation.username.pattern}")
+        @Length(min = 4, max = 20, message = "{validation.username.length}")
         private String username;
         
-        @Schema(description = "비밀번호")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$",
-                message = "비밀번호는 5자 이상, 영문, 숫자, 특수문자를 포함해야 합니다")
+        @Schema(description = "Password")
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
         private String password;
         
         @Schema(description = "계정상태")
-        @NotNull(message = "계정상태는 필수 입력값입니다")
+        @NotNull(message = "{validation.enabled.required}")
         private Boolean enabled;
         
-        @Schema(description = "이름")
-        @NotBlank(message = "이름은 필수 입력값입니다")
-        @Length(min = 2, max = 50, message = "이름은 2~50자 사이로 입력해주세요")
+        @Schema(description = "Name")
+        @NotBlank(message = "{validation.realName.required}")
+        @Length(min = 2, max = 50, message = "{validation.realName.length}")
         private String realName;
         
-        @Schema(description = "프로필 이미지")
-        @Size(max = 5242880, message = "프로필 이미지는 5MB 이하만 가능합니다")
+        @Schema(description = "Profile Image")
+        @Size(max = 5242880, message = "{validation.profileImage.size}")
         private byte[] profileImage;
         
-        @Schema(description = "프로필 이미지 타입")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "지원하지 않는 이미지 형식입니다")
+        @Schema(description = "Profile Image Type")
+        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.profileImageType.pattern}")
         private String profileImageType;
         
-        @Schema(description = "자기소개")
-        @Length(max = 500, message = "자기소개는 500자 이내로 입력해주세요")
+        @Schema(description = "Self-introduction")
+        @Length(max = 500, message = "{validation.description.length}")
         private String description;
         
-        @Schema(description = "이메일")
-        @NotBlank(message = "이메일은 필수 입력값입니다")
-        @Email(message = "올바른 이메일 형식이 아닙니다")
+        @Schema(description = "Email")
+        @NotBlank(message = "{validation.email.required}")
+        @Email(message = "{validation.email.format}")
         private String email;
         
-        @Schema(description = "휴대전화")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        @Schema(description = "Mobile Phone")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.mobilePhone.pattern}")
         private String mobilePhone;
         
-        @Schema(description = "사무실 전화")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "올바른 전화번호 형식이 아닙니다")
+        @Schema(description = "Office Phone")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.officePhone.pattern}")
         private String officePhone;
         
-        @Schema(description = "우편번호")
-        @Pattern(regexp = "^\\d{5}$", message = "올바른 우편번호 형식이 아닙니다")
+        @Schema(description = "Postal Code")
+        @Pattern(regexp = "^\\d{5}$", message = "{validation.postalCode.pattern}")
         private String postalCode;
         
-        @Schema(description = "주소")
-        @Length(max = 200, message = "주소는 200자 이내로 입력해주세요")
+        @Schema(description = "Address")
+        @Length(max = 200, message = "{validation.address.length}")
         private String address;
         
-        @Schema(description = "상세주소")
-        @Length(max = 200, message = "상세주소는 200자 이내로 입력해주세요")
+        @Schema(description = "Detailed Address")
+        @Length(max = 200, message = "{validation.addressDetail.length}")
         private String addressDetail;
         
-        @Schema(description = "직급정보")
-        @NotBlank(message = "직급정보는 필수 입력값입니다")
-        @ValidateWith(service = "userPositionService.validateId", message = "존재하지 않는 직급정보입니다.")
+        @Schema(description = "Position Information")
+        @NotBlank(message = "{validation.position.required}")
+        @ValidateWith(service = "userPositionService.validateId", message = "{validation.position.invalid}")
         private String position;
         
-        @Schema(description = "권한정보")
-        @NotEmpty(message = "최소 하나 이상의 권한이 필요합니다")
-        @Size(min = 1, max = 10, message = "권한은 1~10개까지 지정 가능합니다")
+        @Schema(description = "Permission Information")
+        @NotEmpty(message = "{validation.roles.required}")
+        @Size(min = 1, max = 10, message = "{validation.roles.size}")
         private Set<String> roles;
         
-        @Schema(description = "소속조직")
-        @NotEmpty(message = "최소 하나 이상의 소속조직이 필요합니다")
-        @Size(min = 1, max = 10, message = "소속조직은 1~10개까지 지정 가능합니다")
+        @Schema(description = "Affiliated Organization")
+        @NotEmpty(message = "{validation.organizations.required}")
+        @Size(min = 1, max = 10, message = "{validation.organizations.size}")
         private Set<String> organizations;
         
     }
 
     @Data
     public static class UserAccountBatchUpdateDTO {
-        @Schema(description = "UserAccount ID 목록")
+        @Schema(description = "UserAccount ID List")
         private Set<String> ids;
         
         @Schema(description = "계정상태")
         private Boolean enabled;
         
-        @Schema(description = "직급정보")
+        @Schema(description = "Position Information")
         private String position;
         
-        @Schema(description = "권한정보")
+        @Schema(description = "Permission Information")
         private Set<String> roles;
         
-        @Schema(description = "소속조직")
+        @Schema(description = "Affiliated Organization")
         private Set<String> organizations;
         
     }
@@ -289,14 +286,11 @@ public class UserAccountDTOs {
     @Data
     public static class UserAccountDetailDTO {
         
-        @Schema(description = "사용자 ID")
+        @Schema(description = "User ID")
         private String id;
         
-        @Schema(description = "로그인 계정")
+        @Schema(description = "Login Account")
         private String username;
-        
-        @Schema(description = "비밀번호")
-        private String password;
         
         @Schema(description = "계정상태")
         private Boolean enabled;
@@ -307,37 +301,37 @@ public class UserAccountDTOs {
         @Schema(description = "프로필 이미지")
         private byte[] profileImage;
         
-        @Schema(description = "프로필 이미지 타입")
+        @Schema(description = "Profile Image Type")
         private String profileImageType;
         
-        @Schema(description = "자기소개")
+        @Schema(description = "Self-introduction")
         private String description;
         
-        @Schema(description = "이메일")
+        @Schema(description = "Email")
         private String email;
         
-        @Schema(description = "휴대전화")
+        @Schema(description = "Mobile Phone")
         private String mobilePhone;
         
-        @Schema(description = "사무실 전화")
+        @Schema(description = "Office Phone")
         private String officePhone;
         
-        @Schema(description = "우편번호")
+        @Schema(description = "Postal Code")
         private String postalCode;
         
-        @Schema(description = "주소")
+        @Schema(description = "Address")
         private String address;
         
-        @Schema(description = "상세주소")
+        @Schema(description = "Detailed Address")
         private String addressDetail;
         
-        @Schema(description = "직급정보")
+        @Schema(description = "Position Information")
         private UserPosition position;
         
-        @Schema(description = "권한정보")
+        @Schema(description = "Permission Information")
         private Set<UserRole> roles;
         
-        @Schema(description = "소속조직")
+        @Schema(description = "Affiliated Organization")
         private Set<UserOrganization> organizations;
         
         @Schema(description = "등록자")
@@ -345,23 +339,23 @@ public class UserAccountDTOs {
 
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
         @Schema(description = "수정자")
         private String updatedBy;
 
         @Schema(description = "수정일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
     public static class UserAccountListDTO {
         
-        @Schema(description = "사용자 ID")
+        @Schema(description = "User ID")
         private String id;
         
-        @Schema(description = "로그인 계정")
+        @Schema(description = "Login Account")
         private String username;
         
         @Schema(description = "계정상태")
@@ -370,23 +364,23 @@ public class UserAccountDTOs {
         @Schema(description = "이름")
         private String realName;
         
-        @Schema(description = "이메일")
+        @Schema(description = "Email")
         private String email;
         
-        @Schema(description = "휴대전화")
+        @Schema(description = "Mobile Phone")
         private String mobilePhone;
         
-        @Schema(description = "직급정보")
+        @Schema(description = "Position Information")
         private UserPosition position;
         
-        @Schema(description = "권한정보")
+        @Schema(description = "Permission Information")
         private Set<UserRole> roles;
         
-        @Schema(description = "소속조직")
+        @Schema(description = "Affiliated Organization")
         private Set<UserOrganization> organizations;
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 } 

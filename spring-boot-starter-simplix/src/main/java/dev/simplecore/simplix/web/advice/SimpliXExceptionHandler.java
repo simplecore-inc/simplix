@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.web.advice;
 
+import dev.simplecore.simplix.core.exception.ErrorCode;
 import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,11 +11,20 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.slf4j.MDC;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -33,7 +43,7 @@ import java.util.Map;
  *     private int code;
  *     private String message;
  *     private String detail;
- *     private LocalDateTime timestamp;
+ *     private OffsetDateTime timestamp;
  *
  *     // constructors, getters, setters...
  * }
@@ -48,7 +58,7 @@ import java.util.Map;
  *         response.setCode(statusCode);
  *         response.setMessage(message);
  *         response.setDetail(error);
- *         response.setTimestamp(LocalDateTime.now());
+ *         response.setTimestamp(OffsetDateTime.now());
  *         return response;
  *     }
  * }
@@ -95,13 +105,49 @@ public class SimpliXExceptionHandler<T> {
     @ExceptionHandler(SimpliXGeneralException.class)
     @Order(0)
     public T handleSimpliXGeneralException(SimpliXGeneralException ex, HttpServletRequest request) {
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
                 ex.getStatusCode(),
-                "SimpliXGeneralException",
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
                 ex.getMessage(),
                 ex.getDetail(),
                 request.getRequestURI()
         );
+        
+        // Set HTTP status code and trace ID header
+        try {
+            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            if (response != null) {
+                response.setStatus(ex.getStatusCode().value());
+                
+                // Add trace ID to response header if available
+                if (errorResponse instanceof SimpliXApiResponse) {
+                    SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
+                    if (apiResponse.getTraceId() != null) {
+                        response.setHeader("X-Trace-Id", apiResponse.getTraceId());
+                        // Set TraceId in MDC for logging
+                        MDC.put("traceId", apiResponse.getTraceId());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to set HTTP status: {}", e.getMessage());
+        }
+        
+        // Log exception with trace ID
+        if (errorResponse instanceof SimpliXApiResponse) {
+            SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
+            String traceId = apiResponse.getTraceId();
+            if (traceId != null) {
+                log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}", 
+                    traceId, 
+                    ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
+                    request.getRequestURI(), 
+                    ex);
+            }
+        }
+        
+        return errorResponse;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -116,71 +162,266 @@ public class SimpliXExceptionHandler<T> {
             errors.add(fieldError);
         });
         
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.BAD_REQUEST,
-            "ValidationException",
-            "Validation failed",
-            errors,  // 객체 그대로 전달
+            ErrorCode.VAL_VALIDATION_FAILED.getCode(),
+            messageSource.getMessage("error.val.validation.failed", null, "Validation failed", LocaleContextHolder.getLocale()),
+            errors,
+            request.getRequestURI()
+        );
+        
+        // Set TraceId in MDC for logging
+        if (errorResponse instanceof SimpliXApiResponse) {
+            SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
+            if (apiResponse.getTraceId() != null) {
+                MDC.put("traceId", apiResponse.getTraceId());
+                log.error("Validation failed - TraceId: {}, Path: {}", 
+                    apiResponse.getTraceId(), request.getRequestURI(), ex);
+            }
+        }
+        
+        return errorResponse;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @Order(2)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public T handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied for request: {} - {}", request.getRequestURI(), ex.getMessage());
+        
+        String message = messageSource.getMessage(
+            "error.authz.insufficient.permissions", 
+            null, 
+            "Access denied", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        String detail = messageSource.getMessage(
+            "error.insufficientPermissions.detail", 
+            null, 
+            "You do not have permission to access the requested resource", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        return responseFactory.createErrorResponse(
+            HttpStatus.FORBIDDEN,
+            ErrorCode.AUTHZ_INSUFFICIENT_PERMISSIONS.getCode(),
+            message,
+            detail,
+            request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @Order(3)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public T handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        log.warn("Authentication failed for request: {} - {}", request.getRequestURI(), ex.getMessage());
+        
+        String message = messageSource.getMessage(
+            "error.auth.authentication.required", 
+            null, 
+            "Authentication required", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        String detail = messageSource.getMessage(
+            "error.authenticationFailed.detail", 
+            null, 
+            "Login is required or token is invalid", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        return responseFactory.createErrorResponse(
+            HttpStatus.UNAUTHORIZED,
+            ErrorCode.AUTH_AUTHENTICATION_REQUIRED.getCode(),
+            message,
+            detail,
+            request.getRequestURI()
+        );
+    }
+
+    @ExceptionHandler(AsyncRequestTimeoutException.class)
+    @Order(4)
+    @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+    public T handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex, HttpServletRequest request) {
+        log.warn("Async request timeout for: {}", request.getRequestURI());
+        
+        String message = messageSource.getMessage(
+            "error.gen.timeout", 
+            null, 
+            "Request timeout", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        return responseFactory.createErrorResponse(
+            HttpStatus.REQUEST_TIMEOUT,
+            ErrorCode.GEN_TIMEOUT.getCode(),
+            message,
+            "The request took too long to process",
             request.getRequestURI()
         );
     }
 
     @ExceptionHandler(Exception.class)
     @Order(Integer.MAX_VALUE)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public T handleException(Exception ex, HttpServletRequest request) {
         log.error("Exception occurred: ", ex);
         
-        // 이미 SimpliXGeneralException인 경우 그대로 처리
+        // Check for nested Searchable exceptions first
+        Throwable rootCause = getRootCause(ex);
+        
+        // Handle Searchable exceptions by checking package name
+        String rootClassFullName = rootCause.getClass().getName();
+        if (rootClassFullName.startsWith("dev.simplecore.searchable.core.exception")) {
+            return handleSearchableException(rootCause, request);
+        }
+
+        // If it's already a SimpliXGeneralException, handle it as is
         if (ex instanceof SimpliXGeneralException) {
             return handleSimpliXGeneralException((SimpliXGeneralException) ex, request);
         }
 
-        // HTTP 상태 코드와 메시지 결정
+        // Determine HTTP status code and message
         HttpStatus statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         String message = ex.getMessage();
-        // 상세 에러 정보 수집
-        StringWriter sw = new StringWriter();
-        ex.printStackTrace(new PrintWriter(sw));
-        String error = String.format("%s: %s\n%s", 
-            ex.getClass().getName(), 
-            ex.getMessage(),
-            sw.toString()
-        );
 
-        String errorType = "SimpliXGeneralException";
-            
-        // 예외 타입별 상태 코드와 메시지 매핑
-        if (ex instanceof IllegalArgumentException) {
-            errorType = "IllegalArgumentException";
-            statusCode = HttpStatus.BAD_REQUEST;
-            message = messageSource.getMessage("error.illegal_argument", null, 
-                "Invalid argument", LocaleContextHolder.getLocale());
-        } else if (ex instanceof SecurityException) {
-            errorType = "IllegalArgumentException";
-            statusCode = HttpStatus.UNAUTHORIZED;
-            message = messageSource.getMessage("error.unauthorized", null, 
-                "Unauthorized", LocaleContextHolder.getLocale());
+        // Include detailed error information only in development environments
+        String errorDetail;
+        if (isDebugMode()) {
+            StringWriter sw = new StringWriter();
+            ex.printStackTrace(new PrintWriter(sw));
+            errorDetail = String.format("%s: %s", ex.getClass().getName(), ex.getMessage());
         } else {
-            errorType = "SimpliXGeneralException";
-            // 기본 메시지가 없는 경우 처리
-            message = message != null ? message : 
-                messageSource.getMessage("error.internal", null, 
-                "Internal server error", LocaleContextHolder.getLocale());
+            errorDetail = "An error occurred while processing your request";
         }
 
-        
-        // 예외를 SimpliXGeneralException으로 래핑
+        String errorType = "SimpliXGeneralException";
+
+        // Map exception types to error codes
+        ErrorCode errorCode;
+        if (ex instanceof IllegalArgumentException) {
+            errorCode = ErrorCode.VAL_INVALID_PARAMETER;
+        } else if (ex instanceof SecurityException) {
+            errorCode = ErrorCode.AUTH_AUTHENTICATION_REQUIRED;
+        } else if (ex instanceof IllegalStateException) {
+            errorCode = ErrorCode.GEN_CONFLICT;
+        } else if (ex instanceof UnsupportedOperationException) {
+            errorCode = ErrorCode.GEN_METHOD_NOT_ALLOWED;
+        } else {
+            errorCode = ErrorCode.GEN_INTERNAL_SERVER_ERROR;
+        }
+
+        // Process message
+        String localizedMessage = messageSource.getMessage(
+            "error." + errorCode.getCode().toLowerCase().replace("_", "."),
+            null,
+            errorCode.getDefaultMessage(),
+            LocaleContextHolder.getLocale()
+        );
+
+        // Wrap the exception in a SimpliXGeneralException
         SimpliXGeneralException wrappedException = new SimpliXGeneralException(
-            message != null ? message : "An error occurred",
-            ex, 
-            errorType,
-            statusCode, 
-            error, 
+            localizedMessage,
+            ex,
+            errorCode.getCode(),
+            errorCode.getHttpStatus(),
+            errorDetail,
             request.getRequestURI()
         );
-        
+
         return handleSimpliXGeneralException(wrappedException, request);
+    }
+    
+    /**
+     * Handle Searchable library exceptions
+     */
+    protected T handleSearchableException(Throwable rootCause, HttpServletRequest request) {
+        String simpleClassName = rootCause.getClass().getSimpleName();
+        log.warn("Searchable exception occurred: {} - {}", simpleClassName, rootCause.getMessage());
+        
+        // Determine specific error code based on exception type
+        ErrorCode errorCode = determineSearchableErrorCode(rootCause);
+        
+        String message = messageSource.getMessage(
+            "error." + errorCode.getCode().toLowerCase().replace("_", "."), 
+            null, 
+            errorCode.getDefaultMessage(), 
+            LocaleContextHolder.getLocale()
+        );
+        
+        // Set HTTP status
+        try {
+            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            if (response != null) {
+                response.setStatus(errorCode.getHttpStatus().value());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to set HTTP status: {}", e.getMessage());
+        }
+        
+        return responseFactory.createErrorResponse(
+            errorCode.getHttpStatus(),
+            errorCode.getCode(),
+            message,
+            rootCause.getMessage(),
+            request.getRequestURI()
+        );
+    }
+    
+    /**
+     * Get the root cause of an exception
+     */
+    private Throwable getRootCause(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        return rootCause;
+    }
+    
+    /**
+     * Determine the appropriate error code for Searchable exceptions
+     */
+    private ErrorCode determineSearchableErrorCode(Throwable rootCause) {
+        String simpleClassName = rootCause.getClass().getSimpleName();
+        
+        // Try to determine by class name
+        if (simpleClassName.contains("Validation")) {
+            return ErrorCode.SEARCH_INVALID_PARAMETER;
+        } else if (simpleClassName.contains("Sort")) {
+            return ErrorCode.SEARCH_INVALID_SORT_FIELD;
+        } else if (simpleClassName.contains("Filter") || simpleClassName.contains("Operator")) {
+            return ErrorCode.SEARCH_INVALID_FILTER_OPERATOR;
+        } else if (simpleClassName.contains("Parse") || simpleClassName.contains("Syntax")) {
+            return ErrorCode.SEARCH_INVALID_QUERY_SYNTAX;
+        }
+        
+        // Try to determine by message content
+        String message = rootCause.getMessage();
+        if (message != null) {
+            String lowerMessage = message.toLowerCase();
+            if (lowerMessage.contains("sort")) {
+                return ErrorCode.SEARCH_INVALID_SORT_FIELD;
+            } else if (lowerMessage.contains("filter") || lowerMessage.contains("operator")) {
+                return ErrorCode.SEARCH_INVALID_FILTER_OPERATOR;
+            } else if (lowerMessage.contains("parse") || lowerMessage.contains("syntax")) {
+                return ErrorCode.SEARCH_INVALID_QUERY_SYNTAX;
+            }
+        }
+        
+        // Default to invalid search parameter
+        return ErrorCode.SEARCH_INVALID_PARAMETER;
+    }
+
+    /**
+     * Check if application is running in debug mode
+     */
+    private boolean isDebugMode() {
+        // Check Spring profiles or system properties
+        String activeProfiles = System.getProperty("spring.profiles.active", "");
+        return activeProfiles.contains("dev") || activeProfiles.contains("local") || activeProfiles.contains("debug");
     }
 
     /**
@@ -194,9 +435,22 @@ public class SimpliXExceptionHandler<T> {
      * Default implementation using SimpliXApiResponse
      */
     private static class DefaultResponseFactory implements ResponseFactory<SimpliXApiResponse<Object>> {
+        private static final Logger log = LoggerFactory.getLogger(DefaultResponseFactory.class);
+        
         @Override
         public SimpliXApiResponse<Object> createErrorResponse(HttpStatus statusCode, String errorType, String message, Object detail, String path) {
-            return SimpliXApiResponse.error(message, errorType, detail);
+            // Use error code based on HTTP status and error type
+            String errorCode = errorType != null ? errorType : statusCode.name();
+            SimpliXApiResponse<Object> response = SimpliXApiResponse.error(message, errorCode, detail);
+            
+            // Set TraceId in MDC and log error
+            if (response.getTraceId() != null) {
+                MDC.put("traceId", response.getTraceId());
+                log.error("Error response created - TraceId: {}, Code: {}, Path: {}, Message: {}", 
+                    response.getTraceId(), errorCode, path, message);
+            }
+            
+            return response;
         }
     }
 }

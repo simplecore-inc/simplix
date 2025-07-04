@@ -99,7 +99,7 @@ public class UserDto {
     
     @ExcelColumn(name = "Created At", order = 3, 
                 format = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
     
     @ExcelColumn(name = "Status", order = 4,
                 backgroundColor = "#E6F3FF")
@@ -179,7 +179,7 @@ public class DateFormatter {
                            .format(date);
     }
     
-    public String formatDateTime(LocalDateTime dateTime, String pattern) {
+    public String formatDateTime(OffsetDateTime dateTime, String pattern) {
         // Get cached formatter
         return FormatterCache.getDateTimeFormatter(pattern)
                            .format(dateTime);

@@ -114,7 +114,7 @@ public class TreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
                     .setParameter(1, itemId)
                     .getResultList();
                 
-                // H2와 같은 일부 DB에서는 WITH RECURSIVE가 제대로 작동하지 않을 수 있음
+                // In some databases like H2, WITH RECURSIVE may not work correctly
                 if (items.isEmpty()) {
                     items = getAllDescendantsGeneric(itemId);
                 }

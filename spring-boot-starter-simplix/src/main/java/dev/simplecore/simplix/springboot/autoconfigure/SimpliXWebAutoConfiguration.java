@@ -3,10 +3,12 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
 import dev.simplecore.simplix.web.advice.SimpliXExceptionHandler;
+import dev.simplecore.simplix.web.config.SwaggerI18nCustomizer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -43,6 +45,19 @@ public class SimpliXWebAutoConfiguration {
             DefaultSimpliXExceptionHandler(MessageSource messageSource, ObjectMapper objectMapper) {
                 super(messageSource, objectMapper);
             }
+        }
+    }
+
+    @Configuration
+    @ConditionalOnClass(name = "io.swagger.v3.oas.models.OpenAPI")
+    @ConditionalOnProperty(prefix = "simplix.swagger", name = "i18n-enabled", havingValue = "true", matchIfMissing = true)
+    static class SwaggerI18nConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean(SwaggerI18nCustomizer.class)
+        public SwaggerI18nCustomizer swaggerI18nCustomizer() {
+            log.info("Initializing SimpliX Swagger I18n Customizer as OpenApiCustomiser...");
+            return new SwaggerI18nCustomizer();
         }
     }
 } 

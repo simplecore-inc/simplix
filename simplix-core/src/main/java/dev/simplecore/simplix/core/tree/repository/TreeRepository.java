@@ -9,40 +9,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 트리 구조를 가진 엔티티를 위한 기본 리포지토리 인터페이스
- * @param <T> 엔티티 타입
- * @param <ID> ID 타입
+ * Base repository interface for tree-structured entities
+ * @param <T> Entity type
+ * @param <ID> ID type
  */
 @NoRepositoryBean
 public interface TreeRepository<T extends TreeEntity<T, ID>, ID> extends JpaRepository<T, ID> {
     /**
-     * 전체 계층 구조를 조회
+     * Retrieves the entire hierarchy
      */
     List<T> findCompleteHierarchy();
     
     /**
-     * 특정 항목과 그 하위 항목들을 모두 조회
+     * Retrieves a specific item and all its descendants
      */
     List<T> findItemWithAllDescendants(ID itemId);
     
     /**
-     * 최상위 항목들을 조회
+     * Retrieves root items
      */
     List<T> findRootItems();
     
     /**
-     * 특정 항목의 직계 자식 항목들을 조회
+     * Retrieves direct children of a specific item
      */
     List<T> findDirectChildren(ID parentId);
     
     /**
-     * 메모리에서 계층 구조를 구성
+     * Builds the hierarchy in memory
      */
     List<T> buildHierarchy(List<T> allItems);
 
     /**
-     * 추가 조회 조건으로 항목을 조회
-     * @param parameters 조회 조건 (컬럼명: 값)
+     * Retrieves items with additional search conditions
+     * @param parameters Search conditions (column name: value)
      */
     List<T> findByLookup(Map<String, String> parameters);
 } 

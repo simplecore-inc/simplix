@@ -3,6 +3,7 @@ package dev.simplecore.simplix.demo.domain.common.user.entity;
 import dev.simplecore.simplix.demo.domain.BaseEntity;
 import dev.simplecore.simplix.core.convert.datetime.DateTimeConverter;
 import dev.simplecore.simplix.core.entity.SimpliXCompositeKey;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +11,7 @@ import org.hibernate.annotations.Comment;
 
 import javax.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import lombok.Data;
 
 @Entity
@@ -19,15 +20,18 @@ import lombok.Data;
 @Table(name = "user_account_log")
 @org.hibernate.annotations.Table(
     appliesTo = "user_account_log",
-    comment = "사용자 계정 변경로그: (복합PK 테스트 용도)"
+    comment = "User Account Change Log: (For composite PK testing purposes)"
 )
+@I18nTitle({"ko=사용자 계정 로그", "en=User Account Log", "ja=ユーザーアカウントログ"})
 public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> {
 
     @EmbeddedId
+    @I18nTitle({"ko=로그 ID", "en=Log ID", "ja=ログID"})
     private UserAccountLogId logId;
 
     @Column(name = "log_message")
-    @Comment("로그 메시지: 변경 내용")
+    @Comment("Log Message: Change details")
+    @I18nTitle({"ko=로그 메시지", "en=Log Message", "ja=ログメッセージ"})
     private String logMessage;
 
     //----------------------------------
@@ -55,12 +59,14 @@ public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> 
     public static class UserAccountLogId implements SimpliXCompositeKey {
         
         @Column(name = "user_id", nullable = false, length = 36)
-        @Comment("사용자 ID: 시스템에서 사용하는 고유 UUID")
+        @Comment("User ID: Unique UUID used in the system")
+        @I18nTitle({"ko=사용자 ID", "en=User ID", "ja=ユーザーID"})
         private String userId;
         
         @Column(name = "log_time")
         @Comment("Log Time: Log timestamp")
-        private LocalDateTime logTime;
+        @I18nTitle({"ko=로그 시간", "en=Log Time", "ja=ログ時間"})
+        private OffsetDateTime logTime;
         
         @Override
         public void validate() {
@@ -70,7 +76,7 @@ public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> 
 
             // If userId exists, set logTime to current time if null
             if (this.logTime == null) {
-                this.logTime = LocalDateTime.now();
+                this.logTime = OffsetDateTime.now();
             }
         }
         
@@ -83,7 +89,7 @@ public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> 
             this.userId = pathVariables[0];
             
             DateTimeConverter converter = DateTimeConverter.getDefault();
-            LocalDateTime dateTime = converter.fromString(pathVariables[1], LocalDateTime.class);
+            OffsetDateTime dateTime = converter.fromString(pathVariables[1], OffsetDateTime.class);
             this.logTime = dateTime;
             
             validate();

@@ -1,0 +1,61 @@
+package dev.simplecore.simplix.auth.security;
+
+import dev.simplecore.simplix.core.exception.ErrorCode;
+import dev.simplecore.simplix.core.model.SimpliXApiResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+/**
+ * Custom access denied handler that returns JSON error responses
+ * for authorization failures (403 Forbidden)
+ */
+@Component
+@RequiredArgsConstructor
+public class SimpliXAccessDeniedHandler implements AccessDeniedHandler {
+    
+    private final ObjectMapper objectMapper;
+    private final MessageSource messageSource;
+    
+    @Override
+    public void handle(HttpServletRequest request, 
+                      HttpServletResponse response,
+                      AccessDeniedException accessDeniedException) throws IOException, ServletException {
+        
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        
+        String message = messageSource.getMessage(
+            "error.insufficientPermissions", 
+            null, 
+            "Access denied", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        String detail = messageSource.getMessage(
+            "error.insufficientPermissions.detail", 
+            null, 
+            "You do not have permission to access the requested resource", 
+            LocaleContextHolder.getLocale()
+        );
+        
+        SimpliXApiResponse<Object> errorResponse = SimpliXApiResponse.error(
+            message,
+            ErrorCode.AUTHZ_INSUFFICIENT_PERMISSIONS.getCode(),
+            detail
+        );
+        
+        objectMapper.writeValue(response.getWriter(), errorResponse);
+    }
+} 

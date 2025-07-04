@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
 import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -19,98 +20,117 @@ import java.util.UUID;
 @Table(name = "user_account")
 @org.hibernate.annotations.Table(
     appliesTo = "user_account",
-    comment = "사용자 계정: 시스템에 접근하는 사용자의 기본 계정 정보"
+    comment = "User Account: Basic account information for users accessing the system"
 )
+@I18nTitle({"ko=사용자 계정", "en=User Account", "ja=ユーザーアカウント"})
 public class UserAccount extends AuditingBaseEntity<String> {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(generator = "tsid")
+    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
     @Column(name="user_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("사용자 ID: 시스템에서 사용하는 고유 UUID")
+    @Comment("User ID: Unique UUID used in the system")
+    @I18nTitle({"ko=사용자 ID", "en=User ID", "ja=ユーザーID"})
     private String userId;
 
     @Column(unique = true, nullable = false)
-    @Comment("로그인 계정: 사용자 로그인시 사용하는 계정명")
+    @Comment("Login Account: Username used for user login")
+    @I18nTitle({"ko=로그인 계정", "en=Username", "ja=ユーザー名"})
     private String username;
 
     @Column(nullable = false)
-    @Comment("비밀번호: 사용자 인증을 위한 암호화된 비밀번호")
+    @Comment("Password: Encrypted password for user authentication")
+    @I18nTitle({"ko=비밀번호", "en=Password", "ja=パスワード"})
     private String password;
 
     @Column(nullable = false)
-    @Comment("계정상태: 사용자 계정의 활성화 상태 여부")
+    @Comment("Account Status: Whether the user account is active")
+    @I18nTitle({"ko=계정 상태", "en=Account Status", "ja=アカウント状態"})
     private Boolean enabled;
 
     @Column(name = "real_name")
-    @Comment("이름: 사용자의 실명")
+    @Comment("Name: User's real name")
+    @I18nTitle({"ko=실명", "en=Real Name", "ja=実名"})
     private String realName;
 
     @Lob
     @Column(name = "profile_image")
-    @Comment("프로필 이미지: 사용자 프로필 이미지 바이너리 데이터")
+    @Comment("Profile Image: User profile image binary data")
+    @I18nTitle({"ko=프로필 이미지", "en=Profile Image", "ja=プロフィール画像"})
     private byte[] profileImage;
 
     @Column(name = "profile_image_type")
-    @Comment("프로필 이미지 타입: 이미지의 MIME 타입 (예: image/jpeg, image/png)")
+    @Comment("Profile Image Type: MIME type of the image (e.g., image/jpeg, image/png)")
+    @I18nTitle({"ko=프로필 이미지 타입", "en=Profile Image Type", "ja=プロフィール画像タイプ"})
     private String profileImageType;
 
     @Column(columnDefinition = "TEXT")
-    @Comment("자기소개: 사용자 자기소개 및 설명")
+    @Comment("Self-introduction: User's self-introduction and description")
+    @I18nTitle({"ko=자기소개", "en=Description", "ja=自己紹介"})
     private String description;
 
     @Column(name = "email", unique = true)
-    @Comment("이메일: 사용자 이메일 주소")
+    @Comment("Email: User's email address")
+    @I18nTitle({"ko=이메일", "en=Email", "ja=メールアドレス"})
     private String email;
 
     @Column(name = "mobile_phone")
-    @Comment("휴대전화: 사용자 휴대전화 번호")
+    @Comment("Mobile Phone: User's mobile phone number")
+    @I18nTitle({"ko=휴대전화", "en=Mobile Phone", "ja=携帯電話"})
     private String mobilePhone;
 
     @Column(name = "office_phone")
-    @Comment("사무실 전화: 사용자 사무실 전화번호")
+    @Comment("Office Phone: User's office phone number")
+    @I18nTitle({"ko=사무실 전화", "en=Office Phone", "ja=オフィス電話"})
     private String officePhone;
 
     @Column(name = "postal_code", length = 10)
-    @Comment("우편번호: 사용자 주소의 우편번호")
+    @Comment("Postal Code: Postal code of the user's address")
+    @I18nTitle({"ko=우편번호", "en=Postal Code", "ja=郵便番号"})
     private String postalCode;
 
     @Column(name = "address")
-    @Comment("주소: 사용자의 기본 주소")
+    @Comment("Address: User's primary address")
+    @I18nTitle({"ko=주소", "en=Address", "ja=住所"})
     private String address;
 
     @Column(name = "address_detail")
-    @Comment("상세주소: 사용자의 상세 주소")
+    @Comment("Detailed Address: User's detailed address")
+    @I18nTitle({"ko=상세주소", "en=Address Detail", "ja=詳細住所"})
     private String addressDetail;
 
-    // 사용자는 하나의 직급만 가질 수 있음 (1:N 관계)
+    // A user can only have one position (1:N relationship)
     @ManyToOne(fetch = FetchType.LAZY)
+    @BatchSize(size = 100)
     @JoinColumn(name = "position_id")
-    @Comment("직급정보: 사용자의 조직 내 직급")
+    @Comment("Position Information: User's position within the organization")
+    @I18nTitle({"ko=직급", "en=Position", "ja=職級"})
     private UserPosition position;
 
-    // 사용자는 여러 개의 역할(직책 포함)을 가질 수 있음 (N:M 관계)
+    // A user can have multiple roles (including job titles) (N:M relationship)
     @JsonManagedReference
     @ManyToMany(fetch = FetchType.LAZY)
-    @BatchSize(size = 50)
+    @BatchSize(size = 100)
     @JoinTable(
         name = "user_account_roles",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    @Comment("권한정보: 사용자에게 부여된 시스템 역할 및 직책")
+    @Comment("Permission Information: System roles and job titles assigned to the user")
+    @I18nTitle({"ko=역할", "en=Roles", "ja=役割"})
     private Set<UserRole> roles;
 
-    // 사용자는 여러 조직(부서/그룹)에 속할 수 있음 (N:M 관계)
+    // A user can belong to multiple organizations (departments/groups) (N:M relationship)
     @JsonManagedReference
     @ManyToMany(fetch = FetchType.LAZY)
-    @BatchSize(size = 50)
+    @BatchSize(size = 100)
     @JoinTable(
         name = "user_account_organizations",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "organization_id")
     )
-    @Comment("소속조직: 사용자가 속한 부서 또는 조직 그룹")
+    @Comment("Affiliated Organization: Department or organizational group the user belongs to")
+    @I18nTitle({"ko=소속조직", "en=Organizations", "ja=所属組織"})
     private Set<UserOrganization> organizations;
 
         
@@ -124,11 +144,5 @@ public class UserAccount extends AuditingBaseEntity<String> {
     @Override
     public void setId(String id) {
         this.userId = id;
-    }
-    @PrePersist
-    public void generateId() {
-        if (this.userId == null) {
-            this.userId = UUID.randomUUID().toString();
-        }
     }
 }

@@ -63,7 +63,8 @@ class UserRoleServiceTest {
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
-        itemOrderCounter = new AtomicInteger(1);
+        // Use current time + random number to ensure uniqueness across test runs
+        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
         
         // Create service instance directly
         userRoleService = spy(new UserRoleService(userRoleRepository, entityManager));
@@ -77,8 +78,8 @@ class UserRoleServiceTest {
      */
     private UserRole createRandomUserRole() {
         UserRole userRole = new UserRole();
-        userRole.setName(faker.lorem().word());
-        userRole.setRole(faker.lorem().word());
+        userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
+        userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
         userRole.setItemOrder(itemOrderCounter.getAndIncrement());
         userRole.setId(faker.internet().uuid());
@@ -90,8 +91,8 @@ class UserRoleServiceTest {
      */
     private UserRoleCreateDTO createRandomUserRoleCreateDTO() {
         UserRoleCreateDTO dto = new UserRoleCreateDTO();
-        dto.setName(faker.lorem().word());
-        dto.setRole(faker.lorem().word());
+        dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
+        dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
         dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;
@@ -103,8 +104,8 @@ class UserRoleServiceTest {
     private UserRoleUpdateDTO createRandomUserRoleUpdateDTO(String id) {
         UserRoleUpdateDTO dto = new UserRoleUpdateDTO();
         dto.setId(id);
-        dto.setName(faker.lorem().word());
-        dto.setRole(faker.lorem().word());
+        dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
+        dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
         dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;

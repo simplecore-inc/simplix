@@ -10,32 +10,32 @@ import dev.simplecore.simplix.demo.web.common.user.dto.UserOrganizationDTOs.User
 public interface UserOrganizationTreeMapper {
     
     /**
-     * 전체 조직 트리 조회
+     * Retrieve the entire organization tree
      */
     List<UserOrganizationTreeDTO> organizationTree(@Param("orgId") String orgId);
     
     /**
-     * 특정 조직을 루트로 하는 서브트리 조회
+     * Retrieve subtree with a specific organization as root
      */
     List<UserOrganizationTreeDTO> organizationSubTree(@Param("orgId") String orgId);
     
     /**
-     * 특정 조직의 모든 하위 조직 ID 목록 조회
+     * Retrieve all subordinate organization IDs for a specific organization
      */
     List<String> findAllChildrenIds(@Param("orgId") String orgId);
     
     /**
-     * 특정 조직의 모든 상위 조직 ID 목록 조회
+     * Retrieve all parent organization IDs for a specific organization
      */
     List<String> findAllParentIds(@Param("orgId") String orgId);
     
     /**
-     * 특정 조직의 직계 하위 조직 목록 조회
+     * Retrieve direct subordinate organizations for a specific organization
      */
     List<UserOrganizationMyBatisDTO> findDirectChildren(@Param("orgId") String orgId);
     
     /**
-     * 특정 조직의 직계 상위 조직 조회
+     * Retrieve direct parent organization of a specific organization
      */
     UserOrganizationMyBatisDTO findDirectParent(@Param("orgId") String orgId);
 } 

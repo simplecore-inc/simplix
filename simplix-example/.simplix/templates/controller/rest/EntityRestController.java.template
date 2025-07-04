@@ -229,7 +229,7 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
     @Operation(summary = "Search <%= entityName %> list (GET)", description = "Searches <%= entityComment.split(':')[0].toLowerCase() %>s with various conditions using GET method")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('<%= entityName %>', 'list')")
-    public ResponseEntity<SimpliXApiResponse<Page<<%= entityName %>ListDTO>>> search(
+    public ResponseEntity<SimpliXApiResponse<Page<<%= entityName %>ListDTO>>> simpleSearch(
         @RequestParam(required = false) @SearchableParams(<%= entityName %>SearchDTO.class) Map<String, String> params
     ) {
         return ResponseEntity.ok(SimpliXApiResponse.success(service.search(params)));

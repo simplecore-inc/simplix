@@ -1,5 +1,5 @@
 package dev.simplecore.simplix.demo.web.common.auth.dto;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,81 +27,81 @@ public class AuthPermissionDTOs {
     @Setter
     public static class AuthPermissionSearchDTO {
         
-        @Schema(description = "권한 ID")
+        @Schema(description = "Permission ID")
         @SearchableField(operators = {EQUALS})
         private String id;
         
-        @Schema(description = "권한코드")
+        @Schema(description = "Permission Code")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
         private String name;
         
-        @Schema(description = "권한설명")
+        @Schema(description = "Permission Description")
         @SearchableField(operators = {CONTAINS})
         private String description;
         
-        @Schema(description = "목록 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the list view function")
         @SearchableField(operators = {EQUALS})
         private Boolean useList;
         
-        @Schema(description = "상세 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the detail view function")
         @SearchableField(operators = {EQUALS})
         private Boolean useView;
         
-        @Schema(description = "생성 기능 사용 여부")
+        @Schema(description = "Whether to use the create function")
         @SearchableField(operators = {EQUALS})
         private Boolean useCreate;
         
-        @Schema(description = "수정 기능 사용 여부")
+        @Schema(description = "Whether to use the edit function")
         @SearchableField(operators = {EQUALS})
         private Boolean useEdit;
         
-        @Schema(description = "삭제 기능 사용 여부")
+        @Schema(description = "Whether to use the delete function")
         @SearchableField(operators = {EQUALS})
         private Boolean useDelete;
         
-        @Schema(description = "추가 기능 1 사용 여부")
+        @Schema(description = "Whether to use extra function 1")
         @SearchableField(operators = {EQUALS})
         private Boolean useExtra1;
         
-        @Schema(description = "추가 기능 2 사용 여부")
+        @Schema(description = "Whether to use extra function 2")
         @SearchableField(operators = {EQUALS})
         private Boolean useExtra2;
         
-        @Schema(description = "추가 기능 3 사용 여부")
+        @Schema(description = "Whether to use extra function 3")
         @SearchableField(operators = {EQUALS})
         private Boolean useExtra3;
         
-        @Schema(description = "추가 기능 4 사용 여부")
+        @Schema(description = "Whether to use extra function 4")
         @SearchableField(operators = {EQUALS})
         private Boolean useExtra4;
         
-        @Schema(description = "추가 기능 5 사용 여부")
+        @Schema(description = "Whether to use extra function 5")
         @SearchableField(operators = {EQUALS})
         private Boolean useExtra5;
         
-        @Schema(description = "추가 기능 1 이름")
+        @Schema(description = "Extra Function 1 Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String extra1Name;
         
-        @Schema(description = "추가 기능 2 이름")
+        @Schema(description = "Extra Function 2 Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String extra2Name;
         
-        @Schema(description = "추가 기능 3 이름")
+        @Schema(description = "Extra Function 3 Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String extra3Name;
         
-        @Schema(description = "추가 기능 4 이름")
+        @Schema(description = "Extra Function 4 Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String extra4Name;
         
-        @Schema(description = "추가 기능 5 이름")
+        @Schema(description = "Extra Function 5 Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String extra5Name;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration date and time")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -114,107 +114,107 @@ public class AuthPermissionDTOs {
         @Schema(description = "AuthPermission ID")
         private String id;
         
-        @Schema(description = "권한코드")
+        @Schema(description = "Permission Code")
         private String name;
         
-        @Schema(description = "권한설명")
+        @Schema(description = "Permission Description")
         private String description;
         
-        @Schema(description = "목록 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the list view function")
         private Boolean useList;
         
-        @Schema(description = "상세 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the detail view function")
         private Boolean useView;
         
-        @Schema(description = "생성 기능 사용 여부")
+        @Schema(description = "Whether to use the create function")
         private Boolean useCreate;
         
-        @Schema(description = "수정 기능 사용 여부")
+        @Schema(description = "Whether to use the edit function")
         private Boolean useEdit;
         
-        @Schema(description = "삭제 기능 사용 여부")
+        @Schema(description = "Whether to use the delete function")
         private Boolean useDelete;
         
-        @Schema(description = "추가 기능 1 사용 여부")
+        @Schema(description = "Whether to use extra function 1")
         private Boolean useExtra1;
         
-        @Schema(description = "추가 기능 2 사용 여부")
+        @Schema(description = "Whether to use extra function 2")
         private Boolean useExtra2;
         
-        @Schema(description = "추가 기능 3 사용 여부")
+        @Schema(description = "Whether to use extra function 3")
         private Boolean useExtra3;
         
-        @Schema(description = "추가 기능 4 사용 여부")
+        @Schema(description = "Whether to use extra function 4")
         private Boolean useExtra4;
         
-        @Schema(description = "추가 기능 5 사용 여부")
+        @Schema(description = "Whether to use extra function 5")
         private Boolean useExtra5;
         
-        @Schema(description = "추가 기능 1 이름")
+        @Schema(description = "Extra Function 1 Name")
         private String extra1Name;
         
-        @Schema(description = "추가 기능 2 이름")
+        @Schema(description = "Extra Function 2 Name")
         private String extra2Name;
         
-        @Schema(description = "추가 기능 3 이름")
+        @Schema(description = "Extra Function 3 Name")
         private String extra3Name;
         
-        @Schema(description = "추가 기능 4 이름")
+        @Schema(description = "Extra Function 4 Name")
         private String extra4Name;
         
-        @Schema(description = "추가 기능 5 이름")
+        @Schema(description = "Extra Function 5 Name")
         private String extra5Name;
         
     }
 
     @Data
     public static class AuthPermissionBatchUpdateDTO {
-        @Schema(description = "AuthPermission ID 목록")
+        @Schema(description = "AuthPermission ID List")
         private Set<String> ids;
         
-        @Schema(description = "목록 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the list view function")
         private Boolean useList;
         
-        @Schema(description = "상세 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the detail view function")
         private Boolean useView;
         
-        @Schema(description = "생성 기능 사용 여부")
+        @Schema(description = "Whether to use the create function")
         private Boolean useCreate;
         
-        @Schema(description = "수정 기능 사용 여부")
+        @Schema(description = "Whether to use the edit function")
         private Boolean useEdit;
         
-        @Schema(description = "삭제 기능 사용 여부")
+        @Schema(description = "Whether to use the delete function")
         private Boolean useDelete;
         
-        @Schema(description = "추가 기능 1 사용 여부")
+        @Schema(description = "Whether to use extra function 1")
         private Boolean useExtra1;
         
-        @Schema(description = "추가 기능 2 사용 여부")
+        @Schema(description = "Whether to use extra function 2")
         private Boolean useExtra2;
         
-        @Schema(description = "추가 기능 3 사용 여부")
+        @Schema(description = "Whether to use extra function 3")
         private Boolean useExtra3;
         
-        @Schema(description = "추가 기능 4 사용 여부")
+        @Schema(description = "Whether to use extra function 4")
         private Boolean useExtra4;
         
-        @Schema(description = "추가 기능 5 사용 여부")
+        @Schema(description = "Whether to use extra function 5")
         private Boolean useExtra5;
         
-        @Schema(description = "추가 기능 1 이름")
+        @Schema(description = "Extra Function 1 Name")
         private String extra1Name;
         
-        @Schema(description = "추가 기능 2 이름")
+        @Schema(description = "Extra Function 2 Name")
         private String extra2Name;
         
-        @Schema(description = "추가 기능 3 이름")
+        @Schema(description = "Extra Function 3 Name")
         private String extra3Name;
         
-        @Schema(description = "추가 기능 4 이름")
+        @Schema(description = "Extra Function 4 Name")
         private String extra4Name;
         
-        @Schema(description = "추가 기능 5 이름")
+        @Schema(description = "Extra Function 5 Name")
         private String extra5Name;
         
     }
@@ -226,134 +226,134 @@ public class AuthPermissionDTOs {
     @Data
     public static class AuthPermissionDetailDTO {
         
-        @Schema(description = "권한 ID")
+        @Schema(description = "Permission ID")
         private String id;
         
-        @Schema(description = "권한코드")
+        @Schema(description = "Permission Code")
         private String name;
         
-        @Schema(description = "권한설명")
+        @Schema(description = "Permission Description")
         private String description;
         
-        @Schema(description = "목록 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the list view function")
         private Boolean useList;
         
-        @Schema(description = "상세 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the detail view function")
         private Boolean useView;
         
-        @Schema(description = "생성 기능 사용 여부")
+        @Schema(description = "Whether to use the create function")
         private Boolean useCreate;
         
-        @Schema(description = "수정 기능 사용 여부")
+        @Schema(description = "Whether to use the edit function")
         private Boolean useEdit;
         
-        @Schema(description = "삭제 기능 사용 여부")
+        @Schema(description = "Whether to use the delete function")
         private Boolean useDelete;
         
-        @Schema(description = "추가 기능 1 사용 여부")
+        @Schema(description = "Whether to use extra function 1")
         private Boolean useExtra1;
         
-        @Schema(description = "추가 기능 2 사용 여부")
+        @Schema(description = "Whether to use extra function 2")
         private Boolean useExtra2;
         
-        @Schema(description = "추가 기능 3 사용 여부")
+        @Schema(description = "Whether to use extra function 3")
         private Boolean useExtra3;
         
-        @Schema(description = "추가 기능 4 사용 여부")
+        @Schema(description = "Whether to use extra function 4")
         private Boolean useExtra4;
         
-        @Schema(description = "추가 기능 5 사용 여부")
+        @Schema(description = "Whether to use extra function 5")
         private Boolean useExtra5;
         
-        @Schema(description = "추가 기능 1 이름")
+        @Schema(description = "Extra Function 1 Name")
         private String extra1Name;
         
-        @Schema(description = "추가 기능 2 이름")
+        @Schema(description = "Extra Function 2 Name")
         private String extra2Name;
         
-        @Schema(description = "추가 기능 3 이름")
+        @Schema(description = "Extra Function 3 Name")
         private String extra3Name;
         
-        @Schema(description = "추가 기능 4 이름")
+        @Schema(description = "Extra Function 4 Name")
         private String extra4Name;
         
-        @Schema(description = "추가 기능 5 이름")
+        @Schema(description = "Extra Function 5 Name")
         private String extra5Name;
         
-        @Schema(description = "등록자")
+        @Schema(description = "Created By")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration date and time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated By")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated date and time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
     public static class AuthPermissionListDTO {
         
-        @Schema(description = "권한 ID")
+        @Schema(description = "Permission ID")
         private String id;
         
-        @Schema(description = "권한코드")
+        @Schema(description = "Permission Code")
         private String name;
         
-        @Schema(description = "권한설명")
+        @Schema(description = "Permission Description")
         private String description;
         
-        @Schema(description = "목록 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the list view function")
         private Boolean useList;
         
-        @Schema(description = "상세 조회 기능 사용 여부")
+        @Schema(description = "Whether to use the detail view function")
         private Boolean useView;
         
-        @Schema(description = "생성 기능 사용 여부")
+        @Schema(description = "Whether to use the create function")
         private Boolean useCreate;
         
-        @Schema(description = "수정 기능 사용 여부")
+        @Schema(description = "Whether to use the edit function")
         private Boolean useEdit;
         
-        @Schema(description = "삭제 기능 사용 여부")
+        @Schema(description = "Whether to use the delete function")
         private Boolean useDelete;
         
-        @Schema(description = "추가 기능 1 사용 여부")
+        @Schema(description = "Whether to use extra function 1")
         private Boolean useExtra1;
         
-        @Schema(description = "추가 기능 2 사용 여부")
+        @Schema(description = "Whether to use extra function 2")
         private Boolean useExtra2;
         
-        @Schema(description = "추가 기능 3 사용 여부")
+        @Schema(description = "Whether to use extra function 3")
         private Boolean useExtra3;
         
-        @Schema(description = "추가 기능 4 사용 여부")
+        @Schema(description = "Whether to use extra function 4")
         private Boolean useExtra4;
         
-        @Schema(description = "추가 기능 5 사용 여부")
+        @Schema(description = "Whether to use extra function 5")
         private Boolean useExtra5;
         
-        @Schema(description = "추가 기능 1 이름")
+        @Schema(description = "Extra Function 1 Name")
         private String extra1Name;
         
-        @Schema(description = "추가 기능 2 이름")
+        @Schema(description = "Extra Function 2 Name")
         private String extra2Name;
         
-        @Schema(description = "추가 기능 3 이름")
+        @Schema(description = "Extra Function 3 Name")
         private String extra3Name;
         
-        @Schema(description = "추가 기능 4 이름")
+        @Schema(description = "Extra Function 4 Name")
         private String extra4Name;
         
-        @Schema(description = "추가 기능 5 이름")
+        @Schema(description = "Extra Function 5 Name")
         private String extra5Name;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Registration date and time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 } 

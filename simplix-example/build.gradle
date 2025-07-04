@@ -27,10 +27,13 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
     
     implementation 'com.h2database:h2'
+    implementation 'com.microsoft.sqlserver:mssql-jdbc'
     implementation 'org.liquibase:liquibase-core'
     
     implementation 'net.datafaker:datafaker:2.0.2'
 
+    // https://mvnrepository.com/artifact/io.hypersistence/hypersistence-utils-hibernate-55
+    implementation "io.hypersistence:hypersistence-utils-hibernate-55:3.9.5"
 
     // 테스트 의존성
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

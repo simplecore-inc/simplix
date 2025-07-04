@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 import javax.validation.constraints.NotBlank;
@@ -41,11 +41,11 @@ public class UserOrganizationDTOs {
     @Setter
     public static class UserOrganizationSearchDTO {
         
-        @Schema(description = "조직 ID")
+        @Schema(description = "Organization ID")
         @SearchableField(operators = {EQUALS})
         private String id;
         
-        @Schema(description = "조직명")
+        @Schema(description = "Organization Name")
         @SearchableField(operators = {CONTAINS, EQUALS}, sortable = true)
         private String name;
         
@@ -53,11 +53,11 @@ public class UserOrganizationDTOs {
         @SearchableField(entityField = "parent.id", operators = {EQUALS})
         private String parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         @SearchableField(operators = {EQUALS, GREATER_THAN, LESS_THAN})
         private Integer itemOrder;
         
@@ -67,7 +67,7 @@ public class UserOrganizationDTOs {
         
         @Schema(description = "등록일시")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -77,19 +77,19 @@ public class UserOrganizationDTOs {
     @Data
     public static class UserOrganizationCreateDTO {
         
-        @Schema(description = "조직명")
+        @Schema(description = "Organization Name")
         private String name;
         
-        @Schema(description = "조직유형")
+        @Schema(description = "Organization Type")
         private OrganizationType orgType;
         
         @Schema(description = "Parent")
         private String parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
         @Schema(description = "Children")
@@ -101,22 +101,22 @@ public class UserOrganizationDTOs {
     public static class UserOrganizationUpdateDTO {
         
         @Schema(description = "UserOrganization ID")
-        @NotBlank(message = "ID는 필수 입력값입니다")
+        @NotBlank(message = "ID is a required input value")
         private String id;
         
-        @Schema(description = "조직명")
+        @Schema(description = "Organization Name")
         private String name;
         
-        @Schema(description = "조직유형")
+        @Schema(description = "Organization Type")
         private OrganizationType orgType;
         
         @Schema(description = "Parent")
         private String parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
         @Schema(description = "Children")
@@ -126,19 +126,19 @@ public class UserOrganizationDTOs {
 
     @Data
     public static class UserOrganizationBatchUpdateDTO {
-        @Schema(description = "UserOrganization ID 목록")
+        @Schema(description = "UserOrganization ID List")
         private Set<String> ids;
         
-        @Schema(description = "조직유형")
+        @Schema(description = "Organization Type")
         private OrganizationType orgType;
         
         @Schema(description = "Parent")
         private String parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
         @Schema(description = "Children")
@@ -153,22 +153,22 @@ public class UserOrganizationDTOs {
     @Data
     public static class UserOrganizationDetailDTO {
         
-        @Schema(description = "조직 ID")
+        @Schema(description = "Organization ID")
         private String id;
         
-        @Schema(description = "조직명")
+        @Schema(description = "Organization Name")
         private String name;
         
-        @Schema(description = "조직유형")
+        @Schema(description = "Organization Type")
         private OrganizationType orgType;
         
         @Schema(description = "Parent")
         private UserOrganization parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
         @Schema(description = "Children")
@@ -179,35 +179,35 @@ public class UserOrganizationDTOs {
 
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
 
         @Schema(description = "수정자")
         private String updatedBy;
 
         @Schema(description = "수정일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime updatedAt;
+        private OffsetDateTime updatedAt;
     }
 
     @Data
     public static class UserOrganizationListDTO {
         
-        @Schema(description = "조직 ID")
+        @Schema(description = "Organization ID")
         private String id;
         
-        @Schema(description = "조직명")
+        @Schema(description = "Organization Name")
         private String name;
         
-        @Schema(description = "조직유형")
+        @Schema(description = "Organization Type")
         private OrganizationType orgType;
         
         @Schema(description = "Parent")
         private UserOrganization parent;
         
-        @Schema(description = "조직설명")
+        @Schema(description = "Organization Description")
         private String description;
         
-        @Schema(description = "순서")
+        @Schema(description = "Order")
         private Integer itemOrder;
         
         @Schema(description = "Children")
@@ -215,7 +215,7 @@ public class UserOrganizationDTOs {
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
     }
 
     //----------------------------------
@@ -234,7 +234,7 @@ public class UserOrganizationDTOs {
         private String parentId;
         private String description;
         private Integer itemOrder;
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
         private String path;
         private Integer level;
 
@@ -265,7 +265,7 @@ public class UserOrganizationDTOs {
         private String parentId;
         private String description;
         private Integer itemOrder;
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
         private String path;
         private Integer level;
         private ParentOrgDTO parent;

@@ -3,8 +3,14 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle}">사용자 계정</title>
+</head>
 
 <head>
+    <meta charset="utf-8">
     <title th:text="${pageTitle}">사용자 계정</title>
 </head>
 
@@ -45,8 +51,8 @@
                             <h5 class="card-title mb-3">기본 정보</h5>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">계정 <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="username" 
+                                    <label for="username" class="form-label">계정 <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="username" name="username" 
                                            th:value="${item?.username}"
                                            th:readonly="${item != null}"
                                            required />
@@ -55,8 +61,9 @@
                                     <label class="form-label">비밀번호 
                                         <span class="text-danger" th:if="${item == null}">*</span>
                                     </label>
-                                    <input type="password" class="form-control" name="password"
-                                           th:required="${item == null}" />
+                                    <input type="password" class="form-control" name="password" id="password"
+                                           th:required="${item == null}" 
+                                           th:placeholder="${item == null ? '비밀번호를 입력하세요' : '변경하려면 입력하세요'}" />
                                 </div>
                                 <div class="col-md-6">
                                     <label for="realName" class="form-label">이름 <span class="text-danger">*</span></label>

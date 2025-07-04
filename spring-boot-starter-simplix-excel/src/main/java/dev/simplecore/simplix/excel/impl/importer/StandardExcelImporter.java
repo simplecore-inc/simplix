@@ -22,8 +22,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,6 +44,9 @@ public class StandardExcelImporter<T> {
     
     @Getter @Setter
     private String dateTimeFormat = "yyyy-MM-dd HH:mm:ss";
+    
+    @Getter @Setter
+    private ZoneId applicationZoneId = ZoneId.systemDefault();
 
     public StandardExcelImporter(Class<T> dataClass) {
         this.dataClass = dataClass;
@@ -70,6 +72,16 @@ public class StandardExcelImporter<T> {
         converters.put(Boolean.class, BooleanConverter.getDefault());
         converters.put(LocalDate.class, DateTimeConverter.getDefault());
         converters.put(LocalDateTime.class, DateTimeConverter.getDefault());
+        converters.put(LocalTime.class, DateTimeConverter.getDefault());
+        converters.put(OffsetDateTime.class, DateTimeConverter.getDefault());
+        converters.put(OffsetTime.class, DateTimeConverter.getDefault());
+        converters.put(ZonedDateTime.class, DateTimeConverter.getDefault());
+        converters.put(Instant.class, DateTimeConverter.getDefault());
+        converters.put(Year.class, DateTimeConverter.getDefault());
+        converters.put(YearMonth.class, DateTimeConverter.getDefault());
+        converters.put(MonthDay.class, DateTimeConverter.getDefault());
+        converters.put(Duration.class, DateTimeConverter.getDefault());
+        converters.put(Period.class, DateTimeConverter.getDefault());
         converters.put(Enum.class, EnumConverter.getDefault());
         return converters;
     }
@@ -226,8 +238,9 @@ public class StandardExcelImporter<T> {
             if (targetType == BigDecimal.class) return BigDecimal.valueOf(number.doubleValue());
             
             // Handle Excel date values (days since 1900-01-01)
-            if ((targetType == LocalDate.class || targetType == LocalDateTime.class) 
-                && number.doubleValue() > 0) {
+            if ((targetType == LocalDate.class || targetType == LocalDateTime.class || 
+                 targetType == OffsetDateTime.class || targetType == ZonedDateTime.class || 
+                 targetType == Instant.class) && number.doubleValue() > 0) {
                 try {
                     // Excel's date system has a bug where it thinks 1900 is a leap year
                     // We need to subtract 1 from dates after February 28, 1900
@@ -252,7 +265,21 @@ public class StandardExcelImporter<T> {
                             .plusSeconds((millisInDay % (60 * 1000)) / 1000);
                     }
                     
-                    return targetType == LocalDate.class ? dateTime.toLocalDate() : dateTime;
+                    if (targetType == LocalDate.class) {
+                        return dateTime.toLocalDate();
+                    } else if (targetType == LocalDateTime.class) {
+                        return dateTime;
+                    } else if (targetType == OffsetDateTime.class) {
+                        // Use application timezone for OffsetDateTime conversion
+                        return dateTime.atOffset(ZoneOffset.from(applicationZoneId.getRules().getOffset(dateTime)));
+                    } else if (targetType == ZonedDateTime.class) {
+                        // Use application timezone for ZonedDateTime conversion
+                        return dateTime.atZone(applicationZoneId);
+                    } else if (targetType == Instant.class) {
+                        // Use application timezone for Instant conversion
+                        return dateTime.atZone(applicationZoneId).toInstant();
+                    }
+                    return dateTime;
                 } catch (Exception e) {
                     log.warn("Failed to convert Excel date value: {}", number, e);
                     return null;
@@ -293,6 +320,8 @@ public class StandardExcelImporter<T> {
         if (targetType == Boolean.class || targetType == boolean.class) {
             return ((BooleanConverter) converters.get(Boolean.class)).fromString(stringValue);
         }
+        
+        // Handle all date/time types
         if (targetType == LocalDate.class) {
             return ((DateTimeConverter) converters.get(LocalDate.class))
                 .fromString(stringValue, LocalDate.class);
@@ -300,6 +329,62 @@ public class StandardExcelImporter<T> {
         if (targetType == LocalDateTime.class) {
             return ((DateTimeConverter) converters.get(LocalDateTime.class))
                 .fromString(stringValue, LocalDateTime.class);
+        }
+        if (targetType == LocalTime.class) {
+            return ((DateTimeConverter) converters.get(LocalTime.class))
+                .fromString(stringValue, LocalTime.class);
+        }
+        if (targetType == OffsetDateTime.class) {
+            return ((DateTimeConverter) converters.get(OffsetDateTime.class))
+                .fromString(stringValue, OffsetDateTime.class);
+        }
+        if (targetType == OffsetTime.class) {
+            return ((DateTimeConverter) converters.get(OffsetTime.class))
+                .fromString(stringValue, OffsetTime.class);
+        }
+        if (targetType == ZonedDateTime.class) {
+            return ((DateTimeConverter) converters.get(ZonedDateTime.class))
+                .fromString(stringValue, ZonedDateTime.class);
+        }
+        if (targetType == Instant.class) {
+            return ((DateTimeConverter) converters.get(Instant.class))
+                .fromString(stringValue, Instant.class);
+        }
+        if (targetType == Year.class) {
+            try {
+                return Year.of(Integer.parseInt(stringValue));
+            } catch (NumberFormatException e) {
+                return ((DateTimeConverter) converters.get(Year.class))
+                    .fromString(stringValue, Year.class);
+            }
+        }
+        if (targetType == YearMonth.class) {
+            return ((DateTimeConverter) converters.get(YearMonth.class))
+                .fromString(stringValue, YearMonth.class);
+        }
+        if (targetType == MonthDay.class) {
+            try {
+                return MonthDay.parse(stringValue);
+            } catch (Exception e) {
+                log.warn("Failed to parse MonthDay value: {}", stringValue, e);
+                return null;
+            }
+        }
+        if (targetType == Duration.class) {
+            try {
+                return Duration.parse(stringValue);
+            } catch (Exception e) {
+                log.warn("Failed to parse Duration value: {}", stringValue, e);
+                return null;
+            }
+        }
+        if (targetType == Period.class) {
+            try {
+                return Period.parse(stringValue);
+            } catch (Exception e) {
+                log.warn("Failed to parse Period value: {}", stringValue, e);
+                return null;
+            }
         }
         if (targetType.isEnum()) {
             return ((EnumConverter) converters.get(Enum.class))

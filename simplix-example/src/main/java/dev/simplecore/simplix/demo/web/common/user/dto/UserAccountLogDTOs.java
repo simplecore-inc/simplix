@@ -5,7 +5,7 @@ package dev.simplecore.simplix.demo.web.common.user.dto;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccountLog.UserAccountLogId;
 
 import java.util.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -39,9 +39,9 @@ public class UserAccountLogDTOs {
         
         @Schema(description = "logTime")
         @SearchableField(entityField = "id.logTime", operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
-        private LocalDateTime logTime;
+        private OffsetDateTime logTime;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         @SearchableField(operators = {CONTAINS})
         private String logMessage;
         
@@ -57,7 +57,7 @@ public class UserAccountLogDTOs {
         @Schema(description = "UserAccountLog ID")
         private UserAccountLogId id;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         private String logMessage;
         
     }
@@ -66,10 +66,10 @@ public class UserAccountLogDTOs {
     public static class UserAccountLogUpdateDTO {
 
         @Schema(description = "UserAccountLog ID")
-        @NotNull(message = "ID는 필수 입력값입니다")
+        @NotNull(message = "ID is a required input value")
         private UserAccountLogId id;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         private String logMessage;
         
     }
@@ -80,7 +80,7 @@ public class UserAccountLogDTOs {
         @Schema(description = "UserAccountLog ID 목록")
         private Set<UserAccountLogId> ids;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         private String logMessage;
         
     }
@@ -95,7 +95,7 @@ public class UserAccountLogDTOs {
         @Schema(description = "UserAccountLog ID")
         private UserAccountLogId id;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         private String logMessage;
         
     }
@@ -106,7 +106,7 @@ public class UserAccountLogDTOs {
         @Schema(description = "UserAccountLog ID")
         private UserAccountLogId id;
 
-        @Schema(description = "로그 메시지")
+        @Schema(description = "Log Message")
         private String logMessage;
         
     }

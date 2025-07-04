@@ -17,7 +17,7 @@ import org.springframework.stereotype.Repository;
  * 
  * For example, with your embedded ID class UserAccountLogId:
  * - findBylogIdUserId(String userId)
- * - findBylogIdLogTime(LocalDateTime logTime)
+ * - findBylogIdLogTime(OffsetDateTime logTime)
  * - findBylogIdUserIdAndLogMessage(String userId, String logMessage)
  */
 

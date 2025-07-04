@@ -18,40 +18,40 @@ import java.util.stream.Collectors;
 @Data
 public class UserAccountListExcel {
 
-    @ExcelColumn(name = "사용자 ID", bold = true)
+    @ExcelColumn(name = "User ID", bold = true)
     private String id;
 
-    @ExcelColumn(name = "로그인 계정", bold = true)
+    @ExcelColumn(name = "Login Account", bold = true)
     private String username;
 
-    @ExcelColumn(name = "이름")
+    @ExcelColumn(name = "Name")
     private String realName;
 
-    @ExcelColumn(name = "이메일", width = 25)
+    @ExcelColumn(name = "Email", width = 25)
     private String email;
 
-    @ExcelColumn(name = "휴대전화", alignment = HorizontalAlignment.CENTER)
+    @ExcelColumn(name = "Mobile Phone", alignment = HorizontalAlignment.CENTER)
     private String mobilePhone;
 
-    @ExcelColumn(name = "계정상태", backgroundColor = IndexedColors.YELLOW)
+    @ExcelColumn(name = "Account Status", backgroundColor = IndexedColors.YELLOW)
     private String enabled;
 
-    @ExcelColumn(name = "직급")
+    @ExcelColumn(name = "Position")
     private String positionName;
 
-    @ExcelColumn(name = "직급코드")
+    @ExcelColumn(name = "Position Code")
     private String positionCode;
 
-    @ExcelColumn(name = "직급설명", width = 25, wrapText = true)
+    @ExcelColumn(name = "Position Description", width = 25, wrapText = true)
     private String positionDescription;
 
-    @ExcelColumn(name = "권한", width = 20)
+    @ExcelColumn(name = "Permissions", width = 20)
     private String roleNames;
 
-    @ExcelColumn(name = "소속조직", width = 30, wrapText = true)
+    @ExcelColumn(name = "Affiliated Organization", width = 30, wrapText = true)
     private String organizationNames;
 
-    @ExcelColumn(name = "등록일시", alignment = HorizontalAlignment.CENTER)
+    @ExcelColumn(name = "Registration Date/Time", alignment = HorizontalAlignment.CENTER)
     private String createdAt;
 
     /**

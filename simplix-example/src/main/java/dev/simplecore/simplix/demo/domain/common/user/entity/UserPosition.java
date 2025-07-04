@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.hibernate.annotations.GenericGenerator;
 
 import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 
 import org.hibernate.annotations.Comment;
 
@@ -17,27 +18,32 @@ import java.util.UUID;
 @Table(name = "user_position")
 @org.hibernate.annotations.Table(
     appliesTo = "user_position",
-    comment = "사용자 직급: 조직 내 공식 직급 체계 정보"
+    comment = "User Position: Official position hierarchy information within the organization"
 )
+@I18nTitle({"ko=사용자 직급", "en=User Position", "ja=ユーザー職級"})
 public class UserPosition extends AuditingBaseEntity<String> {
 
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
+    @GeneratedValue(generator = "tsid")
+    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
     @Column(name="position_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("직급 ID: 시스템에서 사용하는 고유 UUID")
+    @Comment("Position ID: Unique UUID used in the system")
+    @I18nTitle({"ko=직급 ID", "en=Position ID", "ja=職級ID"})
     private String positionId;
 
     @Column(nullable = false, unique = true)
-    @Comment("직급명: 조직 내 공식 직급명")
+    @Comment("Position Name: Official position name within the organization")
+    @I18nTitle({"ko=직급명", "en=Position Name", "ja=職級名"})
     private String name;  // 예: 사원, 대리, 과장
 
     @Column(length = 500)
-    @Comment("직급설명: 직급에 대한 상세 설명 및 용도")
+    @Comment("Position Description: Detailed description and purpose of the position")
+    @I18nTitle({"ko=직급 설명", "en=Position Description", "ja=職級説明"})
     private String description;
 
     @Column(name = "item_order", nullable = false, unique = true)
-    @Comment("순서")
+    @Comment("Order")
+    @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
     private String itemOrder;
 
         
@@ -51,12 +57,5 @@ public class UserPosition extends AuditingBaseEntity<String> {
     @Override
     public void setId(String id) {
         this.positionId = id;
-    }
-
-    @PrePersist
-    public void generateId() {
-        if (this.positionId == null) {
-            this.positionId = UUID.randomUUID().toString();
-        }
     }
 }

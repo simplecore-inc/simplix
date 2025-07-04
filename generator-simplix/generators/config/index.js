@@ -149,6 +149,8 @@ export default class extends Generator {
             case 'BigDecimal':
               fieldConfig.searchOperators = ['equals', 'greaterThan', 'lessThan'];
               break;
+            case 'ZonedDateTime':
+            case 'OffsetDateTime':
             case 'LocalDateTime':
             case 'LocalDate':
               fieldConfig.searchOperators = ['between', 'greaterThan', 'lessThan'];
