@@ -1,22 +1,21 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
 
-import java.util.*;
-import java.time.OffsetDateTime;
-
-import dev.simplecore.simplix.core.annotation.I18nTitle;
+import dev.simplecore.searchable.core.annotation.SearchableField;
 import dev.simplecore.simplix.core.validator.ValidateWith;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserOrganization;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserPosition;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.format.annotation.DateTimeFormat;
-import javax.validation.constraints.*;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.validation.constraints.*;
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 
@@ -38,7 +37,7 @@ public class UserAccountDTOs {
     public static class UserAccountSearchDTO {
         
         @Schema(description = "User ID")
-        @SearchableField(operators = {EQUALS})
+        @SearchableField(entityField = "userId", operators = {EQUALS})
         private String id;
         
         @Schema(description = "Login Account")
@@ -82,15 +81,15 @@ public class UserAccountDTOs {
         private String addressDetail;
         
         @Schema(description = "Position Information")
-        @SearchableField(entityField = "position.positionId", operators = {EQUALS}, sortable = true)
+        @SearchableField(entityField = "position.positionId", sortField = "position.name", operators = {EQUALS}, sortable = true)
         private String position;
         
         @Schema(description = "Permission Information")
-        @SearchableField(entityField = "roles.roleId", operators = {EQUALS})
+        @SearchableField(entityField = "roles.roleId", operators = {IN})
         private String roles;
         
         @Schema(description = "Affiliated Organization")
-        @SearchableField(entityField = "organizations.organizationId", operators = {EQUALS})
+        @SearchableField(entityField = "organizations.organizationId", operators = {IN})
         private String organizations;
         
         @Schema(description = "Registration Date/Time")
@@ -194,10 +193,10 @@ public class UserAccountDTOs {
         private String username;
         
         @Schema(description = "Password")
-        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
+        @Pattern(regexp = "^$|^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
         private String password;
         
-        @Schema(description = "계정상태")
+        @Schema(description = "Account Status")
         @NotNull(message = "{validation.enabled.required}")
         private Boolean enabled;
         
@@ -265,7 +264,7 @@ public class UserAccountDTOs {
         @Schema(description = "UserAccount ID List")
         private Set<String> ids;
         
-        @Schema(description = "계정상태")
+        @Schema(description = "Account Status")
         private Boolean enabled;
         
         @Schema(description = "Position Information")
@@ -292,13 +291,13 @@ public class UserAccountDTOs {
         @Schema(description = "Login Account")
         private String username;
         
-        @Schema(description = "계정상태")
+        @Schema(description = "Account Status")
         private Boolean enabled;
         
-        @Schema(description = "이름")
+        @Schema(description = "Name")
         private String realName;
         
-        @Schema(description = "프로필 이미지")
+        @Schema(description = "Profile Image")
         private byte[] profileImage;
         
         @Schema(description = "Profile Image Type")
@@ -334,17 +333,17 @@ public class UserAccountDTOs {
         @Schema(description = "Affiliated Organization")
         private Set<UserOrganization> organizations;
         
-        @Schema(description = "등록자")
+        @Schema(description = "Created By")
         private String createdBy;
 
-        @Schema(description = "등록일시")
+        @Schema(description = "Created At")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
         private OffsetDateTime createdAt;
 
-        @Schema(description = "수정자")
+        @Schema(description = "Updated By")
         private String updatedBy;
 
-        @Schema(description = "수정일시")
+        @Schema(description = "Updated At")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
         private OffsetDateTime updatedAt;
     }
@@ -358,10 +357,10 @@ public class UserAccountDTOs {
         @Schema(description = "Login Account")
         private String username;
         
-        @Schema(description = "계정상태")
+        @Schema(description = "Account Status")
         private Boolean enabled;
         
-        @Schema(description = "이름")
+        @Schema(description = "Name")
         private String realName;
         
         @Schema(description = "Email")
@@ -379,7 +378,7 @@ public class UserAccountDTOs {
         @Schema(description = "Affiliated Organization")
         private Set<UserOrganization> organizations;
         
-        @Schema(description = "등록일시")
+        @Schema(description = "Created At")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
         private OffsetDateTime createdAt;
     }

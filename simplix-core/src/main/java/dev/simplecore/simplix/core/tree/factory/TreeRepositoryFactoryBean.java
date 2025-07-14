@@ -1,5 +1,10 @@
 package dev.simplecore.simplix.core.tree.factory;
 
+import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
+import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
+import dev.simplecore.simplix.core.tree.repository.TreeRepositoryImpl;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
@@ -10,12 +15,6 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
-import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
-import dev.simplecore.simplix.core.tree.entity.TreeEntity;
-import dev.simplecore.simplix.core.tree.repository.TreeRepositoryImpl;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Table;

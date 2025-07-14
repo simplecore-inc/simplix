@@ -1,36 +1,29 @@
 package dev.simplecore.simplix.web.advice;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.exception.ErrorCode;
 import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
-import org.slf4j.MDC;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Generic exception handler that can be extended to use custom response types and handle additional exceptions.
@@ -154,18 +147,26 @@ public class SimpliXExceptionHandler<T> {
     @Order(1)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public T handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        Locale currentLocale = LocaleContextHolder.getLocale();
         List<Map<String, String>> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
             Map<String, String> fieldError = new HashMap<>();
             fieldError.put("field", error.getField());
-            fieldError.put("message", error.getDefaultMessage());
+            
+            // Translate validation message if it's in {key} format
+            String originalMessage = error.getDefaultMessage();
+            String translatedMessage = translateValidationMessage(originalMessage);
+            fieldError.put("message", translatedMessage);
+            
+            log.info("Field validation - Field: {}, Original: {}, Translated: {}", 
+                error.getField(), originalMessage, translatedMessage);
             errors.add(fieldError);
         });
         
         T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.BAD_REQUEST,
             ErrorCode.VAL_VALIDATION_FAILED.getCode(),
-            messageSource.getMessage("error.val.validation.failed", null, "Validation failed", LocaleContextHolder.getLocale()),
+            getLocalizedMessage("error.val.validation.failed", "Validation failed"),
             errors,
             request.getRequestURI()
         );
@@ -175,12 +176,55 @@ public class SimpliXExceptionHandler<T> {
             SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
             if (apiResponse.getTraceId() != null) {
                 MDC.put("traceId", apiResponse.getTraceId());
-                log.error("Validation failed - TraceId: {}, Path: {}", 
-                    apiResponse.getTraceId(), request.getRequestURI(), ex);
+                // Log validation errors as WARN level without stack trace
+                log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}", 
+                    apiResponse.getTraceId(), request.getRequestURI(), 
+                    errors.stream().map(error -> error.get("field")).collect(java.util.stream.Collectors.toList()));
             }
         }
         
         return errorResponse;
+    }
+
+    /**
+     * Translate validation message from {key} format to localized message
+     */
+    private String translateValidationMessage(String originalMessage) {
+        if (originalMessage == null) {
+            return null;
+        }
+        
+        // Check if message is in {key} format
+        if (originalMessage.startsWith("{") && originalMessage.endsWith("}")) {
+            String messageKey = originalMessage.substring(1, originalMessage.length() - 1);
+            try {
+                return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+            } catch (Exception e) {
+                // If translation fails, return original message
+                log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                return originalMessage;
+            }
+        }
+        
+        // If not in {key} format, return as is
+        return originalMessage;
+    }
+
+    /**
+     * Get localized message with fallback to English default
+     */
+    private String getLocalizedMessage(String messageKey, String englishDefault) {
+        try {
+            Locale currentLocale = LocaleContextHolder.getLocale();
+            String resolvedMessage = messageSource.getMessage(messageKey, null, currentLocale);
+            log.debug("Resolved message key '{}' for locale '{}': '{}'", messageKey, currentLocale, resolvedMessage);
+            return resolvedMessage;
+        } catch (Exception e) {
+            Locale currentLocale = LocaleContextHolder.getLocale();
+            log.debug("Failed to resolve message key '{}' for locale '{}', using default: '{}'. Error: {}", 
+                messageKey, currentLocale, englishDefault, e.getMessage());
+            return englishDefault;
+        }
     }
 
     @ExceptionHandler(AccessDeniedException.class)

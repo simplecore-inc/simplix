@@ -1,20 +1,21 @@
 package dev.simplecore.simplix.event.spi.impl;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.context.ApplicationContext;
-
+import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
-
 import io.micrometer.core.instrument.MeterRegistry;
+import io.nats.client.Connection;
+import io.nats.client.Dispatcher;
+import io.nats.client.Subscription;
 import lombok.extern.slf4j.Slf4j;
-import io.nats.client.*;
-import java.util.List;
-import java.util.ArrayList;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.stereotype.Component;
+
 import javax.annotation.PreDestroy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**

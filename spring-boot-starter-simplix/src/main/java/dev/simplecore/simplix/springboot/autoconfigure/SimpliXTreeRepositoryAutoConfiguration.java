@@ -1,11 +1,10 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.TreeRepository;
-import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -14,12 +13,6 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
-import org.springframework.core.annotation.Order;
-import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.data.jpa.repository.config.JpaRepositoryConfigExtension;
-import org.springframework.data.repository.config.RepositoryConfigurationDelegate;
-import org.springframework.data.repository.config.RepositoryConfigurationSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;

@@ -2,7 +2,6 @@ package dev.simplecore.simplix.demo.domain.common.user.repository;
 
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
 import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
-
 import org.springframework.stereotype.Repository;
 
 /**

@@ -1,8 +1,7 @@
 package dev.simplecore.simplix.demo.domain.common.user.enums;
 
-import dev.simplecore.simplix.core.enums.SimpliXLabeledEnum;
 import dev.simplecore.simplix.core.annotation.I18nTitle;
-
+import dev.simplecore.simplix.core.enums.SimpliXLabeledEnum;
 import lombok.Getter;
 
 @Getter

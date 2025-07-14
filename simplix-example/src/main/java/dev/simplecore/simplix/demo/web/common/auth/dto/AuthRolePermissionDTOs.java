@@ -1,19 +1,19 @@
 package dev.simplecore.simplix.demo.web.common.auth.dto;
 
-import java.time.OffsetDateTime;
-import java.util.Set;
-
+import dev.simplecore.searchable.core.annotation.SearchableField;
 import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthPermission;
 import dev.simplecore.simplix.demo.domain.common.auth.enums.PermissionTargetType;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserOrganization;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 

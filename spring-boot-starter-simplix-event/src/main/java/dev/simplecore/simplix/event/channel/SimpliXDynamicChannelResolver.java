@@ -1,20 +1,20 @@
 package dev.simplecore.simplix.event.channel;
 
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.core.DestinationResolver;
-import org.springframework.integration.channel.DirectChannel;
-import org.springframework.messaging.MessagingException;
-
-import java.util.concurrent.ConcurrentHashMap;
-import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
+import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
 import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
-import org.springframework.lang.NonNull;
+import dev.simplecore.simplix.event.util.PayloadConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
 import org.springframework.context.ApplicationContext;
-import dev.simplecore.simplix.event.util.PayloadConverter;
+import org.springframework.integration.channel.DirectChannel;
+import org.springframework.lang.NonNull;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.core.DestinationResolver;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Creates a DirectChannel dynamically if the channel name doesn't exist.

@@ -1,7 +1,5 @@
 package dev.simplecore.simplix.mybatis.autoconfigure;
 
-import javax.sql.DataSource;
-
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -15,6 +13,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
 
 @AutoConfiguration(after = MybatisAutoConfiguration.class)
 @ConditionalOnClass({ SqlSessionTemplate.class, SqlSessionFactoryBean.class })

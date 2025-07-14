@@ -3,7 +3,6 @@ package dev.simplecore.simplix.demo.web.event.service;
 import dev.simplecore.simplix.demo.web.event.dto.SystemMetrics;
 import dev.simplecore.simplix.event.gateway.SimpliXEventGateway;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

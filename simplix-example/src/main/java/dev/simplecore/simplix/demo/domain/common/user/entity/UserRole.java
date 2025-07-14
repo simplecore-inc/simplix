@@ -1,16 +1,15 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
+import dev.simplecore.simplix.core.annotation.DisplayName;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
+import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.GenericGenerator;
 
-import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-
-import org.hibernate.annotations.Comment;
-
 import javax.persistence.*;
-import java.util.UUID;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -33,7 +32,8 @@ public class UserRole extends AuditingBaseEntity<String> {
 
     @Column(nullable = false, unique = true)
     @Comment("Role Name: Unique role name used in the system")
-    @I18nTitle({"ko=역할명", "en=Role Name", "ja=役割名"})
+    @I18nTitle({"ko=역할명", "en=Role Name", "ja=役할명"})
+    @DisplayName(description = "Role name for display")
     private String name;  // 예: 팀장, 프로젝트 매니저
 
     @Column(nullable = false, unique = true)
@@ -46,10 +46,10 @@ public class UserRole extends AuditingBaseEntity<String> {
     @I18nTitle({"ko=역할 설명", "en=Role Description", "ja=役割説明"})
     private String description;
 
-    @Column(name = "item_order", nullable = false, unique = true)
+    @Column(name = "item_order", nullable = false)
     @Comment("Order")
     @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
-    private Integer itemOrder;
+    private BigDecimal itemOrder;
 
         
     //----------------------------------

@@ -1,12 +1,11 @@
 package dev.simplecore.simplix.event.properties;
 
+import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import lombok.Getter;
-import lombok.Setter;
-
-import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 

@@ -1,11 +1,10 @@
 package dev.simplecore.simplix.core.tree.entity;
 
+import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
+import dev.simplecore.simplix.core.tree.annotation.LookupColumn.ColumnType;
+import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
 import lombok.Getter;
 import lombok.Setter;
-
-import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
-import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
-import dev.simplecore.simplix.core.tree.annotation.LookupColumn.ColumnType;
 
 import javax.persistence.*;
 import java.util.ArrayList;

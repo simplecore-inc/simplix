@@ -1,18 +1,16 @@
 package dev.simplecore.simplix.event.spi.impl;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.retry.support.RetryTemplate;
-import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
 import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
 import dev.simplecore.simplix.event.spi.MessageBrokerProvider;
-
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.context.ApplicationContext;
+import org.springframework.retry.support.RetryTemplate;
 
 /**
  * Provider for the RabbitMQ message broker adapter.

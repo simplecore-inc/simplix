@@ -1,16 +1,17 @@
 package dev.simplecore.simplix.auth.autoconfigure;
 
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
+import dev.simplecore.simplix.auth.security.SimpliXAccessDeniedHandler;
+import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
 import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter;
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
-import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
-import dev.simplecore.simplix.auth.security.SimpliXAccessDeniedHandler;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -19,6 +20,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -27,8 +29,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Arrays;
 

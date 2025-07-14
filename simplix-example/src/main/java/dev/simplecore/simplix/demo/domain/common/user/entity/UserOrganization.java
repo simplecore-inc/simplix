@@ -1,17 +1,17 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
+import dev.simplecore.simplix.core.annotation.DisplayName;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import dev.simplecore.simplix.demo.domain.common.user.enums.OrganizationType;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
-import java.util.UUID;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -35,6 +35,7 @@ public class UserOrganization extends AuditingBaseEntity<String> {
     @Column(nullable = false, unique = true)
     @Comment("Organization Name: Name of the department or group")
     @I18nTitle({"ko=조직명", "en=Organization Name", "ja=組織名"})
+    @DisplayName(description = "Organization name for display")
     private String name;  // 예: 개발팀, 인사부, 프로젝트A팀
 
     @Enumerated(EnumType.STRING)
@@ -54,10 +55,10 @@ public class UserOrganization extends AuditingBaseEntity<String> {
     @I18nTitle({"ko=조직 설명", "en=Organization Description", "ja=組織説明"})
     private String description;
 
-    @Column(name = "item_order", nullable = false, unique = true)
+    @Column(name = "item_order", nullable = false)
     @Comment("Order")
-    @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
-    private Integer itemOrder;
+    @I18nTitle({"ko=순서", "en=Order", "ja=順서"})
+    private BigDecimal itemOrder;
 
         
     //----------------------------------

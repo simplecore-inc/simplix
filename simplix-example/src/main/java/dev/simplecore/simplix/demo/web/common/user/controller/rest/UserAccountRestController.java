@@ -1,18 +1,18 @@
 package dev.simplecore.simplix.demo.web.common.user.controller.rest;
 
-import dev.simplecore.simplix.web.controller.SimpliXBaseController;
-import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
-import dev.simplecore.simplix.core.model.SimpliXApiResponse;
-import dev.simplecore.simplix.demo.permission.CustomUserDetails;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
-import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
-import dev.simplecore.simplix.demo.web.common.user.service.UserAccountService;
-import dev.simplecore.simplix.excel.api.ExcelExporter;
-import dev.simplecore.simplix.excel.impl.exporter.StandardExcelExporter;
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.parser.SearchableParamsParser;
 import dev.simplecore.searchable.openapi.annotation.SearchableParams;
+import dev.simplecore.simplix.core.model.SimpliXApiResponse;
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
+import dev.simplecore.simplix.demo.permission.CustomUserDetails;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
+import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
+import dev.simplecore.simplix.demo.web.common.user.service.UserAccountService;
+import dev.simplecore.simplix.excel.api.ExcelExporter;
+import dev.simplecore.simplix.excel.impl.exporter.StandardExcelExporter;
+import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
@@ -23,11 +23,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.servlet.http.HttpServletResponse;
 
 
 
@@ -202,7 +201,7 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     @Operation(summary = "Search UserAccount list (GET)", description = "Searches user accounts with various conditions using GET method")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserAccount', 'list')")
-    public ResponseEntity<SimpliXApiResponse<Page<UserAccountListDTO>>> search(
+    public ResponseEntity<SimpliXApiResponse<Page<UserAccountListDTO>>> simpleSearch(
         @RequestParam(required = false) @SearchableParams(UserAccountSearchDTO.class) Map<String, String> params
     ) {
         return ResponseEntity.ok(SimpliXApiResponse.success(service.search(params)));

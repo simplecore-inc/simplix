@@ -1,9 +1,8 @@
 package dev.simplecore.simplix.core.tree.service;
 
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 
 import java.util.List;
 import java.util.Map;

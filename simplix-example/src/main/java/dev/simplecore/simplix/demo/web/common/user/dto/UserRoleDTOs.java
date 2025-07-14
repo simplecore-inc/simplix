@@ -1,16 +1,16 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
-import java.time.OffsetDateTime;
-import java.util.Set;
-
-import javax.validation.constraints.NotBlank;
-
 import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.validation.constraints.NotBlank;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 
@@ -36,7 +36,7 @@ public class UserRoleDTOs {
         private String id;
         
         @Schema(description = "Role Name")
-        @SearchableField(operators = {CONTAINS, EQUALS}, sortable = true)
+        @SearchableField(operators = {CONTAINS, EQUALS})
         private String name;
         
         @Schema(description = "Role Code")
@@ -46,9 +46,13 @@ public class UserRoleDTOs {
         @Schema(description = "Role Description")
         @SearchableField(operators = {CONTAINS})
         private String description;
+
+        @Schema(description = "Order")
+        @SearchableField(sortable = true)
+        private BigDecimal itemOrder;
         
         @Schema(description = "Registration Date/Time")
-        @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
+        @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN})
         private OffsetDateTime createdAt;
     }
 
@@ -68,7 +72,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private Integer itemOrder;
+        private BigDecimal itemOrder;
         
     }
 
@@ -89,7 +93,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private Integer itemOrder;
+        private BigDecimal itemOrder;
         
     }
 
@@ -97,6 +101,17 @@ public class UserRoleDTOs {
     public static class UserRoleBatchUpdateDTO {
         @Schema(description = "UserRole ID List")
         private Set<String> ids;
+        
+    }
+
+    @Data
+    public static class UserRoleOrderUpdateDTO {
+        @Schema(description = "UserRole ID")
+        @NotBlank(message = "ID is a required input value")
+        private String id;
+        
+        @Schema(description = "Order")
+        private BigDecimal itemOrder;
         
     }
 
@@ -120,7 +135,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private Integer itemOrder;
+        private BigDecimal itemOrder;
         
         @Schema(description = "Registered By")
         private String createdBy;
@@ -153,7 +168,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private Integer itemOrder;
+        private BigDecimal itemOrder;
         
         @Schema(description = "Registration Date/Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")

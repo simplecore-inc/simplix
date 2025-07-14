@@ -2,17 +2,16 @@ package dev.simplecore.simplix.demo.web.common.user.dto;
 
 // import entity.user.common.domain.dev.simplecore.simplix.demo.UserAccountLog;
 
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccountLog.UserAccountLogId;
-
-import java.util.*;
-import java.time.OffsetDateTime;
 import dev.simplecore.searchable.core.annotation.SearchableField;
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccountLog.UserAccountLogId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotNull;
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 

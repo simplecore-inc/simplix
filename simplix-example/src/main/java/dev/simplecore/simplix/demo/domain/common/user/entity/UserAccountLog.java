@@ -1,18 +1,16 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
-import dev.simplecore.simplix.demo.domain.BaseEntity;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 import dev.simplecore.simplix.core.convert.datetime.DateTimeConverter;
 import dev.simplecore.simplix.core.entity.SimpliXCompositeKey;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-
+import dev.simplecore.simplix.demo.domain.BaseEntity;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
 import javax.persistence.*;
-
 import java.time.OffsetDateTime;
-import lombok.Data;
 
 @Entity
 @Getter

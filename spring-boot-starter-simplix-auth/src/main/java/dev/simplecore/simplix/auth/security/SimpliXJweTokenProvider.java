@@ -1,8 +1,5 @@
 package dev.simplecore.simplix.auth.security;
 
-import dev.simplecore.simplix.auth.exception.TokenValidationException;
-import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
-import dev.simplecore.simplix.core.exception.ErrorCode;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
@@ -13,6 +10,9 @@ import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.simplecore.simplix.auth.exception.TokenValidationException;
+import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
+import dev.simplecore.simplix.core.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

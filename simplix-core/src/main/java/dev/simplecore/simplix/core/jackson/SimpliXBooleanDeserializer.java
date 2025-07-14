@@ -1,9 +1,9 @@
 package dev.simplecore.simplix.core.jackson;
 
-import dev.simplecore.simplix.core.convert.bool.BooleanConverter;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import dev.simplecore.simplix.core.convert.bool.BooleanConverter;
 
 import java.io.IOException;
 

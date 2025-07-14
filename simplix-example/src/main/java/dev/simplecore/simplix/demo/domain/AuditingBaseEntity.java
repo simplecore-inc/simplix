@@ -1,6 +1,8 @@
 package dev.simplecore.simplix.demo.domain;
 
 
+import dev.simplecore.simplix.core.annotation.I18nTitle;
+import dev.simplecore.simplix.core.entity.SimpliXBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
@@ -9,9 +11,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-import dev.simplecore.simplix.core.entity.SimpliXBaseEntity;
 
 import javax.persistence.Column;
 import javax.persistence.EntityListeners;

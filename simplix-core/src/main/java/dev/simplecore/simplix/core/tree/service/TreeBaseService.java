@@ -1,17 +1,16 @@
 package dev.simplecore.simplix.core.tree.service;
 
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
+import dev.simplecore.simplix.core.tree.repository.TreeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.stereotype.Service;
-
-import dev.simplecore.simplix.core.tree.entity.TreeEntity;
-import dev.simplecore.simplix.core.tree.repository.TreeRepository;
 
 import java.lang.reflect.Method;
 import java.util.*;

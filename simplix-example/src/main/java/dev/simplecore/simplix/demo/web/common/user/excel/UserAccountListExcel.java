@@ -88,7 +88,7 @@ public class UserAccountListExcel {
         // Position information
         if (userAccount.getPosition() != null) {
             excel.setPositionName(userAccount.getPosition().getName());
-            excel.setPositionCode(userAccount.getPosition().getItemOrder());
+            excel.setPositionCode(String.valueOf(userAccount.getPosition().getItemOrder()));
             excel.setPositionDescription(userAccount.getPosition().getDescription());
         }
         

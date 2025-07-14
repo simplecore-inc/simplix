@@ -3,7 +3,6 @@ package dev.simplecore.simplix.demo.domain.common.auth.repository;
 import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthRolePermission;
 import dev.simplecore.simplix.demo.domain.common.auth.enums.PermissionTargetType;
 import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
-
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;

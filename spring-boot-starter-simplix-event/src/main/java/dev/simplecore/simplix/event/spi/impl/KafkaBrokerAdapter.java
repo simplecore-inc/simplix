@@ -1,30 +1,29 @@
 package dev.simplecore.simplix.event.spi.impl;
 
+import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
+import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
+import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
+import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
+import dev.simplecore.simplix.event.util.PayloadConverter;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.MessageListener;
-import org.springframework.stereotype.Component;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
-import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
-import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
-import dev.simplecore.simplix.event.util.PayloadConverter;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import lombok.extern.slf4j.Slf4j;
-import java.util.function.Consumer;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Kafka Broker Adapter

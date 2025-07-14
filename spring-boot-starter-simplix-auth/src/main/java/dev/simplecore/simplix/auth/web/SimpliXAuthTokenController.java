@@ -1,9 +1,9 @@
 package dev.simplecore.simplix.auth.web;
 
+import com.nimbusds.jose.JOSEException;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
-import com.nimbusds.jose.JOSEException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;

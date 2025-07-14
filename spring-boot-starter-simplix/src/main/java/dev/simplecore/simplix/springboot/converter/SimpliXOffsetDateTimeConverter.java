@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 
 /**
  * JPA AttributeConverter for automatic OffsetDateTime timezone conversion.

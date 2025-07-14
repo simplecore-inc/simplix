@@ -1,9 +1,8 @@
 package dev.simplecore.simplix.core.tree.repository;
 
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-
-import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 
 import java.util.List;
 import java.util.Map;

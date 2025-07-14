@@ -1,23 +1,10 @@
 package dev.simplecore.simplix.demo.web.common.user.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.persistence.EntityManager;
-
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
+import dev.simplecore.simplix.demo.domain.common.user.repository.UserRoleRepository;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,17 +17,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.simplix.demo.domain.common.user.repository.UserRoleRepository;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleBatchUpdateDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleCreateDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleListDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleSearchDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleUpdateDTO;
-import net.datafaker.Faker;
+import javax.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
-import dev.simplecore.searchable.core.condition.SearchCondition;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleServiceTest {
@@ -58,13 +41,15 @@ class UserRoleServiceTest {
     private UserRoleService userRoleService;
 
     private Faker faker;
-    private AtomicInteger itemOrderCounter;
+    private AtomicReference<BigDecimal> itemOrderCounter;
 
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
+        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
+            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
+        itemOrderCounter = new AtomicReference<>(initialValue);
         
         // Create service instance directly
         userRoleService = spy(new UserRoleService(userRoleRepository, entityManager));
@@ -81,7 +66,7 @@ class UserRoleServiceTest {
         userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
-        userRole.setItemOrder(itemOrderCounter.getAndIncrement());
+        userRole.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         userRole.setId(faker.internet().uuid());
         return userRole;
     }
@@ -94,7 +79,7 @@ class UserRoleServiceTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
 
@@ -107,7 +92,7 @@ class UserRoleServiceTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
 

@@ -2,6 +2,7 @@ package dev.simplecore.simplix.event.spi;
 
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
+
 import java.util.function.Consumer;
 
 /**

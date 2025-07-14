@@ -1,36 +1,35 @@
 package dev.simplecore.simplix.event.autoconfigure;
 
+import dev.simplecore.simplix.event.channel.SimpliXDynamicChannelResolver;
+import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
+import dev.simplecore.simplix.event.gateway.SimpliXEventGateway;
+import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
+import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
+import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
+import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
+import dev.simplecore.simplix.event.spi.MessageBrokerProviderRegistry;
+import dev.simplecore.simplix.event.util.PayloadConverter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.integration.IntegrationAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.integration.annotation.IntegrationComponentScan;
+import org.springframework.integration.config.EnableIntegration;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.integration.annotation.IntegrationComponentScan;
-import org.springframework.integration.config.EnableIntegration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.context.ApplicationContext;
-
-import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
-import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
-import dev.simplecore.simplix.event.spi.MessageBrokerProviderRegistry;
-import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-import dev.simplecore.simplix.event.gateway.SimpliXEventGateway;
-import dev.simplecore.simplix.event.util.PayloadConverter;
-import dev.simplecore.simplix.event.channel.SimpliXDynamicChannelResolver;
-import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import java.util.List;
 
 /**

@@ -1,7 +1,7 @@
 package dev.simplecore.simplix.event.spi;
 
-import org.springframework.context.ApplicationContext;
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Service Provider Interface for message broker implementations.

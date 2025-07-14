@@ -1,8 +1,9 @@
 package dev.simplecore.simplix.core.tree.entity;
 
-import javax.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 

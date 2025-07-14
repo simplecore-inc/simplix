@@ -3,7 +3,6 @@ package dev.simplecore.simplix.demo.web.event.receiver;
 import dev.simplecore.simplix.demo.web.event.dto.SampleMessage;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;

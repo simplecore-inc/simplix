@@ -1,9 +1,8 @@
 package dev.simplecore.simplix.event.spi.impl;
 
+import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,11 +19,7 @@ import javax.annotation.PreDestroy;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 

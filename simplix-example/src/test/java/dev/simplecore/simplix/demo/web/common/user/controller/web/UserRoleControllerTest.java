@@ -1,17 +1,8 @@
 package dev.simplecore.simplix.demo.web.common.user.controller.web;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
-
-import java.util.Locale;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
+import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,9 +15,16 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.NestedServletException;
 
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
-import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
-import net.datafaker.Faker;
+import java.math.BigDecimal;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleControllerTest {
@@ -40,13 +38,15 @@ class UserRoleControllerTest {
     private UserRoleController userRoleController;
     
     private Faker faker;
-    private AtomicInteger itemOrderCounter;
+    private AtomicReference<BigDecimal> itemOrderCounter;
 
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
+        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
+            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
+        itemOrderCounter = new AtomicReference<>(initialValue);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(userRoleController)
                 .alwaysDo(print())
@@ -62,7 +62,7 @@ class UserRoleControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
 

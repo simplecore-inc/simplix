@@ -1,29 +1,11 @@
 package dev.simplecore.simplix.demo.web.common.user.controller.rest;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.simplecore.searchable.core.condition.SearchCondition;
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
+import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,18 +20,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleBatchUpdateDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleCreateDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleListDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleSearchDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleUpdateDTO;
-import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
-import net.datafaker.Faker;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.simplecore.searchable.core.condition.SearchCondition;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class UserRoleRestControllerTest {
@@ -66,13 +47,15 @@ class UserRoleRestControllerTest {
     private ObjectMapper objectMapper = new ObjectMapper();
     
     private Faker faker;
-    private AtomicInteger itemOrderCounter;
+    private AtomicReference<BigDecimal> itemOrderCounter;
 
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
+        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
+            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
+        itemOrderCounter = new AtomicReference<>(initialValue);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(userRoleRestController)
                 .alwaysDo(print())
@@ -89,7 +72,7 @@ class UserRoleRestControllerTest {
         userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
-        userRole.setItemOrder(itemOrderCounter.getAndIncrement());
+        userRole.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         userRole.setId(faker.internet().uuid());
         return userRole;
     }
@@ -102,7 +85,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
 
@@ -115,7 +98,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
     
@@ -128,7 +111,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndIncrement());
+        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return dto;
     }
 
@@ -377,5 +360,52 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.body.content.length()").value(2))
                 .andExpect(jsonPath("$.body.content[0].id").value(dto1.getId()))
                 .andExpect(jsonPath("$.body.content[1].id").value(dto2.getId()));
+    }
+
+    @Test
+    @DisplayName("Update User Role Orders Test")
+    void updateUserRoleOrdersTest() throws Exception {
+        // Given
+        String roleId1 = faker.internet().uuid();
+        String roleId2 = faker.internet().uuid();
+        BigDecimal newOrder1 = BigDecimal.valueOf(100);
+        BigDecimal newOrder2 = BigDecimal.valueOf(200);
+        
+        UserRoleOrderUpdateDTO orderUpdateDto1 = new UserRoleOrderUpdateDTO();
+        orderUpdateDto1.setId(roleId1);
+        orderUpdateDto1.setItemOrder(newOrder1);
+        
+        UserRoleOrderUpdateDTO orderUpdateDto2 = new UserRoleOrderUpdateDTO();
+        orderUpdateDto2.setId(roleId2);
+        orderUpdateDto2.setItemOrder(newOrder2);
+        
+        List<UserRoleOrderUpdateDTO> orderUpdateDtos = List.of(orderUpdateDto1, orderUpdateDto2);
+        
+        UserRoleDetailDTO resultDTO1 = createRandomUserRoleDetailDTO();
+        resultDTO1.setId(roleId1);
+        resultDTO1.setItemOrder(newOrder1);
+        
+        UserRoleDetailDTO resultDTO2 = createRandomUserRoleDetailDTO();
+        resultDTO2.setId(roleId2);
+        resultDTO2.setItemOrder(newOrder2);
+        
+        List<UserRoleDetailDTO> resultDTOs = List.of(resultDTO1, resultDTO2);
+        
+        when(userRoleService.updateOrders(anyList())).thenReturn(resultDTOs);
+        
+        // When & Then
+        mockMvc.perform(patch("/api/user/role/order")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(orderUpdateDtos)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.type").value("SUCCESS"))
+                .andExpect(jsonPath("$.body").isArray())
+                .andExpect(jsonPath("$.body.length()").value(2))
+                .andExpect(jsonPath("$.body[0].id").value(roleId1))
+                .andExpect(jsonPath("$.body[0].itemOrder").value(newOrder1.intValue()))
+                .andExpect(jsonPath("$.body[1].id").value(roleId2))
+                .andExpect(jsonPath("$.body[1].itemOrder").value(newOrder2.intValue()))
+                .andExpect(jsonPath("$.message").value("UserRole orders updated successfully"));
     }
 } 

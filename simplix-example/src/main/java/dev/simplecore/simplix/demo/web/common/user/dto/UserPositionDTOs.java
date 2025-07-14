@@ -1,16 +1,16 @@
 package dev.simplecore.simplix.demo.web.common.user.dto;
 
-import java.time.OffsetDateTime;
-import java.util.Set;
-
-import javax.validation.constraints.NotBlank;
-
 import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.validation.constraints.NotBlank;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.Set;
 
 import static dev.simplecore.searchable.core.condition.operator.SearchOperator.*;
 
@@ -42,6 +42,10 @@ public class UserPositionDTOs {
         @Schema(description = "직급설명")
         @SearchableField(operators = {CONTAINS})
         private String description;
+
+        @Schema(description = "순서")
+        @SearchableField(sortable = true)
+        private BigDecimal itemOrder;
         
         @Schema(description = "등록일시")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
@@ -62,7 +66,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private String itemOrder;
+        private BigDecimal itemOrder;
         
     }
 
@@ -81,7 +85,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private String itemOrder;
+        private BigDecimal itemOrder;
         
     }
 
@@ -109,7 +113,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private String itemOrder;
+        private BigDecimal itemOrder;
         
         @Schema(description = "등록자")
         private String createdBy;
@@ -139,7 +143,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private String itemOrder;
+        private BigDecimal itemOrder;
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")

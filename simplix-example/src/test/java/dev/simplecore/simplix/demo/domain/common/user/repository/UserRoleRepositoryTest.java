@@ -2,7 +2,6 @@ package dev.simplecore.simplix.demo.domain.common.user.repository;
 
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
 import net.datafaker.Faker;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,8 +11,11 @@ import org.springframework.test.context.ActiveProfiles;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,13 +34,15 @@ class UserRoleRepositoryTest {
     private Faker faker;
     
     // Counter for generating unique item orders
-    private AtomicInteger itemOrderCounter;
+    private AtomicReference<BigDecimal> itemOrderCounter;
     
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        itemOrderCounter = new AtomicInteger((int) (System.currentTimeMillis() % 10000) + faker.random().nextInt(1000));
+        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
+            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
+        itemOrderCounter = new AtomicReference<>(initialValue);
     }
     
     /**
@@ -49,7 +53,7 @@ class UserRoleRepositoryTest {
         userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
-        userRole.setItemOrder(itemOrderCounter.getAndIncrement());
+        userRole.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
         return userRole;
     }
 
@@ -177,7 +181,7 @@ class UserRoleRepositoryTest {
     @DisplayName("Unique ItemOrder Constraint Test")
     void uniqueItemOrderConstraintTest() {
         // Given
-        int duplicateOrder = 999;
+        BigDecimal duplicateOrder = BigDecimal.valueOf(999);
         
         UserRole role = createRandomUserRole();
         role.setItemOrder(duplicateOrder);

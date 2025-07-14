@@ -1,10 +1,9 @@
 package dev.simplecore.simplix.event.gateway;
 
+import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
+import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import org.springframework.integration.annotation.MessagingGateway;
 import org.springframework.messaging.handler.annotation.Headers;
-
-import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
 
 import java.util.Map;
 

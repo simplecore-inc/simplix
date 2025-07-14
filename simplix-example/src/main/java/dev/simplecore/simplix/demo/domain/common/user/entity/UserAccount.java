@@ -1,18 +1,17 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
-import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import dev.simplecore.simplix.core.annotation.DisplayName;
 import dev.simplecore.simplix.core.annotation.I18nTitle;
-
+import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Comment;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -51,6 +50,7 @@ public class UserAccount extends AuditingBaseEntity<String> {
     @Column(name = "real_name")
     @Comment("Name: User's real name")
     @I18nTitle({"ko=실명", "en=Real Name", "ja=実名"})
+    @DisplayName(description = "User's real name for display")
     private String realName;
 
     @Lob

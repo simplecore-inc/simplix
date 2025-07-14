@@ -1,7 +1,7 @@
 package dev.simplecore.simplix.auth.security;
 
-import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;

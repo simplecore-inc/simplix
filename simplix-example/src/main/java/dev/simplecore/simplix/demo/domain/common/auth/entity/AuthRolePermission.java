@@ -1,20 +1,17 @@
 package dev.simplecore.simplix.demo.domain.common.auth.entity;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
-
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 import dev.simplecore.simplix.demo.domain.BaseEntity;
 import dev.simplecore.simplix.demo.domain.common.auth.enums.PermissionTargetType;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserOrganization;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
-import java.util.UUID;
 
 @Entity
 @Getter

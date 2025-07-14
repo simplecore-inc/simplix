@@ -1,10 +1,10 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
 import dev.simplecore.simplix.web.advice.SimpliXExceptionHandler;
-import dev.simplecore.simplix.web.config.SwaggerI18nCustomizer;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.simplecore.simplix.web.config.SwaggerSchemaEnhancer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -54,10 +54,10 @@ public class SimpliXWebAutoConfiguration {
     static class SwaggerI18nConfiguration {
 
         @Bean
-        @ConditionalOnMissingBean(SwaggerI18nCustomizer.class)
-        public SwaggerI18nCustomizer swaggerI18nCustomizer() {
-            log.info("Initializing SimpliX Swagger I18n Customizer as OpenApiCustomiser...");
-            return new SwaggerI18nCustomizer();
+        @ConditionalOnMissingBean(SwaggerSchemaEnhancer.class)
+        public SwaggerSchemaEnhancer swaggerSchemaEnhancer() {
+            log.info("Initializing SimpliX Swagger Schema Enhancer as OpenApiCustomiser...");
+            return new SwaggerSchemaEnhancer();
         }
     }
 } 

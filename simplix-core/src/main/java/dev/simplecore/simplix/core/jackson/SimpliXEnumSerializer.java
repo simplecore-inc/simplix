@@ -1,9 +1,9 @@
 package dev.simplecore.simplix.core.jackson;
 
-import dev.simplecore.simplix.core.convert.enumeration.EnumConverter;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import dev.simplecore.simplix.core.convert.enumeration.EnumConverter;
 
 import java.io.IOException;
 import java.util.Map;

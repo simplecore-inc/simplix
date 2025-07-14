@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -11,17 +11,13 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.support.ReloadableResourceBundleMessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
-import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -29,80 +25,187 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.*;
 
 /**
- * Auto-configuration for MessageSource with i18n support.
- * Uses Spring Boot's default message source properties.
+ * SimpliX MessageSource Auto-configuration for comprehensive i18n support.
  * 
- * <p>Configure in application.yml:
+ * This configuration provides:
+ * 1. Automatic discovery of library message files
+ * 2. Integration with application-specific message files
+ * 3. Proper validation message source configuration
+ * 4. Locale resolution and change interceptor
+ * 
+ * Configuration in application.yml:
  * <pre>
  * spring:
  *   messages:
- *     # Comma-separated list of basenames
- *     basename: messages/common,messages/validation,messages/errors
- *     # Or using YAML list syntax
- *     basename: |
- *       messages/common,
- *       messages/validation,
- *       messages/errors
+ *     basename: messages/validation,messages/errors,messages/messages
  *     encoding: UTF-8
- *     cache-duration: 3600
  *     use-code-as-default-message: false
  *     fallback-to-system-locale: true
+ * 
+ * simplix:
+ *   message-source:
+ *     enabled: true
+ *     default-locale: ko
  * </pre>
- * 
- * <p>Message properties file example (messages/validation_en.properties):
- * <pre>
- * user.name.empty=Name is required
- * user.email.invalid=Invalid email format
- * </pre>
- * 
- * <p>Usage in code:
- * <pre>{@code
- * @Autowired
- * private MessageSource messageSource;
- * 
- * String message = messageSource.getMessage("user.name.empty", null, LocaleContextHolder.getLocale());
- * }</pre>
  */
-@Configuration
+@Slf4j
 @AutoConfiguration(before = MessageSourceAutoConfiguration.class)
 @Order(0)
 @ConditionalOnProperty(prefix = "simplix.message-source", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
-    
-    private static final Logger LOGGER = Logger.getLogger(SimpliXMessageSourceAutoConfiguration.class.getName());
 
     @Bean
     @ConfigurationProperties(prefix = "spring.messages")
     public MessageSourceProperties messageSourceProperties() {
-        return new MessageSourceProperties();
+        MessageSourceProperties properties = new MessageSourceProperties();
+        // Set sensible defaults if not configured
+        if (StringUtils.isEmpty(properties.getBasename())) {
+            properties.setBasename("messages/validation,messages/errors,messages/messages");
+        }
+        properties.setUseCodeAsDefaultMessage(false);
+        properties.setFallbackToSystemLocale(true);
+        return properties;
     }
 
+    /**
+     * Primary MessageSource that combines library and application messages
+     */
+    @Bean
+    @Primary
+    public MessageSource messageSource(MessageSourceProperties properties) {
+        log.info("Initializing SimpliX MessageSource with comprehensive i18n support");
+        
+        // Create composite message source
+        CompositeMessageSource compositeMessageSource = new CompositeMessageSource();
+        
+        // 1. Add application message source (highest priority)
+        ReloadableResourceBundleMessageSource applicationMessageSource = createApplicationMessageSource(properties);
+        compositeMessageSource.addMessageSource(applicationMessageSource);
+        
+        // 2. Add library message source (fallback)
+        ReloadableResourceBundleMessageSource libraryMessageSource = createLibraryMessageSource();
+        compositeMessageSource.addMessageSource(libraryMessageSource);
+        
+        log.info("SimpliX MessageSource initialized successfully");
+        return compositeMessageSource;
+    }
+
+    /**
+     * Create application-specific message source based on Spring Boot properties
+     */
+    private ReloadableResourceBundleMessageSource createApplicationMessageSource(MessageSourceProperties properties) {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        
+        // Parse basenames from properties
+        String[] basenames = StringUtils.commaDelimitedListToStringArray(
+            StringUtils.trimAllWhitespace(properties.getBasename()));
+        
+        // Convert to classpath format
+        String[] classpathBasenames = Arrays.stream(basenames)
+            .map(basename -> basename.startsWith("classpath:") ? basename : "classpath:" + basename)
+            .toArray(String[]::new);
+        
+        messageSource.setBasenames(classpathBasenames);
+        messageSource.setDefaultEncoding(properties.getEncoding().name());
+        messageSource.setFallbackToSystemLocale(false); // Disable fallback for exact locale matching
+        messageSource.setUseCodeAsDefaultMessage(false); // Don't use code as default message
+        
+        if (properties.getCacheDuration() != null) {
+            messageSource.setCacheSeconds((int) properties.getCacheDuration().getSeconds());
+        }
+        
+        log.info("Application MessageSource configured with basenames: {}", Arrays.toString(classpathBasenames));
+        return messageSource;
+    }
+
+    /**
+     * Create library message source that automatically discovers SimpliX library messages
+     */
+    private ReloadableResourceBundleMessageSource createLibraryMessageSource() {
+        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        
+        Set<String> basenames = new HashSet<>();
+        
+        try {
+            // Discover library message files
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource[] resources = resolver.getResources("classpath*:messages/**/*.properties");
+            
+            for (Resource resource : resources) {
+                try {
+                    String uri = resource.getURI().toString();
+                    String filename = resource.getFilename();
+                    
+                    if (filename != null && uri.contains("/messages/")) {
+                        // Extract basename (remove locale suffix and .properties extension)
+                        String basename = filename.replaceAll("(_[a-z]{2}(_[A-Z]{2})?)?\\.properties$", "");
+                        
+                        // Extract path after messages directory
+                        int messagesIndex = uri.indexOf("/messages/");
+                        if (messagesIndex >= 0) {
+                            String messagePath = uri.substring(messagesIndex + 1);
+                            // Remove filename from path
+                            String pathPrefix = messagePath.substring(0, messagePath.lastIndexOf('/') + 1);
+                            String fullBasename = "classpath:" + pathPrefix + basename;
+                            
+                            // Only include library messages (simplix_core, etc.)
+                            // Exclude application-specific messages (validation, errors, messages)
+                            if ((basename.startsWith("simplix_") || uri.contains("spring-boot-starter-simplix")) && 
+                                !basename.equals("validation") && !basename.equals("errors") && !basename.equals("messages")) {
+                                basenames.add(fullBasename);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.debug("Error processing resource: {}", resource, e);
+                }
+            }
+            
+        } catch (IOException e) {
+            log.warn("Error scanning for library message files", e);
+        }
+        
+        if (!basenames.isEmpty()) {
+            messageSource.setBasenames(basenames.toArray(new String[0]));
+            log.info("Library MessageSource configured with basenames: {}", basenames);
+        } else {
+            // Fallback to known library messages
+            messageSource.setBasenames("classpath:messages/simplix_core");
+            log.info("Library MessageSource using fallback basename: classpath:messages/simplix_core");
+        }
+        
+        messageSource.setDefaultEncoding("UTF-8");
+        messageSource.setFallbackToSystemLocale(false); // Disable fallback for exact locale matching
+        messageSource.setUseCodeAsDefaultMessage(false);
+        messageSource.setCacheSeconds(3600); // Cache library messages longer
+        
+        return messageSource;
+    }
+
+
+
+    /**
+     * Locale resolver with sensible defaults
+     */
     @Bean
     @ConditionalOnMissingBean
-    public LocalValidatorFactoryBean getValidator(MessageSource messageSource) {
-        LocalValidatorFactoryBean bean = new LocalValidatorFactoryBean();
-        bean.setValidationMessageSource(messageSource);
-        return bean;
-    }
-
-    @Bean
     public LocaleResolver localeResolver() {
         CookieLocaleResolver resolver = new CookieLocaleResolver();
-        resolver.setDefaultLocale(null);
+        resolver.setDefaultLocale(Locale.ENGLISH); // Default to English
         resolver.setCookieName("locale");
+        resolver.setCookieMaxAge(3600 * 24 * 30); // 30 days
+        log.info("LocaleResolver configured with default locale: {}", Locale.ENGLISH);
         return resolver;
     }
 
+    /**
+     * Locale change interceptor for URL-based locale switching
+     */
     @Bean
+    @ConditionalOnMissingBean
     public LocaleChangeInterceptor localeChangeInterceptor() {
         LocaleChangeInterceptor interceptor = new LocaleChangeInterceptor();
         interceptor.setParamName("lang");
@@ -114,150 +217,62 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
         registry.addInterceptor(localeChangeInterceptor())
             .addPathPatterns("/**")
-            .order(Ordered.HIGHEST_PRECEDENCE);
+            .order(Integer.MIN_VALUE); // Highest priority
     }
 
     /**
-     * Provides a message source that automatically discovers and integrates all message bundles.
-     * This message source scans all message files in the messages directory across all classpaths
-     * and integrates them without depending on specific patterns or paths.
+     * Composite MessageSource that searches multiple message sources in order
+     * with proper locale matching priority
      */
-    @Bean
-    public MessageSource simplixLibraryMessageSource() {
-        ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        
-        try {
-            // Search for all property files in the messages directory across all classpaths
-            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            Resource[] resources = resolver.getResources("classpath*:messages/**/*.properties");
-            
-            // Extract basenames from discovered resources
-            Set<String> basenames = new HashSet<>();
-            for (Resource resource : resources) {
-                try {
-                    String path = resource.getURI().toString();
-                    String filename = resource.getFilename();
-                    
-                    if (filename != null) {
-                        // Remove locale part and .properties extension from filename
-                        String basename = filename.replaceAll("(_[a-z]{2}(_[A-Z]{2})?)?\\.properties$", "");
-                        
-                        // Extract path after messages directory
-                        int messagesIndex = path.indexOf("/messages/");
-                        if (messagesIndex >= 0) {
-                            String messagePath = path.substring(messagesIndex + 1);
-                            // Remove filename and extension
-                            messagePath = messagePath.substring(0, messagePath.lastIndexOf('/') + 1) + basename;
-                            // Remove locale part
-                            messagePath = messagePath.replaceAll("/[^/]*(_[a-z]{2}(_[A-Z]{2})?)\\.properties$", "");
-                            
-                            // Use classpath: instead of classpath*:
-                            basenames.add("classpath:" + messagePath);
-                        }
-                    }
-                } catch (Exception e) {
-                    // Skip individual resources that cause errors
-                    LOGGER.log(Level.WARNING, "Error processing resource: " + resource, e);
-                }
-            }
-            
-            if (!basenames.isEmpty()) {
-                messageSource.setBasenames(basenames.toArray(new String[0]));
-                LOGGER.info("Registered message basenames: " + basenames);
-            } else {
-                // Set default basename if no resources are found
-                messageSource.setBasenames("classpath:messages/default");
-                LOGGER.info("No message resources found, using default basename");
-            }
-        } catch (IOException e) {
-            // Set default basename on exception
-            messageSource.setBasenames("classpath:messages/default");
-            LOGGER.log(Level.SEVERE, "Error scanning for message properties", e);
-        }
-        
-        messageSource.setDefaultEncoding("UTF-8");
-        messageSource.setFallbackToSystemLocale(false);
-        messageSource.setCacheSeconds(60); // Short cache duration for development
-        messageSource.setUseCodeAsDefaultMessage(true); // Use code as default message if not found
-        return messageSource;
-    }
-
-    @Bean
-    @Primary
-    public MessageSource messageSource(
-        MessageSourceProperties properties,
-        @Autowired(required = false) List<MessageSource> messageSources,
-        @Autowired MessageSource simplixLibraryMessageSource
-    ) {
-        // 1. Create default message source using Spring Boot settings
-        ResourceBundleMessageSource defaultMessageSource = new ResourceBundleMessageSource();
-        defaultMessageSource.setBasenames(StringUtils.commaDelimitedListToStringArray(
-                StringUtils.trimAllWhitespace(properties.getBasename())));
-        defaultMessageSource.setDefaultEncoding(properties.getEncoding().name());
-        defaultMessageSource.setFallbackToSystemLocale(properties.isFallbackToSystemLocale());
-        defaultMessageSource.setCacheSeconds(properties.getCacheDuration() != null ? 
-            (int) properties.getCacheDuration().getSeconds() : -1);
-        defaultMessageSource.setAlwaysUseMessageFormat(properties.isAlwaysUseMessageFormat());
-        defaultMessageSource.setUseCodeAsDefaultMessage(properties.isUseCodeAsDefaultMessage());
-        
-        // 2. Create composite message source
-        CompositeMessageSource compositeMessageSource = new CompositeMessageSource();
-        
-        // 3. Add default message source (user-defined messages have priority)
-        compositeMessageSource.addMessageSource(defaultMessageSource);
-        
-        // 4. Add library message source
-        compositeMessageSource.addMessageSource(simplixLibraryMessageSource);
-        
-        // 5. Add other injected message sources
-        if (messageSources != null) {
-            for (MessageSource source : messageSources) {
-                if (source != defaultMessageSource && source != simplixLibraryMessageSource) {
-                    compositeMessageSource.addMessageSource(source);
-                }
-            }
-        }
-        
-        return compositeMessageSource;
-    }
-
-    /**
-     * Composite message source that integrates multiple message sources.
-     * Searches for messages in the registered message sources in order.
-     */
-    private static class CompositeMessageSource implements MessageSource {
+    public static class CompositeMessageSource implements MessageSource {
         private final List<MessageSource> messageSources = new ArrayList<>();
         
         public void addMessageSource(MessageSource messageSource) {
             if (messageSource != null) {
                 messageSources.add(messageSource);
+                log.debug("Added MessageSource: {}", messageSource.getClass().getSimpleName());
             }
         }
         
         @Override
         public String getMessage(String code, Object[] args, String defaultMessage, Locale locale) {
+            log.debug("Searching for message '{}' with locale '{}'", code, locale);
+            
+            // Search through all message sources for the exact locale
             for (MessageSource source : messageSources) {
                 try {
                     String message = source.getMessage(code, args, null, locale);
-                    if (message != null) {
+                    if (message != null && !message.equals(code)) {
+                        log.trace("Found message for '{}' in {}: {}", code, source.getClass().getSimpleName(), message);
                         return message;
                     }
                 } catch (NoSuchMessageException ignored) {
                     // Continue to next message source
                 }
             }
+            
+            log.debug("No message found for code '{}' with locale '{}', using default: {}", code, locale, defaultMessage);
             return defaultMessage;
         }
         
         @Override
         public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException {
+            log.debug("Searching for message '{}' with locale '{}'", code, locale);
+            
+            // Search through all message sources for the exact locale
             for (MessageSource source : messageSources) {
                 try {
-                    return source.getMessage(code, args, locale);
+                    String message = source.getMessage(code, args, locale);
+                    if (message != null && !message.equals(code)) {
+                        log.trace("Found message for '{}' in {}: {}", code, source.getClass().getSimpleName(), message);
+                        return message;
+                    }
                 } catch (NoSuchMessageException ignored) {
                     // Continue to next message source
                 }
             }
+            
+            log.debug("No message found for code '{}' with locale '{}'", code, locale);
             throw new NoSuchMessageException(code, locale);
         }
         
@@ -265,12 +280,19 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
         public String getMessage(MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException {
             for (MessageSource source : messageSources) {
                 try {
-                    return source.getMessage(resolvable, locale);
+                    String message = source.getMessage(resolvable, locale);
+                    if (message != null) {
+                        log.trace("Found message for resolvable in {}: {}", source.getClass().getSimpleName(), message);
+                        return message;
+                    }
                 } catch (NoSuchMessageException ignored) {
                     // Continue to next message source
                 }
             }
+            
+            log.debug("No message found for resolvable with locale '{}'", locale);
             throw new NoSuchMessageException("No message found for resolvable", locale);
         }
+
     }
 }

@@ -36,10 +36,10 @@ spring:
     jdbc:
       initialize-schema: always
   messages:
-    basename: |
-      messages/errors
+    basename: messages/validation,messages/errors,messages/messages
     encoding: UTF-8
     fallback-to-system-locale: true
+    use-code-as-default-message: false
 
 server:
   port: 8080
@@ -106,6 +106,10 @@ management:
 ########################################
 
 simplix:
+  message-source:
+    enabled: true
+  validator:
+    enabled: true
   date-time:
     # Use Asia/Seoul as default timezone for the application
     # This will be used when timezone information is not available
@@ -126,7 +130,8 @@ simplix:
       permit-all-patterns: [
           /swagger-ui.html, /swagger-ui/**, 
           /v3/api-docs/**, /v3/api-docs.yaml, /swagger-resources/**, /api-docs/**, 
-          /webjars/swagger-ui/**
+          /webjars/swagger-ui/**,
+          /api/test/**
         ]
       # enable-cors: true  # default: true
       enable-csrf: true

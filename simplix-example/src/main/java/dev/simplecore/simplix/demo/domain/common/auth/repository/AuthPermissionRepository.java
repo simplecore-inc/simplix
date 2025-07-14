@@ -2,7 +2,6 @@ package dev.simplecore.simplix.demo.domain.common.auth.repository;
 
 import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthPermission;
 import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
-
 import org.springframework.stereotype.Repository;
 
 /**

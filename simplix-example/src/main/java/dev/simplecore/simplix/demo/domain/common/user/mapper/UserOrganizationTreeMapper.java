@@ -1,10 +1,11 @@
 package dev.simplecore.simplix.demo.domain.common.user.mapper;
 
-import java.util.List;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserOrganizationDTOs.UserOrganizationMyBatisDTO;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserOrganizationDTOs.UserOrganizationTreeDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserOrganizationDTOs.UserOrganizationTreeDTO;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserOrganizationDTOs.UserOrganizationMyBatisDTO;
+
+import java.util.List;
 
 @Mapper
 public interface UserOrganizationTreeMapper {

@@ -1,13 +1,13 @@
 package dev.simplecore.simplix.demo.web.common.auth.controller.rest;
 
-import dev.simplecore.simplix.web.controller.SimpliXBaseController;
-import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
-import dev.simplecore.simplix.core.model.SimpliXApiResponse;
-import dev.simplecore.simplix.demo.web.common.auth.dto.AuthPermissionDTOs.*;
-import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthPermission;
-import dev.simplecore.simplix.demo.web.common.auth.service.AuthPermissionService;
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.openapi.annotation.SearchableParams;
+import dev.simplecore.simplix.core.model.SimpliXApiResponse;
+import dev.simplecore.simplix.demo.domain.common.auth.entity.AuthPermission;
+import dev.simplecore.simplix.demo.web.common.auth.dto.AuthPermissionDTOs.*;
+import dev.simplecore.simplix.demo.web.common.auth.service.AuthPermissionService;
+import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXStandardApi;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;

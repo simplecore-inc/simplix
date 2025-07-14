@@ -1,7 +1,7 @@
 package dev.simplecore.simplix.auth.exception;
 
-import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import dev.simplecore.simplix.core.exception.ErrorCode;
+import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import lombok.Getter;
 
 @Getter

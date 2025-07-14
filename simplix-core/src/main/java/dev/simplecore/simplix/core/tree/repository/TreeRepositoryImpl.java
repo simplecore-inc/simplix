@@ -1,13 +1,11 @@
 package dev.simplecore.simplix.core.tree.repository;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.base.TreeQueries;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
-
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;

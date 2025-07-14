@@ -1,51 +1,40 @@
 package dev.simplecore.simplix.web.config;
 
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-import dev.simplecore.simplix.core.util.I18nTitleUtils;
 import dev.simplecore.searchable.core.annotation.SearchableField;
+import dev.simplecore.simplix.core.annotation.DisplayName;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import org.hibernate.validator.constraints.Length;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.MessageSource;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.type.classreading.CachingMetadataReaderFactory;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ClassUtils;
 
 import javax.annotation.PostConstruct;
+import javax.persistence.EmbeddedId;
+import javax.persistence.Id;
 import javax.validation.constraints.*;
-import org.hibernate.validator.constraints.Length;
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Set;
-import java.util.HashSet;
-import java.io.File;
 import java.net.URL;
-import java.util.Enumeration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
 /**
- * Swagger customizer to add internationalized validation messages, titles, and SearchableField information as extension fields
+ * Swagger customizer to add internationalized validation messages, titles, SearchableField information, and ID field metadata as extension fields
  */
 @Component
-public class SwaggerI18nCustomizer implements OpenApiCustomiser {
+public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
 
-    private static final Logger log = LoggerFactory.getLogger(SwaggerI18nCustomizer.class);
+    private static final Logger log = LoggerFactory.getLogger(SwaggerSchemaEnhancer.class);
 
     @Autowired
     private MessageSource messageSource;
@@ -58,7 +47,7 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
     
     @PostConstruct
     public void init() {
-        log.info("Initializing SwaggerI18nCustomizer with SearchableField support");
+        log.info("Initializing SwaggerSchemaEnhancer with SearchableField and ID field support");
         try {
             cacheSchemaClasses();
             
@@ -71,7 +60,7 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
 
     @Override
     public void customise(OpenAPI openApi) {
-        log.info("Starting OpenAPI customization with SearchableField support");
+        log.info("Starting OpenAPI customization with SearchableField and ID field support");
         if (openApi.getComponents() != null && openApi.getComponents().getSchemas() != null) {
             log.info("Found {} schemas to process", openApi.getComponents().getSchemas().size());
             openApi.getComponents().getSchemas().forEach((schemaName, schema) -> {
@@ -100,18 +89,21 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
     private void cacheSchemaClasses() {
         try {
             List<String> packageNames = Arrays.asList(
-                "dev.simplecore.simplix.demo.web",
+                "dev.simplecore.simplix.demo",
                 "dev.simplecore.simplix.core.model",
                 "dev.simplecore.simplix.web.model"
             );
             
             for (String packageName : packageNames) {
+                log.info("Searching for classes in package: {}", packageName);
                 Set<Class<?>> classes = findClassesInPackage(packageName);
+                log.info("Found {} classes in package {}", classes.size(), packageName);
+                
                 for (Class<?> clazz : classes) {
                     // Cache the outer class
                     String simpleName = clazz.getSimpleName();
                     schemaClassCache.put(simpleName, clazz);
-                    log.debug("Cached class: {} -> {}", simpleName, clazz.getName());
+                    log.info("Cached class: {} -> {}", simpleName, clazz.getName());
                     
                     // Also cache inner static classes
                     Class<?>[] innerClasses = clazz.getDeclaredClasses();
@@ -119,13 +111,14 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
                         if (java.lang.reflect.Modifier.isStatic(innerClass.getModifiers())) {
                             String innerSimpleName = innerClass.getSimpleName();
                             schemaClassCache.put(innerSimpleName, innerClass);
-                            log.debug("Cached inner class: {} -> {}", innerSimpleName, innerClass.getName());
+                            log.info("Cached inner class: {} -> {}", innerSimpleName, innerClass.getName());
                         }
                     }
                 }
             }
             
             log.info("Cached {} classes total", schemaClassCache.size());
+            log.info("Cached class names: {}", schemaClassCache.keySet());
         } catch (Exception e) {
             log.error("Failed to cache schema classes", e);
         }
@@ -164,12 +157,27 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
             log.info("Schema has {} properties", schema.getProperties().size());
             schema.getProperties().forEach((propertyName, propertySchema) -> {
                 try {
-                    log.debug("Processing property: {} in class: {}", propertyName, clazz.getSimpleName());
+                    log.info("Processing property: {} in class: {} (schema type: {}, $ref: {})", 
+                        propertyName, clazz.getSimpleName(), 
+                        ((Schema) propertySchema).getType(), 
+                        ((Schema) propertySchema).get$ref());
                     Field field = findField(clazz, (String) propertyName);
                     if (field != null) {
                         log.info("Found field {} in class {}", propertyName, clazz.getSimpleName());
+                        
+                        // Process all extensions for this field
                         addI18nExtensions(field, (Schema) propertySchema, (String) propertyName);
                         addSearchableFieldExtensions(field, (Schema) propertySchema, (String) propertyName);
+                        addIdFieldExtensions(field, (Schema) propertySchema, (String) propertyName);
+                        addDisplayNameExtensions(field, (Schema) propertySchema, (String) propertyName);
+                        
+                        // Log final extensions after all processing
+                        if (((Schema) propertySchema).getExtensions() != null) {
+                            log.info("Final extensions for field {}: {}", propertyName, 
+                                ((Schema) propertySchema).getExtensions().keySet());
+                        } else {
+                            log.warn("No extensions found for field {} after processing", propertyName);
+                        }
                     } else {
                         log.warn("Field not found: {}.{}", clazz.getSimpleName(), propertyName);
                     }
@@ -372,6 +380,109 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
         }
     }
     
+    private void addIdFieldExtensions(Field field, Schema propertySchema, String fieldName) {
+        log.info("Processing ID field: {} with schema type: {}, $ref: {}", 
+            fieldName, propertySchema.getType(), propertySchema.get$ref());
+        
+        boolean isIdField = false;
+        String idType = null;
+        
+        // Check for @Id annotation
+        Id idAnnotation = field.getAnnotation(Id.class);
+        if (idAnnotation != null) {
+            isIdField = true;
+            idType = "simple";
+            log.info("Found @Id annotation on field: {}", fieldName);
+        }
+        
+        // Check for @EmbeddedId annotation
+        EmbeddedId embeddedIdAnnotation = field.getAnnotation(EmbeddedId.class);
+        if (embeddedIdAnnotation != null) {
+            isIdField = true;
+            idType = "embedded";
+            log.info("Found @EmbeddedId annotation on field: {}", fieldName);
+        }
+        
+        if (isIdField) {
+            Map<String, Object> idInfo = new HashMap<>();
+            idInfo.put("type", idType);
+            idInfo.put("isPrimaryKey", true);
+            
+            // Add field type information
+            Class<?> fieldType = field.getType();
+            idInfo.put("fieldType", fieldType.getSimpleName());
+            
+            // For embedded IDs, add additional information
+            if ("embedded".equals(idType)) {
+                idInfo.put("compositeKey", true);
+                idInfo.put("embeddedClass", fieldType.getName());
+            }
+            
+            // Handle both $ref and regular properties
+            propertySchema.addExtension("x-id-field", idInfo);
+            log.info("Successfully added ID field extensions for field {}: {}", fieldName, idInfo);
+            
+            // Verify the extension was added
+            Object addedExtension = propertySchema.getExtensions() != null ? 
+                propertySchema.getExtensions().get("x-id-field") : null;
+            if (addedExtension != null) {
+                log.info("✅ VERIFIED: ID field extension was added for field {}: {}", fieldName, addedExtension);
+            } else {
+                log.error("❌ ERROR: ID field extension was NOT added for field {}", fieldName);
+            }
+            
+            // Also log all extensions for this field
+            if (propertySchema.getExtensions() != null) {
+                log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
+            }
+        } else {
+            log.debug("No ID field annotation found on field: {}", fieldName);
+        }
+    }
+    
+    private void addDisplayNameExtensions(Field field, Schema propertySchema, String fieldName) {
+        log.info("Processing DisplayName field: {} with schema type: {}, $ref: {}", 
+            fieldName, propertySchema.getType(), propertySchema.get$ref());
+        
+        DisplayName displayNameAnnotation = field.getAnnotation(DisplayName.class);
+        if (displayNameAnnotation != null) {
+            log.info("Found @DisplayName annotation on field: {}", fieldName);
+            
+            Map<String, Object> displayNameInfo = new HashMap<>();
+            displayNameInfo.put("isDisplayName", true);
+            displayNameInfo.put("priority", displayNameAnnotation.priority());
+            
+            // Add description if provided
+            if (displayNameAnnotation.description() != null && !displayNameAnnotation.description().isEmpty()) {
+                displayNameInfo.put("description", displayNameAnnotation.description());
+            }
+            
+            // Add field type information
+            Class<?> fieldType = field.getType();
+            displayNameInfo.put("fieldType", fieldType.getSimpleName());
+            
+            // Handle both $ref and regular properties
+            propertySchema.addExtension("x-display-name", displayNameInfo);
+            log.info("Successfully added DisplayName extensions for field {}: {}", fieldName, displayNameInfo);
+            
+            // Verify the extension was added
+            Object addedExtension = propertySchema.getExtensions() != null ? 
+                propertySchema.getExtensions().get("x-display-name") : null;
+            if (addedExtension != null) {
+                log.info("✅ VERIFIED: DisplayName extension was added for field {}: {}", fieldName, addedExtension);
+            } else {
+                log.error("❌ ERROR: DisplayName extension was NOT added for field {}", fieldName);
+            }
+            
+            // Also log all extensions for this field
+            if (propertySchema.getExtensions() != null) {
+                log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
+            }
+        } else {
+            log.debug("No DisplayName annotation found on field: {}", fieldName);
+        }
+    }
+    
     private Map<String, String> getI18nTitles(Field field) {
         Map<String, String> titles = new HashMap<>();
         
@@ -487,8 +598,46 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
                 log.warn("UserAccountSearchDTO not found in cache");
                 log.info("Available classes in cache: {}", schemaClassCache.keySet());
             }
+            
+            // Test ID field and DisplayName detection
+            testIdAndDisplayNameDetection();
         } catch (Exception e) {
             log.error("Failed to test SearchableField detection", e);
+        }
+    }
+    
+    private void testIdAndDisplayNameDetection() {
+        try {
+            // Test with UserAccount class
+            Class<?> userAccountClass = schemaClassCache.get("UserAccount");
+            if (userAccountClass != null) {
+                log.info("Testing ID and DisplayName detection with class: {}", userAccountClass.getName());
+                
+                Field[] fields = userAccountClass.getDeclaredFields();
+                log.info("Class {} has {} fields", userAccountClass.getSimpleName(), fields.length);
+                
+                for (Field field : fields) {
+                    // Check for ID annotations
+                    Id idAnnotation = field.getAnnotation(Id.class);
+                    EmbeddedId embeddedIdAnnotation = field.getAnnotation(EmbeddedId.class);
+                    DisplayName displayNameAnnotation = field.getAnnotation(DisplayName.class);
+                    
+                    if (idAnnotation != null) {
+                        log.info("Found @Id annotation on field: {}", field.getName());
+                    }
+                    if (embeddedIdAnnotation != null) {
+                        log.info("Found @EmbeddedId annotation on field: {}", field.getName());
+                    }
+                    if (displayNameAnnotation != null) {
+                        log.info("Found @DisplayName annotation on field {}: priority={}, description={}", 
+                            field.getName(), displayNameAnnotation.priority(), displayNameAnnotation.description());
+                    }
+                }
+            } else {
+                log.warn("UserAccount not found in cache");
+            }
+        } catch (Exception e) {
+            log.error("Failed to test ID and DisplayName detection", e);
         }
     }
 
@@ -497,25 +646,31 @@ public class SwaggerI18nCustomizer implements OpenApiCustomiser {
         try {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             String path = packageName.replace('.', '/');
+            log.info("Looking for resources in path: {}", path);
             Enumeration<URL> resources = classLoader.getResources(path);
             
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
+                log.info("Found resource: {} with protocol: {}", resource, resource.getProtocol());
+                
                 if (resource.getProtocol().equals("file")) {
                     // Handle file system
                     File directory = new File(resource.getFile());
+                    log.info("Checking directory: {} (exists: {})", directory.getAbsolutePath(), directory.exists());
                     if (directory.exists()) {
                         findClassesInDirectory(directory, packageName, classes);
                     }
                 } else if (resource.getProtocol().equals("jar")) {
                     // Handle JAR files
                     String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
+                    log.info("Checking JAR: {}", jarPath);
                     findClassesInJar(jarPath, packageName, classes);
                 }
             }
         } catch (Exception e) {
             log.error("Error finding classes in package: {}", packageName, e);
         }
+        log.info("Found {} classes in package {}", classes.size(), packageName);
         return classes;
     }
     

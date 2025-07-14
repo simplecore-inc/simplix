@@ -1,11 +1,11 @@
 package dev.simplecore.simplix.demo.web.common.user.service;
 
-import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
-import dev.simplecore.simplix.demo.domain.common.user.repository.UserRoleRepository;
-import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.parser.SearchableParamsParser;
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
+import dev.simplecore.simplix.demo.domain.common.user.repository.UserRoleRepository;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
+import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -147,6 +147,50 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
         });
         
         saveAll(entities);
+    }
+
+    /**
+     * Updates the order of a UserRole entity.
+     *
+     * @param orderUpdateDto DTO containing the ID and new order value
+     * @return UserRoleDetailDTO of the updated entity
+     * @throws RuntimeException if the entity is not found
+     */
+    @Transactional
+    public UserRoleDetailDTO updateOrder(UserRoleOrderUpdateDTO orderUpdateDto) {
+        UserRole entity = findById(orderUpdateDto.getId())
+            .orElseThrow(() -> new RuntimeException("UserRole not found"));
+        
+        entity.setItemOrder(orderUpdateDto.getItemOrder());
+        
+        return saveAndGetProjection(entity);
+    }
+
+    /**
+     * Updates the order of multiple UserRole entities.
+     *
+     * @param orderUpdateDtos List of DTOs containing the IDs and new order values
+     * @return List of UserRoleDetailDTO of the updated entities
+     * @throws RuntimeException if any entity is not found
+     */
+    @Transactional
+    public List<UserRoleDetailDTO> updateOrders(List<UserRoleOrderUpdateDTO> orderUpdateDtos) {
+        List<UserRoleDetailDTO> updatedEntities = new ArrayList<>();
+        
+        for (UserRoleOrderUpdateDTO orderUpdateDto : orderUpdateDtos) {
+            if (orderUpdateDto.getId() == null) {
+                continue;
+            }
+            
+            UserRole entity = findById(orderUpdateDto.getId())
+                .orElseThrow(() -> new RuntimeException("UserRole not found with ID: " + orderUpdateDto.getId()));
+            
+            entity.setItemOrder(orderUpdateDto.getItemOrder());
+            UserRoleDetailDTO updatedEntity = saveAndGetProjection(entity);
+            updatedEntities.add(updatedEntity);
+        }
+        
+        return updatedEntities;
     }
 
     //----------------------------------

@@ -3,8 +3,6 @@ package dev.simplecore.simplix.springboot.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.time.ZoneId;
-
 @Data
 @ConfigurationProperties(prefix = "simplix")
 public class SimpliXProperties {

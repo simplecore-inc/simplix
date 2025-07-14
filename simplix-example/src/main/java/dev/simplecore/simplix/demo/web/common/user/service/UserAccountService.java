@@ -1,18 +1,18 @@
 package dev.simplecore.simplix.demo.web.common.user.service;
 
-import dev.simplecore.simplix.demo.permission.CustomUserDetailsService;
-import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
-import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
-import dev.simplecore.simplix.demo.domain.common.user.repository.UserAccountRepository;
-import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
-import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.parser.SearchableParamsParser;
-
+import dev.simplecore.simplix.demo.domain.common.user.entity.UserAccount;
+import dev.simplecore.simplix.demo.domain.common.user.repository.UserAccountRepository;
+import dev.simplecore.simplix.demo.permission.CustomUserDetailsService;
+import dev.simplecore.simplix.demo.web.common.user.dto.UserAccountDTOs.*;
+import dev.simplecore.simplix.demo.web.common.user.excel.UserAccountListExcel;
+import dev.simplecore.simplix.web.service.SimpliXBaseService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +43,8 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
     private final ObjectProvider<UserOrganizationService> userOrganizationServiceProvider;
 
     private final ObjectProvider<CustomUserDetailsService> userDetailsServiceProvider;
+    
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * Constructs a new UserAccountService with required dependencies.
@@ -53,6 +55,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
      * @param userRoleServiceProvider Provider for UserRole service
      * @param userOrganizationServiceProvider Provider for UserOrganization service
      * @param userDetailsServiceProvider Provider for CustomUserDetailsService
+     * @param passwordEncoder Password encoder for encrypting passwords
      */
     public UserAccountService(
         UserAccountRepository repository,
@@ -60,7 +63,8 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
         ObjectProvider<UserPositionService> userPositionServiceProvider,
         ObjectProvider<UserRoleService> userRoleServiceProvider,
         ObjectProvider<UserOrganizationService> userOrganizationServiceProvider,
-        ObjectProvider<CustomUserDetailsService> userDetailsServiceProvider
+        ObjectProvider<CustomUserDetailsService> userDetailsServiceProvider,
+        PasswordEncoder passwordEncoder
     ) {
         super(repository, entityManager);
         
@@ -69,6 +73,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
         this.userRoleServiceProvider = userRoleServiceProvider;
         this.userOrganizationServiceProvider = userOrganizationServiceProvider;
         this.userDetailsServiceProvider = userDetailsServiceProvider;
+        this.passwordEncoder = passwordEncoder;
 
     }
 
@@ -82,6 +87,12 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
     @Transactional
     public UserAccountDetailDTO create(UserAccountCreateDTO createDTO) {
         UserAccount entity = modelMapper.map(createDTO, UserAccount.class);
+        
+        // Encode password if provided
+        if (createDTO.getPassword() != null && !createDTO.getPassword().trim().isEmpty()) {
+            entity.setPassword(passwordEncoder.encode(createDTO.getPassword()));
+        }
+        
         return saveAndGetProjection(entity, createDTO.getPosition(), createDTO.getRoles(), createDTO.getOrganizations());
     }
 
@@ -95,7 +106,20 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
      */
     @Transactional
     public UserAccountDetailDTO update(UserAccount entity, UserAccountUpdateDTO updateDto) {
+        // Store the original password before mapping
+        String originalPassword = entity.getPassword();
+        
         modelMapper.map(updateDto, entity);
+        
+        // Handle password update
+        if (updateDto.getPassword() == null || updateDto.getPassword().trim().isEmpty()) {
+            // If password is null or empty, restore the original password
+            entity.setPassword(originalPassword);
+        } else {
+            // If password is provided, encode it
+            entity.setPassword(passwordEncoder.encode(updateDto.getPassword()));
+        }
+        
         UserAccountDetailDTO result = saveAndGetProjection(entity, updateDto.getPosition(), updateDto.getRoles(), updateDto.getOrganizations());
         
         // Update current authentication if it's the same user

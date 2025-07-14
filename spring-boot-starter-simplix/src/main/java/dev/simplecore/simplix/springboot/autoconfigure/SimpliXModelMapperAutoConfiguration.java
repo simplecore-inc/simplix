@@ -42,8 +42,7 @@ public class SimpliXModelMapperAutoConfiguration {
         mapper.getConfiguration()
             .setMatchingStrategy(MatchingStrategies.STRICT)
             .setFieldMatchingEnabled(true)
-            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
-            .setSkipNullEnabled(true);
+            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
 
         // Add timezone-aware datetime converters
         configureTimezoneConverters(mapper);

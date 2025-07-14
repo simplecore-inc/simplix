@@ -4,7 +4,6 @@ import dev.simplecore.simplix.demo.web.event.dto.SampleMessage;
 import dev.simplecore.simplix.demo.web.event.receiver.SampleMessageEventReceiver;
 import dev.simplecore.simplix.event.gateway.SimpliXEventGateway;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

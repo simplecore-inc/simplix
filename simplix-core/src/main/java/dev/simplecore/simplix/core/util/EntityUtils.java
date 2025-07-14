@@ -20,7 +20,6 @@ public class EntityUtils {
         if (source.getClass() != entityClass) {
             ModelMapper mapper = new ModelMapper();
             mapper.getConfiguration()
-                .setSkipNullEnabled(true)
                 .setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
                 .setPropertyCondition(ctx -> ctx.getSource() != null)

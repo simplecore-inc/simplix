@@ -1,16 +1,14 @@
 package dev.simplecore.simplix.event.spi.impl;
 
+import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
+import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
+import dev.simplecore.simplix.event.spi.MessageBrokerProvider;
+import io.micrometer.core.instrument.MeterRegistry;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import io.micrometer.core.instrument.MeterRegistry;
-
-import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
-import dev.simplecore.simplix.event.spi.MessageBrokerProvider;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Provider for the in-memory message broker adapter.

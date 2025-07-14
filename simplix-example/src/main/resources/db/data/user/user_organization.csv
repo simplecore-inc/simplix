@@ -1,5 +1,5 @@
 organization_id,name,org_type,parent_id,description,item_order,created_by,created_at,updated_by,updated_at
-881e8400-e29b-41d4-a716-446655440000,앤솔루션,ROOT,null,앤솔루션,1,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
+881e8400-e29b-41d4-a716-446655440000,SimpleCORE,ROOT,null,SimpleCORE,1,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
 881e8400-e29b-41d4-a716-446655440100,기술본부,DEPARTMENT,881e8400-e29b-41d4-a716-446655440000,기술 총괄 본부,2,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
 881e8400-e29b-41d4-a716-446655440200,경영지원본부,DEPARTMENT,881e8400-e29b-41d4-a716-446655440000,경영지원 총괄 본부,3,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
 881e8400-e29b-41d4-a716-446655440300,품질본부,DEPARTMENT,881e8400-e29b-41d4-a716-446655440000,품질 총괄 본부,4,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00

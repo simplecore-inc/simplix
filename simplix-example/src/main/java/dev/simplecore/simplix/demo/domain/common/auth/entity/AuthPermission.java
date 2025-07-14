@@ -1,13 +1,12 @@
 package dev.simplecore.simplix.demo.domain.common.auth.entity;
 
+import dev.simplecore.simplix.core.annotation.DisplayName;
+import dev.simplecore.simplix.core.annotation.I18nTitle;
+import dev.simplecore.simplix.demo.domain.BaseEntity;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.GenericGenerator;
-
-import dev.simplecore.simplix.demo.domain.BaseEntity;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
-
 import org.hibernate.annotations.Comment;
+import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
 
@@ -33,6 +32,7 @@ public class AuthPermission extends BaseEntity<String> {
     @Column(nullable = false, unique = true)
     @Comment("Permission Code: Code name for the permission used in the system")
     @I18nTitle({"ko=권한 코드", "en=Permission Code", "ja=権限コード"})
+    @DisplayName(description = "Permission code for display")
     private String name;  // 예: USER, BOARD, ...
 
     @Column(length = 500)

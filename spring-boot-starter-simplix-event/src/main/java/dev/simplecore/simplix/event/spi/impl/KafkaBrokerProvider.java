@@ -1,17 +1,15 @@
 package dev.simplecore.simplix.event.spi.impl;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.retry.support.RetryTemplate;
-import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ConsumerFactory;
-
+import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
 import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
 import dev.simplecore.simplix.event.spi.MessageBrokerProvider;
-import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
-
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.retry.support.RetryTemplate;
 
 /**
  * Provider for the Kafka message broker adapter.

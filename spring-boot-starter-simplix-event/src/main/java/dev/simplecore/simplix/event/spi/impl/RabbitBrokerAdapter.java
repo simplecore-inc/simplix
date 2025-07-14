@@ -1,34 +1,31 @@
 package dev.simplecore.simplix.event.spi.impl;
 
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.retry.support.RetryTemplate;
-import org.springframework.stereotype.Component;
-import org.springframework.context.ApplicationContext;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageListener;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
+import dev.simplecore.simplix.event.constant.SimpliXLogMessages;
+import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
 import dev.simplecore.simplix.event.model.SimpliXMessageEvent;
 import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
-import dev.simplecore.simplix.event.constant.SimpliXMetricsConstants;
-import dev.simplecore.simplix.event.constant.SimpliXLogMessages;
 import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
-
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
-import java.util.function.Consumer;
-import java.util.Map;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.List;
-import java.util.ArrayList;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
+import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
+import org.springframework.retry.support.RetryTemplate;
+import org.springframework.stereotype.Component;
+
 import javax.annotation.PreDestroy;
-import dev.simplecore.simplix.event.constant.SimpliXEventConstants;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * RabbitMQ Broker Adapter
