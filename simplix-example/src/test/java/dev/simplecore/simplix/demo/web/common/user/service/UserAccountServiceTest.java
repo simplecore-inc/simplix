@@ -91,7 +91,7 @@ class UserAccountServiceTest {
 
     private UserAccountUpdateDTO createUserAccountUpdateDTO(String id) {
         UserAccountUpdateDTO dto = new UserAccountUpdateDTO();
-        dto.setId(id);
+        dto.setUserId(id);
         dto.setUsername(faker.internet().username());
         dto.setPassword("UpdatedPassword123!");
         dto.setEnabled(true);

@@ -56,7 +56,7 @@ class UserRoleControllerTest {
      */
     private UserRoleDetailDTO createRandomUserRoleDetailDTO() {
         UserRoleDetailDTO dto = new UserRoleDetailDTO();
-        dto.setId(faker.internet().uuid());
+        dto.setRoleId(faker.internet().uuid());
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));

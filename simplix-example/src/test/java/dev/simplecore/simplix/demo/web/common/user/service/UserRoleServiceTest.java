@@ -86,7 +86,7 @@ class UserRoleServiceTest {
      */
     private UserRoleUpdateDTO createRandomUserRoleUpdateDTO(String id) {
         UserRoleUpdateDTO dto = new UserRoleUpdateDTO();
-        dto.setId(id);
+        dto.setRoleId(id);
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
@@ -231,7 +231,7 @@ class UserRoleServiceTest {
             faker.internet().uuid()
         );
         UserRoleBatchUpdateDTO batchUpdateDTO = new UserRoleBatchUpdateDTO();
-        batchUpdateDTO.setIds(ids);
+        batchUpdateDTO.setRoleIds(ids);
         
         List<UserRole> entities = new ArrayList<>();
         ids.forEach(id -> {

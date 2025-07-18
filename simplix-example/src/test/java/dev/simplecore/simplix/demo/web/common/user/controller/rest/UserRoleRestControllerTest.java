@@ -93,7 +93,7 @@ class UserRoleRestControllerTest {
      */
     private UserRoleUpdateDTO createRandomUserRoleUpdateDTO(String id) {
         UserRoleUpdateDTO dto = new UserRoleUpdateDTO();
-        dto.setId(id);
+        dto.setRoleId(id);
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
@@ -106,7 +106,7 @@ class UserRoleRestControllerTest {
      */
     private UserRoleDetailDTO createRandomUserRoleDetailDTO() {
         UserRoleDetailDTO dto = new UserRoleDetailDTO();
-        dto.setId(faker.internet().uuid());
+        dto.setRoleId(faker.internet().uuid());
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
@@ -130,7 +130,7 @@ class UserRoleRestControllerTest {
                 .content(objectMapper.writeValueAsString(createDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
-                .andExpect(jsonPath("$.body.id").value(resultDTO.getId()))
+                .andExpect(jsonPath("$.body.roleId").value(resultDTO.getRoleId()))
                 .andExpect(jsonPath("$.body.name").value(resultDTO.getName()))
                 .andExpect(jsonPath("$.body.role").value(resultDTO.getRole()));
     }
@@ -154,7 +154,7 @@ class UserRoleRestControllerTest {
                 .content(objectMapper.writeValueAsString(updateDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
-                .andExpect(jsonPath("$.body.id").value(resultDTO.getId()))
+                .andExpect(jsonPath("$.body.roleId").value(resultDTO.getRoleId()))
                 .andExpect(jsonPath("$.body.name").value(resultDTO.getName()))
                 .andExpect(jsonPath("$.body.role").value(resultDTO.getRole()));
     }
@@ -190,7 +190,7 @@ class UserRoleRestControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
-                .andExpect(jsonPath("$.body.id").value(detailDTO.getId()))
+                .andExpect(jsonPath("$.body.roleId").value(detailDTO.getRoleId()))
                 .andExpect(jsonPath("$.body.name").value(detailDTO.getName()))
                 .andExpect(jsonPath("$.body.role").value(detailDTO.getRole()));
     }
@@ -235,8 +235,8 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
                 .andExpect(jsonPath("$.body").isArray())
                 .andExpect(jsonPath("$.body.length()").value(2))
-                .andExpect(jsonPath("$.body[0].id").exists())
-                .andExpect(jsonPath("$.body[1].id").exists());
+                .andExpect(jsonPath("$.body[0].roleId").exists())
+                .andExpect(jsonPath("$.body[1].roleId").exists());
     }
     
     @Test
@@ -249,7 +249,7 @@ class UserRoleRestControllerTest {
             faker.internet().uuid(),
             faker.internet().uuid()
         );
-        batchUpdateDTO.setIds(ids);
+        batchUpdateDTO.setRoleIds(ids);
         
         doNothing().when(userRoleService).batchUpdate(any(UserRoleBatchUpdateDTO.class));
         
@@ -279,9 +279,9 @@ class UserRoleRestControllerTest {
         mockMvc.perform(delete("/api/user/role/batch")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .accept(MediaType.APPLICATION_JSON)
-                .param("ids", ids.get(0))
-                .param("ids", ids.get(1))
-                .param("ids", ids.get(2)))
+                .param("roleIds", ids.get(0))
+                .param("roleIds", ids.get(1))
+                .param("roleIds", ids.get(2)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
                 .andExpect(jsonPath("$.message").exists());
@@ -294,12 +294,12 @@ class UserRoleRestControllerTest {
         List<UserRoleListDTO> results = new ArrayList<>();
         // Create actual objects instead of mocks
         UserRoleListDTO dto1 = new UserRoleListDTO();
-        dto1.setId(faker.internet().uuid());
+        dto1.setRoleId(faker.internet().uuid());
         dto1.setName(faker.lorem().word());
         dto1.setRole(faker.lorem().word());
         
         UserRoleListDTO dto2 = new UserRoleListDTO();
-        dto2.setId(faker.internet().uuid());
+        dto2.setRoleId(faker.internet().uuid());
         dto2.setName(faker.lorem().word());
         dto2.setRole(faker.lorem().word());
         
@@ -319,8 +319,8 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
                 .andExpect(jsonPath("$.body.content").isArray())
                 .andExpect(jsonPath("$.body.content.length()").value(2))
-                .andExpect(jsonPath("$.body.content[0].id").value(dto1.getId()))
-                .andExpect(jsonPath("$.body.content[1].id").value(dto2.getId()));
+                .andExpect(jsonPath("$.body.content[0].roleId").value(dto1.getRoleId()))
+                .andExpect(jsonPath("$.body.content[1].roleId").value(dto2.getRoleId()));
     }
 
     @SuppressWarnings("unchecked")
@@ -331,12 +331,12 @@ class UserRoleRestControllerTest {
         List<UserRoleListDTO> results = new ArrayList<>();
         // Create actual objects instead of mocks
         UserRoleListDTO dto1 = new UserRoleListDTO();
-        dto1.setId(faker.internet().uuid());
+        dto1.setRoleId(faker.internet().uuid());
         dto1.setName(faker.lorem().word());
         dto1.setRole(faker.lorem().word());
         
         UserRoleListDTO dto2 = new UserRoleListDTO();
-        dto2.setId(faker.internet().uuid());
+        dto2.setRoleId(faker.internet().uuid());
         dto2.setName(faker.lorem().word());
         dto2.setRole(faker.lorem().word());
         
@@ -357,8 +357,8 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
                 .andExpect(jsonPath("$.body.content").isArray())
                 .andExpect(jsonPath("$.body.content.length()").value(2))
-                .andExpect(jsonPath("$.body.content[0].id").value(dto1.getId()))
-                .andExpect(jsonPath("$.body.content[1].id").value(dto2.getId()));
+                .andExpect(jsonPath("$.body.content[0].roleId").value(dto1.getRoleId()))
+                .andExpect(jsonPath("$.body.content[1].roleId").value(dto2.getRoleId()));
     }
 
     @Test
@@ -371,21 +371,21 @@ class UserRoleRestControllerTest {
         Integer newOrder2 = 200;
         
         UserRoleOrderUpdateDTO orderUpdateDto1 = new UserRoleOrderUpdateDTO();
-        orderUpdateDto1.setId(roleId1);
+        orderUpdateDto1.setRoleId(roleId1);
         orderUpdateDto1.setItemOrder(newOrder1);
         
         UserRoleOrderUpdateDTO orderUpdateDto2 = new UserRoleOrderUpdateDTO();
-        orderUpdateDto2.setId(roleId2);
+        orderUpdateDto2.setRoleId(roleId2);
         orderUpdateDto2.setItemOrder(newOrder2);
         
         List<UserRoleOrderUpdateDTO> orderUpdateDtos = List.of(orderUpdateDto1, orderUpdateDto2);
         
         UserRoleDetailDTO resultDTO1 = createRandomUserRoleDetailDTO();
-        resultDTO1.setId(roleId1);
+        resultDTO1.setRoleId(roleId1);
         resultDTO1.setItemOrder(newOrder1);
         
         UserRoleDetailDTO resultDTO2 = createRandomUserRoleDetailDTO();
-        resultDTO2.setId(roleId2);
+        resultDTO2.setRoleId(roleId2);
         resultDTO2.setItemOrder(newOrder2);
         
         List<UserRoleDetailDTO> resultDTOs = List.of(resultDTO1, resultDTO2);
@@ -401,9 +401,9 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.type").value("SUCCESS"))
                 .andExpect(jsonPath("$.body").isArray())
                 .andExpect(jsonPath("$.body.length()").value(2))
-                .andExpect(jsonPath("$.body[0].id").value(roleId1))
+                .andExpect(jsonPath("$.body[0].roleId").value(roleId1))
                 .andExpect(jsonPath("$.body[0].itemOrder").value(newOrder1))
-                .andExpect(jsonPath("$.body[1].id").value(roleId2))
+                .andExpect(jsonPath("$.body[1].roleId").value(roleId2))
                 .andExpect(jsonPath("$.body[1].itemOrder").value(newOrder2))
                 .andExpect(jsonPath("$.message").value("UserRole orders updated successfully"));
     }

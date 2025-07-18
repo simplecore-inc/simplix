@@ -237,7 +237,7 @@ class SimpliXTreeServiceTest {
             CodeItem savedItem = createCodeItem(5L, "NEW_ITEM", "New Test Item", root.getId(), 3);
             
             when(treeRepository.findById(root.getId())).thenReturn(Optional.of(root));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(savedItem);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(savedItem);
 
             // when
             CodeItem created = treeService.create(newItem);
@@ -246,7 +246,7 @@ class SimpliXTreeServiceTest {
             assertThat(created).isNotNull();
             assertThat(created.getCodeKey()).isEqualTo("NEW_ITEM");
             assertThat(created.getParentId()).isEqualTo(root.getId());
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -255,7 +255,7 @@ class SimpliXTreeServiceTest {
             // given
             CodeItem newRoot = createCodeItem(null, "NEW_ROOT", "New Root Node", null, 1);
             CodeItem savedRoot = createCodeItem(8L, "NEW_ROOT", "New Root Node", null, 1);
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(savedRoot);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(savedRoot);
 
             // when
             CodeItem created = treeService.create(newRoot);
@@ -264,7 +264,7 @@ class SimpliXTreeServiceTest {
             assertThat(created).isNotNull();
             assertThat(created.getCodeKey()).isEqualTo("NEW_ROOT");
             assertThat(created.getParentId()).isNull();
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -274,7 +274,7 @@ class SimpliXTreeServiceTest {
             child1.setCodeValue("Updated First Child");
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findById(root.getId())).thenReturn(Optional.of(root));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(child1);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(child1);
 
             // when
             CodeItem updated = treeService.update(child1);
@@ -282,7 +282,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(updated).isNotNull();
             assertThat(updated.getCodeValue()).isEqualTo("Updated First Child");
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -292,7 +292,7 @@ class SimpliXTreeServiceTest {
             child1.setSortOrder(3);
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findById(root.getId())).thenReturn(Optional.of(root));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(child1);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(child1);
 
             // when
             CodeItem updated = treeService.update(child1);
@@ -300,7 +300,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(updated).isNotNull();
             assertThat(updated.getSortOrder()).isEqualTo(3);
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -359,7 +359,7 @@ class SimpliXTreeServiceTest {
             CodeItem newParent = createCodeItem(6L, "NEW_PARENT", "New Parent Node", null, 2);
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findById(newParent.getId())).thenReturn(Optional.of(newParent));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(child1);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(child1);
 
             // when
             CodeItem moved = treeService.move(child1.getId(), newParent.getId());
@@ -367,7 +367,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(moved).isNotNull();
             assertThat(moved.getParentId()).isEqualTo(newParent.getId());
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -375,6 +375,10 @@ class SimpliXTreeServiceTest {
         void copySubtree() {
             // given
             CodeItem copiedRoot = createCodeItem(7L, "ROOT", "Root Node", null, 1);
+            CodeItem copiedChild1 = createCodeItem(8L, "CHILD1", "First Child", 7L, 1);
+            CodeItem copiedChild2 = createCodeItem(9L, "CHILD2", "Second Child", 7L, 2);
+            CodeItem copiedGrandChild1 = createCodeItem(10L, "GRANDCHILD1", "First Grandchild", 8L, 1);
+            
             when(treeRepository.findById(root.getId())).thenReturn(Optional.of(root));
             when(treeRepository.findItemWithAllDescendants(root.getId()))
                 .thenReturn(Arrays.asList(root, child1, child2, grandChild1));
@@ -382,7 +386,13 @@ class SimpliXTreeServiceTest {
             when(treeRepository.findDirectChildren(child1.getId())).thenReturn(Collections.singletonList(grandChild1));
             when(treeRepository.findDirectChildren(child2.getId())).thenReturn(Collections.emptyList());
             when(treeRepository.findDirectChildren(grandChild1.getId())).thenReturn(Collections.emptyList());
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(copiedRoot);
+            
+            // Mock saveAndFlush calls for each node copy
+            when(treeRepository.saveAndFlush(any(CodeItem.class)))
+                .thenReturn(copiedRoot)
+                .thenReturn(copiedChild1)
+                .thenReturn(copiedChild2)
+                .thenReturn(copiedGrandChild1);
 
             // when
             CodeItem copied = treeService.copySubtree(root.getId(), null);
@@ -390,7 +400,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(copied).isNotNull();
             assertThat(copied.getCodeKey()).isEqualTo("ROOT");
-            verify(treeRepository, atLeastOnce()).save(any(CodeItem.class));
+            verify(treeRepository, atLeastOnce()).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -401,13 +411,13 @@ class SimpliXTreeServiceTest {
             when(treeRepository.findDirectChildren(root.getId())).thenReturn(Arrays.asList(child1, child2));
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findById(child2.getId())).thenReturn(Optional.of(child2));
-            when(treeRepository.save(any(CodeItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
             // when
             treeService.reorderChildren(root.getId(), newOrder);
 
             // then
-            verify(treeRepository, times(2)).save(any(CodeItem.class));
+            verify(treeRepository, times(2)).saveAndFlush(any(CodeItem.class));
         }
     }
 
@@ -591,7 +601,7 @@ class SimpliXTreeServiceTest {
             // given
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findById(root.getId())).thenReturn(Optional.of(root));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(child1);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(child1);
 
             // when
             CodeItem moved = treeService.move(child1.getId(), root.getId());
@@ -599,7 +609,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(moved).isNotNull();
             assertThat(moved.getParentId()).isEqualTo(root.getId());
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
 
         @Test
@@ -607,7 +617,7 @@ class SimpliXTreeServiceTest {
         void moveToRootLevel() {
             // given
             when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
-            when(treeRepository.save(any(CodeItem.class))).thenReturn(child1);
+            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenReturn(child1);
 
             // when
             CodeItem moved = treeService.move(child1.getId(), null);
@@ -615,7 +625,7 @@ class SimpliXTreeServiceTest {
             // then
             assertThat(moved).isNotNull();
             assertThat(moved.getParentId()).isNull();
-            verify(treeRepository).save(any(CodeItem.class));
+            verify(treeRepository).saveAndFlush(any(CodeItem.class));
         }
     }
 
