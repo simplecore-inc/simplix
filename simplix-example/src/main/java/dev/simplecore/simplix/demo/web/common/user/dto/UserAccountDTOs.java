@@ -38,7 +38,7 @@ public class UserAccountDTOs {
         
         @Schema(description = "User ID")
         @SearchableField(entityField = "userId", operators = {EQUALS})
-        private String id;
+        private String userId;
         
         @Schema(description = "Login Account")
         @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
@@ -105,75 +105,75 @@ public class UserAccountDTOs {
     public static class UserAccountCreateDTO {
         
         @Schema(description = "Username")
-        @NotBlank(message = "{validation.username.required}")
+        @NotBlank(message = "{validation.required}")
         @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", message = "{validation.username.pattern}")
-        @Length(min = 4, max = 20, message = "{validation.username.length}")
+        @Length(min = 4, max = 20, message = "{validation.range.length}")
         private String username;
 
         @Schema(description = "Password")
-        @NotBlank(message = "{validation.password.required}")
+        @NotBlank(message = "{validation.required}")
         @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
         private String password;
-        
+
         @Schema(description = "Account Status")
-        @NotNull(message = "{validation.enabled.required}")
+        @NotNull(message = "{validation.required}")
         private Boolean enabled;
-        
+
         @Schema(description = "Name")
-        @NotBlank(message = "{validation.realName.required}")
-        @Length(min = 2, max = 50, message = "{validation.realName.length}")
+        @NotBlank(message = "{validation.required}")
+        @Length(min = 2, max = 50, message = "{validation.range.length}")
         private String realName;
-        
+
         @Schema(description = "Profile Image")
-        @Size(max = 5242880, message = "{validation.profileImage.size}")
+        @Size(max = 5242880, message = "{validation.file.size}")
         private byte[] profileImage;
-        
+
         @Schema(description = "Profile Image Type")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.profileImageType.pattern}")
+        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.file.type}")
         private String profileImageType;
-        
+
         @Schema(description = "Self-introduction")
-        @Length(max = 500, message = "{validation.description.length}")
+        @Length(max = 500, message = "{validation.max.length}")
         private String description;
-        
+
         @Schema(description = "Email")
-        @NotBlank(message = "{validation.email.required}")
-        @Email(message = "{validation.email.format}")
+        @NotBlank(message = "{validation.required}")
+        @Email(message = "{validation.invalid.format}")
         private String email;
-        
+
         @Schema(description = "Mobile Phone")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.mobilePhone.pattern}")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.invalid.format}")
         private String mobilePhone;
-        
+
         @Schema(description = "Office Phone")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.officePhone.pattern}")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.invalid.format}")
         private String officePhone;
-        
+
         @Schema(description = "Postal Code")
-        @Pattern(regexp = "^\\d{5}$", message = "{validation.postalCode.pattern}")
+        @Pattern(regexp = "^\\d{5}$", message = "{validation.invalid.format}")
         private String postalCode;
-        
+
         @Schema(description = "Address")
-        @Length(max = 200, message = "{validation.address.length}")
+        @Length(max = 200, message = "{validation.max.length}")
         private String address;
-        
+
         @Schema(description = "Detailed Address")
-        @Length(max = 200, message = "{validation.addressDetail.length}")
+        @Length(max = 200, message = "{validation.max.length}")
         private String addressDetail;
-        
+
         @Schema(description = "Position Information")
-        @NotBlank(message = "{validation.position.required}")
-        @ValidateWith(service = "userPositionService.validateId", message = "{validation.position.invalid}")
+        @NotBlank(message = "{validation.required}")
+        @ValidateWith(service = "userPositionService.validateId", message = "{validation.invalid.exists}")
         private String position;
-        
+
         @Schema(description = "Permission Information")
-        @NotEmpty(message = "{validation.roles.required}")
-        @Size(min = 1, max = 10, message = "{validation.roles.size}")
+        @NotEmpty(message = "{validation.empty}")
+        @Size(min = 1, max = 10, message = "{validation.range.size}")
         private Set<String> roles;
-        
+
         @Schema(description = "Affiliated Organization")
-        @NotEmpty(message = "{validation.organizations.required}")
-        @Size(min = 1, max = 10, message = "{validation.organizations.size}")
+        @NotEmpty(message = "{validation.empty}")
+        @Size(min = 1, max = 10, message = "{validation.range.size}")
         private Set<String> organizations;
         
     }
@@ -183,78 +183,78 @@ public class UserAccountDTOs {
     public static class UserAccountUpdateDTO {
         
         @Schema(description = "UserAccount ID")
-        @NotBlank(message = "{validation.id.required}")
-        private String id;
+        @NotBlank(message = "{validation.required}")
+        private String userId;
 
         @Schema(description = "Username")
-        @NotBlank(message = "{validation.username.required}")
+        @NotBlank(message = "{validation.required}")
         @Pattern(regexp = "^[a-zA-Z0-9._-]{4,20}$", message = "{validation.username.pattern}")
-        @Length(min = 4, max = 20, message = "{validation.username.length}")
+        @Length(min = 4, max = 20, message = "{validation.range.length}")
         private String username;
-        
+
         @Schema(description = "Password")
         @Pattern(regexp = "^$|^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{5,}$", message = "{validation.password.pattern}")
         private String password;
-        
+
         @Schema(description = "Account Status")
-        @NotNull(message = "{validation.enabled.required}")
+        @NotNull(message = "{validation.required}")
         private Boolean enabled;
-        
+
         @Schema(description = "Name")
-        @NotBlank(message = "{validation.realName.required}")
-        @Length(min = 2, max = 50, message = "{validation.realName.length}")
+        @NotBlank(message = "{validation.required}")
+        @Length(min = 2, max = 50, message = "{validation.range.length}")
         private String realName;
-        
+
         @Schema(description = "Profile Image")
-        @Size(max = 5242880, message = "{validation.profileImage.size}")
+        @Size(max = 5242880, message = "{validation.file.size}")
         private byte[] profileImage;
-        
+
         @Schema(description = "Profile Image Type")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.profileImageType.pattern}")
+        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.file.type}")
         private String profileImageType;
-        
+
         @Schema(description = "Self-introduction")
-        @Length(max = 500, message = "{validation.description.length}")
+        @Length(max = 500, message = "{validation.max.length}")
         private String description;
-        
+
         @Schema(description = "Email")
-        @NotBlank(message = "{validation.email.required}")
-        @Email(message = "{validation.email.format}")
+        @NotBlank(message = "{validation.required}")
+        @Email(message = "{validation.invalid.format}")
         private String email;
-        
+
         @Schema(description = "Mobile Phone")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.mobilePhone.pattern}")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.invalid.format}")
         private String mobilePhone;
-        
+
         @Schema(description = "Office Phone")
-        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.officePhone.pattern}")
+        @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "{validation.invalid.format}")
         private String officePhone;
-        
+
         @Schema(description = "Postal Code")
-        @Pattern(regexp = "^\\d{5}$", message = "{validation.postalCode.pattern}")
+        @Pattern(regexp = "^\\d{5}$", message = "{validation.invalid.format}")
         private String postalCode;
-        
+
         @Schema(description = "Address")
-        @Length(max = 200, message = "{validation.address.length}")
+        @Length(max = 200, message = "{validation.max.length}")
         private String address;
-        
+
         @Schema(description = "Detailed Address")
-        @Length(max = 200, message = "{validation.addressDetail.length}")
+        @Length(max = 200, message = "{validation.max.length}")
         private String addressDetail;
-        
+
         @Schema(description = "Position Information")
-        @NotBlank(message = "{validation.position.required}")
-        @ValidateWith(service = "userPositionService.validateId", message = "{validation.position.invalid}")
+        @NotBlank(message = "{validation.required}")
+        @ValidateWith(service = "userPositionService.validateId", message = "{validation.invalid.exists}")
         private String position;
-        
+
         @Schema(description = "Permission Information")
-        @NotEmpty(message = "{validation.roles.required}")
-        @Size(min = 1, max = 10, message = "{validation.roles.size}")
+        @NotEmpty(message = "{validation.empty}")
+        @Size(min = 1, max = 10, message = "{validation.range.size}")
         private Set<String> roles;
-        
+
         @Schema(description = "Affiliated Organization")
-        @NotEmpty(message = "{validation.organizations.required}")
-        @Size(min = 1, max = 10, message = "{validation.organizations.size}")
+        @NotEmpty(message = "{validation.empty}")
+        @Size(min = 1, max = 10, message = "{validation.range.size}")
         private Set<String> organizations;
         
     }
@@ -262,8 +262,8 @@ public class UserAccountDTOs {
     @Data
     public static class UserAccountBatchUpdateDTO {
         @Schema(description = "UserAccount ID List")
-        private Set<String> ids;
-        
+        private Set<String> userIds;
+
         @Schema(description = "Account Status")
         private Boolean enabled;
         
@@ -286,7 +286,7 @@ public class UserAccountDTOs {
     public static class UserAccountDetailDTO {
         
         @Schema(description = "User ID")
-        private String id;
+        private String userId;
         
         @Schema(description = "Login Account")
         private String username;
@@ -352,7 +352,7 @@ public class UserAccountDTOs {
     public static class UserAccountListDTO {
         
         @Schema(description = "User ID")
-        private String id;
+        private String userId;
         
         @Schema(description = "Login Account")
         private String username;

@@ -45,7 +45,7 @@ public class UserPositionDTOs {
 
         @Schema(description = "순서")
         @SearchableField(sortable = true)
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "등록일시")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)
@@ -66,7 +66,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
     }
 
@@ -85,7 +85,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
     }
 
@@ -113,7 +113,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "등록자")
         private String createdBy;
@@ -143,7 +143,7 @@ public class UserPositionDTOs {
         private String description;
         
         @Schema(description = "순서")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "등록일시")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")

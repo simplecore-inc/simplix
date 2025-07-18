@@ -90,4 +90,19 @@ databaseChangeLog:
             relativeToChangelogFile: false
             usePreparedStatements: true
             stripComments: true
-            trim: true 
+            trim: true
+
+  - changeSet:
+      id: 7
+      author: simplix
+      changes:
+          - loadData:
+                tableName: code_item
+                file: db/data/system/code_item.csv
+                encoding: UTF-8
+                separator: ','
+                quotChar: '"'
+                relativeToChangelogFile: false
+                usePreparedStatements: true
+                stripComments: true
+                trim: true

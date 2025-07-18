@@ -117,11 +117,11 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
         List<UserRoleDetailDTO> updatedEntities = new ArrayList<>();
         
         for (UserRoleUpdateDTO updateDto : updateDtos) {
-            if (updateDto.getId() == null) {
+            if (updateDto.getRoleId() == null) {
                 continue;
             }
 
-            Optional<UserRole> entityOpt = findById(updateDto.getId());
+            Optional<UserRole> entityOpt = findById(updateDto.getRoleId());
             if (entityOpt.isPresent()) {
                 UserRole entity = entityOpt.get();
                 UserRoleDetailDTO updatedEntity = update(entity, updateDto);
@@ -140,7 +140,7 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
      */
     @Transactional
     public void batchUpdate(UserRoleBatchUpdateDTO dto) {
-        List<UserRole> entities = findAllById(dto.getIds());
+        List<UserRole> entities = findAllById(dto.getRoleIds());
         
         entities.forEach(entity -> {
             
@@ -158,7 +158,7 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
      */
     @Transactional
     public UserRoleDetailDTO updateOrder(UserRoleOrderUpdateDTO orderUpdateDto) {
-        UserRole entity = findById(orderUpdateDto.getId())
+        UserRole entity = findById(orderUpdateDto.getRoleId())
             .orElseThrow(() -> new RuntimeException("UserRole not found"));
         
         entity.setItemOrder(orderUpdateDto.getItemOrder());
@@ -178,12 +178,12 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
         List<UserRoleDetailDTO> updatedEntities = new ArrayList<>();
         
         for (UserRoleOrderUpdateDTO orderUpdateDto : orderUpdateDtos) {
-            if (orderUpdateDto.getId() == null) {
+            if (orderUpdateDto.getRoleId() == null) {
                 continue;
             }
             
-            UserRole entity = findById(orderUpdateDto.getId())
-                .orElseThrow(() -> new RuntimeException("UserRole not found with ID: " + orderUpdateDto.getId()));
+            UserRole entity = findById(orderUpdateDto.getRoleId())
+                .orElseThrow(() -> new RuntimeException("UserRole not found with ID: " + orderUpdateDto.getRoleId()));
             
             entity.setItemOrder(orderUpdateDto.getItemOrder());
             UserRoleDetailDTO updatedEntity = saveAndGetProjection(entity);
@@ -200,7 +200,6 @@ public class UserRoleService extends SimpliXBaseService<UserRole, String> {
      * Handles the relationships with other entities.
      *
      * @param entity The UserRole entity to save
-     * @param dto The DTO containing relationship data
      * @return UserRoleDetailDTO of the saved entity
      * @throws RuntimeException if saving fails or if related entities are not found
      */

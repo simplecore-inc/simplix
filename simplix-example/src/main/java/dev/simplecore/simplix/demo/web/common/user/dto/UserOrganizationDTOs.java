@@ -52,7 +52,7 @@ public class UserOrganizationDTOs {
         
         @Schema(description = "Order")
         @SearchableField(operators = {EQUALS, GREATER_THAN, LESS_THAN})
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         @SearchableField(entityField = "children.id", operators = {EQUALS})
@@ -83,7 +83,7 @@ public class UserOrganizationDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         private Set<String> children;
@@ -110,7 +110,7 @@ public class UserOrganizationDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         private Set<String> children;
@@ -132,7 +132,7 @@ public class UserOrganizationDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         private Set<String> children;
@@ -162,7 +162,7 @@ public class UserOrganizationDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         private Set<UserOrganization> children;
@@ -201,7 +201,7 @@ public class UserOrganizationDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Children")
         private Set<UserOrganization> children;
@@ -226,7 +226,7 @@ public class UserOrganizationDTOs {
         private OrganizationType orgType;
         private String parentId;
         private String description;
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         private OffsetDateTime createdAt;
         private String path;
         private Integer level;
@@ -257,7 +257,7 @@ public class UserOrganizationDTOs {
         private OrganizationType orgType;
         private String parentId;
         private String description;
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         private OffsetDateTime createdAt;
         private String path;
         private Integer level;

@@ -15,10 +15,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.util.NestedServletException;
 
-import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -38,15 +37,14 @@ class UserRoleControllerTest {
     private UserRoleController userRoleController;
     
     private Faker faker;
-    private AtomicReference<BigDecimal> itemOrderCounter;
+    private AtomicInteger itemOrderCounter;
 
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
-            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
-        itemOrderCounter = new AtomicReference<>(initialValue);
+        int initialValue = (int)(System.currentTimeMillis() % 10000) + faker.random().nextInt(1000);
+        itemOrderCounter = new AtomicInteger(initialValue);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(userRoleController)
                 .alwaysDo(print())
@@ -62,7 +60,7 @@ class UserRoleControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;
     }
 

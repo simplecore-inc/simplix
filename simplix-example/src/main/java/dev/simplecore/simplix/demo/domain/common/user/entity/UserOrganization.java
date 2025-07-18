@@ -58,7 +58,7 @@ public class UserOrganization extends AuditingBaseEntity<String> {
     @Column(name = "item_order", nullable = false)
     @Comment("Order")
     @I18nTitle({"ko=순서", "en=Order", "ja=順서"})
-    private BigDecimal itemOrder;
+    private Integer itemOrder;
 
         
     //----------------------------------

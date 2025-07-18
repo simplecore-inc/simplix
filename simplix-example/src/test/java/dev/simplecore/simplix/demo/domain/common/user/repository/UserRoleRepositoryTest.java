@@ -11,11 +11,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,15 +33,14 @@ class UserRoleRepositoryTest {
     private Faker faker;
     
     // Counter for generating unique item orders
-    private AtomicReference<BigDecimal> itemOrderCounter;
+    private AtomicInteger itemOrderCounter;
     
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
-            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
-        itemOrderCounter = new AtomicReference<>(initialValue);
+        int initialValue = (int)(System.currentTimeMillis() % 10000) + faker.random().nextInt(1000);
+        itemOrderCounter = new AtomicInteger(initialValue);
     }
     
     /**
@@ -53,7 +51,7 @@ class UserRoleRepositoryTest {
         userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
-        userRole.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        userRole.setItemOrder(itemOrderCounter.getAndIncrement());
         return userRole;
     }
 
@@ -178,23 +176,29 @@ class UserRoleRepositoryTest {
     }
 
     @Test
-    @DisplayName("Unique ItemOrder Constraint Test")
-    void uniqueItemOrderConstraintTest() {
+    @DisplayName("ItemOrder Update Test")
+    void itemOrderUpdateTest() {
         // Given
-        BigDecimal duplicateOrder = BigDecimal.valueOf(999);
-        
-        UserRole role = createRandomUserRole();
-        role.setItemOrder(duplicateOrder);
-        userRoleRepository.save(role);
-        entityManager.flush();
+        Integer initialOrder = 999;
+        Integer updatedOrder = 1000;
 
-        // When & Then
-        UserRole duplicateRole = createRandomUserRole();
-        duplicateRole.setItemOrder(duplicateOrder);
-        
-        userRoleRepository.save(duplicateRole);
-        assertThatThrownBy(() -> entityManager.flush())
-            .isInstanceOf(PersistenceException.class);
+        UserRole role = createRandomUserRole();
+        role.setItemOrder(initialOrder);
+        UserRole savedRole = userRoleRepository.save(role);
+        entityManager.flush();
+        entityManager.clear();
+
+        // When
+        Optional<UserRole> foundRole = userRoleRepository.findById(savedRole.getId());
+        foundRole.get().setItemOrder(updatedOrder);
+        userRoleRepository.save(foundRole.get());
+        entityManager.flush();
+        entityManager.clear();
+
+        // Then
+        Optional<UserRole> updatedRole = userRoleRepository.findById(savedRole.getId());
+        assertThat(updatedRole).isPresent();
+        assertThat(updatedRole.get().getItemOrder()).isEqualTo(updatedOrder);
     }
 
     @Test

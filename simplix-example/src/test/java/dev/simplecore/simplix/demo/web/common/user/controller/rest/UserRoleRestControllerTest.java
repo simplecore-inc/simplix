@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -47,15 +47,14 @@ class UserRoleRestControllerTest {
     private ObjectMapper objectMapper = new ObjectMapper();
     
     private Faker faker;
-    private AtomicReference<BigDecimal> itemOrderCounter;
+    private AtomicInteger itemOrderCounter;
 
     @BeforeEach
     void setUp() {
         faker = new Faker(Locale.US);
         // Use current time + random number to ensure uniqueness across test runs
-        BigDecimal initialValue = BigDecimal.valueOf(System.currentTimeMillis() % 10000)
-            .add(BigDecimal.valueOf(faker.random().nextInt(1000)));
-        itemOrderCounter = new AtomicReference<>(initialValue);
+        int initialValue = (int)(System.currentTimeMillis() % 10000) + faker.random().nextInt(1000);
+        itemOrderCounter = new AtomicInteger(initialValue);
         mockMvc = MockMvcBuilders
                 .standaloneSetup(userRoleRestController)
                 .alwaysDo(print())
@@ -72,7 +71,7 @@ class UserRoleRestControllerTest {
         userRole.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
-        userRole.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        userRole.setItemOrder(itemOrderCounter.getAndIncrement());
         userRole.setId(faker.internet().uuid());
         return userRole;
     }
@@ -85,7 +84,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;
     }
 
@@ -98,7 +97,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;
     }
     
@@ -111,7 +110,7 @@ class UserRoleRestControllerTest {
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
-        dto.setItemOrder(itemOrderCounter.getAndUpdate(current -> current.add(BigDecimal.ONE)));
+        dto.setItemOrder(itemOrderCounter.getAndIncrement());
         return dto;
     }
 
@@ -368,8 +367,8 @@ class UserRoleRestControllerTest {
         // Given
         String roleId1 = faker.internet().uuid();
         String roleId2 = faker.internet().uuid();
-        BigDecimal newOrder1 = BigDecimal.valueOf(100);
-        BigDecimal newOrder2 = BigDecimal.valueOf(200);
+        Integer newOrder1 = 100;
+        Integer newOrder2 = 200;
         
         UserRoleOrderUpdateDTO orderUpdateDto1 = new UserRoleOrderUpdateDTO();
         orderUpdateDto1.setId(roleId1);
@@ -403,9 +402,9 @@ class UserRoleRestControllerTest {
                 .andExpect(jsonPath("$.body").isArray())
                 .andExpect(jsonPath("$.body.length()").value(2))
                 .andExpect(jsonPath("$.body[0].id").value(roleId1))
-                .andExpect(jsonPath("$.body[0].itemOrder").value(newOrder1.intValue()))
+                .andExpect(jsonPath("$.body[0].itemOrder").value(newOrder1))
                 .andExpect(jsonPath("$.body[1].id").value(roleId2))
-                .andExpect(jsonPath("$.body[1].itemOrder").value(newOrder2.intValue()))
+                .andExpect(jsonPath("$.body[1].itemOrder").value(newOrder2))
                 .andExpect(jsonPath("$.message").value("UserRole orders updated successfully"));
     }
 } 

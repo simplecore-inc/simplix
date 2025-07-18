@@ -200,11 +200,11 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
         List<UserAccountDetailDTO> updatedEntities = new ArrayList<>();
         
         for (UserAccountUpdateDTO updateDto : updateDtos) {
-            if (updateDto.getId() == null) {
+            if (updateDto.getUserId() == null) {
                 continue;
             }
 
-            Optional<UserAccount> entityOpt = findById(updateDto.getId());
+            Optional<UserAccount> entityOpt = findById(updateDto.getUserId());
             if (entityOpt.isPresent()) {
                 UserAccount entity = entityOpt.get();
                 UserAccountDetailDTO updatedEntity = update(entity, updateDto);
@@ -223,7 +223,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
      */
     @Transactional
     public void batchUpdate(UserAccountBatchUpdateDTO dto) {
-        List<UserAccount> entities = findAllById(dto.getIds());
+        List<UserAccount> entities = findAllById(dto.getUserIds());
         
         entities.forEach(entity -> {
             
@@ -259,7 +259,6 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
      * Handles the relationships with other entities.
      *
      * @param entity The UserAccount entity to save
-     * @param dto The DTO containing relationship data
      * @return UserAccountDetailDTO of the saved entity
      * @throws RuntimeException if saving fails or if related entities are not found
      */

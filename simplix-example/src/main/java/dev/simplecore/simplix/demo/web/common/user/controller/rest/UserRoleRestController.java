@@ -73,18 +73,18 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
     /**
      * Updates an existing UserRole entity
      *
-     * @param id The ID of the UserRole to update
+     * @param roleId The ID of the UserRole to update
      * @param updateDto The DTO containing the updated data
      * @return ResponseEntity containing the updated UserRoleDetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{roleId}")
     @Operation(summary = "Update UserRole", description = "Updates existing user role")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'edit')")
     public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> update(
-        @PathVariable String id, @RequestBody @Validated UserRoleUpdateDTO updateDto) {
-        return service.findById(id)
+        @PathVariable String roleId, @RequestBody @Validated UserRoleUpdateDTO updateDto) {
+        return service.findById(roleId)
                 .map(entity -> ResponseEntity.ok(SimpliXApiResponse.success(service.update(entity, updateDto))))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserRole not found")));
     }
@@ -132,19 +132,19 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
     /**
      * Deletes a UserRole by its ID
      *
-     * @param id The ID of the UserRole to delete
+     * @param roleId The ID of the UserRole to delete
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{roleId}")
     @Operation(summary = "Delete UserRole", description = "Deletes user role by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'delete')")
-    public ResponseEntity<SimpliXApiResponse<Void>> delete(@PathVariable String id) {
-        if (!service.existsById(id)) {
+    public ResponseEntity<SimpliXApiResponse<Void>> delete(@PathVariable String roleId) {
+        if (!service.existsById(roleId)) {
             return ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserRole not found"));
         }
-        service.delete(id);
+        service.delete(roleId);
         return ResponseEntity.ok(SimpliXApiResponse.success(null, "UserRole deleted successfully"));
     }
 
@@ -152,16 +152,16 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
     /**
      * Retrieves a UserRole by its ID
      *
-     * @param id The ID of the UserRole to retrieve
+     * @param roleId The ID of the UserRole to retrieve
      * @return ResponseEntity containing the found UserRoleDetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{roleId}")
     @Operation(summary = "Get UserRole", description = "Retrieves user role by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'view')")
-    public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> get(@PathVariable String id) {
-        return service.findById(id, UserRoleDetailDTO.class)
+    public ResponseEntity<SimpliXApiResponse<UserRoleDetailDTO>> get(@PathVariable String roleId) {
+        return service.findById(roleId, UserRoleDetailDTO.class)
                 .map(result -> ResponseEntity.ok(SimpliXApiResponse.success(result)))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserRole not found")));
     }
@@ -190,7 +190,7 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
     /**
      * Deletes multiple UserRole entities by their IDs
      *
-     * @param ids List of IDs of the UserRole entities to delete
+     * @param roleIds List of IDs of the UserRole entities to delete
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-06T10:21:42.982+09:00
      */
@@ -198,9 +198,9 @@ public class UserRoleRestController extends SimpliXBaseController<UserRole, Stri
     @Operation(summary = "Delete multiple UserRoles", description = "Deletes multiple user roles by their IDs")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserRole', 'delete')")
-    public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> ids) {
+    public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> roleIds) {
         try {
-            service.batchDelete(ids);
+            service.batchDelete(roleIds);
             return ResponseEntity.ok(SimpliXApiResponse.success(null, "UserRoles deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.ok(SimpliXApiResponse.failure(null, "Failed to process batch delete"));

@@ -33,7 +33,7 @@ public class UserRoleDTOs {
         
         @Schema(description = "Role ID")
         @SearchableField(operators = {CONTAINS, EQUALS})
-        private String id;
+        private String roleId;
         
         @Schema(description = "Role Name")
         @SearchableField(operators = {CONTAINS, EQUALS})
@@ -49,7 +49,7 @@ public class UserRoleDTOs {
 
         @Schema(description = "Order")
         @SearchableField(sortable = true)
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Registration Date/Time")
         @SearchableField(operators = {GREATER_THAN, LESS_THAN, BETWEEN})
@@ -72,7 +72,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
     }
 
@@ -81,7 +81,7 @@ public class UserRoleDTOs {
         
         @Schema(description = "UserRole ID")
         @NotBlank(message = "ID is a required input value")
-        private String id;
+        private String roleId;
         
         @Schema(description = "Role Name")
         private String name;
@@ -93,14 +93,14 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
     }
 
     @Data
     public static class UserRoleBatchUpdateDTO {
         @Schema(description = "UserRole ID List")
-        private Set<String> ids;
+        private Set<String> roleIds;
         
     }
 
@@ -108,10 +108,10 @@ public class UserRoleDTOs {
     public static class UserRoleOrderUpdateDTO {
         @Schema(description = "UserRole ID")
         @NotBlank(message = "ID is a required input value")
-        private String id;
+        private String roleId;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
     }
 
@@ -123,7 +123,7 @@ public class UserRoleDTOs {
     public static class UserRoleDetailDTO {
         
         @Schema(description = "Role ID")
-        private String id;
+        private String roleId;
         
         @Schema(description = "Role Name")
         private String name;
@@ -135,7 +135,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Registered By")
         private String createdBy;
@@ -156,7 +156,7 @@ public class UserRoleDTOs {
     public static class UserRoleListDTO {
         
         @Schema(description = "Role ID")
-        private String id;
+        private String roleId;
         
         @Schema(description = "Role Name")
         private String name;
@@ -168,7 +168,7 @@ public class UserRoleDTOs {
         private String description;
         
         @Schema(description = "Order")
-        private BigDecimal itemOrder;
+        private Integer itemOrder;
         
         @Schema(description = "Registration Date/Time")
         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")

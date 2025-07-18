@@ -27,7 +27,7 @@ subprojects {
         }
     }
 
-    if (project.name != 'simplix-example') {
+    if (project.name != 'simplix-example' && project.name != 'javadoc-extractor') {
         apply plugin: 'maven-publish'
         
         publishing {

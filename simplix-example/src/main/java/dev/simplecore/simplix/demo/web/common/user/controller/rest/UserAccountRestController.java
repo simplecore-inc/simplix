@@ -74,17 +74,17 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     /**
      * Updates an existing UserAccount entity
      *
-     * @param id The ID of the UserAccount to update
+     * @param userId The ID of the UserAccount to update
      * @param updateDto The DTO containing the updated data
      * @return ResponseEntity containing the updated UserAccountDetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-04T15:58:41.833+09:00
      */
-    @PutMapping("/{id}")
+    @PutMapping("/{userId}")
     @Operation(summary = "Update UserAccount", description = "Updates existing user account")
     @SimpliXStandardApi
-    @PreAuthorize("hasPermission('UserAccount', 'edit') or @userAccountService.hasOwnerPermission('edit', #id, #updateDto)")
-    public ResponseEntity<SimpliXApiResponse<UserAccountDetailDTO>> update(@PathVariable String id, @RequestBody @Validated UserAccountUpdateDTO updateDto) {
-        return service.findById(id)
+    @PreAuthorize("hasPermission('UserAccount', 'edit') or @userAccountService.hasOwnerPermission('edit', #userId, #updateDto)")
+    public ResponseEntity<SimpliXApiResponse<UserAccountDetailDTO>> update(@PathVariable String userId, @RequestBody @Validated UserAccountUpdateDTO updateDto) {
+        return service.findById(userId)
                 .map(entity -> ResponseEntity.ok(SimpliXApiResponse.success(service.update(entity, updateDto))))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserAccount not found")));
     }
@@ -110,19 +110,19 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     /**
      * Deletes a UserAccount by its ID
      *
-     * @param id The ID of the UserAccount to delete
+     * @param userId The ID of the UserAccount to delete
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-04T15:58:41.833+09:00
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{userId}")
     @Operation(summary = "Delete UserAccount", description = "Deletes user account by ID")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserAccount', 'delete')")
-    public ResponseEntity<SimpliXApiResponse<Void>> delete(@PathVariable String id) {
-        if (!service.existsById(id)) {
+    public ResponseEntity<SimpliXApiResponse<Void>> delete(@PathVariable String userId) {
+        if (!service.existsById(userId)) {
             return ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserAccount not found"));
         }
-        service.delete(id);
+        service.delete(userId);
         return ResponseEntity.ok(SimpliXApiResponse.success(null, "UserAccount deleted successfully"));
     }
 
@@ -130,16 +130,16 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     /**
      * Retrieves a UserAccount by its ID
      *
-     * @param id The ID of the UserAccount to retrieve
+     * @param userId The ID of the UserAccount to retrieve
      * @return ResponseEntity containing the found UserAccountDetailDTO or 404 if not found
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-04T15:58:41.833+09:00
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{userId}")
     @Operation(summary = "Get UserAccount", description = "Retrieves user account by ID")
     @SimpliXStandardApi
-    @PreAuthorize("hasPermission('UserAccount', 'view') or @userAccountService.hasOwnerPermission('view', #id)")
-    public ResponseEntity<SimpliXApiResponse<UserAccountDetailDTO>> get(@PathVariable String id) {
-        return service.findById(id, UserAccountDetailDTO.class)
+    @PreAuthorize("hasPermission('UserAccount', 'view') or @userAccountService.hasOwnerPermission('view', #userId)")
+    public ResponseEntity<SimpliXApiResponse<UserAccountDetailDTO>> get(@PathVariable String userId) {
+        return service.findById(userId, UserAccountDetailDTO.class)
                 .map(result -> ResponseEntity.ok(SimpliXApiResponse.success(result)))
                 .orElse(ResponseEntity.ok(SimpliXApiResponse.failure(null, "UserAccount not found")));
     }
@@ -168,7 +168,7 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     /**
      * Deletes multiple UserAccount entities by their IDs
      *
-     * @param ids List of IDs of the UserAccount entities to delete
+     * @param userIds List of IDs of the UserAccount entities to delete
      * @return ResponseEntity with success/failure message
      * @generated SimpliX Generator Version 1.0.0 - 2025-02-04T15:58:41.833+09:00
      */
@@ -176,9 +176,9 @@ public class UserAccountRestController extends SimpliXBaseController<UserAccount
     @Operation(summary = "Delete multiple UserAccounts", description = "Deletes multiple user accounts by their IDs")
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('UserAccount', 'delete')")
-    public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> ids) {
+    public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> userIds) {
         try {
-            service.batchDelete(ids);
+            service.batchDelete(userIds);
             return ResponseEntity.ok(SimpliXApiResponse.success(null, "UserAccounts deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.ok(SimpliXApiResponse.failure(null, "Failed to process batch delete"));

@@ -49,7 +49,7 @@ public class UserRole extends AuditingBaseEntity<String> {
     @Column(name = "item_order", nullable = false)
     @Comment("Order")
     @I18nTitle({"ko=순서", "en=Order", "ja=順序"})
-    private BigDecimal itemOrder;
+    private Integer itemOrder;
 
         
     //----------------------------------

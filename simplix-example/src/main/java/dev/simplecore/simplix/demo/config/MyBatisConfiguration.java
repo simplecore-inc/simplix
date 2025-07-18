@@ -5,12 +5,20 @@ import org.apache.ibatis.mapping.VendorDatabaseIdProvider;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
 @MapperScan(basePackages = "dev.simplecore.simplix.demo.domain.**.**.mapper")
 public class MyBatisConfiguration {
+    
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+    
     @Bean
     public DatabaseIdProvider databaseIdProvider() {
         DatabaseIdProvider databaseIdProvider = new VendorDatabaseIdProvider();
