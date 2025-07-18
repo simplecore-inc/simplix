@@ -2,7 +2,7 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
-import dev.simplecore.simplix.core.tree.repository.TreeRepository;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -13,9 +13,12 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.AliasFor;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.lang.annotation.*;
 
 /**
  * Auto-configuration for SimpliX Tree Repository support.
@@ -31,7 +34,7 @@ import javax.sql.DataSource;
  * <pre>
  * simplix:
  *   tree-repository:
- *     enabled: true                        # Enable/disable tree repository (default: true)
+ *     enabled: true                                    # Enable/disable tree repository (default: true)
  * </pre>
  * 
  * <p>Usage example:
@@ -49,22 +52,22 @@ import javax.sql.DataSource;
  * }
  * 
  * // 2. Repository interface
- * public interface CategoryRepository extends TreeRepository<Category, Long> {
+ * public interface CategoryRepository extends SimpliXTreeRepository<Category, Long> {
  *     // Additional custom methods if needed
  * }
  * 
- * // 3. Configuration class (required for tree repositories)
- * @Configuration
- * @EnableJpaRepositories(
- *     repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class,
- *     basePackages = "your.package.repository"
- * )
- * public class JpaConfig {
- *     // Additional configuration if needed
+ * // 3. Main application class - Option 1: Auto-scan (recommended)
+ * @SpringBootApplication
+ * @EnableSimplixTreeRepositories
+ * public class Application {
+ *     public static void main(String[] args) {
+ *         SpringApplication.run(Application.class, args);
+ *     }
  * }
  * 
- * // 4. Main application class
+ * // 3. Main application class - Option 2: Specific packages
  * @SpringBootApplication
+ * @EnableSimplixTreeRepositories(basePackages = "com.example.domain")
  * public class Application {
  *     public static void main(String[] args) {
  *         SpringApplication.run(Application.class, args);
@@ -74,18 +77,14 @@ import javax.sql.DataSource;
  * 
  * <p>The auto-configuration will:
  * <ul>
+ *   <li>Automatically enable JPA repositories with TreeRepositoryFactoryBean</li>
  *   <li>Provide JdbcTemplate bean if not already present</li>
- *   <li>Configure tree repository properties</li>
- *   <li>Work alongside existing JPA repository configurations</li>
+ *   <li>Scan specified base packages for tree repositories</li>
  * </ul>
- * 
- * <p><strong>Important:</strong> You must manually configure @EnableJpaRepositories 
- * with TreeRepositoryFactoryBean to use tree repositories. This auto-configuration 
- * only provides supporting beans and does not interfere with your repository scanning.
  */
 @Configuration
 @AutoConfiguration(after = JpaRepositoriesAutoConfiguration.class)
-@ConditionalOnClass({TreeRepositoryFactoryBean.class, TreeRepository.class, TreeEntity.class})
+@ConditionalOnClass({TreeRepositoryFactoryBean.class, SimpliXTreeRepository.class, TreeEntity.class})
 @ConditionalOnProperty(prefix = "simplix.tree-repository", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXTreeRepositoryAutoConfiguration {
 
@@ -104,7 +103,87 @@ public class SimpliXTreeRepositoryAutoConfiguration {
         return new JdbcTemplate(dataSource);
     }
 
-
+    /**
+     * Annotation to enable SimpliX Tree Repository support.
+     * This is a convenience annotation that wraps @EnableJpaRepositories with TreeRepositoryFactoryBean.
+     * 
+     * Usage:
+     * <pre>{@code
+     * @SpringBootApplication
+     * @EnableSimplixTreeRepositories
+     * public class Application {
+     *     // ...
+     * }
+     * }</pre>
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @EnableJpaRepositories(repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class)
+    public @interface EnableSimplixTreeRepositories {
+        
+        /**
+         * Base packages to scan for tree repositories.
+         * If not specified, will scan from the package of the annotated class.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "value")
+        String[] value() default {};
+        
+        /**
+         * Base packages to scan for tree repositories.
+         * If not specified, will scan from the package of the annotated class.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "basePackages")
+        String[] basePackages() default {};
+        
+        /**
+         * Type-safe alternative to basePackages for specifying the packages to scan.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "basePackageClasses")
+        Class<?>[] basePackageClasses() default {};
+        
+        /**
+         * Whether to consider nested repositories.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "considerNestedRepositories")
+        boolean considerNestedRepositories() default false;
+        
+        /**
+         * Whether to enable default transactions for repository methods.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "enableDefaultTransactions")
+        boolean enableDefaultTransactions() default true;
+        
+        /**
+         * Specifies which types are eligible for component scanning.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "includeFilters")
+        org.springframework.context.annotation.ComponentScan.Filter[] includeFilters() default {};
+        
+        /**
+         * Specifies which types are not eligible for component scanning.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "excludeFilters")
+        org.springframework.context.annotation.ComponentScan.Filter[] excludeFilters() default {};
+        
+        /**
+         * Returns the postfix to be used when looking up custom repository implementations.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "repositoryImplementationPostfix")
+        String repositoryImplementationPostfix() default "Impl";
+        
+        /**
+         * Configures the name of the EntityManagerFactory bean definition to be used.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "entityManagerFactoryRef")
+        String entityManagerFactoryRef() default "entityManagerFactory";
+        
+        /**
+         * Configures the name of the PlatformTransactionManager bean definition to be used.
+         */
+        @AliasFor(annotation = EnableJpaRepositories.class, attribute = "transactionManagerRef")
+        String transactionManagerRef() default "transactionManager";
+    }
 
     /**
      * Configuration properties for tree repository functionality.

@@ -3,7 +3,7 @@
     {
       "name": "simplix.tree-repository.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether to enable SimpliX tree repository functionality. When enabled, provides JdbcTemplate and tree repository configuration support.",
+      "description": "Whether to enable SimpliX tree repository functionality. When enabled, provides JdbcTemplate and tree repository configuration support. Use @EnableSimplixTreeRepositories annotation to activate tree repositories in your application.",
       "defaultValue": true
     },
     {
@@ -22,10 +22,23 @@
       "name": "simplix.date-time.normalize-timezone",
       "type": "java.lang.Boolean",
       "description": "Whether to normalize timezone-less datetime values to application timezone. When true, LocalDateTime values are assumed to be in application timezone and converted to OffsetDateTime automatically.",
-            "defaultValue": true
+      "defaultValue": true
     }
   ],
   "hints": [
+    {
+      "name": "simplix.tree-repository.enabled",
+      "values": [
+        {
+          "value": "true",
+          "description": "Enable SimpliX tree repository functionality with @EnableSimplixTreeRepositories"
+        },
+        {
+          "value": "false",
+          "description": "Disable SimpliX tree repository functionality"
+        }
+      ]
+    },
     {
       "name": "simplix.date-time.default-timezone",
       "values": [

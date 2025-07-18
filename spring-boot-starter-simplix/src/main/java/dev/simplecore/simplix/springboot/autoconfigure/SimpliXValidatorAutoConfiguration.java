@@ -8,11 +8,19 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.validation.Validator;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
+import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 
 /**
  * SimpliX Validator Auto-configuration.
  * 
- * Provides a simple validator configuration that integrates with MessageSource.
+ * Provides comprehensive validator configuration that integrates with MessageSource
+ * and ensures proper parameter substitution in validation messages.
+ * 
+ * Features:
+ * - MessageSource integration for internationalized validation messages
+ * - Proper parameter substitution for {min}, {max}, {value} etc.
+ * - Method validation support
+ * - Hibernate Validator configuration
  */
 @Slf4j
 @AutoConfiguration(after = SimpliXMessageSourceAutoConfiguration.class)
@@ -20,14 +28,40 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 public class SimpliXValidatorAutoConfiguration {
 
     /**
-     * Provides a fallback Spring Validator if no other validator is present.
+     * Provides a comprehensive Spring Validator with MessageSource integration.
+     * This validator properly handles parameter substitution in validation messages.
      */
     @Bean
     @ConditionalOnMissingBean(Validator.class)
-    public Validator springValidator(MessageSource messageSource) {
-        log.info("Configuring SimpliX Validator with MessageSource");
+    public LocalValidatorFactoryBean validator(MessageSource messageSource) {
+        log.info("Configuring SimpliX Validator with MessageSource integration");
+        
         LocalValidatorFactoryBean factory = new LocalValidatorFactoryBean();
+        
+        // Set the MessageSource for internationalized validation messages
         factory.setValidationMessageSource(messageSource);
+        
+        // Configure Hibernate Validator properties for better parameter handling
+        factory.getValidationPropertyMap().put("hibernate.validator.fail_fast", "false");
+        factory.getValidationPropertyMap().put("hibernate.validator.allow_parameter_name_provider", "true");
+        factory.getValidationPropertyMap().put("hibernate.validator.allow_multiple_cascaded_validation", "true");
+        
+        log.debug("Configured LocalValidatorFactoryBean with MessageSource and Hibernate Validator properties");
         return factory;
+    }
+
+    /**
+     * Provides method validation support for @Validated annotations on service methods.
+     */
+    @Bean
+    @ConditionalOnMissingBean(MethodValidationPostProcessor.class)
+    public MethodValidationPostProcessor methodValidationPostProcessor(LocalValidatorFactoryBean validator) {
+        log.info("Configuring Method Validation Post Processor");
+        
+        MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
+        processor.setValidator(validator);
+        
+        log.debug("Configured MethodValidationPostProcessor with LocalValidatorFactoryBean");
+        return processor;
     }
 } 

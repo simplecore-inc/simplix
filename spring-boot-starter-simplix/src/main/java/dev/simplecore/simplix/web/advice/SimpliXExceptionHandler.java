@@ -153,13 +153,27 @@ public class SimpliXExceptionHandler<T> {
             Map<String, String> fieldError = new HashMap<>();
             fieldError.put("field", error.getField());
             
-            // Translate validation message if it's in {key} format
-            String originalMessage = error.getDefaultMessage();
-            String translatedMessage = translateValidationMessage(originalMessage);
-            fieldError.put("message", translatedMessage);
+            String message = error.getDefaultMessage();
             
-            log.info("Field validation - Field: {}, Original: {}, Translated: {}", 
-                error.getField(), originalMessage, translatedMessage);
+            // If message is in {key} format, try to translate with proper arguments
+            if (message != null && message.startsWith("{") && message.endsWith("}")) {
+                String messageKey = message.substring(1, message.length() - 1);
+                try {
+                    // Get constraint annotation attributes for parameter substitution
+                    Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
+                    log.debug("Original error arguments: {}", Arrays.toString(error.getArguments()));
+                    log.debug("Processed message arguments: {}", Arrays.toString(messageArguments));
+                    message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
+                    log.debug("Translated validation message key '{}' with args {} to: '{}'", messageKey, Arrays.toString(messageArguments), message);
+                } catch (Exception e) {
+                    log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                    // Keep the original message if translation fails
+                }
+            }
+            
+            fieldError.put("message", message);
+            
+            log.debug("Field validation - Field: {}, Message: {}", error.getField(), message);
             errors.add(fieldError);
         });
         
@@ -186,10 +200,12 @@ public class SimpliXExceptionHandler<T> {
         return errorResponse;
     }
 
+
+
     /**
-     * Translate validation message from {key} format to localized message
+     * Translate validation message from {key} format to localized message with parameter substitution
      */
-    private String translateValidationMessage(String originalMessage) {
+    private String translateValidationMessage(String originalMessage, Object[] messageArguments) {
         if (originalMessage == null) {
             return null;
         }
@@ -198,9 +214,11 @@ public class SimpliXExceptionHandler<T> {
         if (originalMessage.startsWith("{") && originalMessage.endsWith("}")) {
             String messageKey = originalMessage.substring(1, originalMessage.length() - 1);
             try {
-                return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+                // Try to get the message without arguments first (for simple messages)
+                String resolvedMessage = messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+                log.debug("Translated validation message key '{}' to: '{}'", messageKey, resolvedMessage);
+                return resolvedMessage;
             } catch (Exception e) {
-                // If translation fails, return original message
                 log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
                 return originalMessage;
             }
@@ -209,6 +227,7 @@ public class SimpliXExceptionHandler<T> {
         // If not in {key} format, return as is
         return originalMessage;
     }
+
 
     /**
      * Get localized message with fallback to English default
