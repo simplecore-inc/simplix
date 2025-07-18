@@ -171,7 +171,7 @@ public class CodeItemTreeService extends SimpliXTreeBaseService<CodeItem, String
         boolean fullTree = Boolean.TRUE.equals(fullTreeFlag);
         List<CodeItem> entities;
     
-        if (id == null || id.isBlank()) {
+        if (id == null || id.trim().isEmpty()) {
             entities = fullTree
                 ? super.findCompleteHierarchy()
                 : super.findRoots();
