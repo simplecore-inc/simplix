@@ -13,7 +13,7 @@ import java.util.Map;
  * @param <ID> ID type
  */
 @NoRepositoryBean
-public interface TreeRepository<T extends TreeEntity<T, ID>, ID> extends JpaRepository<T, ID> {
+public interface SimpliXTreeRepository<T extends TreeEntity<T, ID>, ID> extends JpaRepository<T, ID> {
     /**
      * Retrieves the entire hierarchy
      */

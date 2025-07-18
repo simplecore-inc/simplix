@@ -29,9 +29,9 @@ import java.util.Map;
  * @param <T> The entity type that implements TreeEntity
  * @param <ID> The type of the entity's identifier
  */
-public class TreeRepositoryImpl<T extends TreeEntity<T, ID>, ID> 
+public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
         extends SimpleJpaRepository<T, ID> 
-        implements TreeRepository<T, ID> {
+        implements SimpliXTreeRepository<T, ID> {
 
     private final EntityManager entityManager;
     private final JdbcTemplate jdbcTemplate;
@@ -49,7 +49,7 @@ public class TreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
      * @param sortOrderColumn Name of the column used for sorting (optional)
      * @param lookupColumns Array of additional columns that can be used for searching
      */
-    public TreeRepositoryImpl(
+    public SimpliXTreeRepositoryImpl(
             JpaEntityInformation<T, ID> entityInformation,
             EntityManager entityManager,
             JdbcTemplate jdbcTemplate,

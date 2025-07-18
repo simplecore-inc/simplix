@@ -16,12 +16,12 @@ import java.util.List;
 @Setter
 @TreeEntityAttributes(
     tableName = "code_items",
-    idColumn = "code_item_id",
-    parentIdColumn = "parent_code_item_id",
+    idColumn = "code_id",
+    parentIdColumn = "parent_id",
     sortOrderColumn = "sort_order",
     lookupColumns = {
         @LookupColumn(name = "code_key", type = ColumnType.STRING),
-        @LookupColumn(name = "name", type = ColumnType.STRING),
+        @LookupColumn(name = "code_value", type = ColumnType.STRING),
         @LookupColumn(name = "is_active", type = ColumnType.BOOLEAN)
     }
 )
@@ -29,8 +29,8 @@ public class CodeItem implements TreeEntity<CodeItem, Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "code_item_id")
-    private Long id;
+    @Column(name = "code_id")
+    private Long codeId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "code_group_id", nullable = false)
@@ -51,11 +51,11 @@ public class CodeItem implements TreeEntity<CodeItem, Long> {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
-    @Column(name = "parent_code_item_id")
+    @Column(name = "parent_id")
     private Long parentId;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_code_item_id", referencedColumnName = "code_item_id", insertable = false, updatable = false)
+    @JoinColumn(name = "parent_id", referencedColumnName = "code_id", insertable = false, updatable = false)
     private CodeItem parent;
 
     @OneToMany(mappedBy = "parent")
@@ -65,12 +65,12 @@ public class CodeItem implements TreeEntity<CodeItem, Long> {
 
     @Override
     public Long getId() {
-        return this.id;
+        return this.codeId;
     }
 
     @Override
     public void setId(Long id) {
-        this.id = id;
+        this.codeId = id;
     }
 
     @Override

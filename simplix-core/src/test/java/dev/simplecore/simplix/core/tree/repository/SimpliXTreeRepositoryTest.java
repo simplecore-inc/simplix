@@ -50,7 +50,7 @@ class TestApplication {
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Tree Repository Test")
-class TreeRepositoryTest {
+class SimpliXTreeRepositoryTest {
 
     @PersistenceContext
     private EntityManager entityManager;

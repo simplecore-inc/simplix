@@ -1,7 +1,7 @@
 package dev.simplecore.simplix.core.tree.service;
 
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
-import dev.simplecore.simplix.core.tree.repository.TreeRepository;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -49,17 +49,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @Transactional(readOnly = true)
-public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeService<T, ID> {
+public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements SimpliXTreeService<T, ID> {
 
-    private final TreeRepository<T, ID> treeRepository;
+    private final SimpliXTreeRepository<T, ID> simpliXTreeRepository;
     
     // Performance optimization caches
     private final Map<ID, List<T>> descendantsCache = new ConcurrentHashMap<>();
     private final Map<ID, List<T>> ancestorsCache = new ConcurrentHashMap<>();
     private final Map<ID, Integer> depthCache = new ConcurrentHashMap<>();
 
-    public TreeBaseService(TreeRepository<T, ID> treeRepository) {
-        this.treeRepository = treeRepository;
+    public SimpliXTreeBaseService(SimpliXTreeRepository<T, ID> simpliXTreeRepository) {
+        this.simpliXTreeRepository = simpliXTreeRepository;
     }
 
     // =================================================================================
@@ -72,7 +72,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         log.debug("Creating new tree entity: {}", entity);
         validateNewEntity(entity);
         validateParentExists(entity);
-        T saved = treeRepository.save(entity);
+        T saved = simpliXTreeRepository.saveAndFlush(entity);
         clearCaches(saved.getId());
         log.info("Successfully created tree entity with ID: {}", saved.getId());
         return saved;
@@ -84,7 +84,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         log.debug("Updating tree entity: {}", entity);
         validateExistingEntity(entity);
         validateParentExists(entity);
-        T saved = treeRepository.save(entity);
+        T saved = simpliXTreeRepository.saveAndFlush(entity);
         clearCaches(saved.getId());
         log.info("Successfully updated tree entity with ID: {}", saved.getId());
         return saved;
@@ -93,13 +93,13 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     @Override
     public Optional<T> findById(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
-        return treeRepository.findById(id);
+        return simpliXTreeRepository.findById(id);
     }
 
     @Override
     public Page<T> findAll(Pageable pageable) {
         Assert.notNull(pageable, "Pageable cannot be null");
-        return treeRepository.findAll(pageable);
+        return simpliXTreeRepository.findAll(pageable);
     }
 
     @Override
@@ -110,7 +110,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         
         // Clear cache for descendants before deletion
         List<T> descendants = findWithDescendants(id);
-        treeRepository.deleteById(id);
+        simpliXTreeRepository.deleteById(id);
         descendants.forEach(item -> clearCaches(item.getId()));
         
         log.info("Successfully deleted tree entity with ID: {}", id);
@@ -123,7 +123,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     @Override
     public List<T> findCompleteHierarchy() {
         log.debug("Finding complete tree hierarchy");
-        return treeRepository.findCompleteHierarchy();
+        return simpliXTreeRepository.findCompleteHierarchy();
     }
 
     @Override
@@ -131,20 +131,20 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         Assert.notNull(id, "Entity ID cannot be null");
         return descendantsCache.computeIfAbsent(id, k -> {
             log.debug("Computing descendants for entity: {}", k);
-            return treeRepository.findItemWithAllDescendants(k);
+            return simpliXTreeRepository.findItemWithAllDescendants(k);
         });
     }
 
     @Override
     public List<T> findRoots() {
         log.debug("Finding root entities");
-        return treeRepository.findRootItems();
+        return simpliXTreeRepository.findRootItems();
     }
 
     @Override
     public List<T> findDirectChildren(ID parentId) {
         Assert.notNull(parentId, "Parent ID cannot be null");
-        return treeRepository.findDirectChildren(parentId);
+        return simpliXTreeRepository.findDirectChildren(parentId);
     }
 
     @Override
@@ -209,7 +209,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         }
         
         entity.setParentId(newParentId);
-        T saved = treeRepository.save(entity);
+        T saved = simpliXTreeRepository.saveAndFlush(entity);
         clearCaches(saved.getId());
         log.info("Successfully moved entity {} to new parent {}", id, newParentId);
         return saved;
@@ -278,7 +278,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         BeanUtils.copyProperties(sourceNode, newNode, "id", "parentId", "children");
         newNode.setParentId(newParentId);
         newNode.setChildren(new ArrayList<>());
-        return treeRepository.save(newNode);
+        return simpliXTreeRepository.saveAndFlush(newNode);
     }
 
     @Override
@@ -337,7 +337,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         orderedChildIds.forEach(childId -> {
             findById(childId).ifPresent(child -> {
                 child.setSortOrder(counter.getAndIncrement());
-                treeRepository.save(child);
+                simpliXTreeRepository.saveAndFlush(child);
             });
         });
         
@@ -354,7 +354,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     public List<T> findByLookup(Map<String, String> parameters) {
         Assert.notNull(parameters, "Search parameters cannot be null");
         log.debug("Finding entities by lookup parameters: {}", parameters);
-        return treeRepository.findByLookup(parameters);
+        return simpliXTreeRepository.findByLookup(parameters);
     }
 
     @Override
@@ -386,10 +386,10 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         }
 
         // Bulk load all relevant items
-        List<T> allRelevantItems = treeRepository.findAllById(relevantIds);
+        List<T> allRelevantItems = simpliXTreeRepository.findAllById(relevantIds);
 
         // Build hierarchy
-        return treeRepository.buildHierarchy(allRelevantItems);
+        return simpliXTreeRepository.buildHierarchy(allRelevantItems);
     }
 
     @Override
@@ -397,7 +397,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         Assert.isTrue(level >= 0, "Level must be non-negative");
         log.debug("Finding entities at level: {}", level);
         
-        return treeRepository.findAll().stream()
+        return simpliXTreeRepository.findAll().stream()
                 .filter(entity -> getDepth(entity.getId()) == level)
                 .collect(Collectors.toList());
     }
@@ -405,7 +405,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     @Override
     public List<T> findLeafNodes() {
         log.debug("Finding leaf nodes");
-        return treeRepository.findAll().stream()
+        return simpliXTreeRepository.findAll().stream()
                 .filter(this::isLeafNode)
                 .collect(Collectors.toList());
     }
@@ -415,7 +415,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         Assert.notNull(predicate, "Predicate cannot be null");
         log.debug("Finding entities by custom predicate");
         
-        return treeRepository.findAll().stream()
+        return simpliXTreeRepository.findAll().stream()
                 .filter(predicate)
                 .collect(Collectors.toList());
     }
@@ -435,7 +435,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         entities.forEach(this::validateNewEntity);
         
         // Save all entities
-        List<T> savedEntities = treeRepository.saveAll(entities);
+        List<T> savedEntities = simpliXTreeRepository.saveAllAndFlush(entities);
         
         // Clear relevant caches
         savedEntities.forEach(entity -> clearCaches(entity.getId()));
@@ -455,7 +455,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         entities.forEach(this::validateExistingEntity);
         
         // Save all entities
-        List<T> savedEntities = treeRepository.saveAll(entities);
+        List<T> savedEntities = simpliXTreeRepository.saveAllAndFlush(entities);
         
         // Clear relevant caches
         savedEntities.forEach(entity -> clearCaches(entity.getId()));
@@ -478,7 +478,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         });
         
         // Delete all entities
-        treeRepository.deleteAllById(ids);
+        simpliXTreeRepository.deleteAllById(ids);
         
         log.info("Successfully deleted batch of {} entities", ids.size());
     }
@@ -490,7 +490,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     @Override
     public Map<String, Number> getTreeMetrics() {
         log.debug("Calculating tree metrics");
-        List<T> allNodes = treeRepository.findAll();
+        List<T> allNodes = simpliXTreeRepository.findAll();
         Map<String, Number> metrics = new HashMap<>();
         
         // Total nodes
@@ -572,7 +572,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     public Map<String, List<String>> validateTreeIntegrity() {
         log.debug("Validating tree integrity");
         Map<String, List<String>> issues = new HashMap<>();
-        List<T> allNodes = treeRepository.findAll();
+        List<T> allNodes = simpliXTreeRepository.findAll();
         
         // Check for circular references
         List<String> circularReferences = new ArrayList<>();
@@ -589,7 +589,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         List<String> orphanedEntities = new ArrayList<>();
         for (T node : allNodes) {
             ID parentId = node.getParentId();
-            if (parentId != null && !treeRepository.existsById(parentId)) {
+            if (parentId != null && !simpliXTreeRepository.existsById(parentId)) {
                 orphanedEntities.add("Orphaned entity found: " + node.getId() + " (parent: " + parentId + ")");
             }
         }
@@ -642,7 +642,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
                     if (entity.isPresent()) {
                         T e = entity.get();
                         e.setParentId(null);
-                        treeRepository.save(e);
+                        simpliXTreeRepository.saveAndFlush(e);
                         repairedCount++;
                         log.info("Repaired orphaned entity: {}", entityId);
                     }
@@ -685,7 +685,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
         newNode.setChildren(new ArrayList<>());
         
         // Save and return the new node
-        return treeRepository.save(newNode);
+        return simpliXTreeRepository.save(newNode);
     }
 
     /**
@@ -788,7 +788,7 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     protected void validateNewEntity(T entity) {
         Assert.notNull(entity, "Entity cannot be null");
         
-        if (entity.getId() != null && treeRepository.existsById(entity.getId())) {
+        if (entity.getId() != null && simpliXTreeRepository.existsById(entity.getId())) {
             throw new IllegalArgumentException("Entity with ID already exists: " + entity.getId());
         }
 
@@ -827,18 +827,18 @@ public class TreeBaseService<T extends TreeEntity<T, ID>, ID> implements TreeSer
     @Override
     public List<T> getDirectChildren(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
-        return treeRepository.findDirectChildren(id);
+        return simpliXTreeRepository.findDirectChildren(id);
     }
 
     @Override
     public List<T> getAllDescendants(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
-        return treeRepository.findItemWithAllDescendants(id);
+        return simpliXTreeRepository.findItemWithAllDescendants(id);
     }
 
     @Override
     public List<T> getRootItems() {
-        return treeRepository.findRootItems();
+        return simpliXTreeRepository.findRootItems();
     }
 
 } 

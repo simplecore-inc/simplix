@@ -283,7 +283,7 @@ public class TreeQueries {
     public String getAncestorsQuery(String dbType) {
         try {
             String query;
-            if ("postgresql".equals(dbType) || "mysql".equals(dbType) || "mariadb".equals(dbType)) {
+            if ("postgresql".equals(dbType) || "mysql".equals(dbType) || "mariadb".equals(dbType) || "mssql".equals(dbType)) {
                 query = String.format(
                     "WITH RECURSIVE ancestors AS ( " +
                     "    SELECT *, 1 as level " +
@@ -305,19 +305,6 @@ public class TreeQueries {
                     "ORDER BY tree_level DESC",
                     tableName, idColumn,
                     parentIdColumn, idColumn);
-            } else if ("mssql".equals(dbType)) {
-                query = String.format(
-                    "WITH RECURSIVE ancestors AS ( " +
-                    "    SELECT *, 1 as level " +
-                    "    FROM %s WHERE %s = ?1 " +
-                    "    UNION ALL " +
-                    "    SELECT p.*, a.level + 1 " +
-                    "    FROM %s p " +
-                    "    JOIN ancestors a ON p.%s = a.%s " +
-                    ") " +
-                    "SELECT ancestors.* FROM ancestors ORDER BY level DESC",
-                    tableName, idColumn,
-                    tableName, idColumn, parentIdColumn);
             } else if ("h2".equals(dbType)) {
                 // H2 Recursive Queries
                 // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries

@@ -27,13 +27,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
 @DisplayName("Tree Service Lookup Test")
-class TreeServiceLookupTest {
+class SimpliXTreeServiceLookupTest {
 
     @Mock
     private CodeItemRepository treeRepository;
 
     @InjectMocks
-    private TreeBaseService<CodeItem, Long> treeService;
+    private SimpliXTreeBaseService<CodeItem, Long> treeService;
 
     private CodeGroup codeGroup;
     private CodeItem root;

@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  * @author System Generated
  * @since 1.0.0
  */
-public interface TreeService<T extends TreeEntity<T, ID>, ID> {
+public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
     
     // =================================================================================
     // BASIC CRUD OPERATIONS

@@ -3,7 +3,7 @@ package dev.simplecore.simplix.core.tree.factory;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
-import dev.simplecore.simplix.core.tree.repository.TreeRepositoryImpl;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
@@ -184,7 +184,7 @@ public class TreeRepositoryFactoryBean<R extends JpaRepository<T, ID>, T extends
                 lookupColumns = new LookupColumn[0];
             }
 
-            return new TreeRepositoryImpl<>(
+            return new SimpliXTreeRepositoryImpl<>(
                 typedEntityInformation,
                 entityManager,
                 jdbcTemplate,
@@ -199,7 +199,7 @@ public class TreeRepositoryFactoryBean<R extends JpaRepository<T, ID>, T extends
         @Override
         @NonNull
         protected Class<?> getRepositoryBaseClass(@NonNull RepositoryMetadata metadata) {
-            return TreeRepositoryImpl.class;
+            return SimpliXTreeRepositoryImpl.class;
         }
 
         /**

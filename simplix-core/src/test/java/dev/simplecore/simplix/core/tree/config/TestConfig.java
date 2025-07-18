@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.tree.config;
 
 import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -27,7 +28,7 @@ import java.util.Properties;
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
     repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class,
-    repositoryBaseClass = dev.simplecore.simplix.core.tree.repository.TreeRepositoryImpl.class
+    repositoryBaseClass = SimpliXTreeRepositoryImpl.class
 )
 public class TestConfig {
 
