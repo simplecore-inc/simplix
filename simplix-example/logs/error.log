@@ -8262,3 +8262,9 @@ Caused by: java.net.BindException: Address already in use
 /* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
 2025-07-18 15:03:28.840 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper]} - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate natus' )"; SQL statement:
 /* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-07-18 23:54:52.593 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper]} - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'vitae' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-07-18 23:54:52.597 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper]} - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-07-18 23:54:52.605 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper]} - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate odit' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]

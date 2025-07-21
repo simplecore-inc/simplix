@@ -1,5 +1,9 @@
-package dev.simplecore.simplix.demo.domain.common.system.entity;
+package dev.simplecore.simplix.demo.domain.common.code.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import dev.simplecore.simplix.core.entity.converter.JsonMapConverter;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn.ColumnType;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
@@ -8,27 +12,27 @@ import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 
-import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Comment;
 import org.hibernate.annotations.GenericGenerator;
-
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Getter
 @Setter
-@Table(name = "code_item")
+@Table(name = "code_group")
 @org.hibernate.annotations.Table(
-    appliesTo = "code_item",
-    comment = "Code Item: Code item information"
+    appliesTo = "code_group",
+    comment = "Code Group: Code group information"
 )
 @TreeEntityAttributes(
-    tableName = "code_item",
-    idColumn = "code_id",
+    tableName = "code_group",
+    idColumn = "code_group_id",
     parentIdColumn = "parent_id",
     sortOrderColumn = "sort_order",
     lookupColumns = {
@@ -36,22 +40,27 @@ import java.util.List;
         @LookupColumn(name = "is_active", type = ColumnType.BOOLEAN)
     }
 )
-public class CodeItem extends AuditingBaseEntity<String> implements TreeEntity<CodeItem, String> {
+public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<CodeGroup, String> {
 
     @Id
     @GeneratedValue(generator = "tsid")
     @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
-    @Column(name = "code_id", length = 36, nullable = false, updatable = false, unique = true)
-    @Comment("Code ID: Unique UUID used in the system")
-    private String codeId;
+    @Column(name = "code_group_id", length = 36, nullable = false, updatable = false, unique = true)
+    @Comment("Code Group ID: Unique UUID used in the system")
+    private String codeGroupId;
 
     @Column(name = "code_key", length = 50, nullable = false)
     @Comment("Code Key: Code key")
     private String codeKey;
 
-    @Column(name = "code_value", length = 200, nullable = false)
+    @Column(name = "group_name", length = 200, nullable = false)
     @Comment("Code Value: Code value")
-    private String codeValue;
+    private String groupName;
+
+    @Convert(converter = JsonMapConverter.class)
+    @Column(name = "group_name_i18n", length = 2000, nullable = false)
+    @Comment("[i18n] Code Value: Code value")
+    private Map<String, String> groupNameI18n;
 
     @Column(name = "description", length = 2000, nullable = false)
     @Comment("Description: Description")
@@ -59,33 +68,40 @@ public class CodeItem extends AuditingBaseEntity<String> implements TreeEntity<C
 
     @Column(name = "sort_order", nullable = false)
     @Comment("Sort Order: Sort order")
-    private Integer sortOrder;
+    private Integer sortOrder = 999999;
 
     @Column(name = "is_active", nullable = false)
     @Comment("Is Active: Is active")
-    private Boolean isActive;
-    
-    @Column(name = "is_default", nullable = false)
-    @Comment("Is Default: Is default")
-    private Boolean isDefault = false;
+    private Boolean isActive = true;
 
     @Column(name = "parent_id")
     @Comment("Parent ID: Parent ID")
     private String parentId;
-    
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", nullable = true, insertable = false, updatable = false,
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @Comment("Parent Group: Parent group")
+    @JsonIncludeProperties({"codeGroupId", "codeKey", "groupName",
+            "groupNameI18n", "description", "sortOrder", "isActive"})
+    @NotFound(action = NotFoundAction.IGNORE)
+    private CodeGroup parentGroup;
+
     @Transient
-    private List<CodeItem> children = new ArrayList<>();
+    @JsonManagedReference
+    @JsonIgnoreProperties({"parent"})
+    private List<CodeGroup> children = new ArrayList<>();
 
     //----------------------------------
 
     @Override
     public String getId() {
-        return this.codeId;
+        return this.codeGroupId;
     }
 
     @Override
     public void setId(String id) {
-        this.codeId = id;
+        this.codeGroupId = id;
     }
 
     @Override
@@ -99,12 +115,12 @@ public class CodeItem extends AuditingBaseEntity<String> implements TreeEntity<C
     }
 
     @Override
-    public List<CodeItem> getChildren() {
+    public List<CodeGroup> getChildren() {
         return this.children;
     }
 
     @Override
-    public void setChildren(List<CodeItem> children) {
+    public void setChildren(List<CodeGroup> children) {
         this.children = children;
     }
 

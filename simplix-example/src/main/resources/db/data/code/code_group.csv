@@ -1,0 +1,6 @@
+code_group_id,code_key,group_name,group_name_i18n,description,sort_order,is_active,parent_id,created_by,created_at,updated_by,updated_at
+"2AB7F81HC5T5QMNJ","USER_STATUS","사용자 상태","{""ko"":""사용자 상태"",""en"":""User Status""}","사용자 계정의 상태를 나타내는 코드 그룹입니다.",10,true,"","system","2025-07-19 00:00:00","system","2025-07-19 00:00:00"
+"2AB7F81HC5T5QMNK","USER_ROLE","사용자 역할","{""ko"":""사용자 역할"",""en"":""User Role""}","사용자의 역할을 나타내는 코드 그룹입니다.",20,true,"","system","2025-07-19 00:00:00","system","2025-07-19 00:00:00"
+"2AB7F81HC5T5QMNL","CONTENT_TYPE","콘텐츠 유형","{""ko"":""콘텐츠 유형"",""en"":""Content Type""}","시스템에서 사용되는 다양한 콘텐츠 유형을 정의하는 코드 그룹입니다.",30,true,"","system","2025-07-19 00:00:00","system","2025-07-19 00:00:00"
+"2AB7F81HC5T5QMNM","GENDER","성별","{""ko"":""성별"",""en"":""Gender""}","사용자의 성별을 나타내는 코드 그룹입니다.",40,true,"","system","2025-07-19 00:00:00","system","2025-07-19 00:00:00"
+"2AB7F81HC5T5QMNN","LANGUAGE","언어","{""ko"":""언어"",""en"":""Language""}","시스템에서 지원하는 언어 목록을 정의하는 코드 그룹입니다.",50,true,"","system","2025-07-19 00:00:00","system","2025-07-19 00:00:00"

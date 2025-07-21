@@ -47,7 +47,6 @@ public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
      * @param entity The entity to create (must not be null)
      * @return The created entity with generated ID
      * @throws IllegalArgumentException if the entity is null or validation fails
-     * @throws NoSuchElementException if the specified parent doesn't exist
      */
     T create(T entity);
 
@@ -60,7 +59,6 @@ public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
      * @param entity The entity to update (must not be null, must have valid ID)
      * @return The updated entity
      * @throws IllegalArgumentException if the entity is null or validation fails
-     * @throws NoSuchElementException if the entity or specified parent doesn't exist
      */
     T update(T entity);
 
@@ -165,7 +163,6 @@ public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
      * @param newParentId The ID of the new parent (null for root level)
      * @return The moved entity
      * @throws IllegalArgumentException if the operation would create circular references
-     * @throws NoSuchElementException if the entity or new parent doesn't exist
      */
     T move(ID id, ID newParentId);
 
@@ -179,7 +176,6 @@ public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
      * @param targetParentId The new parent ID (null for root level)
      * @return The root entity of the copied subtree
      * @throws IllegalArgumentException if copying would create invalid structure
-     * @throws NoSuchElementException if source or target entities don't exist
      */
     T copySubtree(ID sourceId, ID targetParentId);
 

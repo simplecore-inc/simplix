@@ -1,0 +1,61 @@
+entity: CodeItem
+
+modulePath: common/code
+idField: codeItemId
+nameField: description
+thymeleafBaseDir: code/item
+defaultSortField: createdAt
+defaultSortDirection: desc
+
+fields:
+
+  codeItemId:
+    sortable: false
+    views: [list, detail]
+    searchOperators: [equals]
+
+  codeGroup:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals]
+    reference:
+      entity: CodeGroup
+      idField: codeGroupId
+      idType: String
+      nameField: groupName
+      multiple: false
+
+  codeKey:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+
+  codeValue:
+    sortable: false
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+
+  codeValueI18n:
+    sortable: false
+    views: [list, detail, edit]
+    searchOperators: [equals]
+
+  description:
+    sortable: false
+    views: [list, detail, edit]
+    searchOperators: [equals, contains]
+
+  sortOrder:
+    sortable: true
+    views: [list, detail, edit]
+    searchOperators: [equals, greaterThan, lessThan]
+
+  isActive:
+    sortable: false
+    views: [list, detail, edit, batchUpdate]
+    searchOperators: [equals]
+
+  isDefault:
+    sortable: false
+    views: [list, detail, edit]
+    searchOperators: [equals]
