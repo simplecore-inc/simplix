@@ -77,6 +77,8 @@ public class CodeItemService extends SimpliXBaseService<CodeItem, String> {
     @Transactional
     public CodeItemDetailDTO update(CodeItem entity, CodeItemUpdateDTO updateDto) {
         modelMapper.map(updateDto, entity);
+        entity.setCodeValueI18n(updateDto.getCodeValueI18n() == null ? new HashMap<>() : updateDto.getCodeValueI18n());
+
         return saveAndGetProjection(entity, updateDto.getCodeGroupId());
     }
 
