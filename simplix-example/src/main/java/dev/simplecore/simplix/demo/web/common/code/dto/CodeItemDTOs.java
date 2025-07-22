@@ -49,12 +49,8 @@ public class CodeItemDTOs {
         private String codeValue;
             
         @Schema(description = "[i18n] Code Value")
-        @SearchableField(operators = {EQUALS})
-        private Map<String, String> codeValueI18n;
-            
-        @Schema(description = "Description")
         @SearchableField(operators = {EQUALS, CONTAINS})
-        private String description;
+        private Map<String, String> codeValueI18n;
             
         @Schema(description = "Sort Order")
         @SearchableField(operators = {EQUALS, GREATER_THAN, LESS_THAN}, sortable = true)
@@ -67,22 +63,6 @@ public class CodeItemDTOs {
         @Schema(description = "Is Default")
         @SearchableField(operators = {EQUALS})
         private Boolean isDefault;
-
-        //----------
-
-        @Schema(description = "Created by")
-        private String createdBy;
-
-        @Schema(description = "Created at")
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private OffsetDateTime createdAt;
-
-        @Schema(description = "Updated by")
-        private String updatedBy;
-
-        @Schema(description = "Updated at")
-        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
-        private OffsetDateTime updatedAt;
     }
 
     //----------------------------------
@@ -114,6 +94,9 @@ public class CodeItemDTOs {
         @NotBlank(message = "{validation.required}")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
 
         @Schema(description = "Sort Order")
         @Min(value = 0, message = "{validation.min.value}")
@@ -159,6 +142,9 @@ public class CodeItemDTOs {
         @NotBlank(message = "{validation.required}")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
 
         @Schema(description = "Sort Order")
         @Min(value = 0, message = "{validation.min.value}")
@@ -212,7 +198,10 @@ public class CodeItemDTOs {
         
         @Schema(description = "Description")
         private String description;
-        
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
+
         @Schema(description = "Sort Order")
         private Integer sortOrder;
         
@@ -259,6 +248,9 @@ public class CodeItemDTOs {
         
         @Schema(description = "Description")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
         
         @Schema(description = "Sort Order")
         private Integer sortOrder;

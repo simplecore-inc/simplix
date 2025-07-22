@@ -14,6 +14,9 @@ import org.springframework.context.annotation.Primary;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Auto-configuration for ModelMapper with timezone-aware datetime conversion.
@@ -47,6 +50,9 @@ public class SimpliXModelMapperAutoConfiguration {
         // Add timezone-aware datetime converters
         configureTimezoneConverters(mapper);
         
+        // Configure Map <-> LinkedHashMap conversion
+        configureMapConverters(mapper);
+
         log.info("Configured ModelMapper with timezone-aware datetime conversion");
         return mapper;
     }
@@ -106,5 +112,32 @@ public class SimpliXModelMapperAutoConfiguration {
         mapper.addConverter(offsetToOffsetConverter);
         
         log.debug("Registered timezone-aware datetime converters with ModelMapper");
+    }
+
+    /**
+     * Configures converters between Map and LinkedHashMap for bidirectional mapping
+     *
+     * @param mapper The ModelMapper instance to configure
+     */
+    private void configureMapConverters(ModelMapper mapper) {
+        // Map -> LinkedHashMap converter
+        mapper.createTypeMap(Map.class, LinkedHashMap.class)
+            .setConverter(context -> {
+                if (context.getSource() == null) return null;
+
+                @SuppressWarnings({"unchecked"})
+                Map<Object, Object> sourceMap = (Map<Object, Object>) context.getSource();
+                return new LinkedHashMap<>(sourceMap);
+            });
+
+        // LinkedHashMap -> Map converter
+        mapper.createTypeMap(LinkedHashMap.class, Map.class)
+            .setConverter(context -> {
+                if (context.getSource() == null) return null;
+
+                @SuppressWarnings({"unchecked"})
+                LinkedHashMap<Object, Object> sourceMap = (LinkedHashMap<Object, Object>) context.getSource();
+                return new HashMap<>(sourceMap);
+            });
     }
 } 

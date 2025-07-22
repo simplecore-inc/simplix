@@ -36,7 +36,7 @@ import java.util.Map;
     parentIdColumn = "parent_id",
     sortOrderColumn = "sort_order",
     lookupColumns = {
-        @LookupColumn(name = "code_key", type = ColumnType.STRING),
+        @LookupColumn(name = "group_key", type = ColumnType.STRING),
         @LookupColumn(name = "is_active", type = ColumnType.BOOLEAN)
     }
 )
@@ -49,22 +49,27 @@ public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<
     @Comment("Code Group ID: Unique UUID used in the system")
     private String codeGroupId;
 
-    @Column(name = "code_key", length = 50, nullable = false)
-    @Comment("Code Key: Code key")
-    private String codeKey;
+    @Column(name = "group_key", length = 50, nullable = false)
+    @Comment("Group Key: Code key")
+    private String groupKey;
 
     @Column(name = "group_name", length = 200, nullable = false)
-    @Comment("Code Value: Code value")
+    @Comment("Group Name: Group Name")
     private String groupName;
 
     @Convert(converter = JsonMapConverter.class)
     @Column(name = "group_name_i18n", length = 2000, nullable = false)
-    @Comment("[i18n] Code Value: Code value")
+    @Comment("[i18n] Group Name: Group Name")
     private Map<String, String> groupNameI18n;
 
     @Column(name = "description", length = 2000, nullable = false)
-    @Comment("Description: Description")
+    @Comment("Description: Description of the code group")
     private String description;
+
+    @Convert(converter = JsonMapConverter.class)
+    @Column(name = "description_i18n", columnDefinition = "TEXT", nullable = true)
+    @Comment("[i18n] Description: Description of the code group")
+    private Map<String, String> descriptionI18n;
 
     @Column(name = "sort_order", nullable = false)
     @Comment("Sort Order: Sort order")
@@ -82,8 +87,8 @@ public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<
     @JoinColumn(name = "parent_id", nullable = true, insertable = false, updatable = false,
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     @Comment("Parent Group: Parent group")
-    @JsonIncludeProperties({"codeGroupId", "codeKey", "groupName",
-            "groupNameI18n", "description", "sortOrder", "isActive"})
+    @JsonIncludeProperties({"codeGroupId", "groupKey", "groupName",
+            "groupNameI18n", "description", "descriptionI18n", "sortOrder", "isActive"})
     @NotFound(action = NotFoundAction.IGNORE)
     private CodeGroup parentGroup;
 

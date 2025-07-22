@@ -56,6 +56,11 @@ public class CodeItem extends AuditingBaseEntity<String> {
     @Comment("Description: Description of the code item")
     private String description;
 
+    @Convert(converter = JsonMapConverter.class)
+    @Column(name = "description_i18n", columnDefinition = "TEXT", nullable = true)
+    @Comment("[i18n] Description: Description of the code item")
+    private Map<String, String> descriptionI18n;
+
     @Column(name = "sort_order", nullable = false)
     @Comment("Sort Order: Display order of the code item")
     private Integer sortOrder;

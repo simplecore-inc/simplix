@@ -35,17 +35,14 @@ public class CodeGroupDTOs {
         @SearchableField(operators = {EQUALS})
         private String codeGroupId;
 
-        @Schema(description = "Code Key")
+        @Schema(description = "Group Key")
         @SearchableField(operators = {EQUALS}, sortable = true)
-        private String codeKey;
+        private String groupKey;
             
-        @Schema(description = "Code Value")
+        @Schema(description = "Group Name")
         @SearchableField(operators = {EQUALS, CONTAINS})
         private String groupName;
             
-        @Schema(description = "Description")
-        @SearchableField(operators = {EQUALS, CONTAINS})
-        private String description;
 
         @Schema(description = "Sort Order")
         @SearchableField(sortable = true)
@@ -83,21 +80,27 @@ public class CodeGroupDTOs {
     @Data
     public static class CodeGroupCreateDTO {
 
-        @Schema(description = "Code Key")
+        @Schema(description = "Group Key")
         @NotBlank(message = "{validation.required}")
         @Length(min = 1, max = 50, message = "{validation.range.length}")
-        @Pattern(regexp = "^[A-Z0-9_]+$", message = "{validation.codeKey.pattern}")
-        private String codeKey;
+        @Pattern(regexp = "^[A-Z0-9_]+$", message = "{validation.groupKey.pattern}")
+        private String groupKey;
 
-        @Schema(description = "Code Value")
+        @Schema(description = "Group Name")
         @NotBlank(message = "{validation.required}")
         @Length(min = 1, max = 100, message = "{validation.range.length}")
         private String groupName;
+
+        @Schema(description = "[i18n] Group Name")
+        private Map<String, String> groupNameI18n;
 
         @Schema(description = "Description")
         @NotBlank(message = "{validation.required}")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
 
         @Schema(description = "Sort Order")
         @Min(value = 0, message = "{validation.min.value}")
@@ -121,21 +124,27 @@ public class CodeGroupDTOs {
         @NotBlank(message = "{validation.required}")
         private String codeGroupId;
 
-        @Schema(description = "Code Key")
+        @Schema(description = "Group Key")
         @NotBlank(message = "{validation.required}")
         @Length(min = 1, max = 50, message = "{validation.range.length}")
-        @Pattern(regexp = "^[A-Z0-9_]+$", message = "{validation.codeKey.pattern}")
-        private String codeKey;
+        @Pattern(regexp = "^[A-Z0-9_]+$", message = "{validation.groupKey.pattern}")
+        private String groupKey;
 
-        @Schema(description = "Code Value")
+        @Schema(description = "Group Name")
         @NotBlank(message = "{validation.required}")
         @Length(min = 1, max = 100, message = "{validation.range.length}")
         private String groupName;
+
+        @Schema(description = "[i18n] Group Name")
+        private Map<String, String> groupNameI18n;
 
         @Schema(description = "Description")
         @NotBlank(message = "{validation.required}")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
 
         @Schema(description = "Sort Order")
         @Min(value = 0, message = "{validation.min.value}")
@@ -184,14 +193,20 @@ public class CodeGroupDTOs {
         @Schema(description = "Code ID")
         private String codeGroupId;
         
-        @Schema(description = "Code Key")
-        private String codeKey;
-        
-        @Schema(description = "Code Value")
+        @Schema(description = "Group Key")
+        private String groupKey;
+
+        @Schema(description = "Group Name")
         private String groupName;
-        
+
+        @Schema(description = "[i18n] Group Name")
+        private Map<String, String> groupNameI18n;
+
         @Schema(description = "Description")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
         
         @Schema(description = "Sort Order")
         private Integer sortOrder;
@@ -231,14 +246,20 @@ public class CodeGroupDTOs {
         @Schema(description = "Code ID")
         private String codeGroupId;
 
-        @Schema(description = "Code Key")
-        private String codeKey;
+        @Schema(description = "Group Key")
+        private String groupKey;
 
-        @Schema(description = "Code Value")
+        @Schema(description = "Group Name")
         private String groupName;
+
+        @Schema(description = "[i18n] Group Name")
+        private Map<String, String> groupNameI18n;
 
         @Schema(description = "Description")
         private String description;
+
+        @Schema(description = "[i18n] Description")
+        private Map<String, String>  descriptionI18n;
 
         @Schema(description = "Sort Order")
         private Integer sortOrder;
