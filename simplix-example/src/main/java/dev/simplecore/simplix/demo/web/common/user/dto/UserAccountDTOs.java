@@ -82,15 +82,15 @@ public class UserAccountDTOs {
         
         @Schema(description = "Position Information")
         @SearchableField(entityField = "position.positionId", sortField = "position.name", operators = {EQUALS}, sortable = true)
-        private String position;
+        private String positionId;
         
         @Schema(description = "Permission Information")
         @SearchableField(entityField = "roles.roleId", operators = {IN})
-        private String roles;
+        private String roleId;
         
         @Schema(description = "Affiliated Organization")
         @SearchableField(entityField = "organizations.organizationId", operators = {IN})
-        private String organizations;
+        private String organizationId;
         
         @Schema(description = "Registration Date/Time")
         @SearchableField(operators = {GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO, BETWEEN}, sortable = true)
@@ -124,14 +124,6 @@ public class UserAccountDTOs {
         @Length(min = 2, max = 50, message = "{validation.range.length}")
         private String realName;
 
-        @Schema(description = "Profile Image")
-        @Size(max = 5242880, message = "{validation.file.size}")
-        private byte[] profileImage;
-
-        @Schema(description = "Profile Image Type")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.file.type}")
-        private String profileImageType;
-
         @Schema(description = "Self-introduction")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
@@ -164,17 +156,17 @@ public class UserAccountDTOs {
         @Schema(description = "Position Information")
         @NotBlank(message = "{validation.required}")
         @ValidateWith(service = "userPositionService.validateId", message = "{validation.invalid.exists}")
-        private String position;
+        private String positionId;
 
         @Schema(description = "Permission Information")
         @NotEmpty(message = "{validation.empty}")
         @Size(min = 1, max = 10, message = "{validation.range.size}")
-        private Set<String> roles;
+        private Set<String> roleIds;
 
         @Schema(description = "Affiliated Organization")
         @NotEmpty(message = "{validation.empty}")
         @Size(min = 1, max = 10, message = "{validation.range.size}")
-        private Set<String> organizations;
+        private Set<String> organizationIds;
         
     }
 
@@ -205,14 +197,6 @@ public class UserAccountDTOs {
         @Length(min = 2, max = 50, message = "{validation.range.length}")
         private String realName;
 
-        @Schema(description = "Profile Image")
-        @Size(max = 5242880, message = "{validation.file.size}")
-        private byte[] profileImage;
-
-        @Schema(description = "Profile Image Type")
-        @Pattern(regexp = "^image/(jpeg|png|gif)$", message = "{validation.file.type}")
-        private String profileImageType;
-
         @Schema(description = "Self-introduction")
         @Length(max = 500, message = "{validation.max.length}")
         private String description;
@@ -245,17 +229,17 @@ public class UserAccountDTOs {
         @Schema(description = "Position Information")
         @NotBlank(message = "{validation.required}")
         @ValidateWith(service = "userPositionService.validateId", message = "{validation.invalid.exists}")
-        private String position;
+        private String positionId;
 
         @Schema(description = "Permission Information")
         @NotEmpty(message = "{validation.empty}")
         @Size(min = 1, max = 10, message = "{validation.range.size}")
-        private Set<String> roles;
+        private Set<String> roleIds;
 
         @Schema(description = "Affiliated Organization")
         @NotEmpty(message = "{validation.empty}")
         @Size(min = 1, max = 10, message = "{validation.range.size}")
-        private Set<String> organizations;
+        private Set<String> organizationIds;
         
     }
 
@@ -268,13 +252,13 @@ public class UserAccountDTOs {
         private Boolean enabled;
         
         @Schema(description = "Position Information")
-        private String position;
+        private String positionId;
         
         @Schema(description = "Permission Information")
-        private Set<String> roles;
+        private Set<String> roleIds;
         
         @Schema(description = "Affiliated Organization")
-        private Set<String> organizations;
+        private Set<String> organizationIds;
         
     }
 
@@ -296,13 +280,7 @@ public class UserAccountDTOs {
         
         @Schema(description = "Name")
         private String realName;
-        
-        @Schema(description = "Profile Image")
-        private byte[] profileImage;
-        
-        @Schema(description = "Profile Image Type")
-        private String profileImageType;
-        
+
         @Schema(description = "Self-introduction")
         private String description;
         

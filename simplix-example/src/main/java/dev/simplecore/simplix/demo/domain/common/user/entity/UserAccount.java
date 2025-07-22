@@ -53,17 +53,6 @@ public class UserAccount extends AuditingBaseEntity<String> {
     @DisplayName(description = "User's real name for display")
     private String realName;
 
-    @Lob
-    @Column(name = "profile_image")
-    @Comment("Profile Image: User profile image binary data")
-    @I18nTitle({"ko=프로필 이미지", "en=Profile Image", "ja=プロフィール画像"})
-    private byte[] profileImage;
-
-    @Column(name = "profile_image_type")
-    @Comment("Profile Image Type: MIME type of the image (e.g., image/jpeg, image/png)")
-    @I18nTitle({"ko=프로필 이미지 타입", "en=Profile Image Type", "ja=プロフィール画像タイプ"})
-    private String profileImageType;
-
     @Column(columnDefinition = "TEXT")
     @Comment("Self-introduction: User's self-introduction and description")
     @I18nTitle({"ko=자기소개", "en=Description", "ja=自己紹介"})

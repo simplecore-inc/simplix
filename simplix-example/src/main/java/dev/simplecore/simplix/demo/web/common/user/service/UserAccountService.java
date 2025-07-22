@@ -93,7 +93,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
             entity.setPassword(passwordEncoder.encode(createDTO.getPassword()));
         }
         
-        return saveAndGetProjection(entity, createDTO.getPosition(), createDTO.getRoles(), createDTO.getOrganizations());
+        return saveAndGetProjection(entity, createDTO.getPositionId(), createDTO.getRoleIds(), createDTO.getOrganizationIds());
     }
 
     /**
@@ -120,7 +120,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
             entity.setPassword(passwordEncoder.encode(updateDto.getPassword()));
         }
         
-        UserAccountDetailDTO result = saveAndGetProjection(entity, updateDto.getPosition(), updateDto.getRoles(), updateDto.getOrganizations());
+        UserAccountDetailDTO result = saveAndGetProjection(entity, updateDto.getPositionId(), updateDto.getRoleIds(), updateDto.getOrganizationIds());
         
         // Update current authentication if it's the same user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -231,20 +231,20 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
                 entity.setEnabled(dto.getEnabled());
             }
             
-            if (dto.getPosition() != null) {
-                Objects.requireNonNull(userPositionServiceProvider.getIfAvailable()).findById(dto.getPosition())
+            if (dto.getPositionId() != null) {
+                Objects.requireNonNull(userPositionServiceProvider.getIfAvailable()).findById(dto.getPositionId())
                     .ifPresent(entity::setPosition);
             }
             
-            if (dto.getRoles() != null) {
+            if (dto.getRoleIds() != null) {
                 entity.setRoles(new HashSet<>(
-                    Objects.requireNonNull(userRoleServiceProvider.getIfAvailable()).findAllById(dto.getRoles())
+                    Objects.requireNonNull(userRoleServiceProvider.getIfAvailable()).findAllById(dto.getRoleIds())
                 ));
             }
             
-            if (dto.getOrganizations() != null) {
+            if (dto.getOrganizationIds() != null) {
                 entity.setOrganizations(new HashSet<>(
-                    Objects.requireNonNull(userOrganizationServiceProvider.getIfAvailable()).findAllById(dto.getOrganizations())
+                    Objects.requireNonNull(userOrganizationServiceProvider.getIfAvailable()).findAllById(dto.getOrganizationIds())
                 ));
             }
         });
