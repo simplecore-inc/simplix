@@ -218,7 +218,7 @@ public class CodeGroupDTOs {
         private String parentId;
 
         @Schema(description = "Parent Group")
-        private CodeGroup parentGroup;
+        private CodeGroup parent;
 
         @Schema(description = "Children")
         private List<CodeGroup> children;
@@ -271,7 +271,7 @@ public class CodeGroupDTOs {
         private String parentId;
 
         @Schema(description = "Parent Group")
-        private CodeGroup parentGroup;
+        private CodeGroup parent;
 
         @Schema(description = "Children")
         private List<CodeGroup> children;

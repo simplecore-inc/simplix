@@ -90,7 +90,7 @@ public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<
     @JsonIncludeProperties({"codeGroupId", "groupKey", "groupName",
             "groupNameI18n", "description", "descriptionI18n", "sortOrder", "isActive"})
     @NotFound(action = NotFoundAction.IGNORE)
-    private CodeGroup parentGroup;
+    private CodeGroup parent;
 
     @Transient
     @JsonManagedReference
