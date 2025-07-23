@@ -130,7 +130,7 @@ public class SimpliXAuthSecurityConfiguration {
             loginPage, loginProcessingUrl, logoutUrl, "/error",
             "/css/**", "/js/**", "/images/**", "/webjars/**",
             "/favicon.ico", "/vendor/**",
-            "/h2-console/**"
+            "/h2-console/**", "/h2-console"
         };
 
         String[] permitAllPatterns = properties.getSecurity().getPermitAllPatterns() != null ?

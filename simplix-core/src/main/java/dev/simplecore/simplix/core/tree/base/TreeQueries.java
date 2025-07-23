@@ -117,39 +117,39 @@ public class TreeQueries {
                 return String.format(
                     "WITH RECURSIVE hierarchy AS ( " +
                     "    SELECT *, 1 as level " +
-                    "    FROM %s WHERE %s IS NULL " +
+                    "    FROM %s WHERE %s IS NULL OR TRIM(%s) = '' " +
                     "    UNION ALL " +
                     "    SELECT c.*, h.level + 1 " +
                     "    FROM %s c " +
                     "    JOIN hierarchy h ON c.%s = h.%s " +
                     ") " +
                     "SELECT hierarchy.* FROM hierarchy %s",
-                    tableName, parentIdColumn,
+                    tableName, parentIdColumn, parentIdColumn,
                     tableName, parentIdColumn, idColumn,
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("oracle".equals(dbType)) {
                 return String.format(
                     "SELECT t.*, LEVEL as tree_level " +
                     "FROM %s t " +
-                    "START WITH t.%s IS NULL " +
+                    "START WITH t.%s IS NULL OR TRIM(t.%s) = '' " +
                     "CONNECT BY NOCYCLE PRIOR t.%s = t.%s " +
                     "%s",
                     tableName,
-                    parentIdColumn,
+                    parentIdColumn, parentIdColumn,
                     idColumn, parentIdColumn,
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("mssql".equals(dbType)) {
                 return String.format(
                     "WITH RECURSIVE hierarchy AS ( " +
                     "    SELECT *, 1 as level " +
-                    "    FROM %s WHERE %s IS NULL " +
+                    "    FROM %s WHERE %s IS NULL OR LTRIM(RTRIM(%s)) = '' " +
                     "    UNION ALL " +
                     "    SELECT c.*, h.level + 1 " +
                     "    FROM %s c " +
                     "    JOIN hierarchy h ON c.%s = h.%s " +
                     ") " +
                     "SELECT hierarchy.* FROM hierarchy %s",
-                    tableName, parentIdColumn,
+                    tableName, parentIdColumn, parentIdColumn,
                     tableName, parentIdColumn, idColumn,
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("h2".equals(dbType)) {
@@ -158,7 +158,7 @@ public class TreeQueries {
                 return String.format(
                     "WITH RECURSIVE hierarchy(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
-                    "    FROM %s WHERE %s IS NULL " +
+                    "    FROM %s WHERE %s IS NULL OR %s = '' " +
                     "    UNION ALL " +
                     "    SELECT c.%s, c.%s, h.tree_level + 1 " +
                     "    FROM %s c " +
@@ -167,7 +167,7 @@ public class TreeQueries {
                     "SELECT t.* FROM %s t " +
                     "INNER JOIN hierarchy h ON t.%s = h.%s %s",
                     idColumn, parentIdColumn,
-                    idColumn, parentIdColumn, tableName, parentIdColumn,
+                    idColumn, parentIdColumn, tableName, parentIdColumn, parentIdColumn,
                     idColumn, parentIdColumn, tableName, parentIdColumn, idColumn,
                     tableName, idColumn, idColumn, getOrderByClauseWithNullsLast(dbType));
             } else {
@@ -265,8 +265,21 @@ public class TreeQueries {
      * Generates a query to retrieve root items
      */
     public String getRootItemsQuery() {
-        return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
-            tableName, parentIdColumn, getOrderByClauseWithNullsLast(null));
+        return String.format("SELECT * FROM %s WHERE %s IS NULL OR %s = '' %s",
+            tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(null));
+    }
+
+    /**
+     * Generates a query to retrieve root items with database type consideration
+     */
+    public String getRootItemsQuery(String dbType) {
+        if ("h2".equals(dbType)) {
+            return String.format("SELECT * FROM %s WHERE %s IS NULL OR %s = '' %s",
+                tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
+        } else {
+            return String.format("SELECT * FROM %s WHERE %s IS NULL OR TRIM(%s) = '' %s",
+                tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
+        }
     }
 
     /**
@@ -355,10 +368,33 @@ public class TreeQueries {
     public String getLeafNodesQuery() {
         return String.format(
             "SELECT * FROM %s WHERE %s NOT IN (" +
-            "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL" +
+            "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''" +
             ") %s",
             tableName, idColumn,
-            parentIdColumn, tableName, parentIdColumn,
+            parentIdColumn, tableName, parentIdColumn, parentIdColumn,
             getOrderByClauseWithNullsLast(null));
+    }
+
+    /**
+     * Generates a query to retrieve leaf nodes (items with no children) with database type consideration
+     */
+    public String getLeafNodesQuery(String dbType) {
+        if ("h2".equals(dbType)) {
+            return String.format(
+                "SELECT * FROM %s WHERE %s NOT IN (" +
+                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''" +
+                ") %s",
+                tableName, idColumn,
+                parentIdColumn, tableName, parentIdColumn, parentIdColumn,
+                getOrderByClauseWithNullsLast(dbType));
+        } else {
+            return String.format(
+                "SELECT * FROM %s WHERE %s NOT IN (" +
+                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND TRIM(%s) != ''" +
+                ") %s",
+                tableName, idColumn,
+                parentIdColumn, tableName, parentIdColumn, parentIdColumn,
+                getOrderByClauseWithNullsLast(dbType));
+        }
     }
 } 

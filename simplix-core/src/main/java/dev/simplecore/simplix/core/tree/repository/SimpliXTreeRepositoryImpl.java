@@ -181,7 +181,8 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
         for (T item : allItems) {
             ID parentId = item.getParentId();
             
-            if (parentId == null) {
+            // Treat empty string as null for root items
+            if (parentId == null || (parentId instanceof String && ((String) parentId).trim().isEmpty())) {
                 rootItems.add(item);
             } else {
                 parentChildMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(item);
@@ -204,7 +205,8 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
     @SuppressWarnings("unchecked")
     @Override
     public List<T> findRootItems() {
-        String query = queries.getRootItemsQuery();
+        String dbType = getDatabaseType();
+        String query = queries.getRootItemsQuery(dbType);
         return entityManager.createNativeQuery(query, getDomainClass()).getResultList();
     }
     
