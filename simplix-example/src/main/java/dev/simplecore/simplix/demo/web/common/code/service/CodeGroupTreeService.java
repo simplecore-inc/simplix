@@ -112,6 +112,8 @@ public class CodeGroupTreeService extends SimpliXTreeBaseService<CodeGroup, Stri
      * Deletes a CodeGroup entity by its ID.
      *
      * @param codeGroupId The ID of the CodeGroup to delete
+     * @throws IllegalArgumentException if the entity is not found
+     * @throws IllegalStateException if the entity has children
      */
     @Transactional
     public void delete(String codeGroupId) {

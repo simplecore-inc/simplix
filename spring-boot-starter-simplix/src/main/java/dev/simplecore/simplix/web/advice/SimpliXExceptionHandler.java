@@ -113,14 +113,10 @@ public class SimpliXExceptionHandler<T> {
             if (response != null) {
                 response.setStatus(ex.getStatusCode().value());
                 
-                // Add trace ID to response header if available
-                if (errorResponse instanceof SimpliXApiResponse) {
-                    SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
-                    if (apiResponse.getTraceId() != null) {
-                        response.setHeader("X-Trace-Id", apiResponse.getTraceId());
-                        // Set TraceId in MDC for logging
-                        MDC.put("traceId", apiResponse.getTraceId());
-                    }
+                // Add trace ID to response header from MDC
+                String traceId = MDC.get("traceId");
+                if (traceId != null && !traceId.isEmpty()) {
+                    response.setHeader("X-Trace-Id", traceId);
                 }
             }
         } catch (Exception e) {
@@ -128,16 +124,13 @@ public class SimpliXExceptionHandler<T> {
         }
         
         // Log exception with trace ID
-        if (errorResponse instanceof SimpliXApiResponse) {
-            SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
-            String traceId = apiResponse.getTraceId();
-            if (traceId != null) {
-                log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}", 
-                    traceId, 
-                    ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
-                    request.getRequestURI(), 
-                    ex);
-            }
+        String traceId = MDC.get("traceId");
+        if (traceId != null && !traceId.isEmpty()) {
+            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}", 
+                traceId, 
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
+                request.getRequestURI(), 
+                ex);
         }
         
         return errorResponse;
@@ -185,16 +178,15 @@ public class SimpliXExceptionHandler<T> {
             request.getRequestURI()
         );
         
-        // Set TraceId in MDC for logging
-        if (errorResponse instanceof SimpliXApiResponse) {
-            SimpliXApiResponse<?> apiResponse = (SimpliXApiResponse<?>) errorResponse;
-            if (apiResponse.getTraceId() != null) {
-                MDC.put("traceId", apiResponse.getTraceId());
-                // Log validation errors as WARN level without stack trace
-                log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}", 
-                    apiResponse.getTraceId(), request.getRequestURI(), 
-                    errors.stream().map(error -> error.get("field")).collect(java.util.stream.Collectors.toList()));
-            }
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+        
+        // Log validation errors as WARN level without stack trace
+        String traceId = MDC.get("traceId");
+        if (traceId != null && !traceId.isEmpty()) {
+            log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}", 
+                traceId, request.getRequestURI(), 
+                errors.stream().map(error -> error.get("field")).collect(java.util.stream.Collectors.toList()));
         }
         
         return errorResponse;
@@ -266,13 +258,18 @@ public class SimpliXExceptionHandler<T> {
             LocaleContextHolder.getLocale()
         );
         
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.FORBIDDEN,
             ErrorCode.AUTHZ_INSUFFICIENT_PERMISSIONS.getCode(),
             message,
             detail,
             request.getRequestURI()
         );
+        
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+        
+        return errorResponse;
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -295,13 +292,18 @@ public class SimpliXExceptionHandler<T> {
             LocaleContextHolder.getLocale()
         );
         
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.UNAUTHORIZED,
             ErrorCode.AUTH_AUTHENTICATION_REQUIRED.getCode(),
             message,
             detail,
             request.getRequestURI()
         );
+        
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+        
+        return errorResponse;
     }
 
     @ExceptionHandler(AsyncRequestTimeoutException.class)
@@ -317,13 +319,18 @@ public class SimpliXExceptionHandler<T> {
             LocaleContextHolder.getLocale()
         );
         
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.REQUEST_TIMEOUT,
             ErrorCode.GEN_TIMEOUT.getCode(),
             message,
             "The request took too long to process",
             request.getRequestURI()
         );
+        
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+        
+        return errorResponse;
     }
 
     @ExceptionHandler(Exception.class)
@@ -413,24 +420,18 @@ public class SimpliXExceptionHandler<T> {
             LocaleContextHolder.getLocale()
         );
         
-        // Set HTTP status
-        try {
-            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
-            if (response != null) {
-                response.setStatus(errorCode.getHttpStatus().value());
-            }
-        } catch (Exception e) {
-            log.warn("Failed to set HTTP status: {}", e.getMessage());
-        }
-        
-        return responseFactory.createErrorResponse(
+        T errorResponse = responseFactory.createErrorResponse(
             errorCode.getHttpStatus(),
             errorCode.getCode(),
             message,
             rootCause.getMessage(),
             request.getRequestURI()
         );
+        
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+        
+        return errorResponse;
     }
     
     /**
@@ -488,6 +489,24 @@ public class SimpliXExceptionHandler<T> {
     }
 
     /**
+     * Add trace ID to response header and MDC for logging
+     */
+    private void addTraceIdToResponse(T errorResponse, HttpServletRequest request) {
+        try {
+            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            if (response != null) {
+                String traceId = MDC.get("traceId");
+                if (traceId != null && !traceId.isEmpty()) {
+                    response.setHeader("X-Trace-Id", traceId);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to add trace ID to response: {}", e.getMessage());
+        }
+    }
+
+    /**
      * Interface for creating response objects
      */
     public interface ResponseFactory<T> {
@@ -506,11 +525,11 @@ public class SimpliXExceptionHandler<T> {
             String errorCode = errorType != null ? errorType : statusCode.name();
             SimpliXApiResponse<Object> response = SimpliXApiResponse.error(message, errorCode, detail);
             
-            // Set TraceId in MDC and log error
-            if (response.getTraceId() != null) {
-                MDC.put("traceId", response.getTraceId());
+            // Log error with trace ID from MDC
+            String traceId = MDC.get("traceId");
+            if (traceId != null && !traceId.isEmpty()) {
                 log.error("Error response created - TraceId: {}, Code: {}, Path: {}, Message: {}", 
-                    response.getTraceId(), errorCode, path, message);
+                    traceId, errorCode, path, message);
             }
             
             return response;

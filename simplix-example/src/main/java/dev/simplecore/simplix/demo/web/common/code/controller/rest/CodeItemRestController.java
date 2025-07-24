@@ -109,6 +109,28 @@ public class CodeItemRestController extends SimpliXBaseController<CodeItem, Stri
         return ResponseEntity.ok(SimpliXApiResponse.success(updatedItems));
     }
 
+    
+    /**
+     * Updates the order of multiple CodeItem entities
+     *
+     * @param orderUpdateDtos List of DTOs containing the IDs and new order values
+     * @return ResponseEntity containing the list of updated CodeItemDetailDTOs
+     */
+    @PatchMapping("/order")
+    @Operation(summary = "Update CodeItem Orders", description = "Updates the order of multiple user roles")
+    @SimpliXStandardApi
+    @PreAuthorize("hasPermission('CodeItem', 'edit')")
+    public ResponseEntity<SimpliXApiResponse<List<CodeItemDetailDTO>>> updateOrder(
+        @RequestBody @Validated List<CodeItemOrderUpdateDTO> orderUpdateDtos) {
+        try {
+            List<CodeItemDetailDTO> updatedRoles = service.updateOrders(orderUpdateDtos);
+            return ResponseEntity.ok(SimpliXApiResponse.success(updatedRoles, "CodeItem orders updated successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.ok(SimpliXApiResponse.failure(null, e.getMessage()));
+        }
+    }
+
+
     /**
      * Deletes a CodeItem by its ID
      *

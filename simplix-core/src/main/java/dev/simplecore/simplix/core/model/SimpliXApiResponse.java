@@ -4,11 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -34,8 +30,6 @@ public class SimpliXApiResponse<T> {
     
     private Object errorDetail;      // Detailed error information (renamed from error)
 
-    private String traceId;  // ID for error tracking
-
     private SimpliXApiResponse(ResponseType type, String message, T body, String errorCode, Object errorDetail) {
         this.type = type;
         this.message = message;
@@ -43,23 +37,6 @@ public class SimpliXApiResponse<T> {
         this.timestamp = OffsetDateTime.now(); // Current time with system timezone
         this.errorCode = errorCode;
         this.errorDetail = errorDetail;
-        
-        // Automatically generate traceId for error responses
-        if (type == ResponseType.ERROR && this.traceId == null) {
-            this.traceId = generateTraceId();
-        }
-    }
-
-    /**
-     * Generate unique trace ID for error tracking
-     * Format: YYYYMMDD-HHMMSS-UUID(8chars)
-     * Uses UTC time for consistent logging across timezones
-     */
-    private static String generateTraceId() {
-        String timestamp = Instant.now().atZone(ZoneOffset.UTC)
-            .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-        return String.format("%s-%s", timestamp, uuid);
     }
 
     // Success responses

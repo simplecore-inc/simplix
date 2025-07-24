@@ -233,10 +233,9 @@ public class TreeQueries {
                 // H2 Recursive Queries
                 // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries
                 return String.format(
-                    "SET @target_id = ?1; " +
                     "WITH RECURSIVE sub_items(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
-                    "    FROM %s WHERE %s = @target_id " +
+                    "    FROM %s WHERE %s = ?1 " +
                     "    UNION ALL " +
                     "    SELECT c.%s, c.%s, s.tree_level + 1 " +
                     "    FROM %s c " +
@@ -322,10 +321,9 @@ public class TreeQueries {
                 // H2 Recursive Queries
                 // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries
                 query = String.format(
-                    "SET @target_id = ?1; " +
                     "WITH RECURSIVE ancestors(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
-                    "    FROM %s WHERE %s = @target_id " +
+                    "    FROM %s WHERE %s = ?1 " +
                     "    UNION ALL " +
                     "    SELECT p.%s, p.%s, a.tree_level + 1 " +
                     "    FROM %s p " +

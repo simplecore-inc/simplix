@@ -174,6 +174,17 @@ public class CodeItemDTOs {
         
     }
 
+    @Data
+    public static class CodeItemOrderUpdateDTO {
+        @Schema(description = "Code Item ID")
+        @NotBlank(message = "{validation.required}")
+        private String codeItemId;
+        
+        @Schema(description = "Order")
+        private Integer sortOrder;
+        
+    }
+
     //----------------------------------
     // Projection
     //----------------------------------

@@ -174,6 +174,53 @@ public class CodeItemService extends SimpliXBaseService<CodeItem, String> {
         }
     }
 
+
+    /**
+     * Updates the order of a CodeItem entity.
+     *
+     * @param orderUpdateDto DTO containing the ID and new order value
+     * @return CodeItemDetailDTO of the updated entity
+     * @throws RuntimeException if the entity is not found
+     */
+    @Transactional
+    public CodeItemDetailDTO updateOrder(CodeItemOrderUpdateDTO orderUpdateDto) {
+        CodeItem entity = findById(orderUpdateDto.getCodeItemId())
+            .orElseThrow(() -> new RuntimeException("CodeItem not found"));
+        
+        entity.setSortOrder(orderUpdateDto.getSortOrder());
+        
+        return saveAndGetProjection(entity, entity.getCodeGroup().getCodeGroupId());
+    }
+
+    /**
+     * Updates the order of multiple CodeItem entities.
+     *
+     * @param orderUpdateDtos List of DTOs containing the IDs and new order values
+     * @return List of CodeItemDetailDTO of the updated entities
+     * @throws RuntimeException if any entity is not found
+     */
+    @Transactional
+    public List<CodeItemDetailDTO> updateOrders(List<CodeItemOrderUpdateDTO> orderUpdateDtos) {
+        List<CodeItemDetailDTO> updatedEntities = new ArrayList<>();
+        
+        for (CodeItemOrderUpdateDTO orderUpdateDto : orderUpdateDtos) {
+            if (orderUpdateDto.getCodeItemId() == null) {
+                continue;
+            }
+            
+            CodeItem entity = findById(orderUpdateDto.getCodeItemId())
+                .orElseThrow(() -> new RuntimeException("CodeItem not found with ID: " + orderUpdateDto.getCodeItemId()));
+            
+            entity.setSortOrder(orderUpdateDto.getSortOrder());
+            CodeItemDetailDTO updatedEntity = saveAndGetProjection(entity, entity.getCodeGroup().getCodeGroupId());
+            updatedEntities.add(updatedEntity);
+        }
+        
+        return updatedEntities;
+    }
+
+
+
     //----------------------------------
 
     /**

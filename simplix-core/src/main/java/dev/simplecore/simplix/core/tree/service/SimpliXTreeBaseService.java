@@ -108,12 +108,29 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         Assert.notNull(id, "Entity ID cannot be null");
         log.debug("Deleting tree entity with ID: {}", id);
         
-        // Clear cache for descendants before deletion
-        List<T> descendants = findWithDescendants(id);
-        simpliXTreeRepository.deleteById(id);
-        descendants.forEach(item -> clearCaches(item.getId()));
-        
-        log.info("Successfully deleted tree entity with ID: {}", id);
+        try {
+            // Check if entity exists
+            Optional<T> entity = findById(id);
+            if (!entity.isPresent()) {
+                throw new IllegalArgumentException("Entity not found with ID: " + id);
+            }
+            
+            // Check if entity has children
+            List<T> directChildren = findDirectChildren(id);
+            if (!directChildren.isEmpty()) {
+                throw new IllegalStateException("Cannot delete entity with ID: " + id + " because it has " + directChildren.size() + " child(ren). Please delete children first.");
+            }
+            
+            // Clear cache for descendants before deletion
+            List<T> descendants = findWithDescendants(id);
+            simpliXTreeRepository.deleteById(id);
+            descendants.forEach(item -> clearCaches(item.getId()));
+            
+            log.info("Successfully deleted tree entity with ID: {}", id);
+        } catch (Exception e) {
+            log.error("Error deleting tree entity with ID: {}", id, e);
+            throw e;
+        }
     }
 
     // =================================================================================
@@ -131,7 +148,12 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         Assert.notNull(id, "Entity ID cannot be null");
         return descendantsCache.computeIfAbsent(id, k -> {
             log.debug("Computing descendants for entity: {}", k);
-            return simpliXTreeRepository.findItemWithAllDescendants(k);
+            try {
+                return simpliXTreeRepository.findItemWithAllDescendants(k);
+            } catch (Exception e) {
+                log.warn("Error finding descendants for entity: {}, returning empty list", k, e);
+                return new ArrayList<>();
+            }
         });
     }
 
@@ -470,6 +492,25 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         Assert.notNull(ids, "IDs list cannot be null");
         Assert.notEmpty(ids, "IDs list cannot be empty");
         log.debug("Deleting batch of {} entities", ids.size());
+        
+        // Check if all entities exist and have no children
+        List<String> errors = new ArrayList<>();
+        for (ID id : ids) {
+            Optional<T> entity = findById(id);
+            if (!entity.isPresent()) {
+                errors.add("Entity not found with ID: " + id);
+                continue;
+            }
+            
+            List<T> directChildren = findDirectChildren(id);
+            if (!directChildren.isEmpty()) {
+                errors.add("Cannot delete entity with ID: " + id + " because it has " + directChildren.size() + " child(ren). Please delete children first.");
+            }
+        }
+        
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException("Batch delete failed: " + String.join("; ", errors));
+        }
         
         // Clear caches for all entities and their descendants
         ids.forEach(id -> {

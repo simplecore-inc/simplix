@@ -63,7 +63,7 @@ public class CodeItem extends AuditingBaseEntity<String> {
 
     @Column(name = "sort_order", nullable = false)
     @Comment("Sort Order: Display order of the code item")
-    private Integer sortOrder;
+    private Integer sortOrder = 999999;
 
     @Column(name = "is_active", nullable = false)
     @Comment("Is Active: Whether the code item is available for use")

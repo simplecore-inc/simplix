@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -140,12 +141,26 @@ public class CodeGroupRestController extends SimpliXBaseController<CodeGroup, St
     public ResponseEntity<SimpliXApiResponse<Void>> delete(
         @PathVariable String codeGroupId) {
         
-        if (!service.existsById(codeGroupId)) {
-            return ResponseEntity.ok(SimpliXApiResponse.failure(null, "CodeGroup not found"));
+        try {
+            if (!service.existsById(codeGroupId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(SimpliXApiResponse.failure(null, "CodeGroup not found"));
+            }
+            
+            treeService.delete(codeGroupId);
+            
+            return ResponseEntity.ok(SimpliXApiResponse.success(null, "CodeGroup deleted successfully"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(SimpliXApiResponse.failure(null, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(SimpliXApiResponse.failure(null, e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error deleting CodeGroup with ID: {}", codeGroupId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(SimpliXApiResponse.failure(null, "Failed to delete CodeGroup: " + e.getMessage()));
         }
-        treeService.delete(codeGroupId);
-        
-        return ResponseEntity.ok(SimpliXApiResponse.success(null, "CodeGroup deleted successfully"));
     }
 
     /**
@@ -197,9 +212,21 @@ public class CodeGroupRestController extends SimpliXBaseController<CodeGroup, St
     @SimpliXStandardApi
     @PreAuthorize("hasPermission('CodeGroup', 'delete')")
     public ResponseEntity<SimpliXApiResponse<Void>> batchDelete(@RequestParam List<String> codeGroupIds) {
-        treeService.batchDelete(codeGroupIds);
-        
-        return ResponseEntity.ok(SimpliXApiResponse.success(null, "CodeGroups deleted successfully"));
+        try {
+            treeService.batchDelete(codeGroupIds);
+            
+            return ResponseEntity.ok(SimpliXApiResponse.success(null, "CodeGroups deleted successfully"));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(SimpliXApiResponse.failure(null, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(SimpliXApiResponse.failure(null, e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error batch deleting CodeGroups with IDs: {}", codeGroupIds, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(SimpliXApiResponse.failure(null, "Failed to delete CodeGroups: " + e.getMessage()));
+        }
     }
 
     //----------------------------------

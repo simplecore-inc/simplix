@@ -194,11 +194,12 @@ public class SimpliXErrorController extends AbstractErrorController {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
         
-        // Log error with trace ID
-        if (errorResponse.getTraceId() != null) {
-            MDC.put("traceId", errorResponse.getTraceId());
+        // Add trace ID to response header and MDC for logging
+        String traceId = MDC.get("traceId");
+        if (traceId != null && !traceId.isEmpty()) {
+            response.setHeader("X-Trace-Id", traceId);
             log.error("Error response sent - TraceId: {}, Status: {}, Path: {}", 
-                errorResponse.getTraceId(), statusCode, request.getRequestURI());
+                traceId, statusCode, request.getRequestURI());
         }
         
         objectMapper.writeValue(response.getWriter(), errorResponse);
