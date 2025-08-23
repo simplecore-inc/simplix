@@ -11,4 +11,9 @@ public class IndexController {
     public String index(Model model) {
         return "index";
     }
+
+    @GetMapping("/api-test")
+    public String apiTest(Model model) {
+        return "api-test";
+    }
 } 

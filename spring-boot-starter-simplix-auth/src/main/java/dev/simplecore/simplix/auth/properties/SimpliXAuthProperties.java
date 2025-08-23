@@ -20,6 +20,7 @@ public class SimpliXAuthProperties {
         private boolean enableCsrf = true;
         private boolean enableXssProtection = true;
         private boolean enableHsts = false;
+        private boolean enableHttpBasic = false;
         private boolean requireHttps = false;
         private long hstsMaxAgeSeconds = 31536000L;
         private String[] csrfIgnorePatterns = new String[]{"/api/token/**", "/h2-console/**"};

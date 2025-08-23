@@ -2,6 +2,7 @@ package dev.simplecore.simplix.auth.security;
 
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
+import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -16,6 +17,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -23,26 +25,30 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
 public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
     private final SimpliXJweTokenProvider tokenProvider;
     private final SimpliXUserDetailsService userDetailsService;
+    private final SimpliXAuthProperties properties;
     private static final Logger logger = LoggerFactory.getLogger(SimpliXTokenAuthenticationFilter.class);
 
-    public SimpliXTokenAuthenticationFilter(SimpliXJweTokenProvider tokenProvider, SimpliXUserDetailsService userDetailsService) {
+    public SimpliXTokenAuthenticationFilter(SimpliXJweTokenProvider tokenProvider, SimpliXUserDetailsService userDetailsService, SimpliXAuthProperties properties) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
+        this.properties = properties;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public static SimpliXTokenAuthenticationFilter tokenAuthenticationFilter(
         SimpliXJweTokenProvider tokenProvider, 
-        SimpliXUserDetailsService userDetailsService
+        SimpliXUserDetailsService userDetailsService,
+        SimpliXAuthProperties properties
     ) {
-        return new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService);
+        return new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService, properties);
     }
 
     @Override
@@ -50,6 +56,12 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain chain)
             throws ServletException, IOException {
+            
+        // Check if request matches permit-all patterns
+        if (isPermitAllRequest(request)) {
+            chain.doFilter(request, response);
+            return;
+        }
             
         // Check for existing authentication
         Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
@@ -114,5 +126,18 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
             return header.substring(7);
         }
         return null;
+    }
+
+    private boolean isPermitAllRequest(HttpServletRequest request) {
+        String[] permitAllPatterns = properties.getSecurity().getPermitAllPatterns();
+        if (permitAllPatterns == null || permitAllPatterns.length == 0) {
+            return false;
+        }
+
+        return Arrays.stream(permitAllPatterns)
+            .anyMatch(pattern -> {
+                AntPathRequestMatcher matcher = new AntPathRequestMatcher(pattern);
+                return matcher.matches(request);
+            });
     }
 } 

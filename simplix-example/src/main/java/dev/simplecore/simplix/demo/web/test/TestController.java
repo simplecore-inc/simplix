@@ -69,4 +69,42 @@ public class TestController {
         
         return ResponseEntity.ok(SimpliXApiResponse.success(result));
     }
+
+    @GetMapping("/ping")
+    @Operation(summary = "Ping Test", description = "Simple ping endpoint for connectivity test")
+    public ResponseEntity<SimpliXApiResponse<Map<String, Object>>> ping() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "pong");
+        result.put("timestamp", java.time.LocalDateTime.now());
+        result.put("message", "Test API is working");
+        
+        return ResponseEntity.ok(SimpliXApiResponse.success(result));
+    }
+
+    @GetMapping("/health")
+    @Operation(summary = "Health Check", description = "Health check endpoint")
+    public ResponseEntity<SimpliXApiResponse<Map<String, Object>>> health() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", "UP");
+        result.put("checks", Map.of(
+                "database", "UP",
+                "messageSource", "UP",
+                "validator", "UP"
+        ));
+        result.put("timestamp", java.time.LocalDateTime.now());
+        
+        return ResponseEntity.ok(SimpliXApiResponse.success(result));
+    }
+
+    @PostMapping("/data")
+    @Operation(summary = "Test Data Processing", description = "Test endpoint for data processing")
+    public ResponseEntity<SimpliXApiResponse<Map<String, Object>>> processData(@RequestBody Map<String, Object> data) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("received", data);
+        result.put("processed", true);
+        result.put("dataSize", data.size());
+        result.put("timestamp", java.time.LocalDateTime.now());
+        
+        return ResponseEntity.ok(SimpliXApiResponse.success(result));
+    }
 } 

@@ -127,15 +127,28 @@ simplix:
       login-page-template: login
       login-processing-url: /login
       logout-url: /logout
+      # Patterns that allow access without authentication
+      # These patterns apply to both web pages and API endpoints
       permit-all-patterns: [
+          # Swagger/OpenAPI documentation
           /swagger-ui.html, /swagger-ui/**, 
           /v3/api-docs/**, /v3/api-docs.yaml, /swagger-resources/**, /api-docs/**, 
           /webjars/swagger-ui/**,
-          /api/test/**
+          # Public API endpoints
+          /api/public/**,
+          /api/test/**,
+          # Health check endpoints
+          /actuator/health,
+          # Public pages
+          /public/**,
+          /about,
+          /contact,
+          /api-test
         ]
       # enable-cors: true  # default: true
       enable-csrf: true
       enable-xss-protection: true
+      enable-http-basic: false  # Disable HTTP Basic authentication popup
       # enable-hsts: false  # default: false
       # require-https: false  # default: false
       # hsts-max-age-seconds: 31536000  # default: 31536000 (1 year)

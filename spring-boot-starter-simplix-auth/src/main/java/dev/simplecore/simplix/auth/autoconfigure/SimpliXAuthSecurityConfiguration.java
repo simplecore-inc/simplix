@@ -8,7 +8,7 @@ import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
@@ -48,8 +48,7 @@ public class SimpliXAuthSecurityConfiguration {
             SimpliXUserDetailsService userDetailsService,
             SimpliXTokenAuthenticationFilter tokenAuthenticationFilter,
             SimpliXAuthenticationEntryPoint authenticationEntryPoint,
-            SimpliXAccessDeniedHandler accessDeniedHandler,
-            ServerProperties serverProperties) {
+            SimpliXAccessDeniedHandler accessDeniedHandler) {
         this.properties = properties;
         this.userDetailsService = userDetailsService;
         this.tokenAuthenticationFilter = tokenAuthenticationFilter;
@@ -97,9 +96,17 @@ public class SimpliXAuthSecurityConfiguration {
     @Bean
     @Order(101)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+        // Get permit patterns for API endpoints
+        String[] apiPermitPatterns = getApiPermitPatterns();
+        
         http
             .requestMatchers(matchers -> matchers.antMatchers("/api/**"))
-            .authorizeRequests(auth -> auth.anyRequest().authenticated())
+            .authorizeRequests(auth -> {
+                if (apiPermitPatterns.length > 0) {
+                    auth.antMatchers(apiPermitPatterns).permitAll();
+                }
+                auth.anyRequest().authenticated();
+            })
             .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
@@ -172,8 +179,12 @@ public class SimpliXAuthSecurityConfiguration {
                                     "font-src * data: 'unsafe-inline'; " +
                                     "style-src * 'unsafe-inline'; " +
                                     "frame-src *; " +
-                                    "connect-src *;")))
-            .httpBasic(Customizer.withDefaults());
+                                    "connect-src *;")));
+
+        // HTTP Basic authentication configuration
+        if (properties.getSecurity() != null && properties.getSecurity().isEnableHttpBasic()) {
+            http.httpBasic(Customizer.withDefaults());
+        }
 
         // CSRF configuration
         if (properties.getSecurity() != null && properties.getSecurity().isEnableCsrf()) {
@@ -267,5 +278,20 @@ public class SimpliXAuthSecurityConfiguration {
         System.arraycopy(arr1, 0, result, 0, arr1.length);
         System.arraycopy(arr2, 0, result, arr1.length, arr2.length);
         return result;
+    }
+
+    private String[] getApiPermitPatterns() {
+        String[] permitAllPatterns = properties.getSecurity().getPermitAllPatterns();
+        if (permitAllPatterns == null || permitAllPatterns.length == 0) {
+            return new String[0];
+        }
+        
+        // Filter patterns that start with /api/ or are API-related
+        return Arrays.stream(permitAllPatterns)
+            .filter(pattern -> pattern.startsWith("/api/") || 
+                             pattern.contains("swagger") || 
+                             pattern.contains("api-docs") ||
+                             pattern.equals("/api/test/**"))
+            .toArray(String[]::new);
     }
 } 
