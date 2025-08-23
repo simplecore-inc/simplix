@@ -336,6 +336,7 @@ class SimpliXTreeServiceTest {
         @DisplayName("Delete By Id - Remove Entity by ID")
         void deleteById() {
             // given
+            when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
             when(treeRepository.findItemWithAllDescendants(child1.getId()))
                 .thenReturn(Arrays.asList(child1, grandChild1));
             doNothing().when(treeRepository).deleteById(child1.getId());

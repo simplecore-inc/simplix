@@ -115,12 +115,6 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
                 throw new IllegalArgumentException("Entity not found with ID: " + id);
             }
             
-            // Check if entity has children
-            List<T> directChildren = findDirectChildren(id);
-            if (!directChildren.isEmpty()) {
-                throw new IllegalStateException("Cannot delete entity with ID: " + id + " because it has " + directChildren.size() + " child(ren). Please delete children first.");
-            }
-            
             // Clear cache for descendants before deletion
             List<T> descendants = findWithDescendants(id);
             simpliXTreeRepository.deleteById(id);

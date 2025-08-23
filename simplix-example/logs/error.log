@@ -8268,3 +8268,35 @@ Caused by: java.net.BindException: Address already in use
 /* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
 2025-07-18 23:54:52.605 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper]} - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate odit' )"; SQL statement:
 /* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:52:06.924 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'saepe' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:52:06.929 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-08-24 06:52:06.939 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate non' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:54:39.762 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'voluptatem' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:54:39.768 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-08-24 06:54:39.778 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate adipisci' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:56:44.439 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'qui' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:56:44.444 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-08-24 06:56:44.455 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate sed' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:57:12.143 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'sed' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:57:12.147 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-08-24 06:57:12.156 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate distinctio' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:58:16.968 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_S21D8K5LYWJJC7INW14BRJ6RO_INDEX_B ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'minima' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:58:16.985 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23502-214]
+2025-08-24 06:58:16.995 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.UK_LNTH8W122WGY7GRRJLU8HJMUU_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate explicabo' )"; SQL statement:
+/* insert dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */ insert into user_role (created_at, created_by, updated_at, updated_by, desc [23505-214]
+2025-08-24 06:58:19.248 [SpringApplicationShutdownHook] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Database is already closed (to disable automatic closing at VM shutdown, add ";DB_CLOSE_ON_EXIT=FALSE" to the db URL) [90121-214]
+2025-08-24 06:58:19.248 [SpringApplicationShutdownHook] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Database is already closed (to disable automatic closing at VM shutdown, add ";DB_CLOSE_ON_EXIT=FALSE" to the db URL) [90121-214]

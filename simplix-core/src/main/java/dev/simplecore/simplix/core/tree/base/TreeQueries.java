@@ -264,8 +264,8 @@ public class TreeQueries {
      * Generates a query to retrieve root items
      */
     public String getRootItemsQuery() {
-        return String.format("SELECT * FROM %s WHERE %s IS NULL OR %s = '' %s",
-            tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(null));
+        return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
+            tableName, parentIdColumn, getOrderByClauseWithNullsLast(null));
     }
 
     /**
@@ -273,8 +273,8 @@ public class TreeQueries {
      */
     public String getRootItemsQuery(String dbType) {
         if ("h2".equals(dbType)) {
-            return String.format("SELECT * FROM %s WHERE %s IS NULL OR %s = '' %s",
-                tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
+            return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
+                tableName, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
         } else {
             return String.format("SELECT * FROM %s WHERE %s IS NULL OR TRIM(%s) = '' %s",
                 tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
