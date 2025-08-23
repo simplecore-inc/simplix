@@ -30,15 +30,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle Cache
-        uses: actions/cache@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          gradle-version: 8.5
 
       - name: Update version in build.gradle
         run: |
@@ -50,9 +45,7 @@ jobs:
 
       - name: Build and Publish
         run: |
-          gradle wrapper --gradle-version 8.5
-          chmod +x ./gradlew
-          ./gradlew clean publish --info --stacktrace
+          gradle clean publish --info --stacktrace
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
