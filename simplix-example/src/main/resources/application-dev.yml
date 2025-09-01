@@ -8,9 +8,14 @@ spring:
         globally_quoted_identifiers: false
         globally_quoted_identifiers_skip_column_definitions: true
         dialect: org.hibernate.dialect.H2Dialect
+        hbm2ddl:
+          auto: create
         type:
           descriptor:
             sql: trace
+        jdbc:
+          lob:
+            non_contextual_creation: true
     hibernate:
       ddl-auto: create  # Let JPA create all tables
     defer-datasource-initialization: true  # Enable deferred initialization so JPA creates tables first

@@ -10,7 +10,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.3.4')
+    set('springBootVersion', '3.5.5')
     set('nimbusJoseVersion', '9.37')
 }
 
@@ -29,20 +29,21 @@ dependencies {
     api project(':simplix-core')
 
     // External Libraries
-    api 'org.modelmapper:modelmapper:3.2.0'
+    api 'org.modelmapper:modelmapper'
     
     // Spring Boot Dependencies
     api 'org.springframework.boot:spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-validation'
     api 'org.springframework.boot:spring-boot-starter-actuator'
+    api 'org.springframework.boot:spring-boot-starter-json'
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-thymeleaf'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
     
     // OpenAPI/Swagger
-    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-    api 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-api'
     
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -72,7 +73,7 @@ dependencies {
     // Database
     runtimeOnly 'com.h2database:h2'
 
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'com.google.code.findbugs:jsr305'
 }
 
 bootJar {

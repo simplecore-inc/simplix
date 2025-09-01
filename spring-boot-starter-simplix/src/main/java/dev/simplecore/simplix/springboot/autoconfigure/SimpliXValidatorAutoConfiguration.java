@@ -2,6 +2,7 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.MessageSource;
@@ -55,13 +56,13 @@ public class SimpliXValidatorAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(MethodValidationPostProcessor.class)
-    public MethodValidationPostProcessor methodValidationPostProcessor(LocalValidatorFactoryBean validator) {
+    @ConditionalOnClass(name = "org.springframework.validation.beanvalidation.LocalValidatorFactoryBean")
+    public MethodValidationPostProcessor methodValidationPostProcessor() {
         log.info("Configuring Method Validation Post Processor");
         
         MethodValidationPostProcessor processor = new MethodValidationPostProcessor();
-        processor.setValidator(validator);
         
-        log.debug("Configured MethodValidationPostProcessor with LocalValidatorFactoryBean");
+        log.debug("Configured MethodValidationPostProcessor");
         return processor;
     }
 } 

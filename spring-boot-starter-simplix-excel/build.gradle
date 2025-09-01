@@ -10,7 +10,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.3.4')
+    set('springBootVersion', '3.5.5')
     set('nimbusJoseVersion', '9.31')
 }
 
@@ -34,17 +34,17 @@ dependencies {
     api 'org.springframework.data:spring-data-commons'
     
     // Excel
-    api 'org.apache.poi:poi:5.2.3'
-    api 'org.apache.poi:poi-ooxml:5.2.3'
-    api 'org.jxls:jxls:2.14.0'
-    api 'org.jxls:jxls-poi:2.14.0'
-    implementation 'org.jxls:jxls-jexcel:1.0.9'
+    api 'org.apache.poi:poi'
+    api 'org.apache.poi:poi-ooxml'
+    api 'org.jxls:jxls'
+    api 'org.jxls:jxls-poi'
+    implementation 'org.jxls:jxls-jexcel'
     
     // CSV
-    implementation 'org.apache.commons:commons-csv:1.10.0'
+    implementation 'org.apache.commons:commons-csv'
     
     // Utils
-    api 'org.modelmapper:modelmapper:3.2.0'
+    api 'org.modelmapper:modelmapper'
     
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'

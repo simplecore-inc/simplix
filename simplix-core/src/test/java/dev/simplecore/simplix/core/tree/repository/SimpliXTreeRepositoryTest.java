@@ -24,8 +24,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-// Spring Boot Application configuration for testing
-@SpringBootApplication
+// Test configuration for JPA testing
+@org.springframework.boot.test.context.TestConfiguration
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
@@ -34,19 +34,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TestApplication {
     
     @Bean
-    public DataSource dataSource() {
-        return new EmbeddedDatabaseBuilder()
-            .setType(EmbeddedDatabaseType.H2)
-            .build();
-    }
-    
-    @Bean
     public JdbcTemplate jdbcTemplate(DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 }
 
-@SpringBootTest(classes = TestApplication.class)
+@org.springframework.boot.test.context.SpringBootTest(classes = TestApplication.class)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Tree Repository Test")

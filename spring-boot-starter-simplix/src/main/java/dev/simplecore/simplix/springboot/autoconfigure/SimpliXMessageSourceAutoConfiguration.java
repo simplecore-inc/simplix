@@ -17,7 +17,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.lang.NonNull;
-import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -26,6 +25,7 @@ import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.Arrays;
 
 /**
  * SimpliX MessageSource Auto-configuration for comprehensive i18n support.
@@ -58,12 +58,13 @@ import java.util.*;
 public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
 
     @Bean
+    @Primary
     @ConfigurationProperties(prefix = "spring.messages")
     public MessageSourceProperties messageSourceProperties() {
         MessageSourceProperties properties = new MessageSourceProperties();
         // Set sensible defaults if not configured
-        if (StringUtils.isEmpty(properties.getBasename())) {
-            properties.setBasename("messages/validation,messages/errors,messages/messages");
+        if (properties.getBasename() == null || properties.getBasename().isEmpty()) {
+            properties.setBasename(Arrays.asList("messages/validation", "messages/errors", "messages/messages"));
         }
         properties.setUseCodeAsDefaultMessage(false);
         properties.setFallbackToSystemLocale(true);
@@ -99,12 +100,11 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
     private ReloadableResourceBundleMessageSource createApplicationMessageSource(MessageSourceProperties properties) {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         
-        // Parse basenames from properties
-        String[] basenames = StringUtils.commaDelimitedListToStringArray(
-            StringUtils.trimAllWhitespace(properties.getBasename()));
+        // Get basenames from properties (already a List<String>)
+        List<String> basenames = properties.getBasename();
         
         // Convert to classpath format
-        String[] classpathBasenames = Arrays.stream(basenames)
+        String[] classpathBasenames = basenames.stream()
             .map(basename -> basename.startsWith("classpath:") ? basename : "classpath:" + basename)
             .toArray(String[]::new);
         

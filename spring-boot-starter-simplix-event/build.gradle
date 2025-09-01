@@ -10,7 +10,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.3.4')
+    set('springBootVersion', '3.5.5')
     set('nimbusJoseVersion', '9.31')
 }
 
@@ -29,15 +29,15 @@ dependencies {
     api project(':simplix-core')
     
     // Utils
-    api 'org.modelmapper:modelmapper:3.2.0'
+    api 'org.modelmapper:modelmapper'
 
     // Validation
     api 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.5'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.5'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    implementation 'org.springframework.integration:spring-integration-core:5.5.18'
+    implementation 'org.springframework.integration:spring-integration-core'
     
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -47,12 +47,12 @@ dependencies {
     implementation 'org.springframework:spring-messaging'
 
     // Optional messaging system dependencies
-    compileOnly 'io.nats:jnats:2.16.14'
+    compileOnly 'io.nats:jnats'
     compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
     compileOnly 'org.springframework.kafka:spring-kafka'
     
     // Add test dependencies for messaging systems
-    testImplementation 'io.nats:jnats:2.16.14'
+    testImplementation 'io.nats:jnats'
     testImplementation 'org.springframework.boot:spring-boot-starter-amqp'
     testImplementation 'org.springframework.kafka:spring-kafka'
 

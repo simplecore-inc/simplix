@@ -5,20 +5,20 @@ plugins {
 
 dependencies {
     // Java parser for source code analysis
-    implementation 'com.github.javaparser:javaparser-core:3.25.4'
-    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.4'
+    implementation 'com.github.javaparser:javaparser-core'
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core'
     
     // Apache POI for Excel
-    implementation 'org.apache.poi:poi:5.2.3'
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    implementation 'org.apache.poi:poi'
+    implementation 'org.apache.poi:poi-ooxml'
     
     // Lombok
-    compileOnly 'org.projectlombok:lombok:1.18.30'
-    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     
     // Testing
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 java {

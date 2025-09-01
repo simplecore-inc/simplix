@@ -41,6 +41,9 @@ public class SimplixExcelAutoConfiguration {
         ValueFormatter.configure(properties.getFormat());
         ExcelConverter.configure(properties);
         
+        // Initialize caches
+        initializeCaches();
+        
         log.info("SimpliX Excel module initialized with configuration: {}", properties);
     }
 
@@ -110,7 +113,6 @@ public class SimplixExcelAutoConfiguration {
     /**
      * Initialize caches based on configuration
      */
-    @Bean
     public void initializeCaches() {
         if (!properties.getCache().isTemplateCacheEnabled()) {
             ExcelTemplateManager.clearCache();

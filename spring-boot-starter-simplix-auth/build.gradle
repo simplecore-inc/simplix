@@ -10,7 +10,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.3.4')
+    set('springBootVersion', '3.5.5')
     set('nimbusJoseVersion', '9.37')
 }
 
@@ -46,7 +46,7 @@ dependencies {
     api 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     
     // Utils
-    api 'org.modelmapper:modelmapper:3.2.0'
+    api 'org.modelmapper:modelmapper'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     
@@ -55,17 +55,17 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
 
     // Internal Utils
-    implementation 'com.google.guava:guava:31.1-jre'
+    implementation 'com.google.guava:guava'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // Cache
     implementation 'org.springframework.boot:spring-boot-starter-cache'
-    implementation 'com.github.ben-manes.caffeine:caffeine:2.9.3'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 
     // OpenAPI/Swagger
-    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
-    api 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-api'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
