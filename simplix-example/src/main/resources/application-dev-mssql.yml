@@ -37,10 +37,16 @@ spring:
     username: sa
     password: Password123!
     hikari:
-      auto-commit: false
-      connection-timeout: 30000
+      pool-name: SimplixHikariPool-MSSQL
+      maximum-pool-size: 30
+      minimum-idle: 5
       idle-timeout: 600000
       max-lifetime: 1800000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+      auto-commit: false
+      connection-test-query: SELECT 1
   thymeleaf:
     cache: false
       

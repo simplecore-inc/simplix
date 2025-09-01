@@ -34,6 +34,7 @@ dependencies {
     
     implementation 'com.h2database:h2'
     implementation 'com.microsoft.sqlserver:mssql-jdbc'
+    implementation 'org.postgresql:postgresql'
 
     // Liquibase for database schema and data management
     implementation 'org.liquibase:liquibase-core'

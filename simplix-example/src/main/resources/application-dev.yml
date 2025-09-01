@@ -35,6 +35,16 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+    hikari:
+      pool-name: SimplixHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+      connection-test-query: SELECT 1
   # Data initialization handled by JPA ddl-auto
   web:
     resources:

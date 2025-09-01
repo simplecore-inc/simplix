@@ -37,7 +37,7 @@ public class LiquibaseConfiguration {
             Object liquibase = springLiquibaseClass.getDeclaredConstructor().newInstance();
 
             // Set properties using reflection
-            springLiquibaseClass.getMethod("setDataSource", javax.sql.DataSource.class).invoke(liquibase, dataSource);
+            springLiquibaseClass.getMethod("setDataSource", DataSource.class).invoke(liquibase, dataSource);
             springLiquibaseClass.getMethod("setChangeLog", String.class).invoke(liquibase, changeLog);
             springLiquibaseClass.getMethod("setDefaultSchema", String.class).invoke(liquibase, defaultSchema);
             springLiquibaseClass.getMethod("setContexts", String.class).invoke(liquibase, contexts);
