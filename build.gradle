@@ -19,6 +19,7 @@ ext {
     datafakerVersion = '2.0.2'
     
     // Excel & Document Processing (not managed by Spring Boot BOM)
+    poiVersion = '5.2.4'
     jxlsVersion = '2.14.0'
     jxlsJexcelVersion = '1.0.9'
     commonsCsvVersion = '1.10.0'
@@ -79,6 +80,8 @@ subprojects {
             dependency "net.datafaker:datafaker:${datafakerVersion}"
             
             // Excel & Document Processing (POI managed by Spring Boot BOM, others not)
+            dependency "org.apache.poi:poi:${poiVersion}"
+            dependency "org.apache.poi:poi-ooxml:${poiVersion}"
             dependency "org.jxls:jxls:${jxlsVersion}"
             dependency "org.jxls:jxls-poi:${jxlsVersion}"
             dependency "org.jxls:jxls-jexcel:${jxlsJexcelVersion}"

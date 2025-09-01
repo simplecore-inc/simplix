@@ -1,6 +1,13 @@
 plugins {
     id 'java'
     id 'application'
+    id 'io.spring.dependency-management'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
 }
 
 dependencies {
@@ -8,7 +15,7 @@ dependencies {
     implementation 'com.github.javaparser:javaparser-core'
     implementation 'com.github.javaparser:javaparser-symbol-solver-core'
     
-    // Apache POI for Excel
+    // Apache POI for Excel (managed by Spring Boot BOM)
     implementation 'org.apache.poi:poi'
     implementation 'org.apache.poi:poi-ooxml'
     

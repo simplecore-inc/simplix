@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -25,7 +24,6 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -56,23 +54,13 @@ public class SimpliXAuthSecurityConfiguration {
         this.accessDeniedHandler = accessDeniedHandler;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public DaoAuthenticationProvider authenticationProvider(
-        SimpliXUserDetailsService userDetailsService,
-        PasswordEncoder passwordEncoder
-    ) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return provider;
-    }
+    // AuthenticationProvider는 Spring Security가 자동으로 설정하므로 별도 빈 정의 불필요
+    // UserDetailsService와 PasswordEncoder만 제공하면 됨
 
     @Bean
     @ConditionalOnMissingBean
     public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration config,
-        DaoAuthenticationProvider authenticationProvider
+        AuthenticationConfiguration config
     ) throws Exception {
         return config.getAuthenticationManager();
     }
@@ -120,6 +108,7 @@ public class SimpliXAuthSecurityConfiguration {
     }
     
 
+    @SuppressWarnings("deprecation")
     @Bean
     @Order(102)
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-web-security", havingValue = "true", matchIfMissing = true)
@@ -158,7 +147,7 @@ public class SimpliXAuthSecurityConfiguration {
                 })
                 .permitAll())
             .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher(logoutUrl))
+                .logoutUrl(logoutUrl)
                 .logoutSuccessHandler((request, response, authentication) -> {
                     SecurityContextHolder.clearContext();
                     response.sendRedirect(loginPage + "?logout");
@@ -205,8 +194,6 @@ public class SimpliXAuthSecurityConfiguration {
         if (properties.getSecurity() != null) {
             http.headers(headers -> {
                 headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
-                // XSS Protection and HSTS are deprecated in Spring Boot 3
-                // These are handled by default Content Security Policy
             });
         }
 

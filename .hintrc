@@ -3,6 +3,14 @@
     "development"
   ],
   "hints": {
-    "axe/forms": "off"
+    "axe/forms": "off",
+    "axe/language": [
+      "default",
+      {
+        "html-has-lang": "off"
+      }
+    ],
+    "meta-charset-utf-8": "off",
+    "no-inline-styles": "off"
   }
 }

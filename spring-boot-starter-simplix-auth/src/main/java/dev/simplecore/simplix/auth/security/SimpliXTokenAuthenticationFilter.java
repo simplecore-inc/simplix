@@ -17,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -134,10 +133,11 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
             return false;
         }
 
+        String requestPath = request.getRequestURI();
         return Arrays.stream(permitAllPatterns)
             .anyMatch(pattern -> {
-                AntPathRequestMatcher matcher = new AntPathRequestMatcher(pattern);
-                return matcher.matches(request);
+                // Simple path matching without deprecated classes
+                return requestPath.matches(pattern.replace("**", ".*").replace("*", "[^/]*"));
             });
     }
 } 
