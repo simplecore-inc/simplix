@@ -20,10 +20,10 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
-import org.thymeleaf.extras.java8time.dialect.Java8TimeDialect;
-import org.thymeleaf.spring5.SpringTemplateEngine;
-import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
-import org.thymeleaf.spring5.view.ThymeleafViewResolver;
+
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
 
 /**
@@ -133,7 +133,7 @@ public class SimpliXThymeleafAutoConfiguration implements WebMvcConfigurer {
         engine.setTemplateResolver(errorTemplateResolver);
         engine.addTemplateResolver(defaultTemplateResolver);
         engine.addDialect(new LayoutDialect());
-        engine.addDialect(new Java8TimeDialect());
+
         engine.setEnableSpringELCompiler(true);
         return engine;
     }
@@ -164,9 +164,5 @@ public class SimpliXThymeleafAutoConfiguration implements WebMvcConfigurer {
         return resolver;
     }
 
-    @Bean
-    @ConditionalOnMissingBean
-    public Java8TimeDialect java8TimeDialect() {
-        return new Java8TimeDialect();
-    }
+
 } 

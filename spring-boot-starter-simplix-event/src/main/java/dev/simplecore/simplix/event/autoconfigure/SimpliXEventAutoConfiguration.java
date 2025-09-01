@@ -28,8 +28,8 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.List;
 
 /**
@@ -137,7 +137,7 @@ public class SimpliXEventAutoConfiguration {
         // This prevents Spring AMQP from trying to find a queue for this channel
         log.info("Creating direct channel for outbound messages: {}", SimpliXEventConstants.DEFAULT_OUTBOUND_CHANNEL);
         org.springframework.integration.channel.DirectChannel channel = new org.springframework.integration.channel.DirectChannel();
-        
+
         // Add a message handler to the channel
         channel.subscribe(message -> {
             try {
@@ -156,8 +156,42 @@ public class SimpliXEventAutoConfiguration {
                 throw e;
             }
         });
-        
+
         return channel;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public SimpliXEventGateway simpliXEventGateway(MessageChannel simpliXOutboundChannel) {
+        log.info("Creating SimpliXEventGateway bean for Spring Boot 3 compatibility");
+        return new SimpliXEventGateway() {
+            @Override
+            public void sendEvent(SimpliXMessageEvent event) {
+                try {
+                    org.springframework.messaging.Message<SimpliXMessageEvent> message =
+                        org.springframework.messaging.support.MessageBuilder
+                            .withPayload(event)
+                            .build();
+                    simpliXOutboundChannel.send(message);
+                } catch (Exception e) {
+                    log.error("Failed to send event", e);
+                }
+            }
+
+            @Override
+            public void sendEvent(java.util.Map<String, Object> headers, SimpliXMessageEvent event) {
+                try {
+                    org.springframework.messaging.Message<SimpliXMessageEvent> message =
+                        org.springframework.messaging.support.MessageBuilder
+                            .withPayload(event)
+                            .copyHeaders(headers)
+                            .build();
+                    simpliXOutboundChannel.send(message);
+                } catch (Exception e) {
+                    log.error("Failed to send event with headers", e);
+                }
+            }
+        };
     }
     
     //

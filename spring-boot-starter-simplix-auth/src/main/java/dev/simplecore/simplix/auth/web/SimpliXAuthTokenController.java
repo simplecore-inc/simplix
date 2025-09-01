@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Base64;
 
 @Tag(name = "Auth Token", description = "Token management endpoints")
@@ -45,7 +45,7 @@ public class SimpliXAuthTokenController {
 
     @Operation(
         summary = "Issue JWE token",
-        description = "Issue a new JWE token using Basic authentication"
+        description = "Issue a new JWE token using basic authentication"
     )
     @SecurityRequirement(name = "Basic")
     @ApiResponses({

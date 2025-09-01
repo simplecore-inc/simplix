@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.sql.DataSource;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
 @AutoConfiguration(after = MybatisAutoConfiguration.class)
 @ConditionalOnClass({ SqlSessionTemplate.class, SqlSessionFactoryBean.class })
@@ -26,10 +26,10 @@ public class SimpliXMyBatisAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public SqlSessionFactory sqlSessionFactory(
-            DataSource dataSource,
+            DataSourceProperties dataSourceProperties,
             ApplicationContext applicationContext) throws Exception {
         SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
-        sessionFactory.setDataSource(dataSource);
+        sessionFactory.setDataSource(dataSourceProperties.initializeDataSourceBuilder().build());
         
         sessionFactory.setMapperLocations(new PathMatchingResourcePatternResolver()
                 .getResources("classpath*:mapper/**/*.xml"));

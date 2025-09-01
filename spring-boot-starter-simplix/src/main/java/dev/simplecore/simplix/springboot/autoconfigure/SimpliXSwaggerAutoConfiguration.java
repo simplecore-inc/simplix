@@ -3,8 +3,8 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springdoc.core.SpringDocConfigProperties;
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.properties.SpringDocConfigProperties;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -64,7 +64,7 @@ public class SimpliXSwaggerAutoConfiguration {
     }
 
     @Bean
-    public OpenApiCustomiser sortOperationsCustomiser() {
+    public OpenApiCustomizer sortOperationsCustomiser() {
         return openApi -> {
             if (openApi.getTags() != null) {
                 openApi.setTags(openApi.getTags().stream()

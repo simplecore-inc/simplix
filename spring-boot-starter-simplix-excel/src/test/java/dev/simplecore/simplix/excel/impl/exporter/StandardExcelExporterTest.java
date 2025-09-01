@@ -388,7 +388,7 @@ class StandardExcelExporterTest {
     
     @Test
     void testConditionalFormatting() throws IOException {
-        // 1. Prepare test data (숫자 데이터 유효성만 테스트)
+        // 1. Prepare test data (test only numeric data validity)
         TestUserWithScore user1 = new TestUserWithScore(1L, "John", 95.5);
         TestUserWithScore user2 = new TestUserWithScore(2L, "Jane", 75.0);
         TestUserWithScore user3 = new TestUserWithScore(3L, "Bob", 45.5);
@@ -412,7 +412,7 @@ class StandardExcelExporterTest {
     
     @Test
     void testCellMerging() throws IOException {
-        // 1. Prepare test data with duplicate values (셀 병합 없이 데이터 정확성만 테스트)
+        // 1. Prepare test data with duplicate values (test data accuracy without cell merging)
         List<TestUserWithDepartment> users = Arrays.asList(
             new TestUserWithDepartment(1L, "IT", "Developer", "John"),
             new TestUserWithDepartment(2L, "IT", "Developer", "Jane"),

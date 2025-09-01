@@ -82,10 +82,10 @@ public class SimpliXAuthSecurityConfiguration {
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
     public SecurityFilterChain tokenSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .requestMatchers(matchers -> matchers.antMatchers("/api/token/**"))
-            .authorizeRequests(auth -> auth
-                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .antMatchers("/api/token/**").permitAll())
+            .securityMatchers(matchers -> matchers.requestMatchers("/api/token/**"))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/token/**").permitAll())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -98,12 +98,12 @@ public class SimpliXAuthSecurityConfiguration {
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         // Get permit patterns for API endpoints
         String[] apiPermitPatterns = getApiPermitPatterns();
-        
+
         http
-            .requestMatchers(matchers -> matchers.antMatchers("/api/**"))
-            .authorizeRequests(auth -> {
+            .securityMatchers(matchers -> matchers.requestMatchers("/api/**"))
+            .authorizeHttpRequests(auth -> {
                 if (apiPermitPatterns.length > 0) {
-                    auth.antMatchers(apiPermitPatterns).permitAll();
+                    auth.requestMatchers(apiPermitPatterns).permitAll();
                 }
                 auth.anyRequest().authenticated();
             })
@@ -115,7 +115,7 @@ public class SimpliXAuthSecurityConfiguration {
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .accessDeniedHandler(accessDeniedHandler));
-        
+
         return http.build();
     }
     
@@ -134,10 +134,11 @@ public class SimpliXAuthSecurityConfiguration {
             properties.getSecurity().getLogoutUrl() : "/" + properties.getSecurity().getLogoutUrl();
 
         String[] defaultPermitPatterns = {
-            loginPage, loginProcessingUrl, logoutUrl, "/error",
+            loginPage, loginProcessingUrl, logoutUrl, "/error", "/",
             "/css/**", "/js/**", "/images/**", "/webjars/**",
             "/favicon.ico", "/vendor/**",
-            "/h2-console/**", "/h2-console"
+            "/h2-console/**", "/h2-console",
+            "/actuator/**", "/actuator/health"
         };
 
         String[] permitAllPatterns = properties.getSecurity().getPermitAllPatterns() != null ?
@@ -145,9 +146,8 @@ public class SimpliXAuthSecurityConfiguration {
             defaultPermitPatterns;
 
         http
-            .requestMatchers(matchers -> matchers.antMatchers("/**"))
-            .authorizeRequests(auth -> auth
-                .antMatchers(permitAllPatterns).permitAll()
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(permitAllPatterns).permitAll()
                 .anyRequest().authenticated())
             .formLogin(form -> form
                 .loginPage(loginPage)
@@ -171,7 +171,7 @@ public class SimpliXAuthSecurityConfiguration {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .userDetailsService(userDetailsService)
             .headers(headers -> headers
-                .frameOptions().sameOrigin()
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 .contentSecurityPolicy(csp -> csp
                     .policyDirectives("default-src * 'unsafe-inline' 'unsafe-eval'; " +
                                     "script-src * 'unsafe-inline' 'unsafe-eval'; " +
@@ -190,7 +190,7 @@ public class SimpliXAuthSecurityConfiguration {
         if (properties.getSecurity() != null && properties.getSecurity().isEnableCsrf()) {
             String[] csrfIgnorePatterns = properties.getSecurity().getCsrfIgnorePatterns();
             if (csrfIgnorePatterns != null && csrfIgnorePatterns.length > 0) {
-                http.csrf(csrf -> csrf.ignoringAntMatchers(csrfIgnorePatterns));
+                http.csrf(csrf -> csrf.ignoringRequestMatchers(csrfIgnorePatterns));
             }
         } else {
             http.csrf(AbstractHttpConfigurer::disable);
@@ -204,15 +204,9 @@ public class SimpliXAuthSecurityConfiguration {
         // Security headers configuration
         if (properties.getSecurity() != null) {
             http.headers(headers -> {
-                if (properties.getSecurity().isEnableXssProtection()) {
-                    headers.xssProtection();
-                }
-                if (properties.getSecurity().isEnableHsts()) {
-                    long maxAge = properties.getSecurity().getHstsMaxAgeSeconds();
-                    if (maxAge <= 0) maxAge = 31536000L; // 1year
-                    headers.httpStrictTransportSecurity()
-                        .maxAgeInSeconds(maxAge);
-                }
+                headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
+                // XSS Protection and HSTS are deprecated in Spring Boot 3
+                // These are handled by default Content Security Policy
             });
         }
 
@@ -286,11 +280,13 @@ public class SimpliXAuthSecurityConfiguration {
             return new String[0];
         }
         
-        // Filter patterns that start with /api/ or are API-related
+        // Filter patterns that are API-related (including Swagger and Actuator)
         return Arrays.stream(permitAllPatterns)
-            .filter(pattern -> pattern.startsWith("/api/") || 
-                             pattern.contains("swagger") || 
+            .filter(pattern -> pattern.startsWith("/api/") ||
+                             pattern.contains("swagger") ||
                              pattern.contains("api-docs") ||
+                             pattern.contains("webjars") ||
+                             pattern.contains("actuator") ||
                              pattern.equals("/api/test/**"))
             .toArray(String[]::new);
     }

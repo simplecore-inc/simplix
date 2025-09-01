@@ -7,10 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -19,8 +18,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
-@ActiveProfiles("test")
+@DataJpaTest(properties = {
+    "spring.profiles.active=test",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.show-sql=false",
+    "spring.jpa.properties.hibernate.format_sql=true",
+    "spring.liquibase.enabled=false"
+})
 class UserRoleRepositoryTest {
 
     @Autowired

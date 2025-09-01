@@ -5,7 +5,7 @@ import dev.simplecore.simplix.core.entity.SimpliXBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.MappedSuperclass;
 
 @Getter
 @Setter

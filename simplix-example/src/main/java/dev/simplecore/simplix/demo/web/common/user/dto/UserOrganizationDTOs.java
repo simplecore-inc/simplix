@@ -8,8 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.validation.constraints.NotBlank;
-import java.math.BigDecimal;
+import jakarta.validation.constraints.NotBlank;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;

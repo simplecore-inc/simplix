@@ -8332,3 +8332,9 @@ org.h2.jdbc.JdbcSQLNonTransientConnectionException: The database is open in excl
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
 	at java.base/java.lang.Thread.run(Thread.java:840)
+2025-08-31 19:20:24.783 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_BC ON PUBLIC.USER_ROLE(ROLE NULLS FIRST) VALUES ( /* 2 */ 'consequatur' )"; SQL statement:
+/* insert for dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */insert into user_role (created_at,created_by,description [23505-224]
+2025-08-31 19:20:24.787 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - NULL not allowed for column "ITEM_ORDER"; SQL statement:
+/* insert for dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */insert into user_role (created_at,created_by,description [23502-224]
+2025-08-31 19:20:24.797 [Test worker] ERROR o.h.e.jdbc.spi.SqlExceptionHelper [] - Unique index or primary key violation: "PUBLIC.CONSTRAINT_INDEX_B ON PUBLIC.USER_ROLE(NAME NULLS FIRST) VALUES ( /* 5 */ 'Duplicate voluptas' )"; SQL statement:
+/* insert for dev.simplecore.simplix.demo.domain.common.user.entity.UserRole */insert into user_role (created_at,created_by,description [23505-224]

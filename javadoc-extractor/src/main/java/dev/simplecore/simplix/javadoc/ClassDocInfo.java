@@ -1,6 +1,5 @@
 package dev.simplecore.simplix.javadoc;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -8,16 +8,15 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.hibernate.validator.constraints.Length;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springdoc.core.customizers.OpenApiCustomiser;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.persistence.EmbeddedId;
-import javax.persistence.Id;
-import javax.validation.constraints.*;
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.*;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -32,15 +31,14 @@ import java.util.stream.Collectors;
  * Swagger customizer to add internationalized validation messages, titles, SearchableField information, and ID field metadata as extension fields
  */
 @Component
-public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
+public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
 
     private static final Logger log = LoggerFactory.getLogger(SwaggerSchemaEnhancer.class);
 
     @Autowired
     private MessageSource messageSource;
     
-    @Autowired
-    private ApplicationContext applicationContext;
+
     
     // Cache for schema name to class mapping
     private final Map<String, Class<?>> schemaClassCache = new ConcurrentHashMap<>();
@@ -150,39 +148,41 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         return null;
     }
     
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void addI18nExtensionsToSchema(Schema schema, Class<?> clazz) {
         log.info("Processing schema for class: {}", clazz.getName());
         if (schema.getProperties() != null) {
             log.info("Schema has {} properties", schema.getProperties().size());
             schema.getProperties().forEach((propertyName, propertySchema) -> {
+                String fieldName = (String) propertyName;
                 try {
+                    Schema schemaProperty = (Schema) propertySchema;
                     log.info("Processing property: {} in class: {} (schema type: {}, $ref: {})", 
-                        propertyName, clazz.getSimpleName(), 
-                        ((Schema) propertySchema).getType(), 
-                        ((Schema) propertySchema).get$ref());
-                    Field field = findField(clazz, (String) propertyName);
+                        fieldName, clazz.getSimpleName(), 
+                        schemaProperty.getType(), 
+                        schemaProperty.get$ref());
+                    Field field = findField(clazz, fieldName);
                     if (field != null) {
-                        log.info("Found field {} in class {}", propertyName, clazz.getSimpleName());
+                        log.info("Found field {} in class {}", fieldName, clazz.getSimpleName());
                         
                         // Process all extensions for this field
-                        addI18nExtensions(field, (Schema) propertySchema, (String) propertyName);
-                        addSearchableFieldExtensions(field, (Schema) propertySchema, (String) propertyName);
-                        addIdFieldExtensions(field, (Schema) propertySchema, (String) propertyName);
-                        addDisplayNameExtensions(field, (Schema) propertySchema, (String) propertyName);
+                        addI18nExtensions(field, schemaProperty, fieldName);
+                        addSearchableFieldExtensions(field, schemaProperty, fieldName);
+                        addIdFieldExtensions(field, schemaProperty, fieldName);
+                        addDisplayNameExtensions(field, schemaProperty, fieldName);
                         
                         // Log final extensions after all processing
-                        if (((Schema) propertySchema).getExtensions() != null) {
-                            log.info("Final extensions for field {}: {}", propertyName, 
-                                ((Schema) propertySchema).getExtensions().keySet());
+                        if (schemaProperty.getExtensions() != null) {
+                            log.info("Final extensions for field {}: {}", fieldName, 
+                                schemaProperty.getExtensions().keySet());
                         } else {
-                            log.warn("No extensions found for field {} after processing", propertyName);
+                            log.warn("No extensions found for field {} after processing", fieldName);
                         }
                     } else {
-                        log.warn("Field not found: {}.{}", clazz.getSimpleName(), propertyName);
+                        log.warn("Field not found: {}.{}", clazz.getSimpleName(), fieldName);
                     }
                 } catch (Exception e) {
-                    log.error("Error processing field {}.{}: {}", clazz.getSimpleName(), propertyName, e.getMessage(), e);
+                    log.error("Error processing field {}.{}: {}", clazz.getSimpleName(), fieldName, e.getMessage(), e);
                 }
             });
         } else {
@@ -206,6 +206,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     private void addI18nExtensions(Field field, Schema propertySchema, String fieldName) {
         log.info("Processing field: {} with schema type: {}, $ref: {}", 
             fieldName, propertySchema.getType(), propertySchema.get$ref());
@@ -242,6 +243,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     private void addSearchableFieldExtensions(Field field, Schema propertySchema, String fieldName) {
         log.debug("Checking SearchableField annotation for field: {}", fieldName);
         
@@ -308,9 +310,9 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
                         Object addedExtension = propertySchema.getExtensions() != null ? 
                             propertySchema.getExtensions().get("x-searchable-field") : null;
                         if (addedExtension != null) {
-                            log.info("✅ VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
+                            log.info("VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
                         } else {
-                            log.error("❌ ERROR: Extension was NOT added for field {}", fieldName);
+                            log.error("ERROR: Extension was NOT added for field {}", fieldName);
                         }
                         
                         // Also log all extensions for this field
@@ -366,9 +368,9 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
             Object addedExtension = propertySchema.getExtensions() != null ? 
                 propertySchema.getExtensions().get("x-searchable-field") : null;
             if (addedExtension != null) {
-                log.info("✅ VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
+                log.info("VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
             } else {
-                log.error("❌ ERROR: Extension was NOT added for field {}", fieldName);
+                log.error("ERROR: Extension was NOT added for field {}", fieldName);
             }
             
             // Also log all extensions for this field
@@ -380,6 +382,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     private void addIdFieldExtensions(Field field, Schema propertySchema, String fieldName) {
         log.info("Processing ID field: {} with schema type: {}, $ref: {}", 
             fieldName, propertySchema.getType(), propertySchema.get$ref());
@@ -426,9 +429,9 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
             Object addedExtension = propertySchema.getExtensions() != null ? 
                 propertySchema.getExtensions().get("x-id-field") : null;
             if (addedExtension != null) {
-                log.info("✅ VERIFIED: ID field extension was added for field {}: {}", fieldName, addedExtension);
+                log.info("VERIFIED: ID field extension was added for field {}: {}", fieldName, addedExtension);
             } else {
-                log.error("❌ ERROR: ID field extension was NOT added for field {}", fieldName);
+                log.error("ERROR: ID field extension was NOT added for field {}", fieldName);
             }
             
             // Also log all extensions for this field
@@ -440,6 +443,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         }
     }
     
+    @SuppressWarnings("rawtypes")
     private void addDisplayNameExtensions(Field field, Schema propertySchema, String fieldName) {
         log.info("Processing DisplayName field: {} with schema type: {}, $ref: {}", 
             fieldName, propertySchema.getType(), propertySchema.get$ref());
@@ -469,9 +473,9 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
             Object addedExtension = propertySchema.getExtensions() != null ? 
                 propertySchema.getExtensions().get("x-display-name") : null;
             if (addedExtension != null) {
-                log.info("✅ VERIFIED: DisplayName extension was added for field {}: {}", fieldName, addedExtension);
+                log.info("VERIFIED: DisplayName extension was added for field {}: {}", fieldName, addedExtension);
             } else {
-                log.error("❌ ERROR: DisplayName extension was NOT added for field {}", fieldName);
+                log.error("ERROR: DisplayName extension was NOT added for field {}", fieldName);
             }
             
             // Also log all extensions for this field
@@ -721,6 +725,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomiser {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     private void handleSearchConditionSchema(String schemaName, Schema schema) {
         log.info("Special handling for SearchCondition schema: {}", schemaName);
         

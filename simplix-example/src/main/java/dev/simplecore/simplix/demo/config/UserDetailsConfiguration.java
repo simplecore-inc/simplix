@@ -2,10 +2,10 @@ package dev.simplecore.simplix.demo.config;
 
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
 import dev.simplecore.simplix.demo.permission.CustomUserDetailsService;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
-@Configuration
+@AutoConfiguration
 public class UserDetailsConfiguration {
 
     private final CustomUserDetailsService userDetailsService;

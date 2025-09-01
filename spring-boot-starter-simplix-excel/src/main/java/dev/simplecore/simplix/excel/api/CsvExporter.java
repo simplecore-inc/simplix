@@ -5,7 +5,7 @@
  */
 package dev.simplecore.simplix.excel.api;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;

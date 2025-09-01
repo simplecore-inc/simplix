@@ -18,6 +18,7 @@ spring:
     cache: false
     mode: HTML
     encoding: UTF-8
+    template-resolver-order: 1
   web:
     resources:
       static-locations:
@@ -53,7 +54,7 @@ server:
   error:
     include-exception: false
     include-stacktrace: never
-    include-message: always
+    include-message: on-param
     whitelabel:
       enabled: false
       
@@ -130,10 +131,6 @@ simplix:
       # Patterns that allow access without authentication
       # These patterns apply to both web pages and API endpoints
       permit-all-patterns: [
-          # Swagger/OpenAPI documentation
-          /swagger-ui.html, /swagger-ui/**, 
-          /v3/api-docs/**, /v3/api-docs.yaml, /swagger-resources/**, /api-docs/**, 
-          /webjars/swagger-ui/**,
           # Public API endpoints
           /api/public/**,
           /api/test/**,

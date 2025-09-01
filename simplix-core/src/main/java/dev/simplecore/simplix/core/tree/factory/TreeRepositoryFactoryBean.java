@@ -16,8 +16,8 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Table;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**

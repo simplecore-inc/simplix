@@ -16,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -182,7 +182,7 @@ public class UserAccountService extends SimpliXBaseService<UserAccount, String> 
     public List<UserAccountListExcel> searchForExcel(SearchCondition<UserAccountSearchDTO> searchCondition) {
         Page<UserAccount> page = findAllWithSearch(searchCondition);
         
-        // UserAccountListDTO를 UserAccountListExcel로 변환
+        // Convert UserAccountListDTO to UserAccountListExcel
         return page.getContent().stream()
             .map(UserAccountListExcel::from)
             .collect(Collectors.toList());

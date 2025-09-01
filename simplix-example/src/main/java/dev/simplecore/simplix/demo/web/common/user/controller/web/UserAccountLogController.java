@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 
 /**
- * 사용자 계정 변경로그
+ * User Account Change Log
  *
  */
 @Controller

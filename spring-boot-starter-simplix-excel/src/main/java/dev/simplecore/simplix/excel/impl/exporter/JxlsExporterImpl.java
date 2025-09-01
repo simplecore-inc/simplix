@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.time.Instant;
 import java.util.Collection;

@@ -45,16 +45,16 @@ public class RabbitBrokerProvider implements MessageBrokerProvider {
             ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
             ObjectMapper objectMapper = context.getBean(ObjectMapper.class);
             
-            // MessageConverter를 Spring 컨텍스트에서 가져오기
+            // Get MessageConverter from Spring context
             MessageConverter messageConverter;
             try {
                 messageConverter = context.getBean(MessageConverter.class);
             } catch (Exception e) {
                 log.warn("MessageConverter not found in Spring context, using default");
-                messageConverter = null; // RabbitTemplate이 기본 MessageConverter를 사용하도록 함
+                messageConverter = null; // Let RabbitTemplate use default MessageConverter
             }
             
-            // RabbitTemplate 가져오기
+            // Get RabbitTemplate
             RabbitTemplate rabbitTemplate;
             try {
                 rabbitTemplate = context.getBean(RabbitTemplate.class);

@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.EntityManagerFactory;
 
 /**
  * Auto-configuration for JPA with SimpliX datetime converters.

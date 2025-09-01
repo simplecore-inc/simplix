@@ -15,8 +15,7 @@ spring:
         type: trace
     show-sql: true
   
-  liquibase:
-    enabled: false
+
     
 logging:
   level:

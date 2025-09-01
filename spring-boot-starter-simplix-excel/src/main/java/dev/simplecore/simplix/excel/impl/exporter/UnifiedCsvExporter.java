@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
@@ -396,7 +396,7 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
             return "";
         }
         
-        // 간소화된 변환 로직 사용
+        // Use simplified conversion logic
         if (value instanceof Date) {
             return TypeConverter.formatDate((Date) value, dateFormat);
         } else if (value instanceof Calendar) {

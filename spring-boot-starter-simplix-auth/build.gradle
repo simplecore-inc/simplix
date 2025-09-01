@@ -4,12 +4,14 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 ext {
-    set('springBootVersion', '2.7.18')
-    set('nimbusJoseVersion', '9.31')
+    set('springBootVersion', '3.3.4')
+    set('nimbusJoseVersion', '9.37')
 }
 
 sourceSets {
@@ -41,8 +43,7 @@ dependencies {
     
     // Thymeleaf
     api 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    api 'org.thymeleaf.extras:thymeleaf-extras-springsecurity5'
-    api 'org.thymeleaf.extras:thymeleaf-extras-java8time'
+    api 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
     
     // Utils
     api 'org.modelmapper:modelmapper:3.2.0'
@@ -63,9 +64,8 @@ dependencies {
     implementation 'com.github.ben-manes.caffeine:caffeine:2.9.3'
 
     // OpenAPI/Swagger
-    api 'org.springdoc:springdoc-openapi-ui:1.7.0'
-    api 'org.springdoc:springdoc-openapi-security:1.7.0'
-    api 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.6.0'
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 

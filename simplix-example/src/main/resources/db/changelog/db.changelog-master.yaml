@@ -120,4 +120,4 @@ databaseChangeLog:
                 relativeToChangelogFile: false
                 usePreparedStatements: true
                 stripComments: true
-                trim: true
+

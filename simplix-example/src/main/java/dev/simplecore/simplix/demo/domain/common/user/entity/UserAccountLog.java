@@ -1,6 +1,5 @@
 package dev.simplecore.simplix.demo.domain.common.user.entity;
 
-import dev.simplecore.simplix.core.annotation.I18nTitle;
 import dev.simplecore.simplix.core.convert.datetime.DateTimeConverter;
 import dev.simplecore.simplix.core.entity.SimpliXCompositeKey;
 import dev.simplecore.simplix.demo.domain.BaseEntity;
@@ -9,27 +8,21 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "user_account_log")
-@org.hibernate.annotations.Table(
-    appliesTo = "user_account_log",
-    comment = "User Account Change Log: (For composite PK testing purposes)"
-)
-@I18nTitle({"ko=사용자 계정 로그", "en=User Account Log", "ja=ユーザーアカウントログ"})
+@Comment("User Account Log: Change history and audit trail for user account modifications")
 public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> {
 
     @EmbeddedId
-    @I18nTitle({"ko=로그 ID", "en=Log ID", "ja=ログID"})
     private UserAccountLogId logId;
 
     @Column(name = "log_message")
     @Comment("Log Message: Change details")
-    @I18nTitle({"ko=로그 메시지", "en=Log Message", "ja=ログメッセージ"})
     private String logMessage;
 
     //----------------------------------
@@ -58,12 +51,10 @@ public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> 
         
         @Column(name = "user_id", nullable = false, length = 36)
         @Comment("User ID: Unique UUID used in the system")
-        @I18nTitle({"ko=사용자 ID", "en=User ID", "ja=ユーザーID"})
         private String userId;
         
         @Column(name = "log_time")
         @Comment("Log Time: Log timestamp")
-        @I18nTitle({"ko=로그 시간", "en=Log Time", "ja=ログ時間"})
         private OffsetDateTime logTime;
         
         @Override

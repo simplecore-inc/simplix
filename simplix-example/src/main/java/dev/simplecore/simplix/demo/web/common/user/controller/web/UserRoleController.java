@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 
 /**
- * 사용자 역할
+ * User Role
  *
  */
 @Controller

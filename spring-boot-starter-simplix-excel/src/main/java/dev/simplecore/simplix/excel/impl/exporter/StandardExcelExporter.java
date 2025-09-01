@@ -14,7 +14,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -152,6 +152,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
     /**
      * Export data in normal mode
      */
+    @SuppressWarnings("unused")
     private void exportStandard(Collection<T> items, HttpServletResponse response) throws IOException {
         int totalItems = items != null ? items.size() : 0;
         

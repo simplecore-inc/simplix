@@ -4,13 +4,19 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        use_sql_comments: true
+        use_sql_comments: false
+        globally_quoted_identifiers: false
+        globally_quoted_identifiers_skip_column_definitions: true
+        dialect: org.hibernate.dialect.H2Dialect
         type:
           descriptor:
             sql: trace
     hibernate:
-      ddl-auto: create
-    defer-datasource-initialization: true
+      ddl-auto: create  # Let JPA create all tables
+    defer-datasource-initialization: true  # Enable deferred initialization so JPA creates tables first
+  liquibase:
+    enabled: false  # Disable Spring Boot's auto-configured Liquibase
+
   h2:
     console:
       enabled: true
@@ -23,21 +29,11 @@ spring:
     livereload:
       enabled: true
   datasource:
-    url: jdbc:h2:mem:simplixdb;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:simplixdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;IGNORECASE=TRUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:db/data/user/*.sql
-      schema-locations:
-        - classpath:org/springframework/session/jdbc/schema-h2.sql
-  liquibase:
-    enabled: true
-    change-log: classpath:/db/changelog/db.changelog-master.yaml
-    default-schema: public
-    start-after: INITIALIZED
+  # Data initialization handled by JPA ddl-auto
   web:
     resources:
       static-locations:

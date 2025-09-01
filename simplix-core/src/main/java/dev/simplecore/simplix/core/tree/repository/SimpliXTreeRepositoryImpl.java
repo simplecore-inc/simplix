@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

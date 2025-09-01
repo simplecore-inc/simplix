@@ -18,7 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.UUID;
+import dev.simplecore.simplix.core.util.UuidUtils;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -62,7 +62,7 @@ public final class ExcelTemplateManager {
         
         // Generate default template if not exists
         String tempPath = System.getProperty("java.io.tmpdir");
-        String filename = "template-" + UUID.randomUUID() + ".xlsx";
+        String filename = "template-" + UuidUtils.generateUuidV7() + ".xlsx";
         Path templateFilePath = Paths.get(tempPath, filename);
         
         generateDefaultTemplate(templateFilePath.toString());

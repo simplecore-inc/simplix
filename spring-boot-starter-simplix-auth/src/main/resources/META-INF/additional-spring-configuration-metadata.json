@@ -1,0 +1,215 @@
+{
+  "properties": [
+    {
+      "name": "simplix.auth.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable SimpliX authentication functionality.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-token-endpoints",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable JWE token endpoints (/api/token/**).",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-web-security",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable web security with form login.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-cors",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable CORS configuration.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-csrf",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable CSRF protection.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-xss-protection",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable XSS protection headers.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-hsts",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable HTTP Strict Transport Security.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.enable-http-basic",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable HTTP Basic authentication.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.require-https",
+      "type": "java.lang.Boolean",
+      "description": "Whether to require HTTPS for all requests.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.hsts-max-age-seconds",
+      "type": "java.lang.Long",
+      "description": "HSTS max age in seconds.",
+      "defaultValue": 31536000
+    },
+    {
+      "name": "simplix.auth.security.csrf-ignore-patterns",
+      "type": "java.lang.String[]",
+      "description": "CSRF ignore patterns.",
+      "defaultValue": ["/api/token/**", "/h2-console/**"]
+    },
+    {
+      "name": "simplix.auth.security.login-page-template",
+      "type": "java.lang.String",
+      "description": "Login page template name.",
+      "defaultValue": "login"
+    },
+    {
+      "name": "simplix.auth.security.login-processing-url",
+      "type": "java.lang.String",
+      "description": "Login processing URL.",
+      "defaultValue": "/login"
+    },
+    {
+      "name": "simplix.auth.security.logout-url",
+      "type": "java.lang.String",
+      "description": "Logout URL.",
+      "defaultValue": "/logout"
+    },
+    {
+      "name": "simplix.auth.security.permit-all-patterns",
+      "type": "java.lang.String[]",
+      "description": "URL patterns that are permitted without authentication.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-origins",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed origins.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-methods",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed methods.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-headers",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed headers.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.exposed-headers",
+      "type": "java.lang.String[]",
+      "description": "CORS exposed headers.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allow-credentials",
+      "type": "java.lang.Boolean",
+      "description": "Whether to allow credentials in CORS.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.max-age",
+      "type": "java.lang.Long",
+      "description": "CORS max age in seconds.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-key",
+      "type": "java.lang.String",
+      "description": "JWE encryption key (RSA private key in PEM format).",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-key-location",
+      "type": "java.lang.String",
+      "description": "Location of JWE encryption key file.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.algorithm",
+      "type": "java.lang.String",
+      "description": "JWE encryption algorithm.",
+      "defaultValue": "RSA-OAEP-256"
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-method",
+      "type": "java.lang.String",
+      "description": "JWE encryption method.",
+      "defaultValue": "A256GCM"
+    }
+  ],
+  "hints": [
+    {
+      "name": "simplix.auth.security.permit-all-patterns",
+      "values": [
+        {
+          "value": "/public/**",
+          "description": "Public static resources"
+        },
+        {
+          "value": "/api/public/**",
+          "description": "Public API endpoints"
+        },
+        {
+          "value": "/health/**",
+          "description": "Health check endpoints"
+        },
+        {
+          "value": "/actuator/health",
+          "description": "Spring Boot Actuator health endpoint"
+        },
+        {
+          "value": "/swagger-ui/**",
+          "description": "Swagger UI resources"
+        },
+        {
+          "value": "/v3/api-docs/**",
+          "description": "OpenAPI documentation"
+        }
+      ]
+    },
+    {
+      "name": "simplix.auth.jwe.algorithm",
+      "values": [
+        {
+          "value": "RSA-OAEP-256",
+          "description": "RSA-OAEP with SHA-256"
+        },
+        {
+          "value": "RSA-OAEP",
+          "description": "RSA-OAEP with SHA-1"
+        }
+      ]
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-method",
+      "values": [
+        {
+          "value": "A256GCM",
+          "description": "AES-256-GCM"
+        },
+        {
+          "value": "A192GCM",
+          "description": "AES-192-GCM"
+        },
+        {
+          "value": "A128GCM",
+          "description": "AES-128-GCM"
+        }
+      ]
+    }
+  ]
+}

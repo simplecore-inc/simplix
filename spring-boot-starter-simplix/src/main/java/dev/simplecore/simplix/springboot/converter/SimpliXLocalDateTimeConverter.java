@@ -4,8 +4,8 @@ import dev.simplecore.simplix.springboot.autoconfigure.SimpliXDateTimeAutoConfig
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 

@@ -2,6 +2,7 @@ package dev.simplecore.simplix.demo.web.common.user.controller.web;
 
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.UserRoleDetailDTO;
 import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
+import dev.simplecore.simplix.core.util.UuidUtils;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,9 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.util.NestedServletException;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -56,7 +59,7 @@ class UserRoleControllerTest {
      */
     private UserRoleDetailDTO createRandomUserRoleDetailDTO() {
         UserRoleDetailDTO dto = new UserRoleDetailDTO();
-        dto.setRoleId(faker.internet().uuid());
+        dto.setRoleId(UuidUtils.generateUuidV7());
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
@@ -78,7 +81,7 @@ class UserRoleControllerTest {
     @DisplayName("Detail Page Test - Item Found")
     void detailFoundTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         UserRoleDetailDTO detailDTO = createRandomUserRoleDetailDTO();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.of(detailDTO));
@@ -96,7 +99,7 @@ class UserRoleControllerTest {
     @DisplayName("Detail Page Test - Item Not Found")
     void detailNotFoundTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.empty());
         
@@ -111,7 +114,7 @@ class UserRoleControllerTest {
     @DisplayName("Brief Content Fragment Test")
     void getBriefTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         UserRoleDetailDTO detailDTO = createRandomUserRoleDetailDTO();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.of(detailDTO));
@@ -128,7 +131,7 @@ class UserRoleControllerTest {
     @DisplayName("Edit Page Test")
     void editTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         UserRoleDetailDTO detailDTO = createRandomUserRoleDetailDTO();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.of(detailDTO));
@@ -156,16 +159,16 @@ class UserRoleControllerTest {
     @DisplayName("Edit Page Test - Item Not Found")
     void editNotFoundTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
-        
+        String id = UuidUtils.generateUuidV7();
+
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.empty());
-        
+
         // When & Then
-        NestedServletException exception = Assertions.assertThrows(
-            NestedServletException.class,
+        jakarta.servlet.ServletException exception = Assertions.assertThrows(
+            jakarta.servlet.ServletException.class,
             () -> mockMvc.perform(get("/user/role/edit/{id}", id))
         );
-        
+
         // Verify the exception
         Throwable rootCause = exception.getCause();
         Assertions.assertNotNull(rootCause);

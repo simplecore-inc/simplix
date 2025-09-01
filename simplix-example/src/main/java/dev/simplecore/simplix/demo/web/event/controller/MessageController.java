@@ -26,10 +26,10 @@ public class MessageController {
     @PostMapping(path = "/publish")
     public ResponseEntity<SampleMessage> publishMessage(@RequestBody SampleMessage sampleMessage) {
         sampleMessage.setTimestamp(OffsetDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        
+
         SimpliXMessageEvent messageEvent = new SimpliXMessageEvent(sampleMessage, TOPIC);
         eventGateway.sendEvent(messageEvent);
-        
+
         return ResponseEntity.ok(sampleMessage);
     }
 

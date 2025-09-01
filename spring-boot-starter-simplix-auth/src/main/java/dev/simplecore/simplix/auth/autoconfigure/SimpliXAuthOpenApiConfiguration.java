@@ -18,17 +18,17 @@ public class SimpliXAuthOpenApiConfiguration {
     public OpenAPI customOpenAPI(MessageSource messageSource) {
         return new OpenAPI()
             .components(new Components()
-                .addSecuritySchemes("Basic", new SecurityScheme()
-                    .type(SecurityScheme.Type.HTTP)
-                    .scheme("basic")
-                    .description(messageSource.getMessage("openapi.security.basic.description", null, 
-                        "Basic authentication for token issuance", LocaleContextHolder.getLocale())))
                 .addSecuritySchemes("Bearer", new SecurityScheme()
                     .type(SecurityScheme.Type.HTTP)
                     .scheme("bearer")
                     .bearerFormat("JWE")
                     .description(messageSource.getMessage("openapi.security.bearer.description", null,
-                        "JWE token for API authentication", LocaleContextHolder.getLocale()))))
+                        "JWE token for API authentication", LocaleContextHolder.getLocale())))
+                .addSecuritySchemes("Basic", new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("basic")
+                    .description(messageSource.getMessage("openapi.security.basic.description", null,
+                        "Basic authentication for token issuance", LocaleContextHolder.getLocale()))))
             .addSecurityItem(new SecurityRequirement().addList("Bearer"));
     }
 } 

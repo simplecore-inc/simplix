@@ -17,7 +17,7 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import java.lang.annotation.*;
 
 /**
@@ -98,9 +98,9 @@ public class SimpliXTreeRepositoryAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(DataSourceProperties dataSourceProperties) {
         log.info("Initializing JdbcTemplate for SimpliX Tree Repository...");
-        return new JdbcTemplate(dataSource);
+        return new JdbcTemplate(dataSourceProperties.initializeDataSourceBuilder().build());
     }
 
     /**

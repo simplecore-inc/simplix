@@ -22,12 +22,12 @@ class SimplixExcelAutoConfigurationTest {
     @Test
     void testDefaultConfiguration() {
         contextRunner.run(context -> {
-            // 기본 빈들이 등록되었는지 확인
+            // Check if default beans are registered
             assertThat(context).hasSingleBean(JxlsExporter.class);
             assertThat(context).hasSingleBean(CsvExporter.class);
             assertThat(context).hasSingleBean(SimplixExcelProperties.class);
             
-            // 기본 속성값 확인
+            // Check default property values
             SimplixExcelProperties properties = context.getBean(SimplixExcelProperties.class);
             assertThat(properties.getTemplate().getPath()).isEqualTo("templates/default-template.xlsx");
             assertThat(properties.getExport().getDefaultSheetName()).isEqualTo("Data");
@@ -46,7 +46,7 @@ class SimplixExcelAutoConfigurationTest {
                 "simplix.excel.export.streaming-enabled=true"
             )
             .run(context -> {
-                // 사용자 정의 속성값 확인
+                // Check custom property values
                 SimplixExcelProperties properties = context.getBean(SimplixExcelProperties.class);
                 assertThat(properties.getTemplate().getPath()).isEqualTo("templates/custom-template.xlsx");
                 assertThat(properties.getExport().getDefaultSheetName()).isEqualTo("CustomSheet");

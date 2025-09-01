@@ -5,6 +5,7 @@ import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
 import dev.simplecore.simplix.demo.web.common.user.service.UserRoleService;
+import dev.simplecore.simplix.core.util.UuidUtils;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,23 +13,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.math.BigDecimal;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+
+import java.util.*;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,16 +37,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserRoleRestControllerTest {
 
     private MockMvc mockMvc;
-    
+
     @Mock
     private UserRoleService userRoleService;
-    
+
     @InjectMocks
     private UserRoleRestController userRoleRestController;
     
-    @Spy
-    private ObjectMapper objectMapper = new ObjectMapper();
-    
+    private ObjectMapper objectMapper;
+
     private Faker faker;
     private AtomicInteger itemOrderCounter;
 
@@ -55,12 +55,13 @@ class UserRoleRestControllerTest {
         // Use current time + random number to ensure uniqueness across test runs
         int initialValue = (int)(System.currentTimeMillis() % 10000) + faker.random().nextInt(1000);
         itemOrderCounter = new AtomicInteger(initialValue);
-        mockMvc = MockMvcBuilders
-                .standaloneSetup(userRoleRestController)
-                .alwaysDo(print())
-                .build();
+
+        objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         objectMapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(com.fasterxml.jackson.databind.SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+        // Use the injected controller instance
+        mockMvc = MockMvcBuilders.standaloneSetup(userRoleRestController).build();
     }
 
     /**
@@ -72,7 +73,7 @@ class UserRoleRestControllerTest {
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
         userRole.setItemOrder(itemOrderCounter.getAndIncrement());
-        userRole.setId(faker.internet().uuid());
+        userRole.setId(UuidUtils.generateUuidV7());
         return userRole;
     }
 
@@ -106,7 +107,7 @@ class UserRoleRestControllerTest {
      */
     private UserRoleDetailDTO createRandomUserRoleDetailDTO() {
         UserRoleDetailDTO dto = new UserRoleDetailDTO();
-        dto.setRoleId(faker.internet().uuid());
+        dto.setRoleId(UuidUtils.generateUuidV7());
         dto.setName(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         dto.setDescription(faker.lorem().sentence(8));
@@ -122,8 +123,7 @@ class UserRoleRestControllerTest {
         UserRoleDetailDTO resultDTO = createRandomUserRoleDetailDTO();
         
         when(userRoleService.create(any(UserRoleCreateDTO.class))).thenReturn(resultDTO);
-        
-        // When & Then
+
         mockMvc.perform(post("/api/user/role/create")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class UserRoleRestControllerTest {
     @DisplayName("Update User Role Test")
     void updateUserRoleTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         UserRole existingRole = createRandomUserRole();
         UserRoleUpdateDTO updateDTO = createRandomUserRoleUpdateDTO(id);
         UserRoleDetailDTO resultDTO = createRandomUserRoleDetailDTO();
@@ -163,7 +163,7 @@ class UserRoleRestControllerTest {
     @DisplayName("Delete User Role Test")
     void deleteUserRoleTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         
         when(userRoleService.existsById(id)).thenReturn(true);
         doNothing().when(userRoleService).delete(id);
@@ -180,7 +180,7 @@ class UserRoleRestControllerTest {
     @DisplayName("Get User Role By ID Test")
     void getUserRoleTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         UserRoleDetailDTO detailDTO = createRandomUserRoleDetailDTO();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.of(detailDTO));
@@ -199,7 +199,7 @@ class UserRoleRestControllerTest {
     @DisplayName("User Role Not Found Test")
     void userRoleNotFoundTest() throws Exception {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
         
         when(userRoleService.findById(eq(id), eq(UserRoleDetailDTO.class))).thenReturn(Optional.empty());
         
@@ -216,8 +216,8 @@ class UserRoleRestControllerTest {
     void multiUpdateUserRolesTest() throws Exception {
         // Given
         Set<UserRoleUpdateDTO> updateDTOs = new HashSet<>();
-        updateDTOs.add(createRandomUserRoleUpdateDTO(faker.internet().uuid()));
-        updateDTOs.add(createRandomUserRoleUpdateDTO(faker.internet().uuid()));
+        updateDTOs.add(createRandomUserRoleUpdateDTO(UuidUtils.generateUuidV7()));
+        updateDTOs.add(createRandomUserRoleUpdateDTO(UuidUtils.generateUuidV7()));
         
         List<UserRoleDetailDTO> resultDTOs = List.of(
             createRandomUserRoleDetailDTO(),
@@ -245,9 +245,9 @@ class UserRoleRestControllerTest {
         // Given
         UserRoleBatchUpdateDTO batchUpdateDTO = new UserRoleBatchUpdateDTO();
         Set<String> ids = Set.of(
-            faker.internet().uuid(),
-            faker.internet().uuid(),
-            faker.internet().uuid()
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7()
         );
         batchUpdateDTO.setRoleIds(ids);
         
@@ -268,9 +268,9 @@ class UserRoleRestControllerTest {
     void batchDeleteUserRolesTest() throws Exception {
         // Given
         List<String> ids = List.of(
-            faker.internet().uuid(),
-            faker.internet().uuid(),
-            faker.internet().uuid()
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7()
         );
         
         doNothing().when(userRoleService).batchDelete(anyList());
@@ -294,7 +294,7 @@ class UserRoleRestControllerTest {
         List<UserRoleListDTO> results = new ArrayList<>();
         // Create actual objects instead of mocks
         UserRoleListDTO dto1 = new UserRoleListDTO();
-        dto1.setRoleId(faker.internet().uuid());
+        dto1.setRoleId(UuidUtils.generateUuidV7());
         dto1.setName(faker.lorem().word());
         dto1.setRole(faker.lorem().word());
         
@@ -306,11 +306,9 @@ class UserRoleRestControllerTest {
         results.add(dto1);
         results.add(dto2);
         
-        Page<UserRoleListDTO> pagedResults = new PageImpl<>(results);
+        Page<UserRoleListDTO> pagedResults = new PageImpl<>(results, Pageable.ofSize(10), results.size());
         
         when(userRoleService.search(anyMap())).thenReturn(pagedResults);
-        
-        // When & Then
         mockMvc.perform(get("/api/user/role/search")
                 .accept(MediaType.APPLICATION_JSON)
                 .param("name", "test")
@@ -331,7 +329,7 @@ class UserRoleRestControllerTest {
         List<UserRoleListDTO> results = new ArrayList<>();
         // Create actual objects instead of mocks
         UserRoleListDTO dto1 = new UserRoleListDTO();
-        dto1.setRoleId(faker.internet().uuid());
+        dto1.setRoleId(UuidUtils.generateUuidV7());
         dto1.setName(faker.lorem().word());
         dto1.setRole(faker.lorem().word());
         
@@ -343,12 +341,11 @@ class UserRoleRestControllerTest {
         results.add(dto1);
         results.add(dto2);
         
-        Page<UserRoleListDTO> pagedResults = new PageImpl<>(results);
+        Page<UserRoleListDTO> pagedResults = new PageImpl<>(results, Pageable.ofSize(10), results.size());
         SearchCondition<UserRoleSearchDTO> searchCondition = new SearchCondition<>();
         
         when(userRoleService.search(any(SearchCondition.class))).thenReturn(pagedResults);
-        
-        // When & Then
+
         mockMvc.perform(post("/api/user/role/search")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -365,8 +362,8 @@ class UserRoleRestControllerTest {
     @DisplayName("Update User Role Orders Test")
     void updateUserRoleOrdersTest() throws Exception {
         // Given
-        String roleId1 = faker.internet().uuid();
-        String roleId2 = faker.internet().uuid();
+        String roleId1 = UuidUtils.generateUuidV7();
+        String roleId2 = UuidUtils.generateUuidV7();
         Integer newOrder1 = 100;
         Integer newOrder2 = 200;
         

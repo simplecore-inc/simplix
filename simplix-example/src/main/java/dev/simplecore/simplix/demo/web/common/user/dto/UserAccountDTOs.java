@@ -13,7 +13,7 @@ import lombok.Setter;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.format.annotation.DateTimeFormat;
 
-import javax.validation.constraints.*;
+import jakarta.validation.constraints.*;
 import java.time.OffsetDateTime;
 import java.util.Set;
 

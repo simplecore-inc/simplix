@@ -20,33 +20,33 @@ public class SystemMetricsService {
 
     private final SimpliXEventGateway eventGateway;
     private static final String METRICS_CHANNEL = "system-metrics";
-    
-    @Scheduled(fixedRate = 1000)
+
+    @Scheduled(fixedRate = 5000)  // Changed from 1000ms to 5000ms for better performance
     public void collectAndPublishMetrics() {
         SystemMetrics metrics = collectSystemMetrics();
-//        log.debug("Collected metrics: CPU={}%, Memory={}%",
-//                String.format("%.2f", metrics.getCpuUsage()),
-//                String.format("%.2f", metrics.getMemoryUsage()));
-        
+        // log.debug("Collected system metrics: CPU={}%, Memory={}%",
+        //         String.format("%.2f", metrics.getCpuUsage()),
+        //         String.format("%.2f", metrics.getMemoryUsage()));
+
         SimpliXMessageEvent event = new SimpliXMessageEvent(metrics, METRICS_CHANNEL);
         eventGateway.sendEvent(event);
     }
-    
+
     private SystemMetrics collectSystemMetrics() {
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         double cpuUsage = osBean.getSystemLoadAverage();
-        if (cpuUsage < 0) { // 일부 시스템에서는 -1을 반환할 수 있음
+        if (cpuUsage < 0) { // Some systems may return -1
             cpuUsage = ((com.sun.management.OperatingSystemMXBean) osBean).getProcessCpuLoad() * 100;
         } else {
             cpuUsage = cpuUsage * 100 / osBean.getAvailableProcessors();
         }
-        
+
         long totalMemory = memoryBean.getHeapMemoryUsage().getMax() + memoryBean.getNonHeapMemoryUsage().getMax();
         long usedMemory = memoryBean.getHeapMemoryUsage().getUsed() + memoryBean.getNonHeapMemoryUsage().getUsed();
         double memoryUsage = (double) usedMemory / totalMemory * 100;
-        
+
         return SystemMetrics.builder()
                 .cpuUsage(cpuUsage)
                 .totalMemory(totalMemory)

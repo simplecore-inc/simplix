@@ -4,6 +4,7 @@ import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.simplix.demo.domain.common.user.entity.UserRole;
 import dev.simplecore.simplix.demo.domain.common.user.repository.UserRoleRepository;
 import dev.simplecore.simplix.demo.web.common.user.dto.UserRoleDTOs.*;
+import dev.simplecore.simplix.core.util.UuidUtils;
 import net.datafaker.Faker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,7 +66,7 @@ class UserRoleServiceTest {
         userRole.setRole(faker.lorem().word() + "_" + System.currentTimeMillis() + "_" + faker.random().nextInt(1000));
         userRole.setDescription(faker.lorem().sentence(8));
         userRole.setItemOrder(itemOrderCounter.getAndIncrement());
-        userRole.setId(faker.internet().uuid());
+        userRole.setId(UuidUtils.generateUuidV7());
         return userRole;
     }
 
@@ -101,7 +102,7 @@ class UserRoleServiceTest {
         UserRoleCreateDTO createDTO = createRandomUserRoleCreateDTO();
         UserRole savedEntity = new UserRole();
         modelMapper.map(createDTO, savedEntity);
-        savedEntity.setId(faker.internet().uuid());
+        savedEntity.setId(UuidUtils.generateUuidV7());
         
         UserRoleDetailDTO mockDetailDTO = mock(UserRoleDetailDTO.class);
         
@@ -139,7 +140,7 @@ class UserRoleServiceTest {
     @DisplayName("Delete User Role Test")
     void deleteUserRoleTest() {
         // Given
-        String id = faker.internet().uuid();
+        String id = UuidUtils.generateUuidV7();
 
         // When
         userRoleService.delete(id);
@@ -153,9 +154,9 @@ class UserRoleServiceTest {
     void batchDeleteUserRoleTest() {
         // Given
         List<String> ids = List.of(
-            faker.internet().uuid(),
-            faker.internet().uuid(),
-            faker.internet().uuid()
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7()
         );
         
         // After examining the SimpliXBaseService implementation,
@@ -197,8 +198,8 @@ class UserRoleServiceTest {
     @DisplayName("Multi Update User Roles Test")
     void multiUpdateUserRoles() {
         // Given
-        String id1 = faker.internet().uuid();
-        String id2 = faker.internet().uuid();
+        String id1 = UuidUtils.generateUuidV7();
+        String id2 = UuidUtils.generateUuidV7();
         
         UserRoleUpdateDTO updateDTO1 = createRandomUserRoleUpdateDTO(id1);
         UserRoleUpdateDTO updateDTO2 = createRandomUserRoleUpdateDTO(id2);
@@ -226,9 +227,9 @@ class UserRoleServiceTest {
     void batchUpdateUserRoles() {
         // Given
         Set<String> ids = Set.of(
-            faker.internet().uuid(),
-            faker.internet().uuid(),
-            faker.internet().uuid()
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7(),
+            UuidUtils.generateUuidV7()
         );
         UserRoleBatchUpdateDTO batchUpdateDTO = new UserRoleBatchUpdateDTO();
         batchUpdateDTO.setRoleIds(ids);
@@ -255,7 +256,7 @@ class UserRoleServiceTest {
     @DisplayName("Find By Non-Existent ID Returns Empty")
     void findByNonExistentIdReturnsEmpty() {
         // Given
-        String nonExistentId = faker.internet().uuid();
+        String nonExistentId = UuidUtils.generateUuidV7();
         when(userRoleRepository.findById(nonExistentId)).thenReturn(Optional.empty());
         
         // When

@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
@@ -100,7 +100,7 @@ public class SimpliXExceptionHandler<T> {
     public T handleSimpliXGeneralException(SimpliXGeneralException ex, HttpServletRequest request) {
         T errorResponse = responseFactory.createErrorResponse(
                 ex.getStatusCode(),
-                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
                 ex.getMessage(),
                 ex.getDetail(),
                 request.getRequestURI()
@@ -126,10 +126,10 @@ public class SimpliXExceptionHandler<T> {
         // Log exception with trace ID
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
-            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}", 
-                traceId, 
-                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
-                request.getRequestURI(), 
+            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
+                traceId,
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
+                request.getRequestURI(),
                 ex);
         }
         
@@ -197,6 +197,7 @@ public class SimpliXExceptionHandler<T> {
     /**
      * Translate validation message from {key} format to localized message with parameter substitution
      */
+    @SuppressWarnings("unused")
     private String translateValidationMessage(String originalMessage, Object[] messageArguments) {
         if (originalMessage == null) {
             return null;
@@ -333,6 +334,7 @@ public class SimpliXExceptionHandler<T> {
         return errorResponse;
     }
 
+    @SuppressWarnings("unused")
     @ExceptionHandler(Exception.class)
     @Order(Integer.MAX_VALUE)
     public T handleException(Exception ex, HttpServletRequest request) {
@@ -392,12 +394,10 @@ public class SimpliXExceptionHandler<T> {
 
         // Wrap the exception in a SimpliXGeneralException
         SimpliXGeneralException wrappedException = new SimpliXGeneralException(
+            errorCode,
             localizedMessage,
             ex,
-            errorCode.getCode(),
-            errorCode.getHttpStatus(),
-            errorDetail,
-            request.getRequestURI()
+            errorDetail
         );
 
         return handleSimpliXGeneralException(wrappedException, request);

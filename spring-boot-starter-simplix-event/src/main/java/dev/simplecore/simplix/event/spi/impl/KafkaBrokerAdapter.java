@@ -17,8 +17,8 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

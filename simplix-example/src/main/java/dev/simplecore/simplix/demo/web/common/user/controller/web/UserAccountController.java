@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 
 /**
- * 사용자 계정
+ * User Account
  *
  */
 @Controller

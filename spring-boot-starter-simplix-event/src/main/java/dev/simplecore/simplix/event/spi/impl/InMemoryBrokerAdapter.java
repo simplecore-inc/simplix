@@ -12,10 +12,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
@@ -249,10 +250,13 @@ public class InMemoryBrokerAdapter extends AbstractMessageBrokerAdapter {
     @PostConstruct
     public void startCleanupTask() {
         // Schedule periodic task to monitor queue status
-        ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(
+        PeriodicTrigger trigger = new PeriodicTrigger(java.time.Duration.ofMillis(cleanupIntervalMs));
+        trigger.setInitialDelay(java.time.Duration.ZERO); // Start immediately
+
+        ScheduledFuture<?> future = scheduler.schedule(
             () -> {
                 log.debug("Current queue size: {}", channelQueueSizes.values().stream().mapToInt(AtomicInteger::get).sum());
-                
+
                 // Log subscriber status (for debugging)
                 if (log.isDebugEnabled()) {
                     channelHandlers.forEach((channel, handlers) -> {
@@ -260,7 +264,7 @@ public class InMemoryBrokerAdapter extends AbstractMessageBrokerAdapter {
                     });
                 }
             },
-            cleanupIntervalMs
+            trigger
         );
         cleanupTasks.put("queueMonitor", future);
     }

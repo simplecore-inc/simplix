@@ -13,23 +13,21 @@ import lombok.Getter;
 import lombok.Setter;
 
 import org.hibernate.annotations.Comment;
-import org.hibernate.annotations.GenericGenerator;
+
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import dev.simplecore.simplix.core.hibernate.UuidV7Generator;
 
 @Entity
 @Getter
 @Setter
 @Table(name = "code_group")
-@org.hibernate.annotations.Table(
-    appliesTo = "code_group",
-    comment = "Code Group: Code group information"
-)
+@Comment("Code Group: Code group information")
 @TreeEntityAttributes(
     tableName = "code_group",
     idColumn = "code_group_id",
@@ -43,10 +41,10 @@ import java.util.Map;
 public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<CodeGroup, String> {
 
     @Id
-    @GeneratedValue(generator = "tsid")
-    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
+    @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
+    @UuidV7Generator
     @Column(name = "code_group_id", length = 36, nullable = false, updatable = false, unique = true)
-    @Comment("Code Group ID: Unique UUID used in the system")
+    @Comment("Code Group ID: Unique UUID Version 7 used in the system")
     private String codeGroupId;
 
     @Column(name = "group_key", length = 50, nullable = false)

@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import dev.simplecore.simplix.core.util.UuidUtils;
 
 /**
  * Excel Template Generator
@@ -160,7 +160,7 @@ public class ExcelTemplateGenerator {
         
         // Create in temporary location if not exists
         String tempPath = System.getProperty("java.io.tmpdir");
-        String filename = "default-template-" + UUID.randomUUID().toString() + ".xlsx";
+        String filename = "default-template-" + UuidUtils.generateUuidV7() + ".xlsx";
         Path templatePath = Paths.get(tempPath, filename);
         
         generateDefaultTemplate(templatePath.toString());

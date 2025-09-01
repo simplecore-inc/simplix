@@ -5,9 +5,9 @@ import dev.simplecore.simplix.demo.domain.AuditingBaseEntity;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
-import org.hibernate.annotations.GenericGenerator;
+import dev.simplecore.simplix.core.hibernate.UuidV7Generator;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 import java.util.Map;
 
@@ -20,18 +20,15 @@ import java.util.Map;
 @Table(name = "code_item")
 @Getter
 @Setter
-@org.hibernate.annotations.Table(
-        appliesTo = "code_item",
-        comment = "Code Item: Individual code item information belonging to a code group"
-)
+@Comment("Code Item: Individual code item information belonging to a code group")
 //@EntityListeners(CodeItemEntityListener.class)
 public class CodeItem extends AuditingBaseEntity<String> {
 
     @Id
-    @GeneratedValue(generator = "tsid")
-    @GenericGenerator(name = "tsid", strategy = "io.hypersistence.utils.hibernate.id.TsidGenerator")
+    @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
+    @UuidV7Generator
     @Column(name = "code_item_id", length = 36)
-    @Comment("Code Item ID: Unique ID used in the system")
+    @Comment("Code Item ID: Unique UUID Version 7 used in the system")
     private String codeItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
