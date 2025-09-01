@@ -14,23 +14,23 @@ import jakarta.persistence.*;
 @Getter
 @Setter
 @Table(name = "user_position")
-@Comment("User Position: Official position hierarchy information within the organization")
+@Comment("User Position - Official position hierarchy information within the organization")
 public class UserPosition extends AuditingBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name="position_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("Position ID: Unique UUID Version 7 used in the system")
+    @Comment("Position ID - Unique UUID Version 7 used in the system")
     private String positionId;
 
     @Column(nullable = false, unique = true)
-    @Comment("Position Name: Official position name within the organization")
+    @Comment("Position Name - Official position name within the organization")
     @DisplayName(description = "Position name for display")
     private String name;  // e.g., Employee, Assistant Manager, Manager
 
     @Column(length = 500)
-    @Comment("Position Description: Detailed description and purpose of the position")
+    @Comment("Position Description - Detailed description and purpose of the position")
     private String description;
 
     @Column(name = "item_order", nullable = false)

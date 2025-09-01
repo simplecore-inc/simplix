@@ -15,27 +15,27 @@ import jakarta.persistence.*;
 @Getter
 @Setter
 @Table(name = "user_role")
-@Comment("User Role: Group of permissions or job title information")
+@Comment("User Role - Group of permissions or job title information")
 public class UserRole extends AuditingBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name="role_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("Role ID: Unique UUID Version 7 used in the system")
+    @Comment("Role ID - Unique UUID Version 7 used in the system")
     private String roleId;
 
     @Column(nullable = false, unique = true)
-    @Comment("Role Name: Unique role name used in the system")
+    @Comment("Role Name - Unique role name used in the system")
     @DisplayName(description = "Role name for display")
     private String name;  // e.g., Team Leader, Project Manager
 
     @Column(nullable = false, unique = true)
-    @Comment("Role Code: Unique role code name used in the system")
+    @Comment("Role Code - Unique role code name used in the system")
     private String role;  // e.g., ROLE_ADMIN, ROLE_MANAGER, ROLE_USER, ROLE_GUEST, ROLE_TEAM_LEAD, ROLE_PM, ...
 
     @Column(length = 500)
-    @Comment("Role Description: Detailed description and purpose of the role")
+    @Comment("Role Description - Detailed description and purpose of the role")
     private String description;
 
     @Column(name = "item_order", nullable = false)

@@ -175,8 +175,6 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                         if (schemaProperty.getExtensions() != null) {
                             log.info("Final extensions for field {}: {}", fieldName, 
                                 schemaProperty.getExtensions().keySet());
-                        } else {
-                            log.warn("No extensions found for field {} after processing", fieldName);
                         }
                     } else {
                         log.warn("Field not found: {}.{}", clazz.getSimpleName(), fieldName);

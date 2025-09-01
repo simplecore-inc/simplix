@@ -15,24 +15,24 @@ import jakarta.persistence.*;
 @Getter
 @Setter
 @Table(name = "user_organization")
-@Comment("User Organization: Information about organizational units such as departments or project groups")
+@Comment("User Organization - Information about organizational units such as departments or project groups")
 public class UserOrganization extends AuditingBaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name="organization_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("Organization ID: Unique UUID Version 7 used in the system")
+    @Comment("Organization ID - Unique UUID Version 7 used in the system")
     private String organizationId;
 
     @Column(nullable = false, unique = true)
-    @Comment("Organization Name: Name of the department or group")
+    @Comment("Organization Name - Name of the department or group")
     @DisplayName(description = "Organization name for display")
     private String name;  // e.g., Development Team, HR Department, Project A Team
 
     @Enumerated(EnumType.STRING)
     @Column(name = "org_type", nullable = false)
-    @Comment("Organization Type: Type of organization (DEPARTMENT: Department, GROUP: Group)")
+    @Comment("Organization Type - Type of organization (DEPARTMENT for Department, GROUP for Group)")
     private OrganizationType orgType;  // DEPARTMENT or GROUP
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,7 +40,7 @@ public class UserOrganization extends AuditingBaseEntity<String> {
     private UserOrganization parent;
 
     @Column(length = 500)
-    @Comment("Organization Description: Detailed description and purpose of the organization")
+    @Comment("Organization Description - Detailed description and purpose of the organization")
     private String description;
 
     @Column(name = "item_order", nullable = false)

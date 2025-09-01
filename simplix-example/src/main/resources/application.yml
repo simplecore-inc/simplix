@@ -9,6 +9,12 @@ spring:
     hibernate:
       ddl-auto: create
     defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        show_sql: true
   main:
     allow-bean-definition-overriding: true
   thymeleaf:
@@ -61,8 +67,23 @@ server:
 logging:
   level:
     root: INFO
-    dev.simplecore.simplix: DEBUG
-    dev.simplecore.simplix.web.config.SwaggerI18nCustomizer: DEBUG
+    dev.simplecore.simplix: INFO
+    # Reduce verbose logging for specific components
+    dev.simplecore.simplix.web.config.SwaggerSchemaEnhancer: WARN
+    # JPA/Hibernate SQL logging
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.type.descriptor.sql: TRACE
+    org.hibernate.orm.jdbc: DEBUG
+    org.hibernate.stat: DEBUG
+    # Spring Data JPA logging
+    org.springframework.orm.jpa: DEBUG
+    org.springframework.transaction: DEBUG
+    # Database connection logging
+    org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentInitiator: DEBUG
+    org.springframework.security: WARN
+    org.springframework.boot.autoconfigure: WARN
+    liquibase: WARN
   charset:
     console: UTF-8
     file: UTF-8

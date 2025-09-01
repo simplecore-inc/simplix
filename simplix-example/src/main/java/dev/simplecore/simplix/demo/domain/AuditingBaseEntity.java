@@ -24,21 +24,21 @@ public abstract class AuditingBaseEntity<K> extends SimpliXBaseEntity<K> {
 
     @CreatedBy
     @Column(name = "created_by", updatable = false)
-    @Comment("Creator: User who initially created the record")
+    @Comment("Creator - User who initially created the record")
     private String createdBy;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
-    @Comment("Creation Date: Initial creation timestamp with timezone")
+    @Comment("Creation Date - Initial creation timestamp with timezone")
     private OffsetDateTime createdAt;
 
     @LastModifiedBy
     @Column(name = "updated_by")
-    @Comment("Modifier: User who last modified the record")
+    @Comment("Modifier - User who last modified the record")
     private String updatedBy;
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    @Comment("Modification Date: Last modification timestamp with timezone")
+    @Comment("Modification Date - Last modification timestamp with timezone")
     private OffsetDateTime updatedAt;
 }

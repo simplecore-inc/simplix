@@ -1,6 +1,6 @@
 spring:
   jpa:
-    show-sql: true
+    show-sql: false # Disable SQL logging in console
     properties:
       hibernate:
         format_sql: true
@@ -10,17 +10,14 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
         hbm2ddl:
           auto: create
-        type:
-          descriptor:
-            sql: trace
         jdbc:
           lob:
             non_contextual_creation: true
     hibernate:
-      ddl-auto: create  # Let JPA create all tables
-    defer-datasource-initialization: true  # Enable deferred initialization so JPA creates tables first
+      ddl-auto: create # Let JPA create all tables
+    defer-datasource-initialization: true # Enable deferred initialization so JPA creates tables first
   liquibase:
-    enabled: false  # Disable Spring Boot's auto-configured Liquibase
+    enabled: false # Disable Spring Boot's auto-configured Liquibase
 
   h2:
     console:
@@ -63,18 +60,32 @@ server:
     include-message: always
     whitelabel:
       enabled: false
-      
+
 logging:
   level:
     root: INFO
-    dev.simplecore.simplix: TRACE
-    dev.simplecore.searchable: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security.oauth2: DEBUG
-    org.springframework.jdbc.core: TRACE
+    # Application specific logging - keep at INFO for development
+    dev.simplecore.simplix: INFO
+    dev.simplecore.searchable: INFO
+    # Reduce Hibernate logging verbosity
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type: WARN
+    org.hibernate.type.descriptor: WARN
+    org.hibernate.type.BasicTypeRegistry: WARN
+    org.hibernate.engine: WARN
+    org.hibernate.boot: WARN
+    org.hibernate.cfg: WARN
+    # Reduce framework logging
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.springframework.security.oauth2: WARN
+    org.springframework.jdbc.core: WARN
+    org.springframework.boot.autoconfigure: WARN
+    # Reduce Swagger verbosity
+    dev.simplecore.simplix.web.config.SwaggerSchemaEnhancer: WARN
+    # Reduce Liquibase verbosity
+    liquibase: WARN
   charset:
     console: UTF-8
     file: UTF-8

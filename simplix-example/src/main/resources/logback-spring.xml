@@ -43,9 +43,22 @@
         <appender-ref ref="APPLICATION_FILE"/>
     </root>
     
-    <!-- SimpliX Framework Logging -->
-    <logger name="dev.simplecore.simplix" level="DEBUG"/>
+    <!-- SimpliX Framework Logging - Reduced verbosity -->
+    <logger name="dev.simplecore.simplix" level="INFO"/>
     
-    <!-- HTTP Request/Response Logging -->
-    <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="DEBUG"/>
+    <!-- Reduce Swagger Schema Enhancer verbosity -->
+    <logger name="dev.simplecore.simplix.web.config.SwaggerSchemaEnhancer" level="WARN"/>
+    
+    <!-- Reduce Hibernate SQL logging -->
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
+    
+    <!-- Reduce Spring Security logging -->
+    <logger name="org.springframework.security" level="WARN"/>
+    
+    <!-- Reduce Spring Boot auto-configuration logging -->
+    <logger name="org.springframework.boot.autoconfigure" level="WARN"/>
+    
+    <!-- Reduce Liquibase logging -->
+    <logger name="liquibase" level="WARN"/>
 </configuration> 

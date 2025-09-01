@@ -9,35 +9,35 @@ ext {
     springBootVersion = '3.5.5'
     springDocVersion = '2.7.0'
     
-    // Common Libraries (not managed by Spring Boot BOM)
+    // Common Libraries
     modelMapperVersion = '3.2.0'
     
-    // Database & Migration (not managed by Spring Boot BOM)
+    // Database & Migration
     hypersistenceVersion = '3.9.4'
     
-    // Data & Testing (not managed by Spring Boot BOM)
+    // Data & Testing
     datafakerVersion = '2.0.2'
     
-    // Excel & Document Processing (not managed by Spring Boot BOM)
+    // Excel & Document Processing
     poiVersion = '5.2.4'
     jxlsVersion = '2.14.0'
     jxlsJexcelVersion = '1.0.9'
     commonsCsvVersion = '1.10.0'
     
-    // Java Parser (not managed by Spring Boot BOM)
+    // Java Parser
     javaparserVersion = '3.25.4'
     
-    // Event & Integration (not managed by Spring Boot BOM)
+    // Event & Integration
     jnatsVersion = '2.16.14'
     
-    // Auth & Security (not managed by Spring Boot BOM)
+    // Auth & Security
     guavaVersion = '31.1-jre'
     jsr305Version = '3.0.2'
     
-    // UUID (not managed by Spring Boot BOM)
+    // UUID
     uuidCreatorVersion = '6.1.1'
     
-    // MyBatis (not managed by Spring Boot BOM)
+    // MyBatis
     mybatisSpringBootVersion = '3.0.4'
     
     // Searchable JPA Dependencies (some managed by Spring Boot BOM)
@@ -66,20 +66,20 @@ subprojects {
         }
         
         dependencies {
-            // SpringDoc OpenAPI (not managed by Spring Boot BOM)
+            // SpringDoc OpenAPI
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
             
-            // Common Libraries (not managed by Spring Boot BOM)
+            // Common Libraries
             dependency "org.modelmapper:modelmapper:${modelMapperVersion}"
             
-            // Database & Migration (not managed by Spring Boot BOM)
+            // Database & Migration
             dependency "io.hypersistence:hypersistence-utils-hibernate-60:${hypersistenceVersion}"
             
-            // Data & Testing (not managed by Spring Boot BOM)
+            // Data & Testing
             dependency "net.datafaker:datafaker:${datafakerVersion}"
             
-            // Excel & Document Processing (POI managed by Spring Boot BOM, others not)
+            // Excel & Document Processing
             dependency "org.apache.poi:poi:${poiVersion}"
             dependency "org.apache.poi:poi-ooxml:${poiVersion}"
             dependency "org.jxls:jxls:${jxlsVersion}"
@@ -87,21 +87,21 @@ subprojects {
             dependency "org.jxls:jxls-jexcel:${jxlsJexcelVersion}"
             dependency "org.apache.commons:commons-csv:${commonsCsvVersion}"
             
-            // Java Parser (not managed by Spring Boot BOM)
+            // Java Parser
             dependency "com.github.javaparser:javaparser-core:${javaparserVersion}"
             dependency "com.github.javaparser:javaparser-symbol-solver-core:${javaparserVersion}"
             
-            // Event & Integration (not managed by Spring Boot BOM)
+            // Event & Integration
             dependency "io.nats:jnats:${jnatsVersion}"
             
-            // Auth & Security (not managed by Spring Boot BOM)
+            // Auth & Security
             dependency "com.google.guava:guava:${guavaVersion}"
             dependency "com.google.code.findbugs:jsr305:${jsr305Version}"
             
-            // UUID (not managed by Spring Boot BOM)
+            // UUID
             dependency "com.github.f4b6a3:uuid-creator:${uuidCreatorVersion}"
             
-            // MyBatis (not managed by Spring Boot BOM)
+            // MyBatis
             dependency "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisSpringBootVersion}"
             
             // Searchable JPA Dependencies (some managed by Spring Boot BOM)

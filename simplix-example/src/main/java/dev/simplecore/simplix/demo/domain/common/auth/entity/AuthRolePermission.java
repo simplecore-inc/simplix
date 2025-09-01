@@ -16,38 +16,38 @@ import jakarta.persistence.*;
 @Getter
 @Setter
 @Table(name = "auth_role_permission")
-@Comment("Role Permission: Role-specific permission settings")
+@Comment("Role Permission - Role-specific permission settings")
 public class AuthRolePermission extends BaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name="role_permission_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("Role Permission ID: Unique UUID Version 7 used in the system")
+    @Comment("Role Permission ID - Unique UUID Version 7 used in the system")
     private String rolePermissionId;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "auth_permission_id", nullable = false)
-    @Comment("Permission: Permission for this setting")
+    @Comment("Permission - Permission for this setting")
     private AuthPermission permission;
 
     @Column(nullable = false)
-    @Comment("Permission Scope: Scope of the target to which the permission applies")
+    @Comment("Permission Scope - Scope of the target to which the permission applies")
     private PermissionTargetType targetType;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_role_id")
-    @Comment("Role: The role to which this permission belongs")
+    @Comment("Role - The role to which this permission belongs")
     private UserRole role;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_organization_id")
-    @Comment("Organization: The organization to which this permission belongs")
+    @Comment("Organization - The organization to which this permission belongs")
     private UserOrganization organization;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_account_id")
-    @Comment("User: The user to whom this permission belongs")
+    @Comment("User - The user to whom this permission belongs")
     private UserAccount userAccount;
 
     @Column(nullable = false)
@@ -93,7 +93,7 @@ public class AuthRolePermission extends BaseEntity<String> {
     //----------------------------------
 
     @Column(length = 500)
-    @Comment("Description: Detailed description")
+    @Comment("Description - Detailed description")
     private String description;
 
     //----------------------------------

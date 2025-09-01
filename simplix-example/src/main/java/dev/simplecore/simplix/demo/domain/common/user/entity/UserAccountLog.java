@@ -15,14 +15,14 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @Table(name = "user_account_log")
-@Comment("User Account Log: Change history and audit trail for user account modifications")
+@Comment("User Account Log - Change history and audit trail for user account modifications")
 public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> {
 
     @EmbeddedId
     private UserAccountLogId logId;
 
     @Column(name = "log_message")
-    @Comment("Log Message: Change details")
+    @Comment("Log Message - Change details")
     private String logMessage;
 
     //----------------------------------
@@ -50,11 +50,11 @@ public class UserAccountLog extends BaseEntity<UserAccountLog.UserAccountLogId> 
     public static class UserAccountLogId implements SimpliXCompositeKey {
         
         @Column(name = "user_id", nullable = false, length = 36)
-        @Comment("User ID: Unique UUID used in the system")
+        @Comment("User ID - Unique UUID used in the system")
         private String userId;
         
         @Column(name = "log_time")
-        @Comment("Log Time: Log timestamp")
+        @Comment("Log Time - Log timestamp")
         private OffsetDateTime logTime;
         
         @Override

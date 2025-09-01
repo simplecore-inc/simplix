@@ -27,7 +27,7 @@ import dev.simplecore.simplix.core.hibernate.UuidV7Generator;
 @Getter
 @Setter
 @Table(name = "code_group")
-@Comment("Code Group: Code group information")
+@Comment("Code Group - Code group information")
 @TreeEntityAttributes(
     tableName = "code_group",
     idColumn = "code_group_id",
@@ -44,47 +44,47 @@ public class CodeGroup extends AuditingBaseEntity<String> implements TreeEntity<
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name = "code_group_id", length = 36, nullable = false, updatable = false, unique = true)
-    @Comment("Code Group ID: Unique UUID Version 7 used in the system")
+    @Comment("Code Group ID - Unique UUID Version 7 used in the system")
     private String codeGroupId;
 
     @Column(name = "group_key", length = 50, nullable = false)
-    @Comment("Group Key: Code key")
+    @Comment("Group Key - Code key")
     private String groupKey;
 
     @Column(name = "group_name", length = 200, nullable = false)
-    @Comment("Group Name: Group Name")
+    @Comment("Group Name - Group Name")
     private String groupName;
 
     @Convert(converter = JsonMapConverter.class)
     @Column(name = "group_name_i18n", length = 2000, nullable = false)
-    @Comment("[i18n] Group Name: Group Name")
+    @Comment("[i18n] Group Name - Group Name")
     private Map<String, String> groupNameI18n;
 
     @Column(name = "description", length = 2000, nullable = false)
-    @Comment("Description: Description of the code group")
+    @Comment("Description - Description of the code group")
     private String description;
 
     @Convert(converter = JsonMapConverter.class)
     @Column(name = "description_i18n", columnDefinition = "TEXT", nullable = true)
-    @Comment("[i18n] Description: Description of the code group")
+    @Comment("[i18n] Description - Description of the code group")
     private Map<String, String> descriptionI18n;
 
     @Column(name = "sort_order", nullable = false)
-    @Comment("Sort Order: Sort order")
+    @Comment("Sort Order - Sort order")
     private Integer sortOrder = 999999;
 
     @Column(name = "is_active", nullable = false)
-    @Comment("Is Active: Is active")
+    @Comment("Is Active - Is active")
     private Boolean isActive = true;
 
     @Column(name = "parent_id")
-    @Comment("Parent ID: Parent ID")
+    @Comment("Parent ID - Parent ID")
     private String parentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = true, insertable = false, updatable = false,
             foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
-    @Comment("Parent Group: Parent group")
+    @Comment("Parent Group - Parent group")
     @JsonIncludeProperties({"codeGroupId", "groupKey", "groupName",
             "groupNameI18n", "description", "descriptionI18n", "sortOrder", "isActive"})
     @NotFound(action = NotFoundAction.IGNORE)

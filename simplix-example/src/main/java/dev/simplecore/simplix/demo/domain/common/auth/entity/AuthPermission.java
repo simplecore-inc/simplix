@@ -13,23 +13,23 @@ import jakarta.persistence.*;
 @Getter
 @Setter
 @Table(name = "auth_permission")
-@Comment("Permission Settings: Access permission settings for each function in the system")
+@Comment("Permission Settings - Access permission settings for each function in the system")
 public class AuthPermission extends BaseEntity<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
     @UuidV7Generator
     @Column(name="permission_id", unique = true, nullable = false, updatable = false, length = 36)
-    @Comment("Permission ID: Unique UUID Version 7 used in the system")
+    @Comment("Permission ID - Unique UUID Version 7 used in the system")
     private String permissionId;
 
     @Column(nullable = false, unique = true)
-    @Comment("Permission Code: Code name for the permission used in the system")
+    @Comment("Permission Code - Code name for the permission used in the system")
     @DisplayName(description = "Permission code for display")
     private String name;  // 예: USER, BOARD, ...
 
     @Column(length = 500)
-    @Comment("Permission Description: Detailed description and purpose of the permission")
+    @Comment("Permission Description - Detailed description and purpose of the permission")
     private String description;
 
     @Column(nullable = false)
