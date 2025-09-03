@@ -226,7 +226,7 @@ show_build_results() {
     case "$build_type" in
         1|2)
             echo -e "${CYAN}Generated JAR files:${NC}"
-            find . -name "*.jar" -path "*/build/libs/*" -not -path "*/simplix-example/*" | while read jar; do
+            find . -name "*.jar" -path "*/build/libs/*" | while read jar; do
                 echo "  📦 $jar"
             done
             ;;

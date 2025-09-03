@@ -1,5 +1,0 @@
-role_id,name,role,description,item_order,created_by,created_at,updated_by,updated_at
-771e8400-e29b-41d4-a716-446655440000,시스템 관리자,ROLE_ADMIN,System Administrator,1,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
-771e8400-e29b-41d4-a716-446655440001,부서장,ROLE_MANAGER,Organization Manager,2,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
-771e8400-e29b-41d4-a716-446655440002,일반 사용자,ROLE_USER,Normal User,3,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
-771e8400-e29b-41d4-a716-446655440003,게스트 사용자,ROLE_GUEST,Guest User,4,system,2025-01-01 00:00:00,system,2025-01-01 00:00:00
