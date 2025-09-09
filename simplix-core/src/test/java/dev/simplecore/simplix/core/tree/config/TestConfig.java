@@ -2,6 +2,7 @@ package dev.simplecore.simplix.core.tree.config;
 
 import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
+import jakarta.persistence.EntityManagerFactory;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -17,7 +18,6 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import jakarta.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.Properties;
 

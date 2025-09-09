@@ -1,12 +1,12 @@
 package dev.simplecore.simplix.web.config;
 
+import jakarta.servlet.*;
 import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import jakarta.servlet.*;
 import java.io.IOException;
 
 @AutoConfiguration

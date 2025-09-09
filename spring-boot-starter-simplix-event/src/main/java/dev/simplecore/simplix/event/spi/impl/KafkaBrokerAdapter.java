@@ -6,6 +6,8 @@ import dev.simplecore.simplix.event.properties.SimpliXEventProperties;
 import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
 import dev.simplecore.simplix.event.util.PayloadConverter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
@@ -17,8 +19,6 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

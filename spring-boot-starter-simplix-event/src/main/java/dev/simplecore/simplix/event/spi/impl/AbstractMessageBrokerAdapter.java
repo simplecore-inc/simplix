@@ -7,11 +7,11 @@ import dev.simplecore.simplix.event.service.SimpliXEventReceiver;
 import dev.simplecore.simplix.event.spi.MessageBrokerAdapter;
 import dev.simplecore.simplix.event.util.PayloadConverter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.retry.support.RetryTemplate;
 
-import jakarta.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

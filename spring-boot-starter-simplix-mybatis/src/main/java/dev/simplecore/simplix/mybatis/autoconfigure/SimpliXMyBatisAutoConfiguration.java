@@ -9,12 +9,11 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 
 @AutoConfiguration(after = MybatisAutoConfiguration.class)
 @ConditionalOnClass({ SqlSessionTemplate.class, SqlSessionFactoryBean.class })

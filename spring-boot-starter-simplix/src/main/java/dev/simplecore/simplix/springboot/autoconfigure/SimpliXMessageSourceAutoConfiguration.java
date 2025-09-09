@@ -24,8 +24,8 @@ import org.springframework.web.servlet.i18n.CookieLocaleResolver;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
-import java.util.Arrays;
 
 /**
  * SimpliX MessageSource Auto-configuration for comprehensive i18n support.
@@ -52,7 +52,7 @@ import java.util.Arrays;
  * </pre>
  */
 @Slf4j
-@AutoConfiguration(before = MessageSourceAutoConfiguration.class)
+@AutoConfiguration(before = {MessageSourceAutoConfiguration.class, org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class})
 @Order(0)
 @ConditionalOnProperty(prefix = "simplix.message-source", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
@@ -189,14 +189,15 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
 
     /**
      * Locale resolver with sensible defaults
+     * Using @Primary to override Spring Boot's default AcceptHeaderLocaleResolver
+     * This bean must be created before Spring Boot's WebMvcAutoConfiguration
      */
-    @Bean
-    @ConditionalOnMissingBean
+    @Bean(name = "localeResolver")
+    @Primary
     public LocaleResolver localeResolver() {
-        CookieLocaleResolver resolver = new CookieLocaleResolver();
+        CookieLocaleResolver resolver = new CookieLocaleResolver("locale");
         resolver.setDefaultLocale(Locale.ENGLISH); // Default to English
-        resolver.setCookieName("locale");
-        resolver.setCookieMaxAge(3600 * 24 * 30); // 30 days
+        resolver.setCookieMaxAge(Duration.ofDays(30)); // 30 days
         log.info("LocaleResolver configured with default locale: {}", Locale.ENGLISH);
         return resolver;
     }

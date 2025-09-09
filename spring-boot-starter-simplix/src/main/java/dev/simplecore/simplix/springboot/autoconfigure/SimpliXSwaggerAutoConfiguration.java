@@ -4,7 +4,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.properties.SpringDocConfigProperties;
-import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -12,8 +11,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
-
-import java.util.stream.Collectors;
 
 /**
  * Auto-configuration for Swagger/OpenAPI documentation.
@@ -61,23 +58,6 @@ public class SimpliXSwaggerAutoConfiguration {
         properties.setApiDocs(new SpringDocConfigProperties.ApiDocs());
         properties.getApiDocs().setPath("/v3/api-docs");
         return properties;
-    }
-
-    @Bean
-    public OpenApiCustomizer sortOperationsCustomiser() {
-        return openApi -> {
-            if (openApi.getTags() != null) {
-                openApi.setTags(openApi.getTags().stream()
-                    .sorted((t1, t2) -> {
-                        String path1 = getMainPath(t1.getName());
-                        String path2 = getMainPath(t2.getName());
-                        int mainCompare = path1.compareTo(path2);
-                        if (mainCompare != 0) return mainCompare;
-                        return t1.getName().compareTo(t2.getName());
-                    })
-                    .collect(Collectors.toList()));
-            }
-        };
     }
 
     private String getMainPath(String name) {

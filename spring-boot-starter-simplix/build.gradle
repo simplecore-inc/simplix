@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
@@ -97,6 +99,10 @@ test {
     useJUnitPlatform()
 }
 
+compileJava {
+    options.compilerArgs << "-Xlint:deprecation"
+}
+
 compileJava.inputs.files(processResources)
 
 processResources {
@@ -104,7 +110,7 @@ processResources {
     def springBootVer = springBootVersion
     
     filesMatching(['**/banner.txt', '**/config/application-info.txt']) {
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [
+        filter(ReplaceTokens, tokens: [
             'simplix.version': projectVersion,
             'spring-boot.version': springBootVer
         ])

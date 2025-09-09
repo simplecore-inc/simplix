@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
 import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -8,7 +9,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
-import jakarta.annotation.PostConstruct;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.TimeZone;

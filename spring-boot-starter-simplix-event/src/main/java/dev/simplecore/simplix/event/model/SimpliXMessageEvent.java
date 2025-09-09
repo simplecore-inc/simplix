@@ -1,9 +1,10 @@
 package dev.simplecore.simplix.event.model;
 
+import dev.simplecore.simplix.core.util.UuidUtils;
+
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import dev.simplecore.simplix.core.util.UuidUtils;
 
 /**
  * Represents a message event in the SimpliX Event system.
