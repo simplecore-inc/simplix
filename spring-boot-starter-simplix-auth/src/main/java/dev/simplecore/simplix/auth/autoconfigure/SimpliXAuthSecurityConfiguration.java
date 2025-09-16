@@ -69,10 +69,17 @@ public class SimpliXAuthSecurityConfiguration {
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
     public SecurityFilterChain tokenSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatchers(matchers -> matchers.requestMatchers("/api/token/**"))
+            .securityMatchers(matchers -> matchers
+                .requestMatchers(request -> {
+                    String path = request.getServletPath();
+                    return path.endsWith("/auth/token/issue") ||
+                           path.endsWith("/auth/token/refresh") ||
+                           path.contains("/auth/token/");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/token/**").permitAll())
+                .anyRequest().permitAll())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
