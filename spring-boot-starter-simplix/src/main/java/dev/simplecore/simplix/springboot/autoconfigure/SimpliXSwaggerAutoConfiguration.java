@@ -1,5 +1,7 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
+import dev.simplecore.simplix.web.config.EnumSchemaExtractor;
+import dev.simplecore.simplix.web.config.NestedObjectSchemaExtractor;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 
 /**
@@ -44,6 +47,7 @@ import org.springframework.context.annotation.Primary;
 @ConditionalOnClass(OpenAPI.class)
 @EnableConfigurationProperties(SpringDocConfigProperties.class)
 @ConditionalOnProperty(prefix = "springdoc.api-docs", name = "enabled", havingValue = "true", matchIfMissing = true)
+@Import({EnumSchemaExtractor.class, NestedObjectSchemaExtractor.class})
 public class SimpliXSwaggerAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(SimpliXSwaggerAutoConfiguration.class);
