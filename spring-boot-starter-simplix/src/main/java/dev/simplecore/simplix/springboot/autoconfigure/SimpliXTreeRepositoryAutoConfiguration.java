@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
+import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import org.slf4j.Logger;
@@ -21,25 +22,25 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.lang.annotation.*;
 
 /**
- * Auto-configuration for SimpliX Tree Repository support.
- * 
- * <p>This configuration automatically provides tree repository functionality when:
+ * Auto-configuration for SimpliX Repository support (including tree repositories).
+ *
+ * <p>This configuration automatically provides both standard JPA and tree repository functionality when:
  * <ul>
- *   <li>TreeRepositoryFactoryBean is on the classpath</li>
+ *   <li>SimpliXRepositoryFactoryBean is on the classpath</li>
  *   <li>JPA repositories are enabled</li>
  *   <li>A DataSource is available</li>
  * </ul>
- * 
+ *
  * <p>Configure in application.yml:
  * <pre>
  * simplix:
  *   tree-repository:
  *     enabled: true                                    # Enable/disable tree repository (default: true)
  * </pre>
- * 
+ *
  * <p>Usage example:
  * <pre>{@code
- * // 1. Entity configuration
+ * // 1. Entity configuration (for tree entities)
  * @Entity
  * @TreeEntityAttributes(
  *     tableName = "categories",
@@ -50,22 +51,28 @@ import java.lang.annotation.*;
  * public class Category implements TreeEntity<Category, Long> {
  *     // Entity implementation
  * }
- * 
- * // 2. Repository interface
+ *
+ * // 2. Repository interfaces
+ * // Tree repository
  * public interface CategoryRepository extends SimpliXTreeRepository<Category, Long> {
- *     // Additional custom methods if needed
+ *     // Automatically gets tree functionality
  * }
- * 
- * // 3. Main application class - Option 1: Auto-scan (recommended)
+ *
+ * // Standard JPA repository (also works!)
+ * public interface UserRepository extends JpaRepository<User, Long> {
+ *     // Works as usual
+ * }
+ *
+ * // 3. Main application class - Option 1: Using SimpliXRepositoryFactoryBean (recommended)
  * @SpringBootApplication
- * @EnableSimplixTreeRepositories
+ * @EnableJpaRepositories(repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class)
  * public class Application {
  *     public static void main(String[] args) {
  *         SpringApplication.run(Application.class, args);
  *     }
  * }
- * 
- * // 3. Main application class - Option 2: Specific packages
+ *
+ * // 3. Main application class - Option 2: Using @EnableSimplixTreeRepositories (legacy)
  * @SpringBootApplication
  * @EnableSimplixTreeRepositories(basePackages = "com.example.domain")
  * public class Application {
@@ -74,17 +81,18 @@ import java.lang.annotation.*;
  *     }
  * }
  * }</pre>
- * 
+ *
  * <p>The auto-configuration will:
  * <ul>
- *   <li>Automatically enable JPA repositories with TreeRepositoryFactoryBean</li>
+ *   <li>Automatically enable JPA repositories with SimpliXRepositoryFactoryBean</li>
  *   <li>Provide JdbcTemplate bean if not already present</li>
- *   <li>Scan specified base packages for tree repositories</li>
+ *   <li>Auto-detect and handle both tree and standard repositories</li>
+ *   <li>No need for exclude filters or separate configurations</li>
  * </ul>
  */
 @Configuration
 @AutoConfiguration(after = JpaRepositoriesAutoConfiguration.class)
-@ConditionalOnClass({TreeRepositoryFactoryBean.class, SimpliXTreeRepository.class, TreeEntity.class})
+@ConditionalOnClass({SimpliXRepositoryFactoryBean.class, SimpliXTreeRepository.class, TreeEntity.class})
 @ConditionalOnProperty(prefix = "simplix.tree-repository", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXTreeRepositoryAutoConfiguration {
 
@@ -104,13 +112,28 @@ public class SimpliXTreeRepositoryAutoConfiguration {
     }
 
     /**
-     * Annotation to enable SimpliX Tree Repository support.
-     * This is a convenience annotation that wraps @EnableJpaRepositories with TreeRepositoryFactoryBean.
-     * 
-     * Usage:
+     * Annotation to enable SimpliX Repository support (tree and standard repositories).
+     * This is a convenience annotation that wraps @EnableJpaRepositories with SimpliXRepositoryFactoryBean.
+     *
+     * <p>The SimpliXRepositoryFactoryBean automatically detects and handles:
+     * <ul>
+     *   <li>Tree repositories (extending SimpliXTreeRepository)</li>
+     *   <li>Standard JPA repositories (extending JpaRepository)</li>
+     * </ul>
+     *
+     * <p>Usage:
      * <pre>{@code
      * @SpringBootApplication
      * @EnableSimplixTreeRepositories
+     * public class Application {
+     *     // ...
+     * }
+     * }</pre>
+     *
+     * <p>Alternative (more explicit):
+     * <pre>{@code
+     * @SpringBootApplication
+     * @EnableJpaRepositories(repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class)
      * public class Application {
      *     // ...
      * }
@@ -119,7 +142,7 @@ public class SimpliXTreeRepositoryAutoConfiguration {
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
-    @EnableJpaRepositories(repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class)
+    @EnableJpaRepositories(repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class)
     public @interface EnableSimplixTreeRepositories {
         
         /**
