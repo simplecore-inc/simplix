@@ -16,8 +16,20 @@ public class SimpliXAuthEnvironmentPostProcessor implements EnvironmentPostProce
         
         // Default settings
         defaults.put("simplix.auth.enabled", true);
-        defaults.put("simplix.auth.access-token-validity-minutes", 60);
-        defaults.put("simplix.auth.refresh-token-validity-days", 30);
+
+        // Token settings
+        defaults.put("simplix.auth.token.access-token-expiration-minutes", 30);
+        defaults.put("simplix.auth.token.refresh-token-expiration-days", 7);
+        defaults.put("simplix.auth.token.enable-ip-validation", false);
+        defaults.put("simplix.auth.token.enable-user-agent-validation", false);
+        defaults.put("simplix.auth.token.enable-token-rotation", true);
+        defaults.put("simplix.auth.token.enable-blacklist", false);
+        defaults.put("simplix.auth.token.blacklist-type", "auto");
+        defaults.put("simplix.auth.token.create-session-on-token-issue", true);
+
+        // Session timeout (match access token expiration)
+        defaults.put("server.servlet.session.timeout", "30m");
+
         defaults.put("simplix.auth.login-page-template", "login");
         defaults.put("simplix.auth.login-processing-url", "/login");
         defaults.put("simplix.auth.logout-url", "/logout");

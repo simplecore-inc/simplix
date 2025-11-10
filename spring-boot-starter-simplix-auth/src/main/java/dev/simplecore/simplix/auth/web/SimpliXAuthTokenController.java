@@ -2,6 +2,7 @@ package dev.simplecore.simplix.auth.web;
 
 import com.nimbusds.jose.JOSEException;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
+import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,7 +29,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,6 +49,8 @@ public class SimpliXAuthTokenController {
     private final SimpliXJweTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final MessageSource messageSource;
+    private final SimpliXAuthProperties properties;
+    private final dev.simplecore.simplix.auth.security.SimpliXUserDetailsService userDetailsService;
 
     @Operation(
             summary = "Issue JWE token",
@@ -91,13 +97,26 @@ public class SimpliXAuthTokenController {
             Authentication authentication = authenticationManager.authenticate(authRequest);
 
             // Set authentication in SecurityContextHolder
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            SecurityContext context = SecurityContextHolder.getContext();
+            context.setAuthentication(authentication);
 
             SimpliXJweTokenProvider.TokenResponse tokens = tokenProvider.createTokenPair(
                     authentication.getName(),
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent")
             );
+
+            // Create session if configured
+            if (properties.getToken().isCreateSessionOnTokenIssue()) {
+                HttpSession session = request.getSession(true);
+
+                // Set session timeout to match access token expiration
+                int timeoutSeconds = properties.getToken().getAccessTokenExpirationMinutes() * 60;
+                session.setMaxInactiveInterval(timeoutSeconds);
+
+                // Save SecurityContext to session
+                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+            }
 
             return ResponseEntity.ok(tokens);
         } catch (AuthenticationException e) {
@@ -161,11 +180,38 @@ public class SimpliXAuthTokenController {
                 );
             }
 
+            // Parse refresh token to extract username for session renewal
+            var claims = tokenProvider.parseToken(refreshToken);
+            String username = claims.getSubject();
+
             SimpliXJweTokenProvider.TokenResponse tokens = tokenProvider.refreshTokens(
                     refreshToken,
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent")
             );
+
+            // Update session with renewed authentication
+            // This ensures the session is updated when tokens are refreshed
+            var userDetails = userDetailsService.loadUserByUsername(username);
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    userDetails,
+                    null,
+                    userDetails.getAuthorities()
+            );
+            SecurityContext context = SecurityContextHolder.getContext();
+            context.setAuthentication(authentication);
+
+            // Renew session if configured (creates new session if expired)
+            if (properties.getToken().isCreateSessionOnTokenIssue()) {
+                HttpSession session = request.getSession(true);
+
+                // Reset session timeout to match access token expiration
+                int timeoutSeconds = properties.getToken().getAccessTokenExpirationMinutes() * 60;
+                session.setMaxInactiveInterval(timeoutSeconds);
+
+                // Save SecurityContext to session
+                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+            }
 
             return ResponseEntity.ok(tokens);
         } catch (Exception e) {

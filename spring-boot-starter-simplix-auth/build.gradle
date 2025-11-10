@@ -63,6 +63,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
+    // Optional blacklist implementations (compileOnly = available at compile time, optional at runtime)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
+
     // OpenAPI/Swagger
     api 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
     api 'org.springdoc:springdoc-openapi-starter-webmvc-api'

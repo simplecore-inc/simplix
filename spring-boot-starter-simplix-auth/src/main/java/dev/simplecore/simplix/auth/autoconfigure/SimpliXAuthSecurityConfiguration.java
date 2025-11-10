@@ -6,6 +6,7 @@ import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
 import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter;
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +17,9 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -31,30 +34,15 @@ import java.util.Arrays;
 
 @AutoConfiguration
 @EnableWebSecurity
+@ConditionalOnBean(SimpliXUserDetailsService.class)
 @ConditionalOnProperty(prefix = "simplix.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXAuthSecurityConfiguration {
 
     private final SimpliXAuthProperties properties;
-    private final SimpliXUserDetailsService userDetailsService;
-    private final SimpliXTokenAuthenticationFilter tokenAuthenticationFilter;
-    private final SimpliXAuthenticationEntryPoint authenticationEntryPoint;
-    private final SimpliXAccessDeniedHandler accessDeniedHandler;
 
-    public SimpliXAuthSecurityConfiguration(
-            SimpliXAuthProperties properties,
-            SimpliXUserDetailsService userDetailsService,
-            SimpliXTokenAuthenticationFilter tokenAuthenticationFilter,
-            SimpliXAuthenticationEntryPoint authenticationEntryPoint,
-            SimpliXAccessDeniedHandler accessDeniedHandler) {
+    public SimpliXAuthSecurityConfiguration(SimpliXAuthProperties properties) {
         this.properties = properties;
-        this.userDetailsService = userDetailsService;
-        this.tokenAuthenticationFilter = tokenAuthenticationFilter;
-        this.authenticationEntryPoint = authenticationEntryPoint;
-        this.accessDeniedHandler = accessDeniedHandler;
     }
-
-    // AuthenticationProvider는 Spring Security가 자동으로 설정하므로 별도 빈 정의 불필요
-    // UserDetailsService와 PasswordEncoder만 제공하면 됨
 
     @Bean
     @ConditionalOnMissingBean
@@ -64,6 +52,16 @@ public class SimpliXAuthSecurityConfiguration {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Security filter chain for token issuance and refresh endpoints.
+     * This chain ignores existing session authentication (not used for authentication),
+     * but creates/renews session after successful token issuance.
+     *
+     * Behavior:
+     * - Existing session authentication is NOT used for token issuance (uses Basic auth instead)
+     * - After successful token issuance, the authentication is stored in session
+     * - If JSESSIONID exists, session is renewed; otherwise, new session is created
+     */
     @Bean
     @Order(100)
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
@@ -80,8 +78,10 @@ public class SimpliXAuthSecurityConfiguration {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().permitAll())
+            // IF_REQUIRED policy: does not read session for authentication,
+            // but stores authentication in session after successful token issuance
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable);
         return http.build();
@@ -89,7 +89,11 @@ public class SimpliXAuthSecurityConfiguration {
 
     @Bean
     @Order(101)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apiSecurityFilterChain(
+            HttpSecurity http,
+            SimpliXTokenAuthenticationFilter tokenAuthenticationFilter,
+            SimpliXAuthenticationEntryPoint authenticationEntryPoint,
+            SimpliXAccessDeniedHandler accessDeniedHandler) throws Exception {
         // Get permit patterns for API endpoints
         String[] apiPermitPatterns = getApiPermitPatterns();
 
@@ -118,7 +122,9 @@ public class SimpliXAuthSecurityConfiguration {
     @Bean
     @Order(102)
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-web-security", havingValue = "true", matchIfMissing = true)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain webSecurityFilterChain(
+            HttpSecurity http,
+            SimpliXUserDetailsService userDetailsService) throws Exception {
         final String loginPage = properties.getSecurity().getLoginPageTemplate().startsWith("/") ? 
             properties.getSecurity().getLoginPageTemplate() : "/" + properties.getSecurity().getLoginPageTemplate();
         
@@ -166,7 +172,7 @@ public class SimpliXAuthSecurityConfiguration {
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .userDetailsService(userDetailsService)
             .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+                .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 .contentSecurityPolicy(csp -> csp
                     .policyDirectives("default-src * 'unsafe-inline' 'unsafe-eval'; " +
                                     "script-src * 'unsafe-inline' 'unsafe-eval'; " +
@@ -199,7 +205,7 @@ public class SimpliXAuthSecurityConfiguration {
         // Security headers configuration
         if (properties.getSecurity() != null) {
             http.headers(headers -> {
-                headers.frameOptions(frameOptions -> frameOptions.sameOrigin());
+                headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin);
             });
         }
 
@@ -258,6 +264,12 @@ public class SimpliXAuthSecurityConfiguration {
     @ConditionalOnMissingBean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+            .requestMatchers("/.well-known/appspecific/**");
     }
 
     private String[] combineArrays(String[] arr1, String[] arr2) {

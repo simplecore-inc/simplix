@@ -8,6 +8,7 @@ import lombok.Setter;
 public class SimpliXAuthProperties {
     private boolean enabled = true;
     private JweProperties jwe = new JweProperties();
+    private TokenProperties token = new TokenProperties();
     private Security security = new Security();
     private CorsProperties cors = new CorsProperties();
 
@@ -22,6 +23,7 @@ public class SimpliXAuthProperties {
         private boolean enableHsts = false;
         private boolean enableHttpBasic = false;
         private boolean requireHttps = false;
+        private boolean preferTokenOverSession = true;
         private long hstsMaxAgeSeconds = 31536000L;
         private String[] csrfIgnorePatterns = new String[]{"/api/token/**", "/h2-console/**"};
         private String loginPageTemplate = "login";
@@ -48,5 +50,27 @@ public class SimpliXAuthProperties {
         private String encryptionKeyLocation;
         private String algorithm = "RSA-OAEP-256";
         private String encryptionMethod = "A256GCM";
+    }
+
+    @Getter
+    @Setter
+    public static class TokenProperties {
+        // Token expiration
+        private int accessTokenExpirationMinutes = 30;
+        private int refreshTokenExpirationDays = 7;
+
+        // Security validation
+        private boolean enableIpValidation = false;
+        private boolean enableUserAgentValidation = false;
+
+        // Token management
+        private boolean enableTokenRotation = true;
+
+        // Blacklist (optional feature)
+        private boolean enableBlacklist = false;
+        private String blacklistType = "auto";  // auto, redis, caffeine, memory
+
+        // Session management
+        private boolean createSessionOnTokenIssue = true;
     }
 } 

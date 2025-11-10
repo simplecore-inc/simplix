@@ -237,8 +237,6 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
         
         @Override
         public String getMessage(String code, Object[] args, String defaultMessage, Locale locale) {
-            log.debug("Searching for message '{}' with locale '{}'", code, locale);
-            
             // Search through all message sources for the exact locale
             for (MessageSource source : messageSources) {
                 try {
@@ -258,8 +256,6 @@ public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {
         
         @Override
         public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException {
-            log.debug("Searching for message '{}' with locale '{}'", code, locale);
-            
             // Search through all message sources for the exact locale
             for (MessageSource source : messageSources) {
                 try {

@@ -1,6 +1,6 @@
 package dev.simplecore.simplix.core.tree.config;
 
-import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
+import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -27,7 +27,7 @@ import java.util.Properties;
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
-    repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class,
+    repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class,
     repositoryBaseClass = SimpliXTreeRepositoryImpl.class
 )
 public class TestConfig {

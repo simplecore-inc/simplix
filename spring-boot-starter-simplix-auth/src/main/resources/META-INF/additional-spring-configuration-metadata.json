@@ -55,6 +55,12 @@
       "defaultValue": false
     },
     {
+      "name": "simplix.auth.security.prefer-token-over-session",
+      "type": "java.lang.Boolean",
+      "description": "Whether to prioritize Bearer token authentication over session authentication when both are present. When true, if a request contains both a valid Bearer token and a session cookie (JSESSIONID), the token will be used for authentication and the session will be ignored.",
+      "defaultValue": true
+    },
+    {
       "name": "simplix.auth.security.hsts-max-age-seconds",
       "type": "java.lang.Long",
       "description": "HSTS max age in seconds.",
@@ -149,38 +155,57 @@
       "type": "java.lang.String",
       "description": "JWE encryption method.",
       "defaultValue": "A256GCM"
+    },
+    {
+      "name": "simplix.auth.token.access-token-expiration-minutes",
+      "type": "java.lang.Integer",
+      "description": "Access token expiration time in minutes. The access token is used for API authentication and should have a shorter lifetime for security.",
+      "defaultValue": 30
+    },
+    {
+      "name": "simplix.auth.token.refresh-token-expiration-days",
+      "type": "java.lang.Integer",
+      "description": "Refresh token expiration time in days. The refresh token is used to obtain new access tokens without re-authentication.",
+      "defaultValue": 7
+    },
+    {
+      "name": "simplix.auth.token.enable-ip-validation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to validate client IP address in token. When enabled, tokens can only be used from the same IP address where they were issued. Disable this for mobile apps and environments with changing IP addresses.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.enable-user-agent-validation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to validate User-Agent header in token. When enabled, tokens can only be used from the same browser/client where they were issued. Disable this if User-Agent changes frequently.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.enable-token-rotation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable token rotation. When enabled, a new token pair is issued upon each refresh, and the old refresh token is invalidated.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.token.enable-blacklist",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable token blacklist for revocation. When enabled, tokens can be explicitly revoked (e.g., on logout). Requires a blacklist implementation (Redis, Caffeine, or In-Memory).",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.blacklist-type",
+      "type": "java.lang.String",
+      "description": "Token blacklist implementation type. 'auto' will automatically select Redis if available, otherwise Caffeine, then In-Memory.",
+      "defaultValue": "auto"
+    },
+    {
+      "name": "simplix.auth.token.create-session-on-token-issue",
+      "type": "java.lang.Boolean",
+      "description": "Whether to create HTTP session when issuing tokens. When enabled, both token and session authentication are available. When disabled, only token-based authentication is used (stateless).",
+      "defaultValue": true
     }
   ],
   "hints": [
-    {
-      "name": "simplix.auth.security.permit-all-patterns",
-      "values": [
-        {
-          "value": "/public/**",
-          "description": "Public static resources"
-        },
-        {
-          "value": "/api/public/**",
-          "description": "Public API endpoints"
-        },
-        {
-          "value": "/health/**",
-          "description": "Health check endpoints"
-        },
-        {
-          "value": "/actuator/health",
-          "description": "Spring Boot Actuator health endpoint"
-        },
-        {
-          "value": "/swagger-ui/**",
-          "description": "Swagger UI resources"
-        },
-        {
-          "value": "/v3/api-docs/**",
-          "description": "OpenAPI documentation"
-        }
-      ]
-    },
     {
       "name": "simplix.auth.jwe.algorithm",
       "values": [

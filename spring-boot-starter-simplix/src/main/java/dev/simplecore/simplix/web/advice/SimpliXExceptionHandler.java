@@ -20,6 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -330,7 +331,41 @@ public class SimpliXExceptionHandler<T> {
         
         // Add trace ID to response header and MDC for logging
         addTraceIdToResponse(errorResponse, request);
-        
+
+        return errorResponse;
+    }
+
+    /**
+     * Handle NoResourceFoundException (404) without logging as error
+     * Static resources not found should not trigger internal server errors
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @Order(10)
+    public T handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
+        // Log at DEBUG level only - this is not an error
+        if (log.isDebugEnabled()) {
+            log.debug("Resource not found: {}", request.getRequestURI());
+        }
+
+        String message = messageSource.getMessage(
+            "error.resource.not.found",
+            null,
+            "Resource not found",
+            LocaleContextHolder.getLocale()
+        );
+
+        T errorResponse = responseFactory.createErrorResponse(
+            HttpStatus.NOT_FOUND,
+            ErrorCode.GEN_NOT_FOUND.getCode(),
+            message,
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+
         return errorResponse;
     }
 
@@ -518,20 +553,35 @@ public class SimpliXExceptionHandler<T> {
      */
     private static class DefaultResponseFactory implements ResponseFactory<SimpliXApiResponse<Object>> {
         private static final Logger log = LoggerFactory.getLogger(DefaultResponseFactory.class);
-        
+
         @Override
         public SimpliXApiResponse<Object> createErrorResponse(HttpStatus statusCode, String errorType, String message, Object detail, String path) {
             // Use error code based on HTTP status and error type
             String errorCode = errorType != null ? errorType : statusCode.name();
             SimpliXApiResponse<Object> response = SimpliXApiResponse.error(message, errorCode, detail);
-            
-            // Log error with trace ID from MDC
+
+            // Log with appropriate level based on HTTP status code
             String traceId = MDC.get("traceId");
             if (traceId != null && !traceId.isEmpty()) {
-                log.error("Error response created - TraceId: {}, Code: {}, Path: {}, Message: {}", 
-                    traceId, errorCode, path, message);
+                int status = statusCode.value();
+
+                if (status == 404) {
+                    // 404 is very common and not an error - log at DEBUG level only
+                    if (log.isDebugEnabled()) {
+                        log.debug("Resource not found - TraceId: {}, Code: {}, Path: {}",
+                            traceId, errorCode, path);
+                    }
+                } else if (status >= 400 && status < 500) {
+                    // 4xx client errors - log at WARN level
+                    log.warn("Client error response - TraceId: {}, Code: {}, Path: {}, Message: {}",
+                        traceId, errorCode, path, message);
+                } else if (status >= 500) {
+                    // 5xx server errors - log at ERROR level
+                    log.error("Server error response - TraceId: {}, Code: {}, Path: {}, Message: {}",
+                        traceId, errorCode, path, message);
+                }
             }
-            
+
             return response;
         }
     }

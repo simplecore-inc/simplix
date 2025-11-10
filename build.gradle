@@ -146,6 +146,14 @@ subprojects {
                             name: 'SimpliX Event',
                             description: 'Event library for SimpliX Framework'
                         ],
+                        'spring-boot-starter-simplix-hibernate': [
+                                name: 'Spring Boot Starter for SimpliX Hibernate',
+                                description: 'Spring Boot Starter for SimpliX Hibernate'
+                        ],
+                        'spring-boot-starter-simplix-cache': [
+                                name: 'Spring Boot Starter for SimpliX Cache',
+                                description: 'Spring Boot Starter for SimpliX Cache'
+                        ],
                         'spring-boot-starter-simplix-mybatis': [
                             name: 'Spring Boot Starter for SimpliX MyBatis',
                             description: 'Spring Boot Starter for SimpliX MyBatis'

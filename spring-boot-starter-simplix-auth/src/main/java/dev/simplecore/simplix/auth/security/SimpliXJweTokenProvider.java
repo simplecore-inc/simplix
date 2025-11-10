@@ -12,10 +12,12 @@ import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
+import dev.simplecore.simplix.auth.service.TokenBlacklistService;
 import dev.simplecore.simplix.core.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,10 +38,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Objects;
+import java.util.UUID;
 
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
@@ -47,19 +52,29 @@ public class SimpliXJweTokenProvider {
     private final SimpliXAuthProperties properties;
     private final MessageSource messageSource;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService blacklistService;
     private RSAEncrypter encrypter;
     private RSADecrypter decrypter;
 
-    public SimpliXJweTokenProvider(SimpliXAuthProperties properties, MessageSource messageSource, UserDetailsService userDetailsService) {
+    public SimpliXJweTokenProvider(
+            SimpliXAuthProperties properties,
+            MessageSource messageSource,
+            UserDetailsService userDetailsService,
+            @Autowired(required = false) TokenBlacklistService blacklistService) {
         this.properties = properties;
         this.messageSource = messageSource;
         this.userDetailsService = userDetailsService;
+        this.blacklistService = blacklistService;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public static SimpliXJweTokenProvider jweTokenProvider(SimpliXAuthProperties properties, MessageSource messageSource, UserDetailsService userDetailsService) {
-        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService);
+    public static SimpliXJweTokenProvider jweTokenProvider(
+            SimpliXAuthProperties properties,
+            MessageSource messageSource,
+            UserDetailsService userDetailsService,
+            @Autowired(required = false) TokenBlacklistService blacklistService) {
+        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService, blacklistService);
     }
 
     @PostConstruct
@@ -92,8 +107,13 @@ public class SimpliXJweTokenProvider {
 
     public TokenResponse createTokenPair(String username, String clientIp, String userAgent) throws JOSEException {
         Date now = new Date();
-        Date accessTokenExpiry = new Date(now.getTime() + 1000 * 60 * 30); // 30 minutes
-        Date refreshTokenExpiry = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7); // 7 days
+
+        // Read expiration times from properties
+        int accessMinutes = properties.getToken().getAccessTokenExpirationMinutes();
+        int refreshDays = properties.getToken().getRefreshTokenExpirationDays();
+
+        Date accessTokenExpiry = new Date(now.getTime() + accessMinutes * 60 * 1000L);
+        Date refreshTokenExpiry = new Date(now.getTime() + refreshDays * 24 * 60 * 60 * 1000L);
 
         String accessToken = createToken(username, accessTokenExpiry, clientIp, userAgent);
         String refreshToken = createToken(username, refreshTokenExpiry, clientIp, userAgent);
@@ -104,6 +124,7 @@ public class SimpliXJweTokenProvider {
     private String createToken(String subject, Date expirationTime, String clientIp, String userAgent) throws JOSEException {
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
             .subject(subject)
+            .jwtID(UUID.randomUUID().toString())  // Add JTI for blacklist support
             .issueTime(new Date())
             .expirationTime(expirationTime)
             .claim("clientIp", clientIp)
@@ -124,10 +145,11 @@ public class SimpliXJweTokenProvider {
         try {
             // Clear existing authentication
             SecurityContextHolder.clearContext();
-            
+
             // Validate refresh token and extract claims
             JWTClaimsSet claims = parseToken(refreshToken);
             String username = claims.getSubject();
+            String oldJti = claims.getJWTID();
 
             // Token validation
             if (!validateToken(refreshToken, remoteAddr, userAgent)) {
@@ -146,6 +168,21 @@ public class SimpliXJweTokenProvider {
                 remoteAddr,
                 userAgent
             );
+
+            // Blacklist old refresh token (if enabled and rotation is enabled)
+            if (properties.getToken().isEnableBlacklist() &&
+                properties.getToken().isEnableTokenRotation() &&
+                blacklistService != null) {
+
+                // Calculate remaining TTL for the old refresh token
+                Date expiryDate = claims.getExpirationTime();
+                Duration ttl = Duration.between(Instant.now(), expiryDate.toInstant());
+
+                // Add old refresh token's JTI to blacklist (only if not already expired)
+                if (ttl.toSeconds() > 0) {
+                    blacklistService.blacklist(oldJti, ttl);
+                }
+            }
 
             // Set new authentication
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -176,13 +213,28 @@ public class SimpliXJweTokenProvider {
     public boolean validateToken(String token, String remoteAddr, String userAgent) {
         try {
             JWTClaimsSet claims = parseToken(token);
-            
-            // Check token expiration
+            String jti = claims.getJWTID();
+
+            // Check blacklist (if enabled)
+            if (properties.getToken().isEnableBlacklist() && blacklistService != null) {
+                if (blacklistService.isBlacklisted(jti)) {
+                    throw new TokenValidationException(
+                        messageSource.getMessage("token.revoked", null,
+                            "Token has been revoked",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.revoked.detail", null,
+                            "This token has been invalidated",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+            }
+
+            // Check token expiration (always required)
             Date expirationTime = claims.getExpirationTime();
             if (expirationTime != null && expirationTime.before(new Date())) {
                 throw new TokenValidationException(
                     ErrorCode.AUTH_TOKEN_EXPIRED,
-                    messageSource.getMessage("token.expired", null, 
+                    messageSource.getMessage("token.expired", null,
                         "Token is expired",
                         LocaleContextHolder.getLocale()),
                     messageSource.getMessage("token.expired.detail", null,
@@ -190,35 +242,39 @@ public class SimpliXJweTokenProvider {
                         LocaleContextHolder.getLocale())
                 );
             }
-            
-            // Check IP address
-            String tokenIp = claims.getStringClaim("clientIp");
-            if (!Objects.equals(tokenIp, remoteAddr)) {
-                throw new TokenValidationException(
-                    messageSource.getMessage("token.ip.mismatch", null,
-                        "IP address mismatch",
-                        LocaleContextHolder.getLocale()),
-                    messageSource.getMessage("token.ip.mismatch.detail",
-                        new Object[]{tokenIp, remoteAddr},
-                        "Expected IP: {0}, but got: {1}",
-                        LocaleContextHolder.getLocale())
-                );
+
+            // Check IP address (optional)
+            if (properties.getToken().isEnableIpValidation()) {
+                String tokenIp = claims.getStringClaim("clientIp");
+                if (!Objects.equals(tokenIp, remoteAddr)) {
+                    throw new TokenValidationException(
+                        messageSource.getMessage("token.ip.mismatch", null,
+                            "IP address mismatch",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.ip.mismatch.detail",
+                            new Object[]{tokenIp, remoteAddr},
+                            "Expected IP: {0}, but got: {1}",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
             }
-            
-            // Check User Agent
-            String tokenUserAgent = claims.getStringClaim("userAgent");
-            if (!Objects.equals(tokenUserAgent, userAgent)) {
-                throw new TokenValidationException(
-                    messageSource.getMessage("token.useragent.mismatch", null,
-                        "User Agent mismatch",
-                        LocaleContextHolder.getLocale()),
-                    messageSource.getMessage("token.useragent.mismatch.detail",
-                        new Object[]{tokenUserAgent, userAgent},
-                        "Expected User Agent: {0}, but got: {1}",
-                        LocaleContextHolder.getLocale())
-                );
+
+            // Check User Agent (optional)
+            if (properties.getToken().isEnableUserAgentValidation()) {
+                String tokenUserAgent = claims.getStringClaim("userAgent");
+                if (!Objects.equals(tokenUserAgent, userAgent)) {
+                    throw new TokenValidationException(
+                        messageSource.getMessage("token.useragent.mismatch", null,
+                            "User Agent mismatch",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.useragent.mismatch.detail",
+                            new Object[]{tokenUserAgent, userAgent},
+                            "Expected User Agent: {0}, but got: {1}",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
             }
-            
+
             return true;
         } catch (TokenValidationException e) {
             throw e;  // Pass through custom exceptions

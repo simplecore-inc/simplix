@@ -1,0 +1,110 @@
+{
+  "groups": [
+    {
+      "name": "simplix.cache",
+      "type": "dev.simplecore.simplix.cache.config.CacheProperties",
+      "sourceType": "dev.simplecore.simplix.cache.config.CacheProperties"
+    },
+    {
+      "name": "simplix.cache.redis",
+      "type": "dev.simplecore.simplix.cache.config.CacheProperties$RedisConfig",
+      "sourceType": "dev.simplecore.simplix.cache.config.CacheProperties",
+      "sourceMethod": "getRedis()"
+    },
+    {
+      "name": "simplix.cache.metrics",
+      "type": "dev.simplecore.simplix.cache.config.CacheProperties$MetricsConfig",
+      "sourceType": "dev.simplecore.simplix.cache.config.CacheProperties",
+      "sourceMethod": "getMetrics()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "simplix.cache.mode",
+      "type": "java.lang.String",
+      "description": "Cache mode to use",
+      "defaultValue": "local",
+      "values": [
+        {
+          "value": "local",
+          "description": "Local in-memory cache using Caffeine (single instance only)"
+        },
+        {
+          "value": "redis",
+          "description": "Distributed cache using Redis (multi-instance support)"
+        },
+        {
+          "value": "hazelcast",
+          "description": "Distributed cache using Hazelcast (multi-instance support)"
+        }
+      ]
+    },
+    {
+      "name": "simplix.cache.default-ttl-seconds",
+      "type": "java.lang.Long",
+      "description": "Default TTL for cache entries in seconds",
+      "defaultValue": 3600
+    },
+    {
+      "name": "simplix.cache.max-size",
+      "type": "java.lang.Long",
+      "description": "Maximum number of entries in local cache",
+      "defaultValue": 10000
+    },
+    {
+      "name": "simplix.cache.cache-null-values",
+      "type": "java.lang.Boolean",
+      "description": "Whether to cache null values",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.cache.redis.key-prefix",
+      "type": "java.lang.String",
+      "description": "Prefix for Redis cache keys",
+      "defaultValue": "cache:"
+    },
+    {
+      "name": "simplix.cache.redis.use-key-prefix",
+      "type": "java.lang.Boolean",
+      "description": "Whether to use key prefix in Redis",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.cache.redis.command-timeout",
+      "type": "java.lang.Long",
+      "description": "Redis command timeout in milliseconds",
+      "defaultValue": 2000
+    },
+    {
+      "name": "simplix.cache.metrics.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable cache metrics collection",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.cache.metrics.collection-interval-seconds",
+      "type": "java.lang.Long",
+      "description": "Metrics collection interval in seconds",
+      "defaultValue": 60
+    }
+  ],
+  "hints": [
+    {
+      "name": "simplix.cache.mode",
+      "values": [
+        {
+          "value": "local",
+          "description": "Use local in-memory cache (Caffeine). Best for development and single-instance deployments."
+        },
+        {
+          "value": "redis",
+          "description": "Use Redis for distributed caching. Required for multi-instance deployments."
+        },
+        {
+          "value": "hazelcast",
+          "description": "Use Hazelcast for distributed caching. Alternative to Redis for multi-instance deployments."
+        }
+      ]
+    }
+  ]
+}

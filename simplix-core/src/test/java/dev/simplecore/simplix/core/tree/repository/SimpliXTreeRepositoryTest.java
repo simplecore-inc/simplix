@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
-    repositoryFactoryBeanClass = dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean.class
+    repositoryFactoryBeanClass = dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean.class
 )
 class TestApplication {
     

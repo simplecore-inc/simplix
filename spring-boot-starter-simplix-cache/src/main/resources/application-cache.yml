@@ -1,0 +1,282 @@
+# Default Cache Module Configuration
+# This file provides default settings for the cache module
+# Import this in your application.yml: spring.config.import: classpath:application-cache.yml
+
+# ============================================================================
+# Cache Configuration
+# ============================================================================
+
+simplix:
+  cache:
+    # Cache mode: local, redis, hazelcast
+    # - local: In-memory cache using Caffeine (single instance only)
+    # - redis: Distributed cache using Redis (multi-instance support)
+    # - hazelcast: Distributed cache using Hazelcast (future)
+    mode: ${CACHE_MODE:local}
+
+    # Default TTL for all caches (in seconds)
+    # Can be overridden per cache in cache-configs
+    default-ttl-seconds: ${CACHE_DEFAULT_TTL:3600}
+
+    # Maximum number of entries in local cache
+    # Only applies to local cache mode
+    max-size: ${CACHE_MAX_SIZE:10000}
+
+    # Whether to cache null values
+    # Set to true if you want to cache null results to avoid repeated lookups
+    cache-null-values: ${CACHE_NULL_VALUES:false}
+
+    # Cache-specific configurations
+    # Each cache can have its own TTL and max-size settings
+    cache-configs:
+      # Default cache configuration
+      default:
+        ttl-seconds: 3600
+        max-size: 1000
+
+      # Site timezone cache (rarely changes)
+      siteTimeZones:
+        ttl-seconds: 86400  # 24 hours
+        max-size: 10000
+
+      # Tenant timezone cache (rarely changes)
+      tenantTimeZones:
+        ttl-seconds: 86400  # 24 hours
+        max-size: 10000
+
+      # Tenant settings cache (moderate change frequency)
+      tenantSettings:
+        ttl-seconds: 1800  # 30 minutes
+        max-size: 5000
+
+      # User permissions cache (security-sensitive, shorter TTL)
+      userPermissions:
+        ttl-seconds: 900  # 15 minutes
+        max-size: 2000
+
+      # User sessions cache
+      userSessions:
+        ttl-seconds: 3600  # 1 hour
+        max-size: 5000
+
+      # Application configuration cache
+      applicationConfig:
+        ttl-seconds: 300  # 5 minutes
+        max-size: 100
+
+      # Feature flags cache
+      featureFlags:
+        ttl-seconds: 60  # 1 minute
+        max-size: 100
+
+    # Metrics configuration
+    metrics:
+      # Enable cache metrics collection
+      enabled: ${CACHE_METRICS_ENABLED:true}
+
+      # How often to collect metrics (in seconds)
+      collection-interval-seconds: ${CACHE_METRICS_INTERVAL:60}
+
+    # Redis-specific configuration
+    redis:
+      # Prefix for all cache keys in Redis
+      # Useful for multi-tenant or multi-environment setups
+      key-prefix: ${CACHE_REDIS_PREFIX:cache:}
+
+      # Whether to use key prefix
+      use-key-prefix: ${CACHE_REDIS_USE_PREFIX:true}
+
+      # Redis command timeout in milliseconds
+      command-timeout: ${CACHE_REDIS_TIMEOUT:2000}
+
+      # Enable Redis statistics
+      enable-statistics: ${CACHE_REDIS_STATS:true}
+
+    # Hazelcast-specific configuration (future)
+    hazelcast:
+      # Instance name for Hazelcast cluster
+      instance-name: ${CACHE_HAZELCAST_INSTANCE:simplix-cache}
+
+      # Enable Hazelcast statistics
+      enable-statistics: ${CACHE_HAZELCAST_STATS:true}
+
+      # Number of backup copies
+      backup-count: ${CACHE_HAZELCAST_BACKUPS:1}
+
+      # Whether to read from backup
+      read-backup-data: ${CACHE_HAZELCAST_READ_BACKUP:true}
+
+# ============================================================================
+# Spring Cache Configuration (when using Spring Cache abstraction)
+# ============================================================================
+
+spring:
+  cache:
+    # Cache type configuration
+    # This is automatically set based on simplix.cache.mode
+    type: ${simplix.cache.mode}
+
+    # Cache names to create on startup
+    cache-names:
+      - default
+      - siteTimeZones
+      - tenantTimeZones
+      - tenantSettings
+      - userPermissions
+      - userSessions
+      - applicationConfig
+      - featureFlags
+
+    # Caffeine-specific settings (for local cache)
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=1h,recordStats
+
+    # Redis-specific settings (for Redis cache)
+    redis:
+      # TTL for Redis entries (overridden by simplix.cache settings)
+      time-to-live: 3600000  # 1 hour in milliseconds
+
+      # Whether to cache null values
+      cache-null-values: ${simplix.cache.cache-null-values:false}
+
+      # Whether to use key prefix
+      use-key-prefix: ${simplix.cache.redis.use-key-prefix:true}
+
+      # Key prefix
+      key-prefix: ${simplix.cache.redis.key-prefix:cache:}
+
+# ============================================================================
+# Redis Connection Configuration (when using Redis)
+# ============================================================================
+
+---
+spring:
+  config:
+    activate:
+      on-profile: cache-redis
+
+  data:
+    redis:
+      # Redis server host
+      host: ${REDIS_HOST:localhost}
+
+      # Redis server port
+      port: ${REDIS_PORT:6379}
+
+      # Redis password (leave empty if no password)
+      password: ${REDIS_PASSWORD:}
+
+      # Database index (0-15)
+      database: ${REDIS_DATABASE:0}
+
+      # Connection timeout
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:2000ms}
+
+      # Read timeout
+      timeout: ${REDIS_TIMEOUT:2000ms}
+
+      # SSL configuration
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
+      # Connection pool configuration (Lettuce)
+      lettuce:
+        pool:
+          # Maximum active connections
+          max-active: ${REDIS_POOL_MAX_ACTIVE:8}
+
+          # Maximum idle connections
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+
+          # Minimum idle connections
+          min-idle: ${REDIS_POOL_MIN_IDLE:0}
+
+          # Maximum wait time for connection
+          max-wait: ${REDIS_POOL_MAX_WAIT:-1ms}
+
+          # Time between eviction runs
+          time-between-eviction-runs: ${REDIS_POOL_EVICTION_INTERVAL:60s}
+
+        # Shutdown timeout
+        shutdown-timeout: ${REDIS_SHUTDOWN_TIMEOUT:100ms}
+
+      # Cluster configuration (if using Redis Cluster)
+      cluster:
+        nodes: ${REDIS_CLUSTER_NODES:}
+        max-redirects: ${REDIS_CLUSTER_MAX_REDIRECTS:3}
+
+      # Sentinel configuration (if using Redis Sentinel)
+      sentinel:
+        master: ${REDIS_SENTINEL_MASTER:}
+        nodes: ${REDIS_SENTINEL_NODES:}
+
+# ============================================================================
+# Development Profile
+# ============================================================================
+
+---
+spring:
+  config:
+    activate:
+      on-profile: development
+
+simplix:
+  cache:
+    mode: local
+    default-ttl-seconds: 300  # 5 minutes
+    max-size: 1000
+    cache-null-values: false
+    metrics:
+      enabled: false  # Disable metrics in development
+
+# ============================================================================
+# Production Profile
+# ============================================================================
+
+---
+spring:
+  config:
+    activate:
+      on-profile: production
+
+simplix:
+  cache:
+    mode: redis
+    default-ttl-seconds: 3600  # 1 hour
+    cache-null-values: false
+    metrics:
+      enabled: true
+      collection-interval-seconds: 300  # 5 minutes
+    redis:
+      key-prefix: "prod:cache:"
+      enable-statistics: true
+
+spring:
+  data:
+    redis:
+      ssl:
+        enabled: true
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+
+# ============================================================================
+# Testing Profile
+# ============================================================================
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+simplix:
+  cache:
+    mode: local
+    default-ttl-seconds: 60  # 1 minute for faster test execution
+    max-size: 100  # Smaller size for tests
+    cache-null-values: true  # Test null value handling
+    metrics:
+      enabled: false

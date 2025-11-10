@@ -9,11 +9,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-ext {
-    set('springBootVersion', '3.5.5')
-    set('nimbusJoseVersion', '9.31')
-}
-
 sourceSets {
     main {
         java {
@@ -27,47 +22,50 @@ sourceSets {
 
 dependencies {
     api project(':simplix-core')
-    
-    // Utils
-    api 'org.modelmapper:modelmapper'
+    implementation project(':spring-boot-starter-simplix')
 
-    // Validation
-    api 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    implementation 'org.springframework.integration:spring-integration-core'
-    
-    // Test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Spring Boot core
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
 
+    // Configuration properties
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-    implementation 'org.springframework:spring-messaging'
-
-    // Optional messaging system dependencies
-    compileOnly 'io.nats:jnats'
-    compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
+    // Event infrastructure (optional/conditional)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
     compileOnly 'org.springframework.kafka:spring-kafka'
-    
-    // Add test dependencies for messaging systems
-    testImplementation 'io.nats:jnats'
+    compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
+
+    // Monitoring and metrics
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-core'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Jackson for JSON serialization
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api'
+
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation 'org.springframework:spring-context'
     testImplementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.kafka:spring-kafka'
 
-    // Monitoring
-    implementation 'io.micrometer:micrometer-core'
-    
-    // Integration
-    implementation 'org.springframework.integration:spring-integration-jdbc'
-// implementation 'org.springframework.integration:spring-integration-security:6.3.4' // Spring Boot 3에서는 기본 포함
-    
-    // Security (optional)
-    compileOnly 'org.springframework.security:spring-security-core'
-
-    // Spring Integration
-    implementation 'org.springframework.boot:spring-boot-starter-integration'
+    // Lombok for tests
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 bootJar {
@@ -78,11 +76,11 @@ jar {
     enabled = true
     archiveClassifier = ''
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    
+
     manifest {
         attributes(
-            'Implementation-Title': project.name,
-            'Implementation-Version': project.version
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
         )
     }
 }

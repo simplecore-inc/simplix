@@ -14,6 +14,8 @@ include 'spring-boot-starter-simplix'
 include 'spring-boot-starter-simplix-auth'
 include 'spring-boot-starter-simplix-event'
 include 'spring-boot-starter-simplix-mybatis'
+include 'spring-boot-starter-simplix-hibernate'
+include 'spring-boot-starter-simplix-cache'
 include 'spring-boot-starter-simplix-excel'
 
 def props = new Properties()
