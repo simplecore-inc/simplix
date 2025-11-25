@@ -1,25 +1,25 @@
 package dev.simplecore.simplix.web.config;
 
+import dev.simplecore.simplix.core.util.UuidUtils;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 /**
  * Web configuration for SimpliX framework
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnWebApplication
 public class SimpliXWebConfig {
 
@@ -60,7 +60,7 @@ public class SimpliXWebConfig {
             private String generateTraceId() {
                 String timestamp = Instant.now().atZone(ZoneOffset.UTC)
                     .format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-                String uuid = UUID.randomUUID().toString().substring(0, 8);
+                String uuid = UuidUtils.generateShortUuid();
                 return String.format("%s-%s", timestamp, uuid);
             }
         };

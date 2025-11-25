@@ -1,7 +1,8 @@
 package dev.simplecore.simplix.core.tree.config;
 
-import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
+import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
+import jakarta.persistence.EntityManagerFactory;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -17,7 +18,6 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.Properties;
 
@@ -27,7 +27,7 @@ import java.util.Properties;
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
-    repositoryFactoryBeanClass = TreeRepositoryFactoryBean.class,
+    repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class,
     repositoryBaseClass = SimpliXTreeRepositoryImpl.class
 )
 public class TestConfig {

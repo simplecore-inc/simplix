@@ -10,7 +10,7 @@ import java.util.Map;
 public class StandardEnumConverter implements EnumConverter {
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <T extends Enum<?>> T fromString(String value, Class<T> enumType) {
         if (value == null || value.trim().isEmpty()) {
             return null;
@@ -43,18 +43,21 @@ public class StandardEnumConverter implements EnumConverter {
         }
 
         Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("type", value.getClass().getSimpleName());
         fields.put("value", value.name());
-        
+
         try {
-            for (Method method : value.getClass().getDeclaredMethods()) {
+            // Use getMethods() instead of getDeclaredMethods() to include inherited methods from interfaces
+            for (Method method : value.getClass().getMethods()) {
                 String methodName = method.getName();
                 // Process only getter methods
-                if (methodName.startsWith("get") 
+                if (methodName.startsWith("get")
                     && !methodName.equals("getClass")
                     && !methodName.equals("getDeclaringClass")
-                    && method.getParameterCount() == 0) {
-                    
-                    method.setAccessible(true);
+                    && method.getParameterCount() == 0
+                    && method.getDeclaringClass() != Enum.class
+                    && method.getDeclaringClass() != Object.class) {
+
                     String fieldName = methodName.substring(3, 4).toLowerCase() + methodName.substring(4);
                     Object fieldValue = method.invoke(value);
                     if (fieldValue != null) {

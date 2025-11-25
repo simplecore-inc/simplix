@@ -4,11 +4,13 @@ apply plugin: 'io.spring.dependency-management'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 ext {
-    set('springBootVersion', '2.7.18')
+    set('springBootVersion', '3.5.7')
 }
 
 sourceSets {
@@ -23,23 +25,31 @@ sourceSets {
 }
 
 dependencies {
-    api 'javax.persistence:javax.persistence-api'
-    api 'javax.validation:validation-api'
-    api 'dev.simplecore.searchable:searchable-jpa-core:0.1.7'
-    api 'dev.simplecore.searchable:searchable-jpa-openapi:0.1.7'
+    api 'dev.simplecore.searchable:spring-boot-starter-searchable-jpa'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-json'
     implementation 'org.hibernate.validator:hibernate-validator'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
-    implementation 'org.modelmapper:modelmapper:3.2.0'
+    implementation 'org.modelmapper:modelmapper'
+    implementation 'com.github.f4b6a3:uuid-creator'
 
     // OpenAPI/Swagger
-    implementation 'org.springdoc:springdoc-openapi-ui:1.7.0'
-    implementation 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
-    implementation 'org.springdoc:springdoc-openapi-javadoc:1.7.0'
-    implementation 'org.springdoc:springdoc-openapi-data-rest:1.7.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+
+    // Security Support - OWASP HTML Sanitizer for XSS prevention
+    implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1'
+
+    // Optional: Spring Cloud Vault for production key management
+    compileOnly 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
+
+    // Optional: ShedLock for distributed locking in key rotation
+    compileOnly 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
+    compileOnly 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

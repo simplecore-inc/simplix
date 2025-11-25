@@ -1,0 +1,184 @@
+# Hibernate Cache Module Configuration
+# This configuration is automatically loaded when using the hibernate-cache module
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        # Second Level Cache Configuration
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: jcache
+          # Missing cache strategy: create, fail, or ignore
+          javax.cache.missing_cache_strategy: create
+
+        # Statistics for monitoring cache performance
+        generate_statistics: false  # Enable in dev/test, disable in production
+
+        # Cache provider specific settings
+        javax:
+          cache:
+            provider: org.ehcache.jsr107.EhcacheCachingProvider
+            uri: classpath:ehcache.xml
+
+        # Query cache settings
+        query:
+          startup_check: false
+
+        # Batch fetching optimization
+        default_batch_fetch_size: 16
+
+        # JDBC batch size for bulk operations
+        jdbc:
+          batch_size: 25
+          batch_versioned_data: true
+
+        # Statement caching
+        statement_cache:
+          size: 20
+
+# Hibernate Cache Module specific configuration
+simplix:
+  hibernate:
+    cache:
+      # Disable the cache module (set to true to disable, default is enabled)
+      disabled: false
+
+      # Cache operation mode
+      mode: AUTO  # AUTO, LOCAL, DISTRIBUTED, HYBRID, DISABLED
+
+      # Enable query cache auto-eviction
+      query-cache-auto-eviction: true
+
+      # Auto-detect best eviction strategy
+      auto-detect-eviction-strategy: true
+
+      # Node ID for distributed cache
+      node-id: "node-1"
+
+      # Packages to scan for @Cache entities
+      # scan-packages:
+      #   - "com.example.domain.entity"  # Configure your entity package here
+
+      # Redis configuration
+      redis:
+        channel: "hibernate-cache-sync"
+        pub-sub-enabled: true
+        key-prefix: "hibernate:cache:"
+        connection-timeout: 2000
+
+      # Cache provider configuration
+      provider:
+        type: "ehcache"
+        statistics-enabled: false
+        default-ttl: 3600
+        max-entries: 10000
+
+      # Cache regions configuration
+      regions:
+      # Default cache settings
+      default:
+        ttl: 3600  # 1 hour
+        max-entries: 1000
+        query-cache-enabled: true
+
+      # Example cache region configurations
+      # You can define custom regions for your entities
+      # entity-example1:
+      #   ttl: 7200  # 2 hours
+      #   max-entries: 500
+      #   query-cache-enabled: true
+      # entity-example2:
+      #   ttl: 3600  # 1 hour
+      #   max-entries: 2000
+      #   query-cache-enabled: true
+
+# Logging configuration for cache debugging
+logging:
+  level:
+    # Hibernate cache logging
+    org.hibernate.cache: WARN
+    org.hibernate.stat: WARN
+    # EhCache logging
+    org.ehcache: WARN
+    # Module specific logging
+    dev.simplecore.simplix.hibernate.cache: INFO
+
+---
+# Development profile overrides
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+
+simplix:
+  hibernate:
+    cache:
+      provider:
+        statistics-enabled: true
+
+logging:
+  level:
+    org.hibernate.cache: DEBUG
+    org.hibernate.stat: DEBUG
+    dev.simplecore.simplix.hibernate.cache: DEBUG
+
+---
+# Test profile overrides
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    properties:
+      hibernate:
+        generate_statistics: true
+
+simplix:
+  hibernate:
+    cache:
+      disabled: false
+      provider:
+        statistics-enabled: true
+
+      # Smaller cache sizes for testing
+      regions:
+        default:
+          ttl: 60
+          max-entries: 100
+          query-cache-enabled: true
+
+---
+# Production profile overrides
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+simplix:
+  hibernate:
+    cache:
+      disabled: false
+      provider:
+        statistics-enabled: false
+        default-ttl: 7200  # 2 hours
+        max-entries: 10000
+
+      # Larger cache sizes for production
+      regions:
+        default:
+          ttl: 7200  # 2 hours
+          max-entries: 10000
+          query-cache-enabled: true
+
+logging:
+  level:
+    org.hibernate.cache: ERROR
+    org.hibernate.stat: ERROR
+    dev.simplecore.simplix.hibernate.cache: WARN

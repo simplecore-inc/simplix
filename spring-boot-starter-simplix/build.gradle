@@ -1,15 +1,19 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 ext {
-    set('springBootVersion', '2.7.18')
-    set('nimbusJoseVersion', '9.31')
+    set('springBootVersion', '3.5.7')
+    set('nimbusJoseVersion', '9.37')
 }
 
 sourceSets {
@@ -26,45 +30,52 @@ sourceSets {
 dependencies {
     api project(':simplix-core')
 
+    // Include all SimpliX modules (umbrella starter)
+    api project(':simplix-auth')
+    api project(':simplix-cache')
+    api project(':simplix-encryption')
+    api project(':simplix-event')
+    api project(':simplix-excel')
+    api project(':simplix-hibernate')
+    api project(':simplix-mybatis')
+
     // External Libraries
-    api 'org.modelmapper:modelmapper:3.2.0'
-    
+    api 'org.modelmapper:modelmapper'
+
     // Spring Boot Dependencies
     api 'org.springframework.boot:spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-validation'
     api 'org.springframework.boot:spring-boot-starter-actuator'
+    api 'org.springframework.boot:spring-boot-starter-json'
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-thymeleaf'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    
+
     // OpenAPI/Swagger
-    api 'org.springdoc:springdoc-openapi-ui:1.7.0'
-    api 'org.springdoc:springdoc-openapi-webmvc-core:1.7.0'
-    api 'org.springdoc:springdoc-openapi-javadoc:1.7.0'
-    api 'org.springdoc:springdoc-openapi-data-rest:1.7.0'
-    
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
+    api 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+    // Scalar UI - Not available in SpringDoc 2.7.0 (requires 2.8.x+)
+    // compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-scalar'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
+
     // Spring Boot Optional Dependencies
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    
+
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // Additional Dependencies
-    api 'javax.persistence:javax.persistence-api'
-    api 'javax.validation:validation-api'
 
     implementation 'org.hibernate.validator:hibernate-validator'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
 
     // Thymeleaf
     api 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
-    api 'org.thymeleaf.extras:thymeleaf-extras-java8time'
 
     // Spring Session
     api 'org.springframework.session:spring-session-jdbc'
@@ -75,7 +86,7 @@ dependencies {
     // Database
     runtimeOnly 'com.h2database:h2'
 
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'com.google.code.findbugs:jsr305'
 }
 
 bootJar {
@@ -99,6 +110,10 @@ test {
     useJUnitPlatform()
 }
 
+compileJava {
+    options.compilerArgs << "-Xlint:deprecation"
+}
+
 compileJava.inputs.files(processResources)
 
 processResources {
@@ -106,7 +121,7 @@ processResources {
     def springBootVer = springBootVersion
     
     filesMatching(['**/banner.txt', '**/config/application-info.txt']) {
-        filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: [
+        filter(ReplaceTokens, tokens: [
             'simplix.version': projectVersion,
             'spring-boot.version': springBootVer
         ])

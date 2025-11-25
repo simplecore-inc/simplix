@@ -2,6 +2,7 @@ package dev.simplecore.simplix.web.controller;
 
 import dev.simplecore.simplix.web.service.SimpliXService;
 
+@SimpliXStandardApi
 public abstract class SimpliXBaseController<E, ID> {
     
     protected final SimpliXService<E, ID> service;

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.exception.ErrorCode;
 import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +20,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
@@ -100,7 +101,7 @@ public class SimpliXExceptionHandler<T> {
     public T handleSimpliXGeneralException(SimpliXGeneralException ex, HttpServletRequest request) {
         T errorResponse = responseFactory.createErrorResponse(
                 ex.getStatusCode(),
-                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
                 ex.getMessage(),
                 ex.getDetail(),
                 request.getRequestURI()
@@ -126,10 +127,10 @@ public class SimpliXExceptionHandler<T> {
         // Log exception with trace ID
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
-            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}", 
-                traceId, 
-                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ex.getErrorType(),
-                request.getRequestURI(), 
+            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
+                traceId,
+                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
+                request.getRequestURI(),
                 ex);
         }
         
@@ -141,32 +142,76 @@ public class SimpliXExceptionHandler<T> {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public T handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Locale currentLocale = LocaleContextHolder.getLocale();
-        List<Map<String, String>> errors = new ArrayList<>();
+        List<ValidationFieldError> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
-            Map<String, String> fieldError = new HashMap<>();
-            fieldError.put("field", error.getField());
-            
             String message = error.getDefaultMessage();
-            
-            // If message is in {key} format, try to translate with proper arguments
-            if (message != null && message.startsWith("{") && message.endsWith("}")) {
-                String messageKey = message.substring(1, message.length() - 1);
-                try {
-                    // Get constraint annotation attributes for parameter substitution
-                    Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
-                    log.debug("Original error arguments: {}", Arrays.toString(error.getArguments()));
-                    log.debug("Processed message arguments: {}", Arrays.toString(messageArguments));
-                    message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
-                    log.debug("Translated validation message key '{}' with args {} to: '{}'", messageKey, Arrays.toString(messageArguments), message);
-                } catch (Exception e) {
-                    log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
-                    // Keep the original message if translation fails
+
+            // Process message based on placeholder type
+            if (message != null) {
+                // Check for named placeholders like {min}, {max}, {value}
+                if (message.matches(".*\\{[a-zA-Z]+\\}.*")) {
+                    try {
+                        // Get constraint attributes as map
+                        Map<String, Object> attributeMap = ValidationArgumentProcessor.extractConstraintAttributes(error);
+
+                        // Replace named placeholders with actual values
+                        String processedMessage = message;
+                        for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+                            String placeholder = "{" + entry.getKey() + "}";
+                            if (processedMessage.contains(placeholder)) {
+                                processedMessage = processedMessage.replace(placeholder, String.valueOf(entry.getValue()));
+                            }
+                        }
+                        message = processedMessage;
+                        log.debug("Substituted named placeholders to: '{}'", message);
+                    } catch (Exception e) {
+                        log.debug("Failed to substitute named placeholders: {}", e.getMessage());
+                    }
+                }
+                // Check for numeric placeholders like {0}, {1}, {2}
+                else if (message.contains("{0}") || message.contains("{1}") || message.contains("{2}")) {
+                    try {
+                        // Get constraint annotation attributes for parameter substitution
+                        Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
+
+                        // Use MessageFormat to replace {0}, {1} placeholders
+                        message = java.text.MessageFormat.format(message, messageArguments);
+                        log.debug("Substituted numeric placeholders to: '{}'", message);
+                    } catch (Exception e) {
+                        log.debug("Failed to substitute numeric placeholders: {}", e.getMessage());
+                    }
+                }
+                // If message is in {key} format, try to translate with proper arguments
+                else if (message.startsWith("{") && message.endsWith("}")) {
+                    String messageKey = message.substring(1, message.length() - 1);
+                    try {
+                        // Get constraint annotation attributes for parameter substitution
+                        Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
+                        message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
+                        log.debug("Translated validation message key '{}' to: '{}'", messageKey, message);
+                    } catch (Exception e) {
+                        log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                    }
                 }
             }
-            
-            fieldError.put("message", message);
-            
-            log.debug("Field validation - Field: {}, Message: {}", error.getField(), message);
+
+            // Extract constraint code from error codes
+            String code = null;
+            if (error.getCodes() != null && error.getCodes().length > 0) {
+                String lastCode = error.getCodes()[error.getCodes().length - 1];
+                int lastDot = lastCode.lastIndexOf('.');
+                code = (lastDot > 0) ? lastCode.substring(lastDot + 1) : lastCode;
+            }
+
+            // Create ValidationFieldError object
+            ValidationFieldError fieldError = new ValidationFieldError(
+                error.getField(),
+                message,
+                error.getRejectedValue(),
+                code
+            );
+
+            log.debug("Field validation - Field: {}, Message: {}, Code: {}", error.getField(), message, code);
             errors.add(fieldError);
         });
         
@@ -184,9 +229,9 @@ public class SimpliXExceptionHandler<T> {
         // Log validation errors as WARN level without stack trace
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
-            log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}", 
-                traceId, request.getRequestURI(), 
-                errors.stream().map(error -> error.get("field")).collect(java.util.stream.Collectors.toList()));
+            log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}",
+                traceId, request.getRequestURI(),
+                errors.stream().map(ValidationFieldError::getField).collect(java.util.stream.Collectors.toList()));
         }
         
         return errorResponse;
@@ -197,6 +242,7 @@ public class SimpliXExceptionHandler<T> {
     /**
      * Translate validation message from {key} format to localized message with parameter substitution
      */
+    @SuppressWarnings("unused")
     private String translateValidationMessage(String originalMessage, Object[] messageArguments) {
         if (originalMessage == null) {
             return null;
@@ -329,10 +375,45 @@ public class SimpliXExceptionHandler<T> {
         
         // Add trace ID to response header and MDC for logging
         addTraceIdToResponse(errorResponse, request);
-        
+
         return errorResponse;
     }
 
+    /**
+     * Handle NoResourceFoundException (404) without logging as error
+     * Static resources not found should not trigger internal server errors
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @Order(10)
+    public T handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
+        // Log at DEBUG level only - this is not an error
+        if (log.isDebugEnabled()) {
+            log.debug("Resource not found: {}", request.getRequestURI());
+        }
+
+        String message = messageSource.getMessage(
+            "error.resource.not.found",
+            null,
+            "Resource not found",
+            LocaleContextHolder.getLocale()
+        );
+
+        T errorResponse = responseFactory.createErrorResponse(
+            HttpStatus.NOT_FOUND,
+            ErrorCode.GEN_NOT_FOUND.getCode(),
+            message,
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+
+        return errorResponse;
+    }
+
+    @SuppressWarnings("unused")
     @ExceptionHandler(Exception.class)
     @Order(Integer.MAX_VALUE)
     public T handleException(Exception ex, HttpServletRequest request) {
@@ -392,12 +473,10 @@ public class SimpliXExceptionHandler<T> {
 
         // Wrap the exception in a SimpliXGeneralException
         SimpliXGeneralException wrappedException = new SimpliXGeneralException(
+            errorCode,
             localizedMessage,
             ex,
-            errorCode.getCode(),
-            errorCode.getHttpStatus(),
-            errorDetail,
-            request.getRequestURI()
+            errorDetail
         );
 
         return handleSimpliXGeneralException(wrappedException, request);
@@ -518,20 +597,35 @@ public class SimpliXExceptionHandler<T> {
      */
     private static class DefaultResponseFactory implements ResponseFactory<SimpliXApiResponse<Object>> {
         private static final Logger log = LoggerFactory.getLogger(DefaultResponseFactory.class);
-        
+
         @Override
         public SimpliXApiResponse<Object> createErrorResponse(HttpStatus statusCode, String errorType, String message, Object detail, String path) {
             // Use error code based on HTTP status and error type
             String errorCode = errorType != null ? errorType : statusCode.name();
             SimpliXApiResponse<Object> response = SimpliXApiResponse.error(message, errorCode, detail);
-            
-            // Log error with trace ID from MDC
+
+            // Log with appropriate level based on HTTP status code
             String traceId = MDC.get("traceId");
             if (traceId != null && !traceId.isEmpty()) {
-                log.error("Error response created - TraceId: {}, Code: {}, Path: {}, Message: {}", 
-                    traceId, errorCode, path, message);
+                int status = statusCode.value();
+
+                if (status == 404) {
+                    // 404 is very common and not an error - log at DEBUG level only
+                    if (log.isDebugEnabled()) {
+                        log.debug("Resource not found - TraceId: {}, Code: {}, Path: {}",
+                            traceId, errorCode, path);
+                    }
+                } else if (status >= 400 && status < 500) {
+                    // 4xx client errors - log at WARN level
+                    log.warn("Client error response - TraceId: {}, Code: {}, Path: {}, Message: {}",
+                        traceId, errorCode, path, message);
+                } else if (status >= 500) {
+                    // 5xx server errors - log at ERROR level
+                    log.error("Server error response - TraceId: {}, Code: {}, Path: {}, Message: {}",
+                        traceId, errorCode, path, message);
+                }
             }
-            
+
             return response;
         }
     }

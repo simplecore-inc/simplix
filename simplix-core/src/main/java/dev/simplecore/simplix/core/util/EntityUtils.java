@@ -1,9 +1,9 @@
 package dev.simplecore.simplix.core.util;
 
+import jakarta.persistence.Id;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
-import javax.persistence.Id;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 

@@ -1,0 +1,172 @@
+{
+  "groups": [
+    {
+      "name": "simplix.encryption",
+      "type": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "description": "SimpliX Encryption module configuration properties"
+    },
+    {
+      "name": "simplix.encryption.simple",
+      "type": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Simple",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "description": "SimpleKeyProvider configuration for development"
+    },
+    {
+      "name": "simplix.encryption.vault",
+      "type": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Vault",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "description": "VaultKeyProvider configuration for production"
+    },
+    {
+      "name": "simplix.encryption.rotation",
+      "type": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Rotation",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "description": "Key rotation configuration"
+    }
+  ],
+  "properties": [
+    {
+      "name": "simplix.encryption.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable encryption services",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.encryption.provider",
+      "type": "java.lang.String",
+      "description": "Key provider type (vault, managed, or simple)",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "defaultValue": "simple"
+    },
+    {
+      "name": "simplix.encryption.static-key",
+      "type": "java.lang.String",
+      "description": "Static encryption key for SimpleKeyProvider",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "defaultValue": "dev-default-key-do-not-use-in-production"
+    },
+    {
+      "name": "simplix.encryption.master-key",
+      "type": "java.lang.String",
+      "description": "Master encryption key for ManagedKeyProvider",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties"
+    },
+    {
+      "name": "simplix.encryption.salt",
+      "type": "java.lang.String",
+      "description": "Encryption salt for key derivation",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties"
+    },
+    {
+      "name": "simplix.encryption.key-store-path",
+      "type": "java.lang.String",
+      "description": "Path to key store file for ManagedKeyProvider",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties"
+    },
+    {
+      "name": "simplix.encryption.auto-rotation",
+      "type": "java.lang.Boolean",
+      "description": "Enable automatic scheduled rotation",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.encryption.simple.allow-rotation",
+      "type": "java.lang.Boolean",
+      "description": "Allow rotation in SimpleKeyProvider (not supported)",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Simple",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.encryption.vault.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable VaultKeyProvider",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Vault",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.encryption.vault.path",
+      "type": "java.lang.String",
+      "description": "Vault path for encryption keys",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Vault",
+      "defaultValue": "secret/encryption"
+    },
+    {
+      "name": "simplix.encryption.vault.namespace",
+      "type": "java.lang.String",
+      "description": "Vault namespace (for Vault Enterprise)",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Vault"
+    },
+    {
+      "name": "simplix.encryption.rotation.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable key rotation",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Rotation",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.encryption.rotation.days",
+      "type": "java.lang.Integer",
+      "description": "Days between key rotations",
+      "sourceType": "dev.simplecore.simplix.encryption.config.SimpliXEncryptionProperties$Rotation",
+      "defaultValue": 90
+    }
+  ],
+  "hints": [
+    {
+      "name": "simplix.encryption.provider",
+      "values": [
+        {
+          "value": "vault",
+          "description": "Use VaultKeyProvider for production environments"
+        },
+        {
+          "value": "managed",
+          "description": "Use ManagedKeyProvider for file-based key management"
+        },
+        {
+          "value": "simple",
+          "description": "Use SimpleKeyProvider for development (no rotation)"
+        }
+      ]
+    },
+    {
+      "name": "simplix.encryption.static-key",
+      "values": [
+        {
+          "value": "${SIMPLIX_ENCRYPTION_STATIC_KEY}",
+          "description": "Read from SIMPLIX_ENCRYPTION_STATIC_KEY environment variable"
+        }
+      ]
+    },
+    {
+      "name": "simplix.encryption.master-key",
+      "values": [
+        {
+          "value": "${SIMPLIX_ENCRYPTION_MASTER_KEY}",
+          "description": "Read from SIMPLIX_ENCRYPTION_MASTER_KEY environment variable"
+        }
+      ]
+    },
+    {
+      "name": "simplix.encryption.salt",
+      "values": [
+        {
+          "value": "${SIMPLIX_ENCRYPTION_SALT}",
+          "description": "Read from SIMPLIX_ENCRYPTION_SALT environment variable"
+        }
+      ]
+    },
+    {
+      "name": "simplix.encryption.key-store-path",
+      "values": [
+        {
+          "value": "${SIMPLIX_ENCRYPTION_KEY_STORE_PATH}",
+          "description": "Read from SIMPLIX_ENCRYPTION_KEY_STORE_PATH environment variable"
+        }
+      ]
+    }
+  ]
+}

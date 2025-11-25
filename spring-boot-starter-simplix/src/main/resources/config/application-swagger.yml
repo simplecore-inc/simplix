@@ -1,0 +1,31 @@
+# SimpliX SpringDoc OpenAPI v2.7.0 Default Configuration
+# This file provides default settings for SpringDoc OpenAPI in SimpliX applications
+
+springdoc:
+  # API Documentation endpoints
+  api-docs:
+    enabled: true              # Enable API docs
+    path: /v3/api-docs         # OpenAPI JSON endpoint
+
+  # Swagger UI settings
+  swagger-ui:
+    enabled: true              # Enable Swagger UI
+    path: /swagger-ui.html     # Swagger UI path
+    disable-swagger-default-url: true
+
+  # General settings
+  show-actuator: false         # Don't expose actuator endpoints in API docs
+  override-with-generic-response: false
+
+# ============================================================
+# Scalar UI Configuration (Modern alternative to Swagger UI) - OPTIONAL
+# ============================================================
+# OPTIONAL: Scalar requires additional dependency in client project:
+#   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-scalar'
+#
+# NOTE: Scalar uses 'scalar.*' prefix, NOT 'springdoc.scalar.*'
+# See: examples/SCALAR_SETUP_GUIDE.md for complete setup instructions
+#
+# scalar:
+#   enabled: true
+#   path: /scalar

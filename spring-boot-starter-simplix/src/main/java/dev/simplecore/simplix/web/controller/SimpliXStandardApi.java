@@ -10,48 +10,63 @@ import org.springframework.http.MediaType;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD,  ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "Successfully processed"
-    ),
-    @ApiResponse(
-        responseCode = "400",
-        description = "Invalid request",
-        content = @Content(
-            mediaType = MediaType.APPLICATION_JSON_VALUE,
-            schema = @Schema(implementation = SimpliXApiResponse.class),
-            examples = @ExampleObject(
-                value = "{" +
-                    "\"type\":\"FAILURE\"," +
-                    "\"message\":\"Invalid request parameters\"," +
-                    "\"body\":null," +
-                    "\"error\":\"name field is required\"," +
-                    "\"timestamp\":\"2024-02-06T10:30:00\"" +
-                    "}"
-            )
+        @ApiResponse(
+                responseCode = "200",
+                description = "Successfully processed",
+                useReturnTypeSchema = true,
+                content = @Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        examples = @ExampleObject(
+                                value = "{" +
+                                        "\"type\":\"SUCCESS\"," +
+                                        "\"message\":\"Request processed successfully\"," +
+                                        "\"body\": {}," +
+                                        "\"error\":null," +
+                                        "\"timestamp\":\"2024-02-06T10:30:00\"" +
+                                        "}"
+                        )
+                )
+        ),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Invalid request",
+                useReturnTypeSchema = true,
+                content = @Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        schema = @Schema(implementation = SimpliXApiResponse.class),
+                        examples = @ExampleObject(
+                                value = "{" +
+                                        "\"type\":\"FAILURE\"," +
+                                        "\"message\":\"Invalid request parameters\"," +
+                                        "\"body\":null," +
+                                        "\"error\":\"name field is required\"," +
+                                        "\"timestamp\":\"2024-02-06T10:30:00\"" +
+                                        "}"
+                        )
+                )
+        ),
+        @ApiResponse(
+                responseCode = "500",
+                description = "Server error",
+                useReturnTypeSchema = true,
+                content = @Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        schema = @Schema(implementation = SimpliXApiResponse.class),
+                        examples = @ExampleObject(
+                                value = "{" +
+                                        "\"type\":\"ERROR\"," +
+                                        "\"message\":\"Internal server error\"," +
+                                        "\"body\":null," +
+                                        "\"error\":\"Unexpected error occurred\"," +
+                                        "\"timestamp\":\"2024-02-06T10:30:00\"" +
+                                        "}"
+                        )
+                )
         )
-    ),
-    @ApiResponse(
-        responseCode = "500",
-        description = "Server error",
-        content = @Content(
-            mediaType = MediaType.APPLICATION_JSON_VALUE,
-            schema = @Schema(implementation = SimpliXApiResponse.class),
-            examples = @ExampleObject(
-                value = "{" +
-                    "\"type\":\"ERROR\"," +
-                    "\"message\":\"Internal server error\"," +
-                    "\"body\":null," +
-                    "\"error\":\"Unexpected error occurred\"," +
-                    "\"timestamp\":\"2024-02-06T10:30:00\"" +
-                    "}"
-            )
-        )
-    )
 })
 public @interface SimpliXStandardApi {
 }

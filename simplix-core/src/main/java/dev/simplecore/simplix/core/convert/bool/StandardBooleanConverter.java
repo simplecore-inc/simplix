@@ -12,24 +12,13 @@ public class StandardBooleanConverter implements BooleanConverter {
         }
         
         String normalizedValue = value.toLowerCase().trim();
-        switch (normalizedValue) {
-            case "true":
-            case "1":
-            case "yes":
-            case "y":
-            case "on":
-                return true;
-            case "false":
-            case "0":
-            case "no":
-            case "n":
-            case "off":
-                return false;
-            default:
-                throw new IllegalArgumentException(
-                    "Invalid boolean value: '" + value + "'. " +
-                    "Allowed values are: true/false, 1/0, yes/no, y/n, on/off");
-        }
+		return switch (normalizedValue) {
+			case "true", "1", "yes", "y", "on" -> true;
+			case "false", "0", "no", "n", "off" -> false;
+			default -> throw new IllegalArgumentException(
+				"Invalid boolean value: '" + value + "'. " +
+					"Allowed values are: true/false, 1/0, yes/no, y/n, on/off");
+		};
     }
 
     @Override

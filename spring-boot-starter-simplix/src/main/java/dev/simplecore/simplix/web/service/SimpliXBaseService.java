@@ -2,14 +2,14 @@ package dev.simplecore.simplix.web.service;
 
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.service.DefaultSearchableService;
-import dev.simplecore.simplix.web.repository.SimpliXBaseRepository;
+import dev.simplecore.simplix.core.repository.SimpliXBaseRepository;
+import jakarta.persistence.EntityManager;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Optional;

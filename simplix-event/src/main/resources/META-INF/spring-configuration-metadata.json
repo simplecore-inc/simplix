@@ -1,0 +1,234 @@
+{
+  "groups": [
+    {
+      "name": "simplix.events",
+      "type": "dev.simplecore.simplix.event.config.EventProperties",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "description": "Configuration properties for SimpliX Events module"
+    },
+    {
+      "name": "simplix.events.redis",
+      "type": "dev.simplecore.simplix.event.config.EventProperties$RedisConfig",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "description": "Redis-specific event publishing configuration"
+    },
+    {
+      "name": "simplix.events.kafka",
+      "type": "dev.simplecore.simplix.event.config.EventProperties$KafkaConfig",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "description": "Kafka-specific event publishing configuration"
+    },
+    {
+      "name": "simplix.events.rabbit",
+      "type": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "description": "RabbitMQ-specific event publishing configuration"
+    }
+  ],
+  "properties": [
+    {
+      "name": "simplix.events.mode",
+      "type": "java.lang.String",
+      "description": "Event publishing mode: local, redis, kafka, or rabbit",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": "local"
+    },
+    {
+      "name": "simplix.events.enrich-metadata",
+      "type": "java.lang.Boolean",
+      "description": "Enable automatic metadata enrichment for events",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.events.persistent-by-default",
+      "type": "java.lang.Boolean",
+      "description": "Make events persistent by default",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.events.async-by-default",
+      "type": "java.lang.Boolean",
+      "description": "Publish events asynchronously by default",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.events.instance-id",
+      "type": "java.lang.String",
+      "description": "Unique instance identifier for event tracking",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties"
+    },
+    {
+      "name": "simplix.events.redis.channel-prefix",
+      "type": "java.lang.String",
+      "description": "Redis channel prefix for pub/sub",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RedisConfig",
+      "defaultValue": "simplix:events:"
+    },
+    {
+      "name": "simplix.events.redis.persistent.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable persistent storage alongside pub/sub",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RedisConfig",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.events.redis.persistent.ttl",
+      "type": "java.lang.Long",
+      "description": "TTL for persistent events in seconds",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RedisConfig",
+      "defaultValue": 86400
+    },
+    {
+      "name": "simplix.events.kafka.topic-prefix",
+      "type": "java.lang.String",
+      "description": "Kafka topic prefix for event publishing",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$KafkaConfig",
+      "defaultValue": "simplix-events"
+    },
+    {
+      "name": "simplix.events.kafka.default-topic",
+      "type": "java.lang.String",
+      "description": "Default Kafka topic for events",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$KafkaConfig",
+      "defaultValue": "domain-events"
+    },
+    {
+      "name": "simplix.events.kafka.producer.acks",
+      "type": "java.lang.String",
+      "description": "Producer acknowledgment level: 0, 1, or all",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$KafkaConfig",
+      "defaultValue": "1"
+    },
+    {
+      "name": "simplix.events.kafka.producer.retries",
+      "type": "java.lang.Integer",
+      "description": "Number of retries for failed sends",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$KafkaConfig",
+      "defaultValue": 3
+    },
+    {
+      "name": "simplix.events.rabbit.exchange",
+      "type": "java.lang.String",
+      "description": "RabbitMQ exchange name for events",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": "simplix.events"
+    },
+    {
+      "name": "simplix.events.rabbit.queue",
+      "type": "java.lang.String",
+      "description": "RabbitMQ queue name for events",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": "simplix.events.queue"
+    },
+    {
+      "name": "simplix.events.rabbit.routing-key-prefix",
+      "type": "java.lang.String",
+      "description": "Routing key prefix for event routing",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": "event."
+    },
+    {
+      "name": "simplix.events.rabbit.ttl",
+      "type": "java.lang.Long",
+      "description": "Message TTL in milliseconds",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": 86400000
+    },
+    {
+      "name": "simplix.events.rabbit.max-retries",
+      "type": "java.lang.Integer",
+      "description": "Maximum retry attempts for failed messages",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": 3
+    },
+    {
+      "name": "simplix.events.rabbit.retry-delay",
+      "type": "java.lang.Long",
+      "description": "Initial retry delay in milliseconds",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": 1000
+    },
+    {
+      "name": "simplix.events.rabbit.dlq.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable Dead Letter Queue for failed messages",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.events.rabbit.dlq.exchange",
+      "type": "java.lang.String",
+      "description": "Dead Letter Queue exchange name",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": "simplix.events.dlq"
+    },
+    {
+      "name": "simplix.events.rabbit.dlq.queue",
+      "type": "java.lang.String",
+      "description": "Dead Letter Queue name",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties$RabbitConfig",
+      "defaultValue": "simplix.events.dlq.queue"
+    },
+    {
+      "name": "simplix.events.monitoring.metrics-enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable metrics collection for event publishing",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.events.monitoring.health-check.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enable health check endpoint for event publishers",
+      "sourceType": "dev.simplecore.simplix.event.config.EventProperties",
+      "defaultValue": true
+    }
+  ],
+  "hints": [
+    {
+      "name": "simplix.events.mode",
+      "values": [
+        {
+          "value": "local",
+          "description": "Use Spring ApplicationEventPublisher (single JVM)"
+        },
+        {
+          "value": "redis",
+          "description": "Use Redis Pub/Sub for distributed events"
+        },
+        {
+          "value": "kafka",
+          "description": "Use Apache Kafka for high-throughput streaming"
+        },
+        {
+          "value": "rabbit",
+          "description": "Use RabbitMQ for reliable message queuing"
+        }
+      ]
+    },
+    {
+      "name": "simplix.events.kafka.producer.acks",
+      "values": [
+        {
+          "value": "0",
+          "description": "No acknowledgment (fire and forget)"
+        },
+        {
+          "value": "1",
+          "description": "Leader acknowledgment only"
+        },
+        {
+          "value": "all",
+          "description": "All in-sync replicas acknowledgment"
+        },
+        {
+          "value": "-1",
+          "description": "Same as 'all'"
+        }
+      ]
+    }
+  ]
+}
