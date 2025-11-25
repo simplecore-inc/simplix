@@ -8,7 +8,7 @@ import java.util.UUID;
 /**
  * Generic implementation of Event for general-purpose event publishing.
  * This class can be used for any event type without requiring domain-specific entities.
- *
+ * <p>
  * Example usage:
  * <pre>
  * GenericEvent event = GenericEvent.builder()

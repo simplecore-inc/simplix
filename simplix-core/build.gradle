@@ -10,7 +10,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.5.5')
+    set('springBootVersion', '3.5.7')
 }
 
 sourceSets {
@@ -40,6 +40,16 @@ dependencies {
     // OpenAPI/Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+
+    // Security Support - OWASP HTML Sanitizer for XSS prevention
+    implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1'
+
+    // Optional: Spring Cloud Vault for production key management
+    compileOnly 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
+
+    // Optional: ShedLock for distributed locking in key rotation
+    compileOnly 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
+    compileOnly 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0'
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

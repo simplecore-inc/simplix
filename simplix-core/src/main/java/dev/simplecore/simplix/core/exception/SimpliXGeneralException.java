@@ -6,9 +6,9 @@ import org.springframework.http.HttpStatus;
 @Getter
 public class SimpliXGeneralException extends RuntimeException {
     
-    private ErrorCode errorCode;
+    private final ErrorCode errorCode;
     
-    private HttpStatus statusCode;
+    private final HttpStatus statusCode;
     
     private Object detail;
     

@@ -17,7 +17,7 @@ public class SimpliXApiResponse<T> {
         ERROR
     }
 
-    private ResponseType type;
+    private String type;
 
     private String message;          // Response message
 
@@ -27,16 +27,18 @@ public class SimpliXApiResponse<T> {
 
     // Error-specific fields (only included when type is ERROR)
     private String errorCode;        // Specific error code (renamed from errorType)
-    
+
     private Object errorDetail;      // Detailed error information (renamed from error)
 
-    private SimpliXApiResponse(ResponseType type, String message, T body, String errorCode, Object errorDetail) {
-        this.type = type;
-        this.message = message;
+    private SimpliXApiResponse(ResponseType response, String message, T body, String errorCode, Object errorDetail) {
+        this.type = response.name();
         this.body = body;
         this.timestamp = OffsetDateTime.now(); // Current time with system timezone
-        this.errorCode = errorCode;
-        this.errorDetail = errorDetail;
+        if (response != ResponseType.SUCCESS) {
+            this.message = message;
+            this.errorCode = errorCode;
+            this.errorDetail = errorDetail;
+        }
     }
 
     // Success responses
@@ -69,25 +71,4 @@ public class SimpliXApiResponse<T> {
     public static <T> SimpliXApiResponse<T> error(String message, String errorCode, Object errorDetail) {
         return new SimpliXApiResponse<>(ResponseType.ERROR, message, null, errorCode, errorDetail);
     }
-
-    // // Backward compatibility methods for deprecated fields
-    // @Deprecated
-    // public String getErrorType() {
-    //     return errorCode;
-    // }
-
-    // @Deprecated
-    // public void setErrorType(String errorType) {
-    //     this.errorCode = errorType;
-    // }
-
-    // @Deprecated
-    // public Object getError() {
-    //     return errorDetail;
-    // }
-
-    // @Deprecated
-    // public void setError(Object error) {
-    //     this.errorDetail = error;
-    // }
 }

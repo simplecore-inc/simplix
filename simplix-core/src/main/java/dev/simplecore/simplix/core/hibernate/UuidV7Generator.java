@@ -11,10 +11,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * Hibernate ID Generator Type for UUID Version 7
- * 
+ * <p>
  * This annotation creates UUID Version 7 identifiers for JPA entities
  * using the UUID Creator library for optimal performance and standard compliance.
- * 
+ * <p>
  * Usage: @UuidV7Generator
  */
 @IdGeneratorType(dev.simplecore.simplix.core.hibernate.UuidV7GeneratorImpl.class)
