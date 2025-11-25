@@ -1,0 +1,19 @@
+meta {
+  name: User Account Search
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/user/account/search
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {"conditions":[],"page":0,"size":10,"sort":{"orders":[{"field":"createdAt","direction":"DESC"}]}}
+}

@@ -1,0 +1,26 @@
+meta {
+  name: Refresh
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/token/refresh
+  body: none
+  auth: none
+}
+
+headers {
+  X-Refresh-Token: {{refreshToken}}
+}
+
+script:post-response {
+  // 응답이 성공적인 경우에만 토큰 저장
+  if (res.getStatus() === 200) {
+    const responseBody = res.body;
+    bru.setEnvVar("accessToken", responseBody.accessToken);
+    bru.setEnvVar("refreshToken", responseBody.refreshToken);
+    bru.setEnvVar("accessTokenExpiry", responseBody.accessTokenExpiry);
+    bru.setEnvVar("refreshTokenExpiry", responseBody.refreshTokenExpiry);
+  }
+}

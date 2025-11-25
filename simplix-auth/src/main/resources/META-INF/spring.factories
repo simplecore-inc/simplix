@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+dev.simplecore.simplix.auth.properties.SimpliXAuthEnvironmentPostProcessor

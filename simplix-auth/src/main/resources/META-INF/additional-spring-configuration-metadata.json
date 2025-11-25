@@ -1,0 +1,240 @@
+{
+  "properties": [
+    {
+      "name": "simplix.auth.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable SimpliX authentication functionality.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-token-endpoints",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable JWE token endpoints (/api/token/**).",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-web-security",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable web security with form login.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-cors",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable CORS configuration.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-csrf",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable CSRF protection.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-xss-protection",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable XSS protection headers.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.enable-hsts",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable HTTP Strict Transport Security.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.enable-http-basic",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable HTTP Basic authentication.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.require-https",
+      "type": "java.lang.Boolean",
+      "description": "Whether to require HTTPS for all requests.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.security.prefer-token-over-session",
+      "type": "java.lang.Boolean",
+      "description": "Whether to prioritize Bearer token authentication over session authentication when both are present. When true, if a request contains both a valid Bearer token and a session cookie (JSESSIONID), the token will be used for authentication and the session will be ignored.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.security.hsts-max-age-seconds",
+      "type": "java.lang.Long",
+      "description": "HSTS max age in seconds.",
+      "defaultValue": 31536000
+    },
+    {
+      "name": "simplix.auth.security.csrf-ignore-patterns",
+      "type": "java.lang.String[]",
+      "description": "CSRF ignore patterns.",
+      "defaultValue": ["/api/token/**", "/h2-console/**"]
+    },
+    {
+      "name": "simplix.auth.security.login-page-template",
+      "type": "java.lang.String",
+      "description": "Login page template name.",
+      "defaultValue": "login"
+    },
+    {
+      "name": "simplix.auth.security.login-processing-url",
+      "type": "java.lang.String",
+      "description": "Login processing URL.",
+      "defaultValue": "/login"
+    },
+    {
+      "name": "simplix.auth.security.logout-url",
+      "type": "java.lang.String",
+      "description": "Logout URL.",
+      "defaultValue": "/logout"
+    },
+    {
+      "name": "simplix.auth.security.permit-all-patterns",
+      "type": "java.lang.String[]",
+      "description": "URL patterns that are permitted without authentication.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-origins",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed origins.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-methods",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed methods.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allowed-headers",
+      "type": "java.lang.String[]",
+      "description": "CORS allowed headers.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.exposed-headers",
+      "type": "java.lang.String[]",
+      "description": "CORS exposed headers.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.allow-credentials",
+      "type": "java.lang.Boolean",
+      "description": "Whether to allow credentials in CORS.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.cors.max-age",
+      "type": "java.lang.Long",
+      "description": "CORS max age in seconds.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-key",
+      "type": "java.lang.String",
+      "description": "JWE encryption key (RSA private key in PEM format).",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-key-location",
+      "type": "java.lang.String",
+      "description": "Location of JWE encryption key file.",
+      "defaultValue": null
+    },
+    {
+      "name": "simplix.auth.jwe.algorithm",
+      "type": "java.lang.String",
+      "description": "JWE encryption algorithm.",
+      "defaultValue": "RSA-OAEP-256"
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-method",
+      "type": "java.lang.String",
+      "description": "JWE encryption method.",
+      "defaultValue": "A256GCM"
+    },
+    {
+      "name": "simplix.auth.token.access-token-expiration-minutes",
+      "type": "java.lang.Integer",
+      "description": "Access token expiration time in minutes. The access token is used for API authentication and should have a shorter lifetime for security.",
+      "defaultValue": 30
+    },
+    {
+      "name": "simplix.auth.token.refresh-token-expiration-days",
+      "type": "java.lang.Integer",
+      "description": "Refresh token expiration time in days. The refresh token is used to obtain new access tokens without re-authentication.",
+      "defaultValue": 7
+    },
+    {
+      "name": "simplix.auth.token.enable-ip-validation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to validate client IP address in token. When enabled, tokens can only be used from the same IP address where they were issued. Disable this for mobile apps and environments with changing IP addresses.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.enable-user-agent-validation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to validate User-Agent header in token. When enabled, tokens can only be used from the same browser/client where they were issued. Disable this if User-Agent changes frequently.",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.enable-token-rotation",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable token rotation. When enabled, a new token pair is issued upon each refresh, and the old refresh token is invalidated.",
+      "defaultValue": true
+    },
+    {
+      "name": "simplix.auth.token.enable-blacklist",
+      "type": "java.lang.Boolean",
+      "description": "Whether to enable token blacklist for revocation. When enabled, tokens can be explicitly revoked (e.g., on logout). Requires a blacklist implementation (Redis, Caffeine, or In-Memory).",
+      "defaultValue": false
+    },
+    {
+      "name": "simplix.auth.token.blacklist-type",
+      "type": "java.lang.String",
+      "description": "Token blacklist implementation type. 'auto' will automatically select Redis if available, otherwise Caffeine, then In-Memory.",
+      "defaultValue": "auto"
+    },
+    {
+      "name": "simplix.auth.token.create-session-on-token-issue",
+      "type": "java.lang.Boolean",
+      "description": "Whether to create HTTP session when issuing tokens. When enabled, both token and session authentication are available. When disabled, only token-based authentication is used (stateless).",
+      "defaultValue": true
+    }
+  ],
+  "hints": [
+    {
+      "name": "simplix.auth.jwe.algorithm",
+      "values": [
+        {
+          "value": "RSA-OAEP-256",
+          "description": "RSA-OAEP with SHA-256"
+        },
+        {
+          "value": "RSA-OAEP",
+          "description": "RSA-OAEP with SHA-1"
+        }
+      ]
+    },
+    {
+      "name": "simplix.auth.jwe.encryption-method",
+      "values": [
+        {
+          "value": "A256GCM",
+          "description": "AES-256-GCM"
+        },
+        {
+          "value": "A192GCM",
+          "description": "AES-192-GCM"
+        },
+        {
+          "value": "A128GCM",
+          "description": "AES-128-GCM"
+        }
+      ]
+    }
+  ]
+}

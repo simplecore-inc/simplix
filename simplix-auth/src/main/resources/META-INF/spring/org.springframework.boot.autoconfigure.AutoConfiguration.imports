@@ -1,0 +1,8 @@
+dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthAutoConfiguration
+dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthSecurityConfiguration
+dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthMethodSecurityConfiguration
+dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthOpenApiConfiguration
+dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider
+dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter
+dev.simplecore.simplix.auth.web.SimpliXAuthLoginController
+dev.simplecore.simplix.auth.web.SimpliXAuthTokenController
