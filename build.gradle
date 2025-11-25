@@ -231,6 +231,7 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        jvmArgs '-Xshare:off'
     }
 }
 
