@@ -22,6 +22,7 @@ import java.util.Map;
  * </pre>
  */
 @Component
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(NestedObjectSchemaExtractor.class);
@@ -58,7 +59,6 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
     /**
      * Recursively process a schema to find and extract nested object definitions.
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     private void processSchemaForNestedObjects(Schema schema, Map<String, Schema> extractedSchemas,
                                               Map<String, Schema> existingSchemas,
                                               String parentName, String contextPath,
