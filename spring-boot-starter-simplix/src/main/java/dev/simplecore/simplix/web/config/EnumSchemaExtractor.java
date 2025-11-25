@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +15,12 @@ import java.util.stream.Collectors;
  * OpenAPI customizer that extracts inline enum definitions to separate reusable schemas.
  * This improves API documentation by creating named enum types that can be referenced
  * throughout the documentation.
+ *
+ * <p>NOTE: This customizer is ENABLED by default. To disable:
+ * <pre>
+ * simplix.swagger.customizers.enum-extractor.enabled=false
+ * </pre>
  */
-@Component
 public class EnumSchemaExtractor implements OpenApiCustomizer {
 
     private static final Logger log = LoggerFactory.getLogger(EnumSchemaExtractor.class);

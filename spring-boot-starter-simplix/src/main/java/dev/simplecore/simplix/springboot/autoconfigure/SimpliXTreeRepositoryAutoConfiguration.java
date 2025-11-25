@@ -2,7 +2,6 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
-import dev.simplecore.simplix.core.tree.factory.TreeRepositoryFactoryBean;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

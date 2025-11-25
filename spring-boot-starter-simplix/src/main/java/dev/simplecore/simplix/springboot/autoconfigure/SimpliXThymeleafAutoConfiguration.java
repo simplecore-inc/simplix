@@ -27,9 +27,12 @@ import org.thymeleaf.templatemode.TemplateMode;
 
 /**
  * Auto-configuration for Thymeleaf, Error Pages, and JSP ViewResolver
- * 
+ *
+ * <p>IMPORTANT: This configuration uses string-based @ConditionalOnClass to avoid
+ * ClassNotFoundException when Thymeleaf dependencies are not present.
+ *
  * Example application.yml configuration:
- * 
+ *
  * spring:
  *   thymeleaf:
  *     enabled: true                        # Enable/disable Thymeleaf (default: true)
@@ -43,26 +46,29 @@ import org.thymeleaf.templatemode.TemplateMode;
  *     check-template-location: true        # Check template location existence (default: true)
  *     servlet.content-type: text/html      # Content-Type header (default: text/html)
  *     reactive.max-chunk-size: 8192        # Maximum chunk size (default: 8192)
- * 
+ *
  *   mvc:
  *     view:
  *       prefix: /WEB-INF/views/            # JSP file location (default: /WEB-INF/)
  *       suffix: .jsp                       # JSP file extension (default: .jsp)
- * 
+ *
  * server:
  *   error:
  *     whitelabel:
  *       enabled: false                     # Disable default error page
- * 
+ *
  * ViewResolver Priority:
  * - thymeleafViewResolver: order=0 (higher priority)
  * - jspViewResolver: order=1 (lower priority)
  */
 @AutoConfiguration(before = {ErrorMvcAutoConfiguration.class})
-@ConditionalOnClass(SpringTemplateEngine.class)
+@ConditionalOnClass(name = {
+    "org.thymeleaf.spring6.SpringTemplateEngine",
+    "org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver",
+    "nz.net.ultraq.thymeleaf.layoutdialect.LayoutDialect"
+})
 @ConditionalOnProperty(prefix = "spring.thymeleaf", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({ThymeleafProperties.class, WebMvcProperties.class})
-@EnableWebMvc
 public class SimpliXThymeleafAutoConfiguration implements WebMvcConfigurer {
 
     private static final Logger log = LoggerFactory.getLogger(SimpliXThymeleafAutoConfiguration.class);

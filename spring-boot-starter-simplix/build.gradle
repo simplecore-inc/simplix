@@ -12,7 +12,7 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.5.5')
+    set('springBootVersion', '3.5.7')
     set('nimbusJoseVersion', '9.37')
 }
 
@@ -30,9 +30,18 @@ sourceSets {
 dependencies {
     api project(':simplix-core')
 
+    // Include all SimpliX modules (umbrella starter)
+    api project(':simplix-auth')
+    api project(':simplix-cache')
+    api project(':simplix-encryption')
+    api project(':simplix-event')
+    api project(':simplix-excel')
+    api project(':simplix-hibernate')
+    api project(':simplix-mybatis')
+
     // External Libraries
     api 'org.modelmapper:modelmapper'
-    
+
     // Spring Boot Dependencies
     api 'org.springframework.boot:spring-boot-starter'
     api 'org.springframework.boot:spring-boot-starter-web'
@@ -42,19 +51,21 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-security'
     api 'org.springframework.boot:spring-boot-starter-thymeleaf'
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    
+
     // OpenAPI/Swagger
     api 'org.springdoc:springdoc-openapi-starter-webmvc-ui'
     api 'org.springdoc:springdoc-openapi-starter-webmvc-api'
-    
+    // Scalar UI - Not available in SpringDoc 2.7.0 (requires 2.8.x+)
+    // compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-scalar'
+
     // Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
+
     // Spring Boot Optional Dependencies
     compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    
+
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 

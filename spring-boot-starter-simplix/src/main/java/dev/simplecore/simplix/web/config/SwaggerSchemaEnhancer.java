@@ -1,8 +1,6 @@
 package dev.simplecore.simplix.web.config;
 
 import dev.simplecore.searchable.core.annotation.SearchableField;
-import dev.simplecore.simplix.core.annotation.DisplayName;
-import dev.simplecore.simplix.core.annotation.I18nTitle;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import jakarta.annotation.PostConstruct;
@@ -28,7 +26,7 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 /**
- * Swagger customizer to add internationalized validation messages, titles, SearchableField information, and ID field metadata as extension fields
+ * Swagger customizer to add internationalized validation messages, SearchableField information, and ID field metadata as extension fields
  */
 @Component
 public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
@@ -169,8 +167,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                         addI18nExtensions(field, schemaProperty, fieldName);
                         addSearchableFieldExtensions(field, schemaProperty, fieldName);
                         addIdFieldExtensions(field, schemaProperty, fieldName);
-                        addDisplayNameExtensions(field, schemaProperty, fieldName);
-                        
+
                         // Log final extensions after all processing
                         if (schemaProperty.getExtensions() != null) {
                             log.info("Final extensions for field {}: {}", fieldName, 
@@ -206,34 +203,12 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
     
     @SuppressWarnings("rawtypes")
     private void addI18nExtensions(Field field, Schema propertySchema, String fieldName) {
-        log.info("Processing field: {} with schema type: {}, $ref: {}", 
+        log.info("Processing field: {} with schema type: {}, $ref: {}",
             fieldName, propertySchema.getType(), propertySchema.get$ref());
-        
-        // Get I18n titles and validation messages
-        Map<String, String> i18nTitles = getI18nTitles(field);
+
+        // Get validation messages
         Map<String, String> validationMessages = getValidationMessages(field, fieldName);
-        
-        // Handle $ref properties (relationship fields)
-        if (propertySchema.get$ref() != null) {
-            log.info("Processing $ref field: {} with titles: {}", fieldName, i18nTitles);
-            if (!i18nTitles.isEmpty()) {
-                propertySchema.addExtension("x-i18n-titles", i18nTitles);
-                log.info("Successfully added I18n titles for $ref field {}: {}", fieldName, i18nTitles);
-            }
-            
-            if (!validationMessages.isEmpty()) {
-                propertySchema.addExtension("x-i18n-validation-messages", validationMessages);
-                log.info("Successfully added validation messages for $ref field {}: {}", fieldName, validationMessages);
-            }
-            return;
-        }
-        
-        // Add I18n titles for regular fields
-        if (!i18nTitles.isEmpty()) {
-            propertySchema.addExtension("x-i18n-titles", i18nTitles);
-            log.info("Added I18n titles for field {}: {}", fieldName, i18nTitles);
-        }
-        
+
         // Add validation messages
         if (!validationMessages.isEmpty()) {
             propertySchema.addExtension("x-i18n-validation-messages", validationMessages);
@@ -283,7 +258,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                         if (operatorsValue != null && operatorsValue.getClass().isArray()) {
                             Object[] operators = (Object[]) operatorsValue;
                             List<String> operatorNames = Arrays.stream(operators)
-                                .map(op -> op.toString())
+                                .map(Object::toString)
                                 .collect(Collectors.toList());
                             searchableInfo.put("operators", operatorNames);
                             log.debug("Added operators for field {}: {}", fieldName, operatorNames);
@@ -333,7 +308,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             // Add operators information
             if (searchableField.operators() != null && searchableField.operators().length > 0) {
                 List<String> operators = Arrays.stream(searchableField.operators())
-                    .map(op -> op.name())
+                    .map(Enum::name)
                     .collect(Collectors.toList());
                 searchableInfo.put("operators", operators);
                 log.info("Added operators for field {}: {}", fieldName, operators);
@@ -440,71 +415,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.debug("No ID field annotation found on field: {}", fieldName);
         }
     }
-    
-    @SuppressWarnings("rawtypes")
-    private void addDisplayNameExtensions(Field field, Schema propertySchema, String fieldName) {
-        log.info("Processing DisplayName field: {} with schema type: {}, $ref: {}", 
-            fieldName, propertySchema.getType(), propertySchema.get$ref());
-        
-        DisplayName displayNameAnnotation = field.getAnnotation(DisplayName.class);
-        if (displayNameAnnotation != null) {
-            log.info("Found @DisplayName annotation on field: {}", fieldName);
-            
-            Map<String, Object> displayNameInfo = new HashMap<>();
-            displayNameInfo.put("isDisplayName", true);
-            displayNameInfo.put("priority", displayNameAnnotation.priority());
-            
-            // Add description if provided
-            if (displayNameAnnotation.description() != null && !displayNameAnnotation.description().isEmpty()) {
-                displayNameInfo.put("description", displayNameAnnotation.description());
-            }
-            
-            // Add field type information
-            Class<?> fieldType = field.getType();
-            displayNameInfo.put("fieldType", fieldType.getSimpleName());
-            
-            // Handle both $ref and regular properties
-            propertySchema.addExtension("x-display-name", displayNameInfo);
-            log.info("Successfully added DisplayName extensions for field {}: {}", fieldName, displayNameInfo);
-            
-            // Verify the extension was added
-            Object addedExtension = propertySchema.getExtensions() != null ? 
-                propertySchema.getExtensions().get("x-display-name") : null;
-            if (addedExtension != null) {
-                log.info("VERIFIED: DisplayName extension was added for field {}: {}", fieldName, addedExtension);
-            } else {
-                log.error("ERROR: DisplayName extension was NOT added for field {}", fieldName);
-            }
-            
-            // Also log all extensions for this field
-            if (propertySchema.getExtensions() != null) {
-                log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
-            }
-        } else {
-            log.debug("No DisplayName annotation found on field: {}", fieldName);
-        }
-    }
-    
-    private Map<String, String> getI18nTitles(Field field) {
-        Map<String, String> titles = new HashMap<>();
-        
-        I18nTitle i18nTitle = field.getAnnotation(I18nTitle.class);
-        if (i18nTitle != null) {
-            String[] values = i18nTitle.value();
-            for (String value : values) {
-                if (value.contains("=")) {
-                    String[] parts = value.split("=", 2);
-                    if (parts.length == 2) {
-                        titles.put(parts[0].trim(), parts[1].trim());
-                    }
-                }
-            }
-        }
-        
-        return titles;
-    }
-    
-    private Map<String, String> getValidationMessages(Field field, String fieldName) {
+private Map<String, String> getValidationMessages(Field field, String fieldName) {
         Map<String, String> messages = new HashMap<>();
         
         // Check for validation annotations and get corresponding messages
@@ -513,41 +424,32 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             String messageKey = null;
             String defaultMessage = null;
             
-            if (annotation instanceof NotNull) {
-                NotNull notNull = (NotNull) annotation;
-                messageKey = "validation.notnull";
+            if (annotation instanceof NotNull notNull) {
+				messageKey = "validation.notnull";
                 defaultMessage = notNull.message();
-            } else if (annotation instanceof NotBlank) {
-                NotBlank notBlank = (NotBlank) annotation;
-                messageKey = "validation.notblank";
+            } else if (annotation instanceof NotBlank notBlank) {
+				messageKey = "validation.notblank";
                 defaultMessage = notBlank.message();
-            } else if (annotation instanceof NotEmpty) {
-                NotEmpty notEmpty = (NotEmpty) annotation;
-                messageKey = "validation.notempty";
+            } else if (annotation instanceof NotEmpty notEmpty) {
+				messageKey = "validation.notempty";
                 defaultMessage = notEmpty.message();
-            } else if (annotation instanceof Size) {
-                Size size = (Size) annotation;
-                messageKey = "validation.size";
+            } else if (annotation instanceof Size size) {
+				messageKey = "validation.size";
                 defaultMessage = size.message();
-            } else if (annotation instanceof Min) {
-                Min min = (Min) annotation;
-                messageKey = "validation.min";
+            } else if (annotation instanceof Min min) {
+				messageKey = "validation.min";
                 defaultMessage = min.message();
-            } else if (annotation instanceof Max) {
-                Max max = (Max) annotation;
-                messageKey = "validation.max";
+            } else if (annotation instanceof Max max) {
+				messageKey = "validation.max";
                 defaultMessage = max.message();
-            } else if (annotation instanceof Pattern) {
-                Pattern pattern = (Pattern) annotation;
-                messageKey = "validation.pattern";
+            } else if (annotation instanceof Pattern pattern) {
+				messageKey = "validation.pattern";
                 defaultMessage = pattern.message();
-            } else if (annotation instanceof Email) {
-                Email email = (Email) annotation;
-                messageKey = "validation.email";
+            } else if (annotation instanceof Email email) {
+				messageKey = "validation.email";
                 defaultMessage = email.message();
-            } else if (annotation instanceof Length) {
-                Length length = (Length) annotation;
-                messageKey = "validation.length";
+            } else if (annotation instanceof Length length) {
+				messageKey = "validation.length";
                 defaultMessage = length.message();
             }
             
@@ -600,46 +502,41 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 log.warn("UserAccountSearchDTO not found in cache");
                 log.info("Available classes in cache: {}", schemaClassCache.keySet());
             }
-            
-            // Test ID field and DisplayName detection
-            testIdAndDisplayNameDetection();
+
+            // Test ID field detection
+            testIdDetection();
         } catch (Exception e) {
             log.error("Failed to test SearchableField detection", e);
         }
     }
     
-    private void testIdAndDisplayNameDetection() {
+    private void testIdDetection() {
         try {
             // Test with UserAccount class
             Class<?> userAccountClass = schemaClassCache.get("UserAccount");
             if (userAccountClass != null) {
-                log.info("Testing ID and DisplayName detection with class: {}", userAccountClass.getName());
-                
+                log.info("Testing ID detection with class: {}", userAccountClass.getName());
+
                 Field[] fields = userAccountClass.getDeclaredFields();
                 log.info("Class {} has {} fields", userAccountClass.getSimpleName(), fields.length);
-                
+
                 for (Field field : fields) {
                     // Check for ID annotations
                     Id idAnnotation = field.getAnnotation(Id.class);
                     EmbeddedId embeddedIdAnnotation = field.getAnnotation(EmbeddedId.class);
-                    DisplayName displayNameAnnotation = field.getAnnotation(DisplayName.class);
-                    
+
                     if (idAnnotation != null) {
                         log.info("Found @Id annotation on field: {}", field.getName());
                     }
                     if (embeddedIdAnnotation != null) {
                         log.info("Found @EmbeddedId annotation on field: {}", field.getName());
                     }
-                    if (displayNameAnnotation != null) {
-                        log.info("Found @DisplayName annotation on field {}: priority={}, description={}", 
-                            field.getName(), displayNameAnnotation.priority(), displayNameAnnotation.description());
-                    }
                 }
             } else {
                 log.warn("UserAccount not found in cache");
             }
         } catch (Exception e) {
-            log.error("Failed to test ID and DisplayName detection", e);
+            log.error("Failed to test ID detection", e);
         }
     }
 
@@ -747,7 +644,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                     // Add operators
                     if (searchableField.operators() != null && searchableField.operators().length > 0) {
                         List<String> operators = Arrays.stream(searchableField.operators())
-                            .map(op -> op.name())
+                            .map(Enum::name)
                             .collect(Collectors.toList());
                         fieldInfo.put("operators", operators);
                     }

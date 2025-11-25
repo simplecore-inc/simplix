@@ -15,6 +15,11 @@ import java.util.Map;
  * OpenAPI customizer that extracts inline nested objects to separate reusable schemas.
  * This includes generic 'object' types and inline object definitions with properties.
  * Runs after EnumSchemaExtractor to process remaining nested structures.
+ *
+ * <p>Enabled by default. To disable:
+ * <pre>
+ * simplix.swagger.customizers.nested-object-extractor.enabled=false
+ * </pre>
  */
 @Component
 public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
@@ -58,9 +63,30 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                                               Map<String, Schema> existingSchemas,
                                               String parentName, String contextPath,
                                               Map<String, String> schemaHashToName) {
+        processSchemaForNestedObjects(schema, extractedSchemas, existingSchemas,
+            parentName, contextPath, schemaHashToName, new java.util.HashSet<>());
+    }
+
+    /**
+     * Recursively process a schema to find and extract nested object definitions with cycle detection.
+     */
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void processSchemaForNestedObjects(Schema schema, Map<String, Schema> extractedSchemas,
+                                              Map<String, Schema> existingSchemas,
+                                              String parentName, String contextPath,
+                                              Map<String, String> schemaHashToName,
+                                              java.util.Set<String> processingStack) {
         if (schema == null || schema.get$ref() != null) {
             return;
         }
+
+        // Prevent infinite recursion by checking if we're already processing this context
+        if (processingStack.contains(contextPath)) {
+            log.debug("Skipping already processing context: {}", contextPath);
+            return;
+        }
+
+        processingStack.add(contextPath);
 
         // Process properties
         if (schema.getProperties() != null) {
@@ -87,9 +113,11 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                         refSchema.set$ref("#/components/schemas/" + extractedSchemaName);
                         schema.getProperties().put(propName, refSchema);
 
-                        // Recursively process the extracted schema
+                        // Recursively process the extracted schema with the SAME processing stack
+                        // to prevent infinite recursion (SpringDoc 2.8.0+ infinite recursion fix)
                         processSchemaForNestedObjects(extractedSchema, extractedSchemas,
-                            existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName);
+                            existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName,
+                            processingStack);
                     } else if (existingSchemas.containsKey(extractedSchemaName) ||
                                extractedSchemas.containsKey(extractedSchemaName)) {
                         // Schema already exists, just replace with reference
@@ -100,7 +128,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                 } else {
                     // Recursively process nested schemas
                     processSchemaForNestedObjects(propSchema, extractedSchemas,
-                        existingSchemas, parentName, propPath, schemaHashToName);
+                        existingSchemas, parentName, propPath, schemaHashToName, processingStack);
                 }
             });
         }
@@ -127,9 +155,11 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                     refSchema.set$ref("#/components/schemas/" + extractedSchemaName);
                     schema.setItems(refSchema);
 
-                    // Recursively process the extracted schema
+                    // Recursively process the extracted schema with the SAME processing stack
+                    // to prevent infinite recursion (SpringDoc 2.8.0+ infinite recursion fix)
                     processSchemaForNestedObjects(extractedSchema, extractedSchemas,
-                        existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName);
+                        existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName,
+                        processingStack);
                 } else if (existingSchemas.containsKey(extractedSchemaName) ||
                            extractedSchemas.containsKey(extractedSchemaName)) {
                     // Schema already exists, just replace with reference
@@ -139,7 +169,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                 }
             } else {
                 processSchemaForNestedObjects(itemSchema, extractedSchemas,
-                    existingSchemas, parentName, contextPath + "[]", schemaHashToName);
+                    existingSchemas, parentName, contextPath + "[]", schemaHashToName, processingStack);
             }
         }
 
@@ -170,9 +200,11 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                     refSchema.set$ref("#/components/schemas/" + extractedSchemaName);
                     schema.setAdditionalProperties(refSchema);
 
-                    // Recursively process the extracted schema
+                    // Recursively process the extracted schema with the SAME processing stack
+                    // to prevent infinite recursion (SpringDoc 2.8.0+ infinite recursion fix)
                     processSchemaForNestedObjects(extractedSchema, extractedSchemas,
-                        existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName);
+                        existingSchemas, extractedSchemaName, extractedSchemaName, schemaHashToName,
+                        processingStack);
                 } else if (existingSchemas.containsKey(extractedSchemaName) ||
                            extractedSchemas.containsKey(extractedSchemaName)) {
                     // Schema already exists, just replace with reference
@@ -182,9 +214,12 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                 }
             } else {
                 processSchemaForNestedObjects(additionalPropSchema,
-                    extractedSchemas, existingSchemas, parentName, contextPath + "[*]", schemaHashToName);
+                    extractedSchemas, existingSchemas, parentName, contextPath + "[*]", schemaHashToName, processingStack);
             }
         }
+
+        // Remove from processing stack when done
+        processingStack.remove(contextPath);
     }
 
     /**

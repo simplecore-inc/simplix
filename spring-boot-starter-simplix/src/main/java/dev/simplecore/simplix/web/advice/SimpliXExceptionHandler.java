@@ -142,32 +142,76 @@ public class SimpliXExceptionHandler<T> {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public T handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Locale currentLocale = LocaleContextHolder.getLocale();
-        List<Map<String, String>> errors = new ArrayList<>();
+        List<ValidationFieldError> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
-            Map<String, String> fieldError = new HashMap<>();
-            fieldError.put("field", error.getField());
-            
             String message = error.getDefaultMessage();
-            
-            // If message is in {key} format, try to translate with proper arguments
-            if (message != null && message.startsWith("{") && message.endsWith("}")) {
-                String messageKey = message.substring(1, message.length() - 1);
-                try {
-                    // Get constraint annotation attributes for parameter substitution
-                    Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
-                    log.debug("Original error arguments: {}", Arrays.toString(error.getArguments()));
-                    log.debug("Processed message arguments: {}", Arrays.toString(messageArguments));
-                    message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
-                    log.debug("Translated validation message key '{}' with args {} to: '{}'", messageKey, Arrays.toString(messageArguments), message);
-                } catch (Exception e) {
-                    log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
-                    // Keep the original message if translation fails
+
+            // Process message based on placeholder type
+            if (message != null) {
+                // Check for named placeholders like {min}, {max}, {value}
+                if (message.matches(".*\\{[a-zA-Z]+\\}.*")) {
+                    try {
+                        // Get constraint attributes as map
+                        Map<String, Object> attributeMap = ValidationArgumentProcessor.extractConstraintAttributes(error);
+
+                        // Replace named placeholders with actual values
+                        String processedMessage = message;
+                        for (Map.Entry<String, Object> entry : attributeMap.entrySet()) {
+                            String placeholder = "{" + entry.getKey() + "}";
+                            if (processedMessage.contains(placeholder)) {
+                                processedMessage = processedMessage.replace(placeholder, String.valueOf(entry.getValue()));
+                            }
+                        }
+                        message = processedMessage;
+                        log.debug("Substituted named placeholders to: '{}'", message);
+                    } catch (Exception e) {
+                        log.debug("Failed to substitute named placeholders: {}", e.getMessage());
+                    }
+                }
+                // Check for numeric placeholders like {0}, {1}, {2}
+                else if (message.contains("{0}") || message.contains("{1}") || message.contains("{2}")) {
+                    try {
+                        // Get constraint annotation attributes for parameter substitution
+                        Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
+
+                        // Use MessageFormat to replace {0}, {1} placeholders
+                        message = java.text.MessageFormat.format(message, messageArguments);
+                        log.debug("Substituted numeric placeholders to: '{}'", message);
+                    } catch (Exception e) {
+                        log.debug("Failed to substitute numeric placeholders: {}", e.getMessage());
+                    }
+                }
+                // If message is in {key} format, try to translate with proper arguments
+                else if (message.startsWith("{") && message.endsWith("}")) {
+                    String messageKey = message.substring(1, message.length() - 1);
+                    try {
+                        // Get constraint annotation attributes for parameter substitution
+                        Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
+                        message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
+                        log.debug("Translated validation message key '{}' to: '{}'", messageKey, message);
+                    } catch (Exception e) {
+                        log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                    }
                 }
             }
-            
-            fieldError.put("message", message);
-            
-            log.debug("Field validation - Field: {}, Message: {}", error.getField(), message);
+
+            // Extract constraint code from error codes
+            String code = null;
+            if (error.getCodes() != null && error.getCodes().length > 0) {
+                String lastCode = error.getCodes()[error.getCodes().length - 1];
+                int lastDot = lastCode.lastIndexOf('.');
+                code = (lastDot > 0) ? lastCode.substring(lastDot + 1) : lastCode;
+            }
+
+            // Create ValidationFieldError object
+            ValidationFieldError fieldError = new ValidationFieldError(
+                error.getField(),
+                message,
+                error.getRejectedValue(),
+                code
+            );
+
+            log.debug("Field validation - Field: {}, Message: {}, Code: {}", error.getField(), message, code);
             errors.add(fieldError);
         });
         
@@ -185,9 +229,9 @@ public class SimpliXExceptionHandler<T> {
         // Log validation errors as WARN level without stack trace
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
-            log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}", 
-                traceId, request.getRequestURI(), 
-                errors.stream().map(error -> error.get("field")).collect(java.util.stream.Collectors.toList()));
+            log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}",
+                traceId, request.getRequestURI(),
+                errors.stream().map(ValidationFieldError::getField).collect(java.util.stream.Collectors.toList()));
         }
         
         return errorResponse;
