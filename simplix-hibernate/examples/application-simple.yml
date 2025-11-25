@@ -1,0 +1,52 @@
+# Hibernate Cache Module - Simple Configuration
+
+# ===================================
+# ZERO CONFIGURATION (DEFAULT)
+# ===================================
+# The module works automatically without ANY configuration!
+# Just add the dependency and it works.
+
+---
+# ===================================
+# DISABLE MODULE (IF NEEDED)
+# ===================================
+simplix:
+  hibernate:
+    cache:
+      disabled: true  # Only add this to completely disable the module
+
+---
+# ===================================
+# REGION CONFIGURATION (OPTIONAL)
+# ===================================
+simplix:
+  hibernate:
+    cache:
+      regions:
+        default:
+          ttl: 3600  # TTL in seconds
+          max-entries: 10000  # Maximum entries per region
+
+---
+# ===================================
+# THAT'S IT!
+# ===================================
+# The module automatically:
+# ✔ Detects cached entities (@Cache annotation)
+# ✔ Manages cache eviction on entity changes
+# ✔ Uses EhCache-based local cache
+# ✔ Handles query cache automatically
+
+# Just add to build.gradle:
+# implementation 'dev.simplecore.simplix:simplix-hibernate:${simplixVersion}'
+
+# Note: Distributed cache providers (Redis, Hazelcast) are planned for future releases
+
+# And your existing Hibernate L2 cache configuration:
+# spring:
+#   jpa:
+#     properties:
+#       hibernate:
+#         cache:
+#           use_second_level_cache: true
+#           use_query_cache: true

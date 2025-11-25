@@ -1,0 +1,106 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+dependencies {
+    api project(':simplix-core')
+
+    // Spring Framework - compileOnly to avoid conflicts (provided by main starter)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    // Actuator for monitoring and health checks
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Micrometer for metrics
+    implementation 'io.micrometer:micrometer-core'
+
+    // Hibernate - core provided by domain module, jcache needed for 2nd level cache
+    compileOnly 'org.hibernate.orm:hibernate-core'
+    implementation 'org.hibernate.orm:hibernate-jcache'
+
+    // Default cache provider - Ehcache
+    implementation 'org.ehcache:ehcache:3.10.8'
+    implementation 'javax.cache:cache-api:1.1.1'
+
+    // Distributed cache providers (optional)
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
+    compileOnly 'org.redisson:redisson-hibernate-6:3.25.0'
+
+    // Hazelcast support (optional)
+    compileOnly 'com.hazelcast:hazelcast:5.3.6'
+    compileOnly 'com.hazelcast:hazelcast-spring:5.3.6'
+
+    // Infinispan support (optional)
+    compileOnly 'org.infinispan:infinispan-core:14.0.21.Final'
+    compileOnly 'org.infinispan:infinispan-spring-boot3-starter-embedded:14.0.21.Final'
+    compileOnly 'org.infinispan:infinispan-commons:14.0.21.Final'
+
+    // Utilities
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'com.google.guava:guava:32.1.3-jre'
+
+    // Logging
+    implementation 'org.slf4j:slf4j-api'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Configuration processor
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version
+        )
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava.inputs.files(processResources)
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+compileJava.dependsOn(processResources)
