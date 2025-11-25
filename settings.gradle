@@ -10,13 +10,14 @@ pluginManagement {
 
 rootProject.name = 'simplix'
 include 'simplix-core'
+include 'simplix-auth'
+include 'simplix-event'
+include 'simplix-mybatis'
+include 'simplix-hibernate'
+include 'simplix-cache'
+include 'simplix-excel'
+include 'simplix-encryption'
 include 'spring-boot-starter-simplix'
-include 'spring-boot-starter-simplix-auth'
-include 'spring-boot-starter-simplix-event'
-include 'spring-boot-starter-simplix-mybatis'
-include 'spring-boot-starter-simplix-hibernate'
-include 'spring-boot-starter-simplix-cache'
-include 'spring-boot-starter-simplix-excel'
 
 def props = new Properties()
 def propertiesFile = file("gradle.properties")

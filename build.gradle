@@ -1,45 +1,45 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.5' apply false
+    id 'org.springframework.boot' version '3.5.7' apply false
     id 'io.spring.dependency-management' version '1.1.7' apply false
     id 'java'
     id 'maven-publish'
 }
 
 ext {
-    springBootVersion = '3.5.5'
+    springBootVersion = '3.5.7'
     springDocVersion = '2.7.0'
-    
+
     // Common Libraries (not managed by Spring Boot BOM)
     modelMapperVersion = '3.2.0'
-    
+
     // Database & Migration (not managed by Spring Boot BOM)
     hypersistenceVersion = '3.9.4'
-    
+
     // Data & Testing (not managed by Spring Boot BOM)
     datafakerVersion = '2.0.2'
-    
+
     // Excel & Document Processing (not managed by Spring Boot BOM)
     poiVersion = '5.2.4'
     jxlsVersion = '2.14.0'
     jxlsJexcelVersion = '1.0.9'
     commonsCsvVersion = '1.10.0'
-    
+
     // Java Parser (not managed by Spring Boot BOM)
     javaparserVersion = '3.25.4'
-    
+
     // Event & Integration (not managed by Spring Boot BOM)
     jnatsVersion = '2.16.14'
-    
+
     // Auth & Security (not managed by Spring Boot BOM)
     guavaVersion = '31.1-jre'
     jsr305Version = '3.0.2'
-    
+
     // UUID (not managed by Spring Boot BOM)
     uuidCreatorVersion = '6.1.1'
-    
+
     // MyBatis (not managed by Spring Boot BOM)
     mybatisSpringBootVersion = '3.0.4'
-    
+
     // Searchable JPA Dependencies (some managed by Spring Boot BOM)
     hibernateValidatorLegacyVersion = '6.2.5.Final'
     javaxPersistenceVersion = '2.2'
@@ -51,7 +51,7 @@ ext {
 allprojects {
     group = 'dev.simplecore.simplix'
     version = '1.0.0-SNAPSHOT'
-    
+
     System.setProperty("spring.boot.version.check.enabled", "false")
 }
 
@@ -60,26 +60,27 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'maven-publish'
-    
+
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
         }
-        
+
         dependencies {
             // SpringDoc OpenAPI (not managed by Spring Boot BOM)
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
-            
+            dependency "org.springdoc:springdoc-openapi-starter-webmvc-scalar:${springDocVersion}"
+
             // Common Libraries (not managed by Spring Boot BOM)
             dependency "org.modelmapper:modelmapper:${modelMapperVersion}"
-            
+
             // Database & Migration (not managed by Spring Boot BOM)
             dependency "io.hypersistence:hypersistence-utils-hibernate-60:${hypersistenceVersion}"
-            
+
             // Data & Testing (not managed by Spring Boot BOM)
             dependency "net.datafaker:datafaker:${datafakerVersion}"
-            
+
             // Excel & Document Processing (POI managed by Spring Boot BOM, others not)
             dependency "org.apache.poi:poi:${poiVersion}"
             dependency "org.apache.poi:poi-ooxml:${poiVersion}"
@@ -87,24 +88,24 @@ subprojects {
             dependency "org.jxls:jxls-poi:${jxlsVersion}"
             dependency "org.jxls:jxls-jexcel:${jxlsJexcelVersion}"
             dependency "org.apache.commons:commons-csv:${commonsCsvVersion}"
-            
+
             // Java Parser (not managed by Spring Boot BOM)
             dependency "com.github.javaparser:javaparser-core:${javaparserVersion}"
             dependency "com.github.javaparser:javaparser-symbol-solver-core:${javaparserVersion}"
-            
+
             // Event & Integration (not managed by Spring Boot BOM)
             dependency "io.nats:jnats:${jnatsVersion}"
-            
+
             // Auth & Security (not managed by Spring Boot BOM)
             dependency "com.google.guava:guava:${guavaVersion}"
             dependency "com.google.code.findbugs:jsr305:${jsr305Version}"
-            
+
             // UUID (not managed by Spring Boot BOM)
             dependency "com.github.f4b6a3:uuid-creator:${uuidCreatorVersion}"
-            
+
             // MyBatis (not managed by Spring Boot BOM)
             dependency "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisSpringBootVersion}"
-            
+
             // Searchable JPA Dependencies (some managed by Spring Boot BOM)
             dependency "org.hibernate.validator:hibernate-validator:${hibernateValidatorLegacyVersion}"
             dependency "javax.persistence:javax.persistence-api:${javaxPersistenceVersion}"
@@ -113,12 +114,12 @@ subprojects {
             dependency "dev.simplecore.searchable:spring-boot-starter-searchable-jpa:${searchableJpaVersion}"
         }
     }
-    
+
     publishing {
         publications {
             mavenJava(MavenPublication) {
                 from components.java
-                
+
                 versionMapping {
                     usage('java-api') {
                         fromResolutionOf('runtimeClasspath')
@@ -132,35 +133,39 @@ subprojects {
                     def metadata = [
                         'simplix-core': [
                             name: 'SimpliX Core',
-                            description: 'Core library for SimpliX Framework'
+                            description: 'Core library providing SPI patterns, base entities, tree repository support, and security utilities'
                         ],
                         'spring-boot-starter-simplix': [
-                                name: 'Spring Boot Starter for SimpliX',
-                                description: 'Spring Boot Starter for SimpliX Framework'
+                            name: 'Spring Boot Starter for SimpliX',
+                            description: 'All-in-one umbrella starter that includes all SimpliX modules (auth, event, cache, hibernate, mybatis, excel, encryption)'
                         ],
-                        'spring-boot-starter-simplix-auth': [
+                        'simplix-auth': [
                             name: 'SimpliX Auth',
-                            description: 'Auth library for SimpliX Framework'
+                            description: 'Authentication and authorization with JWT/JWE token support and Spring Security integration'
                         ],
-                        'spring-boot-starter-simplix-event': [
+                        'simplix-event': [
                             name: 'SimpliX Event',
-                            description: 'Event library for SimpliX Framework'
+                            description: 'Event-driven architecture with strategy pattern supporting Local, Redis Pub/Sub, Kafka, and RabbitMQ'
                         ],
-                        'spring-boot-starter-simplix-hibernate': [
-                                name: 'Spring Boot Starter for SimpliX Hibernate',
-                                description: 'Spring Boot Starter for SimpliX Hibernate'
+                        'simplix-hibernate': [
+                            name: 'SimpliX Hibernate Cache',
+                            description: 'Automatic Hibernate 2nd level cache management with support for Ehcache, Redis, Hazelcast, and Infinispan'
                         ],
-                        'spring-boot-starter-simplix-cache': [
-                                name: 'Spring Boot Starter for SimpliX Cache',
-                                description: 'Spring Boot Starter for SimpliX Cache'
+                        'simplix-cache': [
+                            name: 'SimpliX Cache',
+                            description: 'SPI-based cache abstraction providing unified API for Caffeine (local) and Redis (distributed) caching'
                         ],
-                        'spring-boot-starter-simplix-mybatis': [
-                            name: 'Spring Boot Starter for SimpliX MyBatis',
-                            description: 'Spring Boot Starter for SimpliX MyBatis'
+                        'simplix-mybatis': [
+                            name: 'SimpliX MyBatis',
+                            description: 'MyBatis integration with custom type handlers and mapper configurations'
                         ],
-                        'spring-boot-starter-simplix-excel': [
-                            name: 'Spring Boot Starter for SimpliX Excel',
-                            description: 'Spring Boot Starter for SimpliX Excel'
+                        'simplix-excel': [
+                            name: 'SimpliX Excel',
+                            description: 'Excel and CSV import/export with Apache POI integration and template processing'
+                        ],
+                        'simplix-encryption': [
+                            name: 'SimpliX Encryption',
+                            description: 'Multi-provider encryption supporting Simple (dev), Managed (file-based), and Vault (production) key providers with rotation'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {
@@ -171,7 +176,7 @@ subprojects {
                         throw new RuntimeException("No metadata found for project: ${project.name}")
                     }
                     url = 'https://github.com/simplecore-inc/simplix'
-                    
+
                     licenses {
                         license {
                             name = 'SimpliX License, Version 1.0'
@@ -192,7 +197,7 @@ subprojects {
                 }
             }
         }
-        
+
         repositories {
             mavenLocal()
             maven {
@@ -210,11 +215,18 @@ subprojects {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
         withSourcesJar()
+        withJavadocJar()
     }
 
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
         options.compilerArgs.addAll(['-parameters', "-Xlint:-deprecation", "-Xlint:-options"])
+    }
+
+    tasks.withType(Javadoc).configureEach {
+        options.encoding = 'UTF-8'
+        options.addStringOption('Xdoclint:none', '-quiet')
+        options.addStringOption('Xmaxwarns', '1')
     }
 
     test {
