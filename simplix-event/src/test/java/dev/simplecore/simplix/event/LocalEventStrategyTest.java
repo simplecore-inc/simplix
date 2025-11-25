@@ -30,7 +30,7 @@ class LocalEventStrategyTest {
 
     @Test
     @DisplayName("Should publish event using Spring ApplicationEventPublisher")
-    void shouldPublishEventUsingApplicationEventPublisher() {
+    void shouldPublishEventUsingApplicationEventPublisher() throws Exception {
         // Given
         Event event = TestEvent.builder()
             .id("local-event-001")
@@ -41,10 +41,14 @@ class LocalEventStrategyTest {
             .metadata(new HashMap<>())
             .build();
 
+        // defaults() uses async=true, so we need to wait for async execution
         PublishOptions options = PublishOptions.defaults();
 
         // When
         localEventStrategy.publish(event, options);
+
+        // Wait for async execution to complete
+        Thread.sleep(100);
 
         // Then
         verify(mockEventPublisher, times(1)).publishEvent(event);
@@ -76,7 +80,7 @@ class LocalEventStrategyTest {
 
     @Test
     @DisplayName("Should publish event asynchronously when async is true")
-    void shouldPublishEventAsynchronously() {
+    void shouldPublishEventAsynchronously() throws Exception {
         // Given
         Event event = TestEvent.builder()
             .id("async-event-001")
@@ -93,6 +97,9 @@ class LocalEventStrategyTest {
 
         // When
         localEventStrategy.publish(event, options);
+
+        // Wait for async execution to complete
+        Thread.sleep(100);
 
         // Then
         verify(mockEventPublisher, times(1)).publishEvent(event);
@@ -140,7 +147,10 @@ class LocalEventStrategyTest {
     @Test
     @DisplayName("Should handle critical events")
     void shouldHandleCriticalEvents() {
-        // Given
+        // Given - use a fresh mock for this test to avoid interference
+        ApplicationEventPublisher failingPublisher = mock(ApplicationEventPublisher.class);
+        LocalEventStrategy strategyWithFailingPublisher = new LocalEventStrategy(failingPublisher);
+
         Event event = TestEvent.builder()
             .id("critical-event-001")
             .aggregateId("entity-004")
@@ -153,14 +163,15 @@ class LocalEventStrategyTest {
         PublishOptions options = PublishOptions.builder()
             .critical(true)
             .persistent(true)
+            .async(false) // Must be sync to catch exception
             .build();
 
         doThrow(new RuntimeException("Publishing failed"))
-            .when(mockEventPublisher).publishEvent(any(Event.class));
+            .when(failingPublisher).publishEvent(any(Event.class));
 
         // When/Then
         try {
-            localEventStrategy.publish(event, options);
+            strategyWithFailingPublisher.publish(event, options);
             assert false : "Should have thrown exception for critical event";
         } catch (LocalEventStrategy.EventPublishException e) {
             assertThat(e.getMessage()).contains("Failed to publish critical event");

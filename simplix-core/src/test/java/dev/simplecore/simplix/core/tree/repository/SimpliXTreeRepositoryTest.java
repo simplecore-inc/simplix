@@ -21,7 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Test configuration for JPA testing
-@org.springframework.boot.test.context.TestConfiguration
+@org.springframework.boot.autoconfigure.SpringBootApplication
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
@@ -49,11 +49,8 @@ class SimpliXTreeRepositoryTest {
 
     private CodeGroup codeGroup;
     private CodeItem root;
-    private CodeItem child1;
-    private CodeItem child2;
-    private CodeItem grandChild1;
 
-    @BeforeEach
+	@BeforeEach
     void setUp() {
         // Create code group
         codeGroup = new CodeGroup();
@@ -69,14 +66,14 @@ class SimpliXTreeRepositoryTest {
         entityManager.flush();
 
         // Create child code items
-        child1 = createCodeItem("CHILD1", "Child1", root.getId(), 1);
-        child2 = createCodeItem("CHILD2", "Child2", root.getId(), 2);
+		CodeItem child1 = createCodeItem("CHILD1", "Child1", root.getId(), 1);
+		CodeItem child2 = createCodeItem("CHILD2", "Child2", root.getId(), 2);
         entityManager.persist(child1);
         entityManager.persist(child2);
         entityManager.flush();
 
         // Create grandchild code item
-        grandChild1 = createCodeItem("GRANDCHILD1", "Grandchild1", child1.getId(), 1);
+		CodeItem grandChild1 = createCodeItem("GRANDCHILD1", "Grandchild1", child1.getId(), 1);
         entityManager.persist(grandChild1);
         entityManager.flush();
         entityManager.clear();

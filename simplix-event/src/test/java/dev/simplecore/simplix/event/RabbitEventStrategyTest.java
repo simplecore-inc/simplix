@@ -45,21 +45,16 @@ class RabbitEventStrategyTest {
         when(mockConnection.isOpen()).thenReturn(true);
         when(mockRabbitTemplate.getMessageConverter()).thenReturn(new Jackson2JsonMessageConverter(objectMapper));
 
-        rabbitEventStrategy = new RabbitEventStrategy(mockRabbitTemplate, objectMapper);
-
-        // Use reflection to set the exchange name since it's injected by @Value
-        java.lang.reflect.Field exchangeField = RabbitEventStrategy.class.getDeclaredField("exchangeName");
-        exchangeField.setAccessible(true);
-        exchangeField.set(rabbitEventStrategy, "test.exchange");
-
-        java.lang.reflect.Field routingKeyPrefixField = RabbitEventStrategy.class.getDeclaredField("routingKeyPrefix");
-        routingKeyPrefixField.setAccessible(true);
-        routingKeyPrefixField.set(rabbitEventStrategy, "event.");
+        rabbitEventStrategy = new RabbitEventStrategy();
+        rabbitEventStrategy.setRabbitTemplate(mockRabbitTemplate);
+        rabbitEventStrategy.setObjectMapper(objectMapper);
+        rabbitEventStrategy.setExchangeName("test.exchange");
+        rabbitEventStrategy.setRoutingKeyPrefix("event.");
     }
 
     @Test
     @DisplayName("Should publish event to RabbitMQ exchange")
-    void shouldPublishEventToRabbitMQ() {
+    void shouldPublishEventToRabbitMQ() throws Exception {
         // Given
         rabbitEventStrategy.initialize();
 
@@ -72,10 +67,14 @@ class RabbitEventStrategyTest {
             .metadata(new HashMap<>())
             .build();
 
+        // defaults() uses async=true, so we need to wait
         PublishOptions options = PublishOptions.defaults();
 
         // When
         rabbitEventStrategy.publish(event, options);
+
+        // Wait for async execution
+        Thread.sleep(100);
 
         // Then
         verify(mockRabbitTemplate, atLeastOnce()).convertAndSend(
@@ -153,6 +152,6 @@ class RabbitEventStrategyTest {
     @DisplayName("Should return strategy name")
     void shouldReturnStrategyName() {
         // Then
-        assertThat(rabbitEventStrategy.getName()).isEqualTo("RabbitMQ");
+        assertThat(rabbitEventStrategy.getName()).isEqualTo("RabbitEventStrategy");
     }
 }

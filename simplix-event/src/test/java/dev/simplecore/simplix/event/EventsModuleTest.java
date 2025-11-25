@@ -35,7 +35,7 @@ class EventsModuleTest {
 
     @Test
     @DisplayName("Should publish event using local strategy")
-    void shouldPublishEventUsingLocalStrategy() {
+    void shouldPublishEventUsingLocalStrategy() throws Exception {
         // Given
         Event event = TestEvent.builder()
             .id("test-event-001")
@@ -46,8 +46,11 @@ class EventsModuleTest {
             .metadata(new HashMap<>())
             .build();
 
-        // When
+        // When - default publish uses async=true
         eventPublisher.publish(event);
+
+        // Wait for async execution
+        Thread.sleep(100);
 
         // Then
         verify(mockApplicationEventPublisher).publishEvent(any(Event.class));
@@ -82,7 +85,7 @@ class EventsModuleTest {
 
     @Test
     @DisplayName("Should enrich event metadata when ID is not set")
-    void shouldEnrichEventMetadata() {
+    void shouldEnrichEventMetadata() throws Exception {
         // Given
         Event event = TestEvent.builder()
             .aggregateId("entity-003")
@@ -91,8 +94,11 @@ class EventsModuleTest {
             .metadata(new HashMap<>())
             .build();
 
-        // When
+        // When - default publish uses async=true
         eventPublisher.publish(event);
+
+        // Wait for async execution
+        Thread.sleep(100);
 
         // Then
         verify(mockApplicationEventPublisher).publishEvent(any(Event.class));

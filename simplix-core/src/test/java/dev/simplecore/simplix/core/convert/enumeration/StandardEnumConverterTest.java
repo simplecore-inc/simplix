@@ -25,7 +25,7 @@ class StandardEnumConverterTest {
         // Setup ObjectMapper with SimpliXEnumSerializer
         objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer((Class)Enum.class, new SimpliXEnumSerializer());
+        module.addSerializer((Class) Enum.class, new SimpliXEnumSerializer());
         objectMapper.registerModule(module);
     }
 
@@ -40,9 +40,10 @@ class StandardEnumConverterTest {
 
         // Then
         assertNotNull(result);
+        assertEquals("UserRole", result.get("type"));
         assertEquals("ADMIN", result.get("value"));
         assertEquals("관리자", result.get("label"));
-        assertEquals(2, result.size()); // value and label only
+        assertEquals(3, result.size()); // type, value, and label
     }
 
     @Test
@@ -56,8 +57,9 @@ class StandardEnumConverterTest {
 
         // Then
         assertNotNull(result);
+        assertEquals("Status", result.get("type"));
         assertEquals("ACTIVE", result.get("value"));
-        assertEquals(1, result.size()); // value only
+        assertEquals(2, result.size()); // type and value
     }
 
     @Test
@@ -71,10 +73,11 @@ class StandardEnumConverterTest {
 
         // Then
         assertNotNull(result);
+        assertEquals("Priority", result.get("type"));
         assertEquals("HIGH", result.get("value"));
         assertEquals("높음", result.get("label"));
         assertEquals(3, result.get("level"));
-        assertEquals(3, result.size()); // value, label, and level
+        assertEquals(4, result.size()); // type, value, label, and level
     }
 
     @Test

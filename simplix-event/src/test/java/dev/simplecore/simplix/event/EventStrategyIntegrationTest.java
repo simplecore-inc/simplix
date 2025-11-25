@@ -39,7 +39,7 @@ class EventStrategyIntegrationTest {
     void shouldSelectLocalStrategyWhenModeIsLocal() {
         // Given
         LocalEventStrategy localStrategy = new LocalEventStrategy(mockApplicationEventPublisher);
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
 
         // When
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "local");
@@ -101,7 +101,7 @@ class EventStrategyIntegrationTest {
         when(localStrategy.supports("unknown")).thenReturn(false);
         when(localStrategy.getName()).thenReturn("Local");
 
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
 
         // When/Then
         assertThatThrownBy(() -> new UnifiedEventPublisher(strategies, "unknown"))
@@ -113,7 +113,7 @@ class EventStrategyIntegrationTest {
     @DisplayName("Should throw exception when no strategies available")
     void shouldThrowExceptionWhenNoStrategiesAvailable() {
         // Given
-        List<EventStrategy> strategies = Arrays.asList();
+        List<EventStrategy> strategies = List.of();
 
         // When/Then
         assertThatThrownBy(() -> new UnifiedEventPublisher(strategies, "local"))
@@ -126,7 +126,7 @@ class EventStrategyIntegrationTest {
     void shouldPublishEventThroughUnifiedPublisher() {
         // Given
         LocalEventStrategy localStrategy = new LocalEventStrategy(mockApplicationEventPublisher);
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "local");
 
         Event event = TestEvent.builder()
@@ -150,7 +150,7 @@ class EventStrategyIntegrationTest {
     void shouldPublishEventWithOptionsThroughUnifiedPublisher() {
         // Given
         LocalEventStrategy localStrategy = new LocalEventStrategy(mockApplicationEventPublisher);
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "local");
 
         Event event = TestEvent.builder()
@@ -176,18 +176,17 @@ class EventStrategyIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should handle null event gracefully")
-    void shouldHandleNullEventGracefully() {
+    @DisplayName("Should reject null event")
+    void shouldRejectNullEvent() {
         // Given
         LocalEventStrategy localStrategy = new LocalEventStrategy(mockApplicationEventPublisher);
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "local");
 
-        // When
-        publisher.publish(null);
-
-        // Then - Should not throw exception
-        assertThat(publisher.isAvailable()).isTrue();
+        // When/Then - Should throw IllegalArgumentException
+        assertThatThrownBy(() -> publisher.publish(null))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("null event");
     }
 
     @Test
@@ -195,7 +194,7 @@ class EventStrategyIntegrationTest {
     void shouldEnrichEventMetadataWhenIdIsNotSet() throws Exception {
         // Given
         LocalEventStrategy localStrategy = new LocalEventStrategy(mockApplicationEventPublisher);
-        List<EventStrategy> strategies = Arrays.asList(localStrategy);
+        List<EventStrategy> strategies = List.of(localStrategy);
         UnifiedEventPublisher publisher = new UnifiedEventPublisher(strategies, "local");
 
         // Use reflection to set enrichMetadata and instanceId
@@ -236,7 +235,7 @@ class EventStrategyIntegrationTest {
         doThrow(new RuntimeException("Strategy failed"))
             .when(failingStrategy).publish(any(), any());
 
-        List<EventStrategy> strategies = Arrays.asList(failingStrategy);
+        List<EventStrategy> strategies = List.of(failingStrategy);
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "failing");
 
         Event event = TestEvent.builder()
@@ -269,7 +268,7 @@ class EventStrategyIntegrationTest {
         doThrow(new RuntimeException("Strategy failed"))
             .when(failingStrategy).publish(any(), any());
 
-        List<EventStrategy> strategies = Arrays.asList(failingStrategy);
+        List<EventStrategy> strategies = List.of(failingStrategy);
         EventPublisher publisher = new UnifiedEventPublisher(strategies, "failing");
 
         Event event = TestEvent.builder()

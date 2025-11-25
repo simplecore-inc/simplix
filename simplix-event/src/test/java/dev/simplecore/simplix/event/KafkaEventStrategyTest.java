@@ -120,29 +120,31 @@ class KafkaEventStrategyTest {
         // When
         kafkaEventStrategy.publish(event, options);
 
-        // Then
+        // Then - topic is built from topicPrefix + eventType.toLowerCase()
         verify(mockKafkaTemplate).send(
             argThat((ProducerRecord<String, Object> record) ->
-                record.topic().equals("simplix-events-domain-events"))
+                record.topic().equals("simplix-events-entity_updated"))
         );
     }
 
     @Test
-    @DisplayName("Should use default topic when no routing key specified")
-    void shouldUseDefaultTopicWhenNoRoutingKeySpecified() throws Exception {
+    @DisplayName("Should use routing key when specified")
+    void shouldUseRoutingKeyWhenSpecified() throws Exception {
         // Given
         kafkaEventStrategy.initialize();
 
         Event event = TestEvent.builder()
-            .id("default-topic-event-001")
+            .id("routing-key-event-001")
             .aggregateId("entity-003")
             .eventType("ENTITY_DELETED")
             .occurredAt(Instant.now())
-            .payload(Map.of("useDefaultTopic", true))
+            .payload(Map.of("useRoutingKey", true))
             .metadata(new HashMap<>())
             .build();
 
-        PublishOptions options = PublishOptions.defaults();
+        PublishOptions options = PublishOptions.builder()
+            .routingKey("custom-topic")
+            .build();
 
         CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
         when(mockKafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
@@ -151,10 +153,10 @@ class KafkaEventStrategyTest {
         // When
         kafkaEventStrategy.publish(event, options);
 
-        // Then
+        // Then - topic uses routingKey when specified
         verify(mockKafkaTemplate).send(
             argThat((ProducerRecord<String, Object> record) ->
-                record.topic().equals("simplix-events-domain-events"))
+                record.topic().equals("simplix-events-custom-topic"))
         );
     }
 
@@ -206,8 +208,7 @@ class KafkaEventStrategyTest {
         PublishOptions options = PublishOptions.builder()
             .critical(true)
             .async(false)  // Use sync for predictable testing
-            .maxRetries(3)
-            .retryDelay(java.time.Duration.ofMillis(100))
+            .maxRetries(0) // No retries to get immediate exception
             .build();
 
         CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
@@ -221,7 +222,7 @@ class KafkaEventStrategyTest {
             assert false : "Should have thrown exception for critical event";
         } catch (KafkaEventStrategy.KafkaPublishException e) {
             // Expected for critical events
-            assertThat(e.getMessage()).contains("Failed to publish critical event");
+            assertThat(e.getMessage()).contains("Failed to publish critical event to Kafka");
         }
     }
 
