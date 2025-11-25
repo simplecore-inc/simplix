@@ -1,0 +1,98 @@
+# SimpliX Encryption Module Configuration
+# These are the default settings for the encryption infrastructure.
+# Override these in your application.yml as needed.
+
+simplix:
+  encryption:
+    # Encryption Configuration
+    enabled: true  # Enabled by default with appropriate providers
+
+    # Key Provider Selection (vault, managed, simple)
+    provider: ${SIMPLIX_ENCRYPTION_PROVIDER:#{null}}  # Auto-detected based on profile if not specified
+
+    # SimpleKeyProvider Configuration (dev/test/local)
+    static-key: ${SIMPLIX_ENCRYPTION_STATIC_KEY:dev-default-key-do-not-use-in-production}  # Static key for SimpleKeyProvider
+    simple:
+      allow-rotation: false  # SimpleKeyProvider doesn't support rotation
+
+    # ManagedKeyProvider Configuration (file-based/staging)
+    master-key: ${SIMPLIX_ENCRYPTION_MASTER_KEY:#{null}}  # Master encryption key for ManagedKeyProvider
+    salt: ${SIMPLIX_ENCRYPTION_SALT:#{null}}  # Encryption salt
+    key-store-path: ${SIMPLIX_ENCRYPTION_KEY_STORE_PATH:#{null}}  # Path to key store for ManagedKeyProvider
+
+    # VaultKeyProvider Configuration (production/staging)
+    vault:
+      enabled: ${SIMPLIX_ENCRYPTION_VAULT_ENABLED:true}  # Enable Vault integration
+      path: secret/encryption  # Vault path for keys
+      namespace: ${SIMPLIX_ENCRYPTION_VAULT_NAMESPACE:#{null}}  # Vault namespace (Enterprise only)
+
+    # Key Rotation Settings (applies to VaultKeyProvider and ManagedKeyProvider)
+    rotation:
+      enabled: ${SIMPLIX_ENCRYPTION_ROTATION_ENABLED:false}  # Enable key rotation
+      days: ${SIMPLIX_ENCRYPTION_ROTATION_DAYS:90}  # Days between key rotations
+    auto-rotation: ${SIMPLIX_ENCRYPTION_AUTO_ROTATION:false}  # Enable automatic scheduled rotation
+    rotation-cron: "0 0 2 * * ?"  # Daily at 2 AM for scheduler service
+
+# Profile-specific configurations
+---
+# Development Profile
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+simplix:
+  encryption:
+    provider: simple  # Use SimpleKeyProvider in development
+    vault:
+      enabled: false
+    rotation:
+      enabled: false
+
+---
+# Local Profile
+spring:
+  config:
+    activate:
+      on-profile: local
+
+simplix:
+  encryption:
+    provider: simple  # Use SimpleKeyProvider in local environment
+    vault:
+      enabled: false
+    rotation:
+      enabled: false
+
+---
+# Staging Profile
+spring:
+  config:
+    activate:
+      on-profile: staging
+
+simplix:
+  encryption:
+    provider: ${SIMPLIX_ENCRYPTION_PROVIDER:managed}  # Default to ManagedKeyProvider, can override to vault
+    rotation:
+      enabled: true
+      days: 30  # More frequent rotation in staging
+    auto-rotation: true
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+simplix:
+  encryption:
+    enabled: true  # Always enable encryption in production
+    provider: vault  # Always use VaultKeyProvider in production
+    vault:
+      enabled: true
+    rotation:
+      enabled: true  # Mandatory for compliance
+      days: 90
+    auto-rotation: true  # Enable automatic rotation in production
