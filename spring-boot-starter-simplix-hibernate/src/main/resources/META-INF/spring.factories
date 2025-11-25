@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  dev.simplecore.simplix.hibernate.cache.config.HibernateCacheAutoConfiguration
