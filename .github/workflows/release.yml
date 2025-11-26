@@ -31,21 +31,20 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: 8.5
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Update version in build.gradle
         run: |
-          sed -i "s/version = '.*'/version = '${{ github.event.inputs.version }}'/" build.gradle
+          sed -i "s/projectVersion = '.*'/projectVersion = '${{ github.event.inputs.version }}'/" build.gradle
           git config --global user.email "devteam@simplecore.dev"
           git config --global user.name "simplecore"
           git add build.gradle
           git commit -m "release: v${{ github.event.inputs.version }}"
+          git push origin ${{ github.event.inputs.branch }}
 
       - name: Build and Publish
         run: |
-          gradle clean publish --info --stacktrace
+          ./gradlew clean publish --info --stacktrace
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,7 +57,7 @@ jobs:
       - name: Update to Next Development Version
         run: |
           NEXT_VERSION=$(echo ${{ github.event.inputs.version }} | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')-SNAPSHOT
-          sed -i "s/version = '.*'/version = '$NEXT_VERSION'/" build.gradle
+          sed -i "s/projectVersion = '.*'/projectVersion = '$NEXT_VERSION'/" build.gradle
           git add build.gradle
           git commit -m "chore: prepare for next development version $NEXT_VERSION"
           git push origin ${{ github.event.inputs.branch }}
@@ -68,19 +67,19 @@ jobs:
         run: |
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 "v${{ github.event.inputs.version }}^" 2>/dev/null || echo "")
           if [ -z "$PREVIOUS_TAG" ]; then
-            NOTES=$(git log --pretty=format:"* %s" --no-merges --perl-regexp --author='^((?!github-actions).*)$' "v${{ github.event.inputs.version }}")
+            NOTES=$(git log --pretty=format:"* %s (%an)" --no-merges "v${{ github.event.inputs.version }}" | grep -v "github-actions")
           else
-            NOTES=$(git log --pretty=format:"* %s" --no-merges --perl-regexp --author='^((?!github-actions).*)$' "$PREVIOUS_TAG..v${{ github.event.inputs.version }}")
+            NOTES=$(git log --pretty=format:"* %s (%an)" --no-merges "$PREVIOUS_TAG..v${{ github.event.inputs.version }}" | grep -v "github-actions")
           fi
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.event.inputs.version }}
           name: Release v${{ github.event.inputs.version }}
           body: ${{ steps.release_notes.outputs.notes }}
           draft: false
-          prerelease: false 
+          prerelease: false
