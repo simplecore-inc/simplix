@@ -32,6 +32,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.5'
 
       - name: Update version in build.gradle
         run: |
@@ -44,7 +46,7 @@ jobs:
 
       - name: Build and Publish
         run: |
-          ./gradlew clean publish --info --stacktrace
+          gradle clean publish --info --stacktrace
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
