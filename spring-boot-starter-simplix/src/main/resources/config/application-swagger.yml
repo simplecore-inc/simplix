@@ -18,14 +18,13 @@ springdoc:
   override-with-generic-response: false
 
 # ============================================================
-# Scalar UI Configuration (Modern alternative to Swagger UI) - OPTIONAL
+# Scalar UI Configuration (Modern alternative to Swagger UI)
 # ============================================================
-# OPTIONAL: Scalar requires additional dependency in client project:
-#   implementation 'org.springdoc:springdoc-openapi-starter-webmvc-scalar'
-#
-# NOTE: Scalar uses 'scalar.*' prefix, NOT 'springdoc.scalar.*'
-# See: examples/SCALAR_SETUP_GUIDE.md for complete setup instructions
+# Scalar API Reference is included in spring-boot-starter-simplix
+# Dependency: com.scalar.maven:scalar
+# See: https://github.com/scalar/scalar
 #
 # scalar:
-#   enabled: true
-#   path: /scalar
+#   enabled: true              # Enable Scalar UI (default: true)
+#   url: /v3/api-docs          # OpenAPI specification URL
+#   path: /scalar              # Scalar UI endpoint path

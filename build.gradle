@@ -59,6 +59,11 @@ ext {
     // Testing
     // ============================================================
     datafakerVersion = '2.0.2'
+
+    // ============================================================
+    // API Documentation
+    // ============================================================
+    scalarVersion = '0.3.11'
 }
 
 allprojects {
@@ -83,7 +88,9 @@ subprojects {
             // SpringDoc OpenAPI (not managed by Spring Boot BOM)
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
             dependency "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
-            dependency "org.springdoc:springdoc-openapi-starter-webmvc-scalar:${springDocVersion}"
+
+            // Scalar API Reference (https://github.com/scalar/scalar)
+            dependency "com.scalar.maven:scalar:${scalarVersion}"
 
             // Common Libraries (not managed by Spring Boot BOM)
             dependency "org.modelmapper:modelmapper:${modelMapperVersion}"

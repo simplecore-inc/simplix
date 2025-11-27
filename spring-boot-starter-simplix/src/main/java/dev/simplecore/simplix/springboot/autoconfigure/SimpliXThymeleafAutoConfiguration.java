@@ -16,10 +16,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.core.io.Resource;
+
+import java.io.IOException;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
@@ -89,9 +92,19 @@ public class SimpliXThymeleafAutoConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/")
-                .addResourceLocations("classpath:/vendor/")
-                .setCachePeriod(3600);
+                .addResourceLocations("classpath:/static/", "classpath:/vendor/")
+                .setCachePeriod(3600)
+                .resourceChain(false)
+                .addResolver(new PathResourceResolver() {
+                    @Override
+                    protected Resource getResource(@NonNull String resourcePath, @NonNull Resource location) throws IOException {
+                        // Exclude paths handled by controllers (e.g., Scalar API Reference, Swagger UI)
+                        if (resourcePath.startsWith("scalar") || resourcePath.startsWith("swagger")) {
+                            return null;
+                        }
+                        return super.getResource(resourcePath, location);
+                    }
+                });
     }
 
     @Bean

@@ -44,17 +44,18 @@ import org.springframework.context.annotation.Primary;
  *       url: https://www.apache.org/licenses/LICENSE-2.0
  *   packages-to-scan: com.example.controller
  *
- * # Scalar UI (modern alternative to Swagger UI) - OPTIONAL
- * # Requires: implementation 'org.springdoc:springdoc-openapi-starter-webmvc-scalar'
- * # NOTE: Uses 'scalar.*' prefix, NOT 'springdoc.scalar.*'
+ * # Scalar UI (modern alternative to Swagger UI)
+ * # Dependency: com.scalar.maven:scalar (included in spring-boot-starter-simplix)
+ * # See: https://github.com/scalar/scalar
  * scalar:
- *   enabled: true            # Enable modern Scalar UI (default: false)
- *   path: /scalar            # Scalar UI path
+ *   enabled: true            # Enable Scalar UI (default: true when dependency present)
+ *   url: /v3/api-docs        # OpenAPI specification URL
+ *   path: /scalar            # Scalar UI endpoint path
  * </pre>
  *
- * <p>Scalar UI Support (Optional):
- * - Add dependency: org.springdoc:springdoc-openapi-starter-webmvc-scalar
- * - Access at /scalar when enabled (scalar.enabled=true)
+ * <p>Scalar UI endpoints:
+ * - /scalar - API Reference UI
+ * - /v3/api-docs - OpenAPI JSON specification
  */
 @AutoConfiguration
 @ConditionalOnClass(name = "io.swagger.v3.oas.models.OpenAPI")
@@ -72,7 +73,7 @@ public class SimpliXSwaggerAutoConfiguration {
         log.info("OpenAPI endpoints:");
         log.info("  - API Docs (JSON): /v3/api-docs");
         log.info("  - Swagger UI: /swagger-ui.html");
-        log.info("  - Scalar UI: /scalar (optional - add dependency & set scalar.enabled=true)");
+        log.info("  - Scalar UI: /scalar (set scalar.enabled=true)");
 
         SpringDocConfigProperties properties = new SpringDocConfigProperties();
         properties.setShowActuator(false);
