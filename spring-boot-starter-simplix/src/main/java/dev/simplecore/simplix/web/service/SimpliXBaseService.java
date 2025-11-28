@@ -19,8 +19,9 @@ import java.util.stream.Collectors;
 public abstract class SimpliXBaseService<E, ID> extends DefaultSearchableService<E, ID> implements SimpliXService<E, ID> {
     protected final SimpliXBaseRepository<E, ID> repository;
     protected final EntityManager entityManager;
-    
-    @Autowired
+
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+	@Autowired
     protected ModelMapper modelMapper;
 
     protected SimpliXBaseService(SimpliXBaseRepository<E, ID> repository, EntityManager entityManager) {

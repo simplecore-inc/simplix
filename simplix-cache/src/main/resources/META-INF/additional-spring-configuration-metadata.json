@@ -16,113 +16,85 @@
       "name": "simplix.cache.mode",
       "type": "java.lang.String",
       "description": "Cache implementation strategy to use",
-      "defaultValue": "local",
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": "local"
     },
     {
       "name": "simplix.cache.default-ttl-seconds",
       "type": "java.lang.Long",
       "description": "Default time-to-live for cache entries in seconds",
-      "defaultValue": 3600,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": 3600
     },
     {
       "name": "simplix.cache.max-size",
       "type": "java.lang.Long",
       "description": "Maximum number of entries in local cache (Caffeine only)",
-      "defaultValue": 10000,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": 10000
     },
     {
       "name": "simplix.cache.cache-null-values",
       "type": "java.lang.Boolean",
       "description": "Whether to cache null values to prevent cache penetration",
-      "defaultValue": false,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": false
     },
     {
       "name": "simplix.cache.metrics.enabled",
       "type": "java.lang.Boolean",
       "description": "Enable collection and reporting of cache metrics",
-      "defaultValue": true,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": true
     },
     {
       "name": "simplix.cache.metrics.collection-interval-seconds",
       "type": "java.lang.Long",
       "description": "Interval between cache metrics collection in seconds",
-      "defaultValue": 60,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": 60
     },
     {
       "name": "simplix.cache.redis.key-prefix",
       "type": "java.lang.String",
       "description": "Prefix to add to all Redis cache keys",
-      "defaultValue": "cache:",
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": "cache:"
     },
     {
       "name": "simplix.cache.redis.use-key-prefix",
       "type": "java.lang.Boolean",
       "description": "Whether to use key prefix in Redis",
-      "defaultValue": true,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": true
     },
     {
       "name": "simplix.cache.redis.command-timeout",
       "type": "java.lang.Long",
       "description": "Redis command execution timeout in milliseconds",
-      "defaultValue": 2000,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": 2000
     },
     {
       "name": "simplix.cache.redis.enable-statistics",
       "type": "java.lang.Boolean",
       "description": "Enable Redis cache statistics collection",
-      "defaultValue": true,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": true
     },
     {
       "name": "simplix.cache.hazelcast.instance-name",
       "type": "java.lang.String",
       "description": "Name of the Hazelcast instance",
-      "defaultValue": "simplix-cache",
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": "simplix-cache"
     },
     {
       "name": "simplix.cache.hazelcast.enable-statistics",
       "type": "java.lang.Boolean",
       "description": "Enable Hazelcast cache statistics",
-      "defaultValue": true,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": true
     },
     {
       "name": "simplix.cache.hazelcast.backup-count",
       "type": "java.lang.Integer",
       "description": "Number of synchronous backups for Hazelcast",
-      "defaultValue": 1,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": 1
     },
     {
       "name": "simplix.cache.hazelcast.read-backup-data",
       "type": "java.lang.Boolean",
       "description": "Whether to read from Hazelcast backup data",
-      "defaultValue": true,
-      "deprecation": null,
-      "deprecated": false
+      "defaultValue": true
     }
   ],
   "hints": [
@@ -145,39 +117,6 @@
       "providers": [
         {
           "name": "any"
-        }
-      ]
-    },
-    {
-      "name": "simplix.cache.cache-configs",
-      "values": [
-        {
-          "value": "siteTimeZones",
-          "description": "Cache for site timezone information"
-        },
-        {
-          "value": "tenantTimeZones",
-          "description": "Cache for tenant default timezone settings"
-        },
-        {
-          "value": "tenantSettings",
-          "description": "Cache for tenant configuration settings"
-        },
-        {
-          "value": "userPermissions",
-          "description": "Cache for user permission data"
-        },
-        {
-          "value": "userSessions",
-          "description": "Cache for active user sessions"
-        },
-        {
-          "value": "applicationConfig",
-          "description": "Cache for application configuration"
-        },
-        {
-          "value": "featureFlags",
-          "description": "Cache for feature flag states"
         }
       ]
     },

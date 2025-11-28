@@ -128,10 +128,8 @@ public class StandardExcelImporter<T> {
             if (row == null) continue;
 
             T instance = createInstance(row);
-            if (instance != null) {
-                results.add(instance);
-            }
-        }
+			results.add(instance);
+		}
 
         return results;
     }
@@ -147,10 +145,8 @@ public class StandardExcelImporter<T> {
         while (iterator.hasNext()) {
             CSVRecord record = iterator.next();
             T instance = createInstanceFromCsv(record);
-            if (instance != null) {
-                results.add(instance);
-            }
-        }
+			results.add(instance);
+		}
 
         return results;
     }

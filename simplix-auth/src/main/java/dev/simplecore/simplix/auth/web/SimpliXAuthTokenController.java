@@ -1,9 +1,9 @@
 package dev.simplecore.simplix.auth.web;
 
-import com.nimbusds.jose.JOSEException;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
+import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,14 +45,15 @@ import java.util.Base64;
 @RequestMapping("/auth/token")
 @RequiredArgsConstructor
 @ConditionalOnWebApplication
-@ConditionalOnBean(SimpliXJweTokenProvider.class)
+@ConditionalOnBean({SimpliXJweTokenProvider.class, SimpliXUserDetailsService.class})
 @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class SimpliXAuthTokenController {
     private final SimpliXJweTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final MessageSource messageSource;
     private final SimpliXAuthProperties properties;
-    private final dev.simplecore.simplix.auth.security.SimpliXUserDetailsService userDetailsService;
+    private final SimpliXUserDetailsService userDetailsService;
     private final AuthenticationSuccessHandler tokenAuthenticationSuccessHandler;
     private final AuthenticationFailureHandler tokenAuthenticationFailureHandler;
 

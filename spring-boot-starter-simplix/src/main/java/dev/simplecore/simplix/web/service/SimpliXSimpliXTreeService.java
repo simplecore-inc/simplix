@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public abstract class SimpliXSimpliXTreeService<E extends TreeEntity<E, ID>, ID> extends SimpliXTreeBaseService<E, ID> {
 
+	@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     protected ModelMapper modelMapper;
     

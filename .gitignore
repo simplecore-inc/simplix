@@ -94,3 +94,4 @@ spring-boot-starter-simplix-excel/templates/default-template.xlsx
 *.log
 **/logs/*.log
 .kiro/steering/project-rule.md
+/qodana.yaml

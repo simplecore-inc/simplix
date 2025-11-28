@@ -78,22 +78,21 @@ simplix:
 
       # Cache regions configuration
       regions:
-      # Default cache settings
-      default:
-        ttl: 3600  # 1 hour
-        max-entries: 1000
-        query-cache-enabled: true
-
-      # Example cache region configurations
-      # You can define custom regions for your entities
-      # entity-example1:
-      #   ttl: 7200  # 2 hours
-      #   max-entries: 500
-      #   query-cache-enabled: true
-      # entity-example2:
-      #   ttl: 3600  # 1 hour
-      #   max-entries: 2000
-      #   query-cache-enabled: true
+        # Default cache settings
+        default:
+          ttl: 3600  # 1 hour
+          max-entries: 1000
+          query-cache-enabled: true
+        # Example cache region configurations
+        # You can define custom regions for your entities
+        # entity-example1:
+        #   ttl: 7200  # 2 hours
+        #   max-entries: 500
+        #   query-cache-enabled: true
+        # entity-example2:
+        #   ttl: 3600  # 1 hour
+        #   max-entries: 2000
+        #   query-cache-enabled: true
 
 # Logging configuration for cache debugging
 logging:

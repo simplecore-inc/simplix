@@ -35,7 +35,8 @@ public class CacheMetricsCollector {
                 CacheStrategy.CacheStatistics stats = cacheStrategy.getStatistics(cacheName);
 
                 if (stats.hits() > 0 || stats.misses() > 0) {
-                    log.debug("Cache metrics for {}: hits={}, misses={}, hitRate={:.2f}%, size={}, evictions={}",
+					//noinspection LoggingPlaceholderCountMatchesArgumentCount
+					log.debug("Cache metrics for {}: hits={}, misses={}, hitRate={:.2f}%, size={}, evictions={}",
                         cacheName,
                         stats.hits(),
                         stats.misses(),

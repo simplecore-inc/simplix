@@ -76,11 +76,8 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
 
         // Get current locale
         Locale currentLocale = LocaleContextHolder.getLocale();
-        if (currentLocale == null) {
-            currentLocale = Locale.forLanguageTag(defaultLocale);
-        }
 
-        // Get i18n Map from source field
+		// Get i18n Map from source field
         Map<String, String> i18nMap = getI18nMap(currentBean);
         if (i18nMap == null || i18nMap.isEmpty()) {
             gen.writeObject(value);

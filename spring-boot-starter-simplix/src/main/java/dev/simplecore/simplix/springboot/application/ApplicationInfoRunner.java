@@ -42,9 +42,9 @@ public class ApplicationInfoRunner implements ApplicationRunner {
             activeProfiles = "default";
         }
 
-        System.out.println(String.format(template,
+        System.out.printf((template) + "%n",
             activeProfiles,
             port, port, port, port
-        ));
+        );
     }
 } 

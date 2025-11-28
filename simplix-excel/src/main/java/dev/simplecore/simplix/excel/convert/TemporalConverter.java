@@ -247,7 +247,7 @@ public class TemporalConverter implements Converter<Object> {
                     return (T) LocalDateTime.ofInstant(instant, DEFAULT_ZONE);
                 } else if (targetType == ZonedDateTime.class) {
                     return (T) ZonedDateTime.ofInstant(instant, DEFAULT_ZONE);
-                } else if (targetType == OffsetDateTime.class) {
+                } else { // OffsetDateTime.class
                     return (T) OffsetDateTime.ofInstant(instant, DEFAULT_ZONE);
                 }
             } catch (NumberFormatException ignored) {

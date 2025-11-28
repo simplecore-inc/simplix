@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,8 @@ import java.util.Arrays;
 
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(SimpliXUserDetailsService.class)
+@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
     private final SimpliXJweTokenProvider tokenProvider;
     private final SimpliXUserDetailsService userDetailsService;

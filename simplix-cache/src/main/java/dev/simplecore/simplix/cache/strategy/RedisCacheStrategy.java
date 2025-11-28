@@ -108,7 +108,7 @@ public class RedisCacheStrategy implements CacheStrategy {
     public void evict(String cacheName, Object key) {
         String redisKey = buildKey(cacheName, key);
         Boolean deleted = redisTemplate.delete(redisKey);
-        if (Boolean.TRUE.equals(deleted)) {
+        if (deleted) {
             log.trace("Evicted key {} from Redis cache {}", key, cacheName);
         }
     }
@@ -127,7 +127,7 @@ public class RedisCacheStrategy implements CacheStrategy {
     public void clear(String cacheName) {
         String pattern = buildKeyPattern(cacheName);
         Set<String> keys = redisTemplate.keys(pattern);
-        if (keys != null && !keys.isEmpty()) {
+        if (!keys.isEmpty()) {
             Long deleted = redisTemplate.delete(keys);
             log.debug("Cleared {} entries from Redis cache {}", deleted, cacheName);
         }
@@ -138,7 +138,7 @@ public class RedisCacheStrategy implements CacheStrategy {
         log.warn("Clearing all Redis caches - this affects all applications using this Redis instance!");
         try {
             Set<String> keys = redisTemplate.keys("*");
-            if (keys != null && !keys.isEmpty()) {
+            if (!keys.isEmpty()) {
                 redisTemplate.delete(keys);
                 log.debug("Cleared {} total entries from Redis", keys.size());
             }
@@ -150,30 +150,26 @@ public class RedisCacheStrategy implements CacheStrategy {
     @Override
     public boolean exists(String cacheName, Object key) {
         String redisKey = buildKey(cacheName, key);
-        return Boolean.TRUE.equals(redisTemplate.hasKey(redisKey));
+        return redisTemplate.hasKey(redisKey);
     }
 
     @Override
     public Collection<Object> getKeys(String cacheName) {
         String pattern = buildKeyPattern(cacheName);
         Set<String> keys = redisTemplate.keys(pattern);
-        if (keys != null) {
-            String prefix = getFullPrefix(cacheName);
-            return keys.stream()
-                .map(k -> k.substring(prefix.length()))
-                .collect(Collectors.toSet());
-        }
-        return Collections.emptySet();
-    }
+		String prefix = getFullPrefix(cacheName);
+		return keys.stream()
+			.map(k -> k.substring(prefix.length()))
+			.collect(Collectors.toSet());
+	}
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> Map<Object, T> getAll(String cacheName, Class<T> type) {
+	public <T> Map<Object, T> getAll(String cacheName, Class<T> type) {
         Map<Object, T> result = new HashMap<>();
         String pattern = buildKeyPattern(cacheName);
         Set<String> keys = redisTemplate.keys(pattern);
 
-        if (keys != null && !keys.isEmpty()) {
+        if (!keys.isEmpty()) {
             List<String> values = redisTemplate.opsForValue().multiGet(keys);
             if (values != null) {
                 Iterator<String> keyIterator = keys.iterator();
@@ -243,20 +239,17 @@ public class RedisCacheStrategy implements CacheStrategy {
             }
 
             RedisConnection connection = factory.getConnection();
-            if (connection == null) {
-                log.warn("Cannot get statistics: RedisConnection is null");
-                return CacheStatistics.empty();
-            }
 
-            Properties info = connection.serverCommands().info("stats");
+			Properties info = connection.serverCommands().info("stats");
 
-            long hits = getLongProperty(info, "keyspace_hits", 0);
-            long misses = getLongProperty(info, "keyspace_misses", 0);
-            long evictions = getLongProperty(info, "evicted_keys", 0);
+			assert info != null;
+			long hits = getLongProperty(info, "keyspace_hits");
+            long misses = getLongProperty(info, "keyspace_misses");
+            long evictions = getLongProperty(info, "evicted_keys");
 
             String pattern = buildKeyPattern(cacheName);
             Set<String> keys = redisTemplate.keys(pattern);
-            long size = keys != null ? keys.size() : 0;
+            long size = keys.size();
 
             double hitRate = (hits + misses) > 0 ? (double) hits / (hits + misses) : 0.0;
 
@@ -285,11 +278,8 @@ public class RedisCacheStrategy implements CacheStrategy {
             }
 
             RedisConnection connection = factory.getConnection();
-            if (connection == null) {
-                throw new IllegalStateException("RedisConnection is null");
-            }
 
-            connection.ping();
+			connection.ping();
             log.info("Redis cache strategy initialized successfully");
         } catch (Exception e) {
             log.error("Failed to initialize Redis cache strategy", e);
@@ -312,12 +302,8 @@ public class RedisCacheStrategy implements CacheStrategy {
             }
 
             RedisConnection connection = factory.getConnection();
-            if (connection == null) {
-                log.debug("Redis is not available: RedisConnection is null");
-                return false;
-            }
 
-            connection.ping();
+			connection.ping();
             return true;
         } catch (Exception e) {
             log.debug("Redis is not available: {}", e.getMessage());
@@ -366,7 +352,7 @@ public class RedisCacheStrategy implements CacheStrategy {
         return objectMapper.readValue(value, type);
     }
 
-    private long getLongProperty(Properties props, String key, long defaultValue) {
+    private long getLongProperty(Properties props, String key) {
         String value = props.getProperty(key);
         if (value != null) {
             try {
@@ -375,6 +361,6 @@ public class RedisCacheStrategy implements CacheStrategy {
                 log.trace("Failed to parse {} as long: {}", key, value);
             }
         }
-        return defaultValue;
+        return 0;
     }
 }

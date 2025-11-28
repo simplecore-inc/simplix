@@ -69,11 +69,7 @@ public class ConditionalEvictionListener {
             Object[] currentState = persister.getPropertyValues(entity);
             Object[] loadedState = session.getPersistenceContext().getEntry(entity).getLoadedState();
 
-            if (loadedState == null) {
-                return new String[0];
-            }
-
-            String[] propertyNames = persister.getPropertyNames();
+			String[] propertyNames = persister.getPropertyNames();
             Set<String> dirtyFields = new HashSet<>();
 
             for (int i = 0; i < propertyNames.length; i++) {
