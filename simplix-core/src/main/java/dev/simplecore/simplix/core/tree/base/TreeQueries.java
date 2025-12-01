@@ -3,13 +3,16 @@ package dev.simplecore.simplix.core.tree.base;
 
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn.ColumnType;
+import dev.simplecore.simplix.core.tree.annotation.SortDirection;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Database-specific query generator for tree-structured entities
+ * Database-specific query generator for tree-structured entities.
+ * <p>
+ * Supports configurable sort direction (ASC/DESC) for ordering query results.
  */
 @Slf4j
 public class TreeQueries {
@@ -17,17 +20,23 @@ public class TreeQueries {
     private final String idColumn;
     private final String parentIdColumn;
     private final String sortOrderColumn;
+    private final SortDirection sortDirection;
     private final Map<String, ColumnType> lookupColumns;
 
     public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn) {
-        this(tableName, idColumn, parentIdColumn, sortOrderColumn, new LookupColumn[0]);
+        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, new LookupColumn[0]);
     }
 
     public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn, LookupColumn[] lookupColumns) {
+        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, lookupColumns);
+    }
+
+    public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn, SortDirection sortDirection, LookupColumn[] lookupColumns) {
         this.tableName = tableName;
         this.idColumn = idColumn;
         this.parentIdColumn = parentIdColumn;
         this.sortOrderColumn = sortOrderColumn;
+        this.sortDirection = sortDirection != null ? sortDirection : SortDirection.ASC;
         this.lookupColumns = parseLookupColumns(lookupColumns);
     }
 
@@ -83,17 +92,25 @@ public class TreeQueries {
         return condition.toString();
     }
 
+    private String getSortDirectionSql() {
+        return sortDirection == SortDirection.DESC ? "DESC" : "ASC";
+    }
+
     private String getOrderByClause() {
-        return sortOrderColumn != null ? 
-            String.format("ORDER BY %s, %s", sortOrderColumn, idColumn) :
-            String.format("ORDER BY %s", idColumn);
+        String dir = getSortDirectionSql();
+        return sortOrderColumn != null ?
+            String.format("ORDER BY %s %s, %s %s", sortOrderColumn, dir, idColumn, dir) :
+            String.format("ORDER BY %s %s", idColumn, dir);
     }
 
     private String getOrderByClauseWithNullsLast(String dbType) {
+        String dir = getSortDirectionSql();
+        String nullsLast = sortDirection == SortDirection.DESC ? "NULLS FIRST" : "NULLS LAST";
+
         if ("postgresql".equals(dbType) || "oracle".equals(dbType)) {
-            return sortOrderColumn != null ? 
-                String.format("ORDER BY %s NULLS LAST, %s", sortOrderColumn, idColumn) :
-                String.format("ORDER BY %s", idColumn);
+            return sortOrderColumn != null ?
+                String.format("ORDER BY %s %s %s, %s %s", sortOrderColumn, dir, nullsLast, idColumn, dir) :
+                String.format("ORDER BY %s %s", idColumn, dir);
         } else {
             return getOrderByClause();
         }

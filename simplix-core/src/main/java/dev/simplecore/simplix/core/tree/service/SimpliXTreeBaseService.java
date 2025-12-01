@@ -15,7 +15,6 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -330,36 +329,25 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         return copiedRoot;
     }
 
+    /**
+     * Reorders children of a parent node.
+     * <p>
+     * Note: This default implementation throws UnsupportedOperationException
+     * because the generic TreeEntity interface no longer includes setSortOrder().
+     * Concrete service implementations should override this method with access
+     * to entity-specific sort order fields.
+     *
+     * @param parentId The parent entity ID
+     * @param orderedChildIds Ordered list of child IDs
+     * @throws UnsupportedOperationException always in this base implementation
+     */
     @Override
     @Transactional
     public void reorderChildren(ID parentId, List<ID> orderedChildIds) {
-        Assert.notNull(parentId, "Parent entity ID cannot be null");
-        Assert.notNull(orderedChildIds, "Ordered child IDs list cannot be null");
-        log.debug("Reordering children of parent {}", parentId);
-        
-        // Get current children
-        List<T> currentChildren = findDirectChildren(parentId);
-        Set<ID> currentChildIds = currentChildren.stream()
-                .map(T::getId)
-                .collect(Collectors.toSet());
-        
-        // Validate input
-        if (!new HashSet<>(orderedChildIds).equals(currentChildIds)) {
-            throw new IllegalArgumentException("Provided child ID list doesn't match current children");
-        }
-        
-        // Update sort order starting from 1
-        AtomicInteger counter = new AtomicInteger(1);
-        orderedChildIds.forEach(childId -> {
-            findById(childId).ifPresent(child -> {
-                child.setSortOrder(counter.getAndIncrement());
-                simpliXTreeRepository.saveAndFlush(child);
-            });
-        });
-        
-        // Clear cache
-        clearCaches(parentId);
-        log.info("Successfully reordered children of parent {}", parentId);
+        throw new UnsupportedOperationException(
+            "reorderChildren is not supported in the generic implementation. " +
+            "Override this method in a concrete service class with access to the entity's sort order field."
+        );
     }
 
     // =================================================================================
@@ -632,24 +620,30 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
             issues.put("orphanedEntities", orphanedEntities);
         }
         
-        // Check for duplicate sort orders within siblings
-        List<String> duplicateSortOrders = new ArrayList<>();
+        // Check for duplicate sort keys within siblings
+        List<String> duplicateSortKeys = new ArrayList<>();
         Map<ID, List<T>> parentChildMap = allNodes.stream()
                 .filter(node -> node.getParentId() != null)
                 .collect(Collectors.groupingBy(T::getParentId));
-        
+
         parentChildMap.forEach((parentId, children) -> {
-            Map<Integer, Long> sortOrderCounts = children.stream()
-                    .collect(Collectors.groupingBy(T::getSortOrder, Collectors.counting()));
-            
-            sortOrderCounts.forEach((sortOrder, count) -> {
+            Map<Object, Long> sortKeyCounts = children.stream()
+                    .collect(Collectors.groupingBy(
+                        child -> {
+                            Comparable<?> sortKey = child.getSortKey();
+                            return sortKey != null ? sortKey : "";
+                        },
+                        Collectors.counting()
+                    ));
+
+            sortKeyCounts.forEach((sortKey, count) -> {
                 if (count > 1) {
-                    duplicateSortOrders.add("Duplicate sort order " + sortOrder + " found for parent: " + parentId);
+                    duplicateSortKeys.add("Duplicate sort key " + sortKey + " found for parent: " + parentId);
                 }
             });
         });
-        if (!duplicateSortOrders.isEmpty()) {
-            issues.put("duplicateSortOrders", duplicateSortOrders);
+        if (!duplicateSortKeys.isEmpty()) {
+            issues.put("duplicateSortKeys", duplicateSortKeys);
         }
         
         log.info("Tree integrity validation completed. Issues found: {}", issues.size());

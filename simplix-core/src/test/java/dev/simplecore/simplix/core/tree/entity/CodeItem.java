@@ -94,12 +94,7 @@ public class CodeItem implements TreeEntity<CodeItem, Long> {
     }
 
     @Override
-    public Integer getSortOrder() {
+    public Comparable<?> getSortKey() {
         return this.sortOrder;
-    }
-
-    @Override
-    public void setSortOrder(Integer sortOrder) {
-        this.sortOrder = sortOrder;
     }
 } 

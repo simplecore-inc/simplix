@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.tree.repository;
 
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
+import dev.simplecore.simplix.core.tree.annotation.SortDirection;
 import dev.simplecore.simplix.core.tree.base.TreeQueries;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import jakarta.persistence.EntityManager;
@@ -47,6 +48,7 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
      * @param idColumn Name of the primary key column
      * @param parentIdColumn Name of the parent reference column
      * @param sortOrderColumn Name of the column used for sorting (optional)
+     * @param sortDirection Sort direction (ASC or DESC)
      * @param lookupColumns Array of additional columns that can be used for searching
      */
     public SimpliXTreeRepositoryImpl(
@@ -57,11 +59,12 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
             String idColumn,
             String parentIdColumn,
             String sortOrderColumn,
+            SortDirection sortDirection,
             LookupColumn[] lookupColumns) {
         super(entityInformation, entityManager);
         this.entityManager = entityManager;
         this.jdbcTemplate = jdbcTemplate;
-        this.queries = new TreeQueries(tableName, idColumn, parentIdColumn, sortOrderColumn, lookupColumns);
+        this.queries = new TreeQueries(tableName, idColumn, parentIdColumn, sortOrderColumn, sortDirection, lookupColumns);
     }
 
     /**

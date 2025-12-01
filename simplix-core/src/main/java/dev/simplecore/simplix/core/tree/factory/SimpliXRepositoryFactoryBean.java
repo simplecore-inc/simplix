@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.tree.factory;
 
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
+import dev.simplecore.simplix.core.tree.annotation.SortDirection;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
@@ -167,6 +168,7 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
             String idColumn = null;
             String parentIdColumn = null;
             String sortOrderColumn = null;
+            SortDirection sortDirection = SortDirection.ASC;
             LookupColumn[] lookupColumns = null;
 
             // Extract configuration from @TreeEntityAttributes
@@ -176,6 +178,7 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
                 idColumn = attributes.idColumn();
                 parentIdColumn = attributes.parentIdColumn();
                 sortOrderColumn = attributes.sortOrderColumn();
+                sortDirection = attributes.sortDirection();
                 lookupColumns = attributes.lookupColumns();
             }
 
@@ -211,6 +214,7 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
                 idColumn,
                 parentIdColumn,
                 sortOrderColumn,
+                sortDirection,
                 lookupColumns
             );
         }

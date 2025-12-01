@@ -14,20 +14,25 @@ import java.lang.annotation.Target;
  * relationships at the persistence layer.
  * <p>
  * Key Features:
- * - Database table and column mapping configuration
- * - Support for custom column names and table names
- * - Configurable lookup columns for efficient searching
- * - Integration with tree repository implementations
+ * <ul>
+ *   <li>Database table and column mapping configuration</li>
+ *   <li>Support for custom column names and table names</li>
+ *   <li>Configurable lookup columns for efficient searching</li>
+ *   <li>Sort direction control (ASC/DESC)</li>
+ *   <li>Cascade delete option for hierarchical deletion</li>
+ *   <li>Maximum depth limit for tree operations</li>
+ * </ul>
  * <p>
  * Usage Example:
- * <pre>
- * {@code
+ * <pre>{@code
  * @Entity
  * @TreeEntityAttributes(
  *     tableName = "categories",
  *     idColumn = "category_id",
  *     parentIdColumn = "parent_category_id",
  *     sortOrderColumn = "display_order",
+ *     sortDirection = SortDirection.ASC,
+ *     cascadeDelete = false,
  *     lookupColumns = {
  *         @LookupColumn(name = "name", type = ColumnType.STRING),
  *         @LookupColumn(name = "active", type = ColumnType.BOOLEAN)
@@ -36,14 +41,15 @@ import java.lang.annotation.Target;
  * public class Category implements TreeEntity<Category, Long> {
  *     // Entity implementation
  * }
- * }
- * </pre>
- * 
+ * }</pre>
+ * <p>
  * Database Compatibility:
- * - Works with all major SQL databases
- * - Generates optimized recursive queries when supported
- * - Fallback to in-memory processing for unsupported databases
- * 
+ * <ul>
+ *   <li>Works with all major SQL databases</li>
+ *   <li>Generates optimized recursive queries when supported</li>
+ *   <li>Fallback to in-memory processing for unsupported databases</li>
+ * </ul>
+ *
  * @author System Generated
  * @since 1.0.0
  */
@@ -105,15 +111,57 @@ public @interface TreeEntityAttributes {
      * query generation.
      * <p>
      * Example:
-     * <pre>
+     * <pre>{@code
      * lookupColumns = {
      *     @LookupColumn(name = "name", type = ColumnType.STRING),
      *     @LookupColumn(name = "active", type = ColumnType.BOOLEAN),
      *     @LookupColumn(name = "priority", type = ColumnType.NUMBER)
      * }
-     * </pre>
-     * 
+     * }</pre>
+     *
      * @return Array of lookup column definitions, empty by default
      */
     LookupColumn[] lookupColumns() default {};
+
+    /**
+     * Specifies the sort direction for ordering sibling entities.
+     * <p>
+     * This determines how entities with the same parent are ordered
+     * in query results. Use ASC for ascending order (default) or
+     * DESC for descending order.
+     *
+     * @return The sort direction, defaults to ASC
+     * @since 1.1.0
+     */
+    SortDirection sortDirection() default SortDirection.ASC;
+
+    /**
+     * Enables cascade deletion of child entities.
+     * <p>
+     * When set to true, deleting a parent entity will automatically
+     * delete all its descendants (children, grandchildren, etc.).
+     * When false (default), deletion of a parent with children will
+     * throw an exception.
+     * <p>
+     * Note: This is handled at the service level, not database level,
+     * to ensure proper cache invalidation and event handling.
+     *
+     * @return true to enable cascade delete, false otherwise
+     * @since 1.1.0
+     */
+    boolean cascadeDelete() default false;
+
+    /**
+     * Limits the maximum depth of tree operations.
+     * <p>
+     * When set to a positive value, tree traversal operations will
+     * stop at the specified depth level. This can improve performance
+     * for deep hierarchies where full traversal is not needed.
+     * <p>
+     * A value of -1 (default) means unlimited depth.
+     *
+     * @return Maximum depth limit, or -1 for unlimited
+     * @since 1.1.0
+     */
+    int maxDepth() default -1;
 } 

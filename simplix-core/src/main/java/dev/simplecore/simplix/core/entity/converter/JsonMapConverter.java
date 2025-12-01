@@ -8,7 +8,19 @@ import jakarta.persistence.Converter;
 import java.util.Collections;
 import java.util.Map;
 
+/**
+ * Custom JPA converter for Map&lt;String, String&gt; to JSON string conversion.
+ *
+ * @deprecated Use Hypersistence Utils {@code @Type(JsonType.class)} instead.
+ * <pre>{@code
+ * @Type(JsonType.class)
+ * @Column(columnDefinition = "TEXT")
+ * private Map<String, String> data;
+ * }</pre>
+ * @see <a href="https://github.com/vladmihalcea/hypersistence-utils">Hypersistence Utils</a>
+ */
 @Converter(autoApply = false)
+@Deprecated
 public class JsonMapConverter
         implements AttributeConverter<Map<String,String>, String> {
 

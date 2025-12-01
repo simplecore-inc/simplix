@@ -405,20 +405,15 @@ class SimpliXTreeServiceTest {
         }
 
         @Test
-        @DisplayName("Reorder Children - Change Child Nodes Order")
+        @DisplayName("Reorder Children - Should Throw UnsupportedOperationException in Base Implementation")
         void reorderChildren() {
             // given
             List<Long> newOrder = Arrays.asList(child2.getId(), child1.getId());
-            when(treeRepository.findDirectChildren(root.getId())).thenReturn(Arrays.asList(child1, child2));
-            when(treeRepository.findById(child1.getId())).thenReturn(Optional.of(child1));
-            when(treeRepository.findById(child2.getId())).thenReturn(Optional.of(child2));
-            when(treeRepository.saveAndFlush(any(CodeItem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-            // when
-            treeService.reorderChildren(root.getId(), newOrder);
-
-            // then
-            verify(treeRepository, times(2)).saveAndFlush(any(CodeItem.class));
+            // when & then
+            assertThatThrownBy(() -> treeService.reorderChildren(root.getId(), newOrder))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("reorderChildren is not supported in the generic implementation");
         }
     }
 
@@ -528,16 +523,16 @@ class SimpliXTreeServiceTest {
         }
 
         @Test
-        @DisplayName("Reorder Invalid Children - Handle Non-existent Children")
+        @DisplayName("Reorder Invalid Children - Should Throw UnsupportedOperationException in Base Implementation")
         void reorderInvalidChildren() {
             // given
             List<Long> invalidOrder = Arrays.asList(999L, 888L);
-            when(treeRepository.findDirectChildren(root.getId())).thenReturn(Arrays.asList(child1, child2));
 
             // when & then
+            // Note: Base implementation throws UnsupportedOperationException before validation
             assertThatThrownBy(() -> treeService.reorderChildren(root.getId(), invalidOrder))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Provided child ID list doesn't match current children");
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("reorderChildren is not supported in the generic implementation");
         }
 
         @Test

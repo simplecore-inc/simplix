@@ -4,31 +4,36 @@ import java.util.List;
 
 /**
  * Core interface for entities that implement tree structure functionality.
- * 
+ * <p>
  * This interface defines the essential operations and properties required for any entity
  * that participates in a hierarchical tree structure. It provides a standardized way
  * to handle parent-child relationships, navigation, and tree manipulation operations.
- * 
+ * <p>
  * Key Features:
- * - Parent-child relationship management
- * - Hierarchical navigation support
- * - Sort order management for sibling ordering
- * - Utility methods for tree structure analysis
- * 
+ * <ul>
+ *   <li>Parent-child relationship management</li>
+ *   <li>Hierarchical navigation support</li>
+ *   <li>Flexible sort key for sibling ordering (supports any Comparable type)</li>
+ *   <li>Utility methods for tree structure analysis</li>
+ * </ul>
+ * <p>
  * Implementation Guidelines:
- * - Entities should implement proper equals() and hashCode() based on ID
- * - Parent ID should be validated to prevent circular references
- * - Children list should be lazily loaded when possible
- * - Sort order should be used for consistent ordering of siblings
- * 
+ * <ul>
+ *   <li>Entities should implement proper equals() and hashCode() based on ID</li>
+ *   <li>Parent ID should be validated to prevent circular references</li>
+ *   <li>Children list should be lazily loaded when possible</li>
+ *   <li>Sort key can be any Comparable type (Integer, Instant, String, etc.)</li>
+ * </ul>
+ * <p>
  * Performance Considerations:
- * - Use lazy loading for children collections to avoid deep loading
- * - Consider caching frequently accessed tree paths
- * - Implement efficient bulk operations for large tree modifications
- * 
+ * <ul>
+ *   <li>Use lazy loading for children collections to avoid deep loading</li>
+ *   <li>Consider caching frequently accessed tree paths</li>
+ *   <li>Implement efficient bulk operations for large tree modifications</li>
+ * </ul>
+ *
  * @param <T> The concrete entity type that implements this interface
  * @param <ID> The type of the entity's identifier (e.g., Long, String, UUID)
- * 
  * @author System Generated
  * @since 1.0.0
  */
@@ -100,28 +105,22 @@ public interface TreeEntity<T extends TreeEntity<T, ID>, ID> {
     void setChildren(List<T> children);
 
     /**
-     * Returns the sort order value for ordering siblings.
-     * 
-     * The sort order is used to maintain a consistent ordering of sibling
-     * entities within the same parent. Lower values appear first in the order.
-     * The default implementation returns 0.
-     * 
-     * @return The sort order value, typically a non-negative integer
+     * Returns the sort key for ordering siblings.
+     * <p>
+     * The sort key is used to maintain a consistent ordering of sibling
+     * entities within the same parent. This method supports any Comparable type,
+     * allowing flexible sorting by Integer, Instant, String, or custom types.
+     * <p>
+     * Examples:
+     * <ul>
+     *   <li>Integer-based sorting: {@code return this.sortOrder;}</li>
+     *   <li>Time-based sorting: {@code return this.createdAt;}</li>
+     *   <li>Alphabetical sorting: {@code return this.name;}</li>
+     * </ul>
+     *
+     * @return The sort key value, must implement Comparable
      */
-    default Integer getSortOrder() {
-        return 0;
-    }
-
-    /**
-     * Sets the sort order value for this entity.
-     * 
-     * The sort order determines the position of this entity among its siblings.
-     * Implementations should ensure that sort orders are properly maintained
-     * when entities are reordered.
-     * 
-     * @param sortOrder The new sort order value
-     */
-    void setSortOrder(Integer sortOrder);
+    Comparable<?> getSortKey();
 
     /**
      * Determines if this entity is a root node in the tree.

@@ -194,13 +194,19 @@ public interface SimpliXTreeService<T extends TreeEntity<T, ID>, ID> {
 
     /**
      * Reorders the children of a specific parent entity.
-     * 
+     * <p>
      * Updates the sort order of child entities according to the provided
      * ordered list of IDs. All current children must be included in the list.
-     * 
+     * <p>
+     * Note: The default implementation in {@link SimpliXTreeBaseService} throws
+     * {@link UnsupportedOperationException} because the generic TreeEntity interface
+     * no longer includes setSortOrder(). Concrete service implementations should
+     * override this method with access to entity-specific sort order fields.
+     *
      * @param parentId The parent entity ID (must not be null)
      * @param orderedChildIds List of child IDs in the desired order
      * @throws IllegalArgumentException if the ID list doesn't match current children
+     * @throws UnsupportedOperationException in the default base implementation
      */
     void reorderChildren(ID parentId, List<ID> orderedChildIds);
     
