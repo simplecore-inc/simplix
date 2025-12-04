@@ -107,11 +107,6 @@ public class SimplixExcelProperties {
         private boolean hideGridLines = false;
 
         /**
-         * Whether to auto-size columns by default
-         */
-        private boolean autoSizeColumns = false;
-
-        /**
          * Whether to enable formula processing by default
          */
         private boolean enableFormulas = true;
@@ -212,20 +207,5 @@ public class SimplixExcelProperties {
          * Whether to enable column caching
          */
         private boolean columnCacheEnabled = true;
-
-        /**
-         * Maximum template cache size
-         */
-        private int maxTemplateCacheSize = 100;
-
-        /**
-         * Maximum field cache size
-         */
-        private int maxFieldCacheSize = 100;
-
-        /**
-         * Maximum column cache size
-         */
-        private int maxColumnCacheSize = 100;
     }
 } 

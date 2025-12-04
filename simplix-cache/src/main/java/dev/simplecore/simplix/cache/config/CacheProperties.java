@@ -14,7 +14,7 @@ import java.util.Map;
 public class CacheProperties {
 
     /**
-     * Cache mode: local, redis, hazelcast
+     * Cache mode: local, redis
      */
     private String mode = "local";
 
@@ -22,11 +22,6 @@ public class CacheProperties {
      * Default TTL in seconds
      */
     private long defaultTtlSeconds = 3600; // 1 hour
-
-    /**
-     * Maximum cache size for local caches
-     */
-    private long maxSize = 10000;
 
     /**
      * Whether to cache null values
@@ -49,17 +44,12 @@ public class CacheProperties {
     private RedisConfig redis = new RedisConfig();
 
     /**
-     * Hazelcast-specific configuration
-     */
-    private HazelcastConfig hazelcast = new HazelcastConfig();
-
-    /**
      * Initialize default cache configurations
      */
     public CacheProperties() {
         // Default cache configuration
         // Applications should define their own cache configurations in application.yml
-        cacheConfigs.put("default", new CacheConfig(3600L, 1000L));
+        cacheConfigs.put("default", new CacheConfig(3600L));
     }
 
     /**
@@ -68,16 +58,13 @@ public class CacheProperties {
     @Data
     public static class CacheConfig {
         private long ttlSeconds;
-        private long maxSize;
 
         public CacheConfig() {
             this.ttlSeconds = 3600L;
-            this.maxSize = 1000L;
         }
 
-        public CacheConfig(long ttlSeconds, long maxSize) {
+        public CacheConfig(long ttlSeconds) {
             this.ttlSeconds = ttlSeconds;
-            this.maxSize = maxSize;
         }
     }
 
@@ -87,7 +74,6 @@ public class CacheProperties {
     @Data
     public static class MetricsConfig {
         private boolean enabled = true;
-        private long collectionIntervalSeconds = 60;
     }
 
     /**
@@ -97,18 +83,5 @@ public class CacheProperties {
     public static class RedisConfig {
         private String keyPrefix = "cache:";
         private boolean useKeyPrefix = true;
-        private long commandTimeout = 2000; // milliseconds
-        private boolean enableStatistics = true;
-    }
-
-    /**
-     * Hazelcast-specific configuration
-     */
-    @Data
-    public static class HazelcastConfig {
-        private String instanceName = "simplix-cache";
-        private boolean enableStatistics = true;
-        private int backupCount = 1;
-        private boolean readBackupData = true;
     }
 }

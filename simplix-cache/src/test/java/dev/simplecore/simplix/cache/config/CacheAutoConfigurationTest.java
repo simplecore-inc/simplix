@@ -70,13 +70,11 @@ class CacheAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "simplix.cache.default-ttl-seconds=7200",
-                "simplix.cache.max-size=5000",
                 "simplix.cache.cache-null-values=true"
             )
             .run(context -> {
                 CacheProperties properties = context.getBean(CacheProperties.class);
                 assertThat(properties.getDefaultTtlSeconds()).isEqualTo(7200);
-                assertThat(properties.getMaxSize()).isEqualTo(5000);
                 assertThat(properties.isCacheNullValues()).isTrue();
             });
     }
@@ -87,7 +85,6 @@ class CacheAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "simplix.cache.cache-configs.testCache.ttl-seconds=1800",
-                "simplix.cache.cache-configs.testCache.max-size=1000",
                 "simplix.cache.cache-configs.userCache.ttl-seconds=3600"
             )
             .run(context -> {
@@ -98,7 +95,6 @@ class CacheAutoConfigurationTest {
 
                 CacheProperties.CacheConfig testConfig = properties.getCacheConfigs().get("testCache");
                 assertThat(testConfig.getTtlSeconds()).isEqualTo(1800);
-                assertThat(testConfig.getMaxSize()).isEqualTo(1000);
 
                 CacheProperties.CacheConfig userConfig = properties.getCacheConfigs().get("userCache");
                 assertThat(userConfig.getTtlSeconds()).isEqualTo(3600);
@@ -112,20 +108,16 @@ class CacheAutoConfigurationTest {
             .withPropertyValues(
                 "simplix.cache.mode=redis",
                 "simplix.cache.redis.key-prefix=myapp:",
-                "simplix.cache.redis.use-key-prefix=true",
-                "simplix.cache.redis.command-timeout=5000",
-                "simplix.cache.redis.enable-statistics=true"
+                "simplix.cache.redis.use-key-prefix=true"
             )
             .withBean(RedisConnectionFactory.class, () -> mock(RedisConnectionFactory.class))
             .withBean(RedisTemplate.class, () -> mock(RedisTemplate.class))
             .run(context -> {
                 CacheProperties properties = context.getBean(CacheProperties.class);
                 CacheProperties.RedisConfig redisConfig = properties.getRedis();
-                
+
                 assertThat(redisConfig.getKeyPrefix()).isEqualTo("myapp:");
                 assertThat(redisConfig.isUseKeyPrefix()).isTrue();
-                assertThat(redisConfig.getCommandTimeout()).isEqualTo(5000);
-                assertThat(redisConfig.isEnableStatistics()).isTrue();
             });
     }
 

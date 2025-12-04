@@ -19,12 +19,9 @@ public class SimpliXAuthProperties {
         private boolean enableWebSecurity = true;
         private boolean enableCors = true;
         private boolean enableCsrf = true;
-        private boolean enableXssProtection = true;
-        private boolean enableHsts = false;
         private boolean enableHttpBasic = false;
         private boolean requireHttps = false;
         private boolean preferTokenOverSession = true;
-        private long hstsMaxAgeSeconds = 31536000L;
         private String[] csrfIgnorePatterns = new String[]{"/api/token/**", "/h2-console/**"};
         private String loginPageTemplate = "login";
         private String loginProcessingUrl = "/login";
@@ -68,7 +65,6 @@ public class SimpliXAuthProperties {
 
         // Blacklist (optional feature)
         private boolean enableBlacklist = false;
-        private String blacklistType = "auto";  // auto, redis, caffeine, memory
 
         // Session management
         private boolean createSessionOnTokenIssue = true;
