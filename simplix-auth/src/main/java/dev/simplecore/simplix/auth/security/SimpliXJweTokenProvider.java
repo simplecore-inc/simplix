@@ -17,6 +17,7 @@ import dev.simplecore.simplix.core.exception.ErrorCode;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -46,6 +47,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-token-endpoints", havingValue = "true", matchIfMissing = true)
 public class SimpliXJweTokenProvider {
@@ -208,6 +210,43 @@ public class SimpliXJweTokenProvider {
         EncryptedJWT jwt = EncryptedJWT.parse(token);
         jwt.decrypt(decrypter);
         return jwt.getJWTClaimsSet();
+    }
+
+    /**
+     * Revoke a token by adding its JTI to the blacklist.
+     *
+     * @param token the token to revoke
+     * @return true if the token was added to blacklist, false if blacklist is disabled or token already expired
+     */
+    public boolean revokeToken(String token) {
+        if (!properties.getToken().isEnableBlacklist() || blacklistService == null) {
+            log.warn("Token blacklist is disabled. Tokens will remain valid until expiry.");
+            return false;
+        }
+
+        try {
+            JWTClaimsSet claims = parseToken(token);
+            String jti = claims.getJWTID();
+            Date expiryDate = claims.getExpirationTime();
+
+            if (jti == null || expiryDate == null) {
+                log.warn("Token does not contain JTI or expiration time, cannot revoke");
+                return false;
+            }
+
+            Duration ttl = Duration.between(Instant.now(), expiryDate.toInstant());
+            if (ttl.toSeconds() > 0) {
+                blacklistService.blacklist(jti, ttl);
+                log.debug("Token revoked successfully, JTI: {}", jti);
+                return true;
+            } else {
+                log.debug("Token already expired, no need to blacklist");
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to revoke token: {}", e.getMessage());
+            return false;
+        }
     }
 
     public boolean validateToken(String token, String remoteAddr, String userAgent) {

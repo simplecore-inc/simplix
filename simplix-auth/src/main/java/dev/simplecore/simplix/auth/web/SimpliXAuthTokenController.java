@@ -243,6 +243,71 @@ public class SimpliXAuthTokenController {
         }
     }
 
+    @Operation(
+            summary = "Revoke tokens",
+            description = "Revoke access and refresh tokens by adding them to the blacklist. Clears session and security context."
+    )
+    @Parameters({
+            @Parameter(
+                    name = "Authorization",
+                    description = "Bearer token to revoke",
+                    required = true,
+                    in = ParameterIn.HEADER,
+                    schema = @Schema(type = "string", example = "Bearer eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIn0...")
+            ),
+            @Parameter(
+                    name = "X-Refresh-Token",
+                    description = "Refresh token to revoke (optional)",
+                    required = false,
+                    in = ParameterIn.HEADER,
+                    schema = @Schema(type = "string")
+            )
+    })
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Token revoked successfully",
+                    content = @Content(schema = @Schema(implementation = SimpliXApiResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid or missing token",
+                    content = @Content(schema = @Schema(implementation = SimpliXApiResponse.class))
+            )
+    })
+    @RequestMapping(value = "/revoke", method = {RequestMethod.POST})
+    public ResponseEntity<SimpliXApiResponse<?>> revokeTokens(HttpServletRequest request) {
+        // Extract access token from Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring("Bearer ".length()).trim();
+            tokenProvider.revokeToken(accessToken);
+        }
+
+        // Extract and revoke refresh token if provided
+        String refreshToken = request.getHeader("X-Refresh-Token");
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            tokenProvider.revokeToken(refreshToken);
+        }
+
+        // Clear security context
+        SecurityContextHolder.clearContext();
+
+        // Invalidate session if exists
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+        return ResponseEntity.ok(
+                SimpliXApiResponse.success(
+                        messageSource.getMessage("token.revoke.success", null,
+                                "Token revoked successfully",
+                                LocaleContextHolder.getLocale())
+                )
+        );
+    }
+
     //--------------------------------
 
     private String[] extractBasicAuthCredentials(HttpServletRequest request) {
