@@ -1,0 +1,91 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+dependencies {
+    // Spring Boot dependencies
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    // Spring Web (for MultipartFile, Resource)
+    implementation 'org.springframework:spring-web'
+
+    // AWS S3 SDK (for MinIO, RustFS, AWS S3 compatible storage)
+    implementation platform('software.amazon.awssdk:bom:2.29.26')
+    implementation 'software.amazon.awssdk:s3'
+
+    // WebP support for ImageIO (with Apple Silicon arm64 support)
+    // https://github.com/usefulness/webp-imageio
+    implementation "com.github.usefulness:webp-imageio:${webpImageIoVersion}"
+
+    // Validation
+    implementation 'jakarta.validation:jakarta.validation-api'
+
+    // SpringDoc OpenAPI annotations (optional)
+    compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    jvmArgs = [
+        '-Dfile.encoding=UTF-8',
+        '-Djava.awt.headless=true'
+    ]
+}
+
+compileJava.inputs.files(processResources)
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+compileJava.dependsOn(processResources)

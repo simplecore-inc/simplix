@@ -1,0 +1,4 @@
+dev.simplecore.simplix.email.config.EmailAutoConfiguration
+dev.simplecore.simplix.email.config.AwsSesConfiguration
+dev.simplecore.simplix.email.config.SendGridConfiguration
+dev.simplecore.simplix.email.config.ResendConfiguration

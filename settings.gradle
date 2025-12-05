@@ -17,6 +17,8 @@ include 'simplix-hibernate'
 include 'simplix-cache'
 include 'simplix-excel'
 include 'simplix-encryption'
+include 'simplix-file'
+include 'simplix-email'
 include 'spring-boot-starter-simplix'
 
 def props = new Properties()

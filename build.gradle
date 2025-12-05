@@ -64,6 +64,19 @@ ext {
     // API Documentation
     // ============================================================
     scalarVersion = '0.3.11'
+
+    // ============================================================
+    // File Processing
+    // ============================================================
+    webpImageIoVersion = '0.8.0'
+
+    // ============================================================
+    // Email Providers
+    // ============================================================
+    awsSdkVersion = '2.29.26'
+    sendGridVersion = '4.10.3'
+    resendVersion = '3.1.0'
+    greenMailVersion = '2.0.1'
 }
 
 allprojects {
@@ -186,6 +199,14 @@ subprojects {
                         'simplix-encryption': [
                             name: 'SimpliX Encryption',
                             description: 'Multi-provider encryption supporting Simple (dev), Managed (file-based), and Vault (production) key providers with rotation'
+                        ],
+                        'simplix-file': [
+                            name: 'SimpliX File',
+                            description: 'File upload, storage, and image processing with support for local filesystem and cloud storage'
+                        ],
+                        'simplix-email': [
+                            name: 'SimpliX Email',
+                            description: 'Multi-provider email service supporting SMTP, AWS SES, SendGrid, and Resend with template support'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {

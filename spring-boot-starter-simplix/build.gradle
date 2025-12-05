@@ -38,6 +38,8 @@ dependencies {
     api project(':simplix-excel')
     api project(':simplix-hibernate')
     api project(':simplix-mybatis')
+    api project(':simplix-file')
+    api project(':simplix-email')
 
     // External Libraries
     api 'org.modelmapper:modelmapper'

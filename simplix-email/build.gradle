@@ -1,0 +1,103 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+dependencies {
+    // Spring Boot dependencies
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    // Thymeleaf for email templates
+    implementation 'org.thymeleaf:thymeleaf-spring6'
+    implementation 'org.thymeleaf:thymeleaf'
+
+    // AWS SES SDK (optional - for SES provider)
+    compileOnly platform("software.amazon.awssdk:bom:${awsSdkVersion}")
+    compileOnly 'software.amazon.awssdk:ses'
+    compileOnly 'software.amazon.awssdk:sesv2'
+
+    // SendGrid SDK (optional - for SendGrid provider)
+    compileOnly "com.sendgrid:sendgrid-java:${sendGridVersion}"
+
+    // Resend SDK (optional - for Resend provider)
+    compileOnly "com.resend:resend-java:${resendVersion}"
+
+    // JSON processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // Validation
+    implementation 'jakarta.validation:jakarta.validation-api'
+
+    // SpringDoc OpenAPI annotations (optional)
+    compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation "com.icegreen:greenmail-junit5:${greenMailVersion}"
+
+    // Test with providers
+    testImplementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
+    testImplementation 'software.amazon.awssdk:ses'
+    testImplementation 'software.amazon.awssdk:sesv2'
+    testImplementation "com.sendgrid:sendgrid-java:${sendGridVersion}"
+    testImplementation "com.resend:resend-java:${resendVersion}"
+
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+compileJava.inputs.files(processResources)
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+compileJava.dependsOn(processResources)
