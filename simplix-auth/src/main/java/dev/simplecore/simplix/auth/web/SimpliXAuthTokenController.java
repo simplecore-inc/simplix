@@ -279,14 +279,38 @@ public class SimpliXAuthTokenController {
     public ResponseEntity<SimpliXApiResponse<?>> revokeTokens(HttpServletRequest request) {
         // Extract access token from Authorization header
         String authHeader = request.getHeader("Authorization");
+        String accessToken = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring("Bearer ".length()).trim();
+            accessToken = authHeader.substring("Bearer ".length()).trim();
+        }
+
+        // Extract refresh token
+        String refreshToken = request.getHeader("X-Refresh-Token");
+
+        // Validate that at least one token is provided
+        boolean hasAccessToken = accessToken != null && !accessToken.isEmpty();
+        boolean hasRefreshToken = refreshToken != null && !refreshToken.isEmpty();
+
+        if (!hasAccessToken && !hasRefreshToken) {
+            return ResponseEntity.badRequest().body(
+                    SimpliXApiResponse.error(
+                            messageSource.getMessage("token.revoke.missing", null,
+                                    "No token provided for revocation",
+                                    LocaleContextHolder.getLocale()),
+                            messageSource.getMessage("token.revoke.missing.detail", null,
+                                    "Provide Authorization header with Bearer token or X-Refresh-Token header",
+                                    LocaleContextHolder.getLocale())
+                    )
+            );
+        }
+
+        // Revoke access token
+        if (hasAccessToken) {
             tokenProvider.revokeToken(accessToken);
         }
 
-        // Extract and revoke refresh token if provided
-        String refreshToken = request.getHeader("X-Refresh-Token");
-        if (refreshToken != null && !refreshToken.isEmpty()) {
+        // Revoke refresh token
+        if (hasRefreshToken) {
             tokenProvider.revokeToken(refreshToken);
         }
 
