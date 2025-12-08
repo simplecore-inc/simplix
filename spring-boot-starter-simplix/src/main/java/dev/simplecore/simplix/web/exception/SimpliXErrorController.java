@@ -16,6 +16,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -147,30 +148,59 @@ public class SimpliXErrorController extends AbstractErrorController {
         
         SimpliXApiResponse<Object> errorResponse;
         if (throwable != null) {
-            // Handle the original exception
-            Exception ex = throwable instanceof Exception ? (Exception) throwable : new Exception(throwable);
-            errorResponse = exceptionHandler.handleException(ex, request);
+            // Check for BadCredentialsException in the exception chain
+            Throwable rootCause = getRootCause(throwable);
+            if (rootCause instanceof BadCredentialsException || throwable instanceof BadCredentialsException) {
+                // Invalid credentials - use specific error code
+                String message = messageSource.getMessage(
+                    "error.auth.invalid.credentials",
+                    null,
+                    "Invalid credentials",
+                    LocaleContextHolder.getLocale()
+                );
+                String detail = messageSource.getMessage(
+                    "error.auth.invalid.credentials.detail",
+                    null,
+                    "The username or password is incorrect",
+                    LocaleContextHolder.getLocale()
+                );
+                errorResponse = SimpliXApiResponse.error(message, "AUTH_INVALID_CREDENTIALS", detail);
+            } else {
+                // Handle the original exception
+                Exception ex = throwable instanceof Exception ? (Exception) throwable : new Exception(throwable);
+                errorResponse = exceptionHandler.handleException(ex, request);
+            }
         } else {
             // Get error details when throwable is not available
             String errorMessage = (String) request.getAttribute(RequestDispatcher.ERROR_MESSAGE);
             String requestUri = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
             String errorServletName = (String) request.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
-            
+
             // Handle specific HTTP status codes
             String errorCode;
             String message;
             String detail = null;
-            
+
             if (statusCode == 403) {
                 // Access Denied / Forbidden
                 errorCode = "AUTHZ_INSUFFICIENT_PERMISSIONS";
                 message = messageSource.getMessage("error.insufficientPermissions", null, LocaleContextHolder.getLocale());
                 detail = messageSource.getMessage("error.insufficientPermissions.detail", null, LocaleContextHolder.getLocale());
             } else if (statusCode == 401) {
-                // Unauthorized
-                errorCode = "AUTH_AUTHENTICATION_REQUIRED"; 
-                message = messageSource.getMessage("error.authenticationFailed", null, LocaleContextHolder.getLocale());
-                detail = messageSource.getMessage("error.authenticationFailed.detail", null, LocaleContextHolder.getLocale());
+                // Check if error message indicates invalid credentials
+                boolean isInvalidCredentials = errorMessage != null &&
+                    (errorMessage.contains("Invalid") || errorMessage.contains("credentials") ||
+                     errorMessage.contains("password") || errorMessage.contains("username"));
+
+                if (isInvalidCredentials) {
+                    errorCode = "AUTH_INVALID_CREDENTIALS";
+                    message = messageSource.getMessage("error.auth.invalid.credentials", null, LocaleContextHolder.getLocale());
+                    detail = messageSource.getMessage("error.auth.invalid.credentials.detail", null, LocaleContextHolder.getLocale());
+                } else {
+                    errorCode = "AUTH_AUTHENTICATION_REQUIRED";
+                    message = messageSource.getMessage("error.authenticationFailed", null, LocaleContextHolder.getLocale());
+                    detail = messageSource.getMessage("error.authenticationFailed.detail", null, LocaleContextHolder.getLocale());
+                }
             } else if (statusCode == 404) {
                 // Not Found
                 errorCode = "GEN_NOT_FOUND";
@@ -186,7 +216,7 @@ public class SimpliXErrorController extends AbstractErrorController {
                     detail = messageSource.getMessage("error.unknownError.detail", new Object[]{requestUri}, LocaleContextHolder.getLocale());
                 }
             }
-            
+
             errorResponse = SimpliXApiResponse.error(message, errorCode, detail);
         }
         
@@ -204,5 +234,13 @@ public class SimpliXErrorController extends AbstractErrorController {
         }
         
         objectMapper.writeValue(response.getWriter(), errorResponse);
+    }
+
+    private Throwable getRootCause(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        return rootCause;
     }
 } 

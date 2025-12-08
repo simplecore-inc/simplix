@@ -15,6 +15,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -318,26 +319,60 @@ public class SimpliXExceptionHandler<T> {
         return errorResponse;
     }
 
-    @ExceptionHandler(AuthenticationException.class)
+    @ExceptionHandler(BadCredentialsException.class)
     @Order(3)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public T handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
+        log.warn("Invalid credentials for request: {} - {}", request.getRequestURI(), ex.getMessage());
+
+        String message = messageSource.getMessage(
+            "error.auth.invalid.credentials",
+            null,
+            "Invalid credentials",
+            LocaleContextHolder.getLocale()
+        );
+
+        String detail = messageSource.getMessage(
+            "error.auth.invalid.credentials.detail",
+            null,
+            "The username or password is incorrect",
+            LocaleContextHolder.getLocale()
+        );
+
+        T errorResponse = responseFactory.createErrorResponse(
+            HttpStatus.UNAUTHORIZED,
+            ErrorCode.AUTH_INVALID_CREDENTIALS.getCode(),
+            message,
+            detail,
+            request.getRequestURI()
+        );
+
+        // Add trace ID to response header and MDC for logging
+        addTraceIdToResponse(errorResponse, request);
+
+        return errorResponse;
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @Order(4)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public T handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
         log.warn("Authentication failed for request: {} - {}", request.getRequestURI(), ex.getMessage());
-        
+
         String message = messageSource.getMessage(
-            "error.auth.authentication.required", 
-            null, 
-            "Authentication required", 
+            "error.auth.authentication.required",
+            null,
+            "Authentication required",
             LocaleContextHolder.getLocale()
         );
-        
+
         String detail = messageSource.getMessage(
-            "error.authenticationFailed.detail", 
-            null, 
-            "Login is required or token is invalid", 
+            "error.authenticationFailed.detail",
+            null,
+            "Login is required or token is invalid",
             LocaleContextHolder.getLocale()
         );
-        
+
         T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.UNAUTHORIZED,
             ErrorCode.AUTH_AUTHENTICATION_REQUIRED.getCode(),
@@ -345,10 +380,10 @@ public class SimpliXExceptionHandler<T> {
             detail,
             request.getRequestURI()
         );
-        
+
         // Add trace ID to response header and MDC for logging
         addTraceIdToResponse(errorResponse, request);
-        
+
         return errorResponse;
     }
 
