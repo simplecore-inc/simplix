@@ -40,7 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Base64;
 
-@Tag(name = "auth.Token", description = "Token management endpoints")
+@Tag(name = "Auth Token", description = "Token management endpoints")
 @RestController
 @RequestMapping("/auth/token")
 @RequiredArgsConstructor
@@ -338,7 +338,7 @@ public class SimpliXAuthTokenController {
         String header = request.getHeader("Authorization");
 
         // Check for Basic auth header
-        if (header == null || header.isEmpty() || !header.startsWith("Basic ")) {
+        if (header == null || !header.startsWith("Basic ")) {
             throw new BadCredentialsException(
                     messageSource.getMessage("auth.basic.header.missing", null,
                             "Missing basic auth header",

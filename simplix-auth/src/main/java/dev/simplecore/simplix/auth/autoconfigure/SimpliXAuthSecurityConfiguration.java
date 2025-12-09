@@ -91,6 +91,9 @@ public class SimpliXAuthSecurityConfiguration {
         return http.build();
     }
 
+    /**
+     * Security filter chain for API endpoints.
+     */
     @Bean
     @Order(100)
     public SecurityFilterChain apiSecurityFilterChain(
@@ -172,7 +175,7 @@ public class SimpliXAuthSecurityConfiguration {
                 })
                 .clearAuthentication(true)
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID", "accessToken", "refreshToken")
+                .deleteCookies("JSESSIONID", "accessToken", "refreshToken", "access_token", "refresh_token")
                 .permitAll())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))

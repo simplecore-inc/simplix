@@ -5,6 +5,7 @@ import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -141,10 +142,30 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
+        // 1. Check Authorization header first
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
+            logger.debug("Token extracted from Authorization header");
             return header.substring(7);
         }
+
+        // 2. Check cookie if OAuth2 is enabled and token delivery method is COOKIE
+        if (properties.getOauth2() != null && properties.getOauth2().isEnabled()) {
+            String cookieName = properties.getOauth2().getCookie().getAccessTokenName();
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookieName.equals(cookie.getName())) {
+                        String token = cookie.getValue();
+                        if (token != null && !token.isEmpty()) {
+                            logger.debug("Token extracted from cookie: {}", cookieName);
+                            return token;
+                        }
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

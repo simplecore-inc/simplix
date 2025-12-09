@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.auth.properties;
 
+import dev.simplecore.simplix.auth.oauth2.properties.SimpliXOAuth2Properties;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ public class SimpliXAuthProperties {
     private TokenProperties token = new TokenProperties();
     private Security security = new Security();
     private CorsProperties cors = new CorsProperties();
+    private SimpliXOAuth2Properties oauth2 = new SimpliXOAuth2Properties();
 
     @Getter
     @Setter
