@@ -48,12 +48,20 @@ public class LocalFileStorageService implements FileStorageService {
     @PostConstruct
     public void init() {
         this.basePath = Paths.get(storageProperties.getLocal().getBasePath()).toAbsolutePath().normalize();
-        this.thumbnailPath = Paths.get(fileProperties.getThumbnail().getCachePath()).toAbsolutePath().normalize();
+
+        // Resolve thumbnail path: if relative, resolve under base-path
+        Path configuredThumbnailPath = Paths.get(fileProperties.getThumbnail().getCachePath());
+        if (configuredThumbnailPath.isAbsolute()) {
+            this.thumbnailPath = configuredThumbnailPath.normalize();
+        } else {
+            this.thumbnailPath = basePath.resolve(configuredThumbnailPath).normalize();
+        }
 
         try {
             Files.createDirectories(basePath);
             Files.createDirectories(thumbnailPath);
             log.info("Initialized local file storage at: {}", basePath);
+            log.info("Thumbnail cache path: {}", thumbnailPath);
         } catch (IOException e) {
             throw new StorageException(
                 StorageException.StorageErrorCode.WRITE_FAILED,
