@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.encryption.config;
 
+import dev.simplecore.simplix.encryption.provider.ConfigurableKeyProvider;
 import dev.simplecore.simplix.encryption.provider.KeyProvider;
 import dev.simplecore.simplix.encryption.provider.ManagedKeyProvider;
 import dev.simplecore.simplix.encryption.provider.SimpleKeyProvider;
@@ -25,7 +26,8 @@ import org.springframework.vault.core.VaultTemplate;
  * Priority order:
  * 1. VaultKeyProvider (prod, staging profiles)
  * 2. ManagedKeyProvider (file-based profile)
- * 3. SimpleKeyProvider (default fallback for dev)
+ * 3. ConfigurableKeyProvider (explicit provider=configurable)
+ * 4. SimpleKeyProvider (default fallback for dev)
  */
 @Configuration
 @Slf4j
@@ -117,6 +119,30 @@ public class KeyProviderConfiguration {
             provider.setKeyStorePath(keyStorePath);
             provider.setMasterKey(masterKey);
             provider.setSalt(salt);
+            return provider;
+        }
+    }
+
+    /**
+     * ConfigurableKeyProvider for multi-version key management.
+     * Activated when provider=configurable is explicitly set.
+     * Works with any profile.
+     */
+    @Configuration
+    public static class ConfigurableKeyProviderConfig {
+
+        @Bean
+        @Primary
+        @ConditionalOnMissingBean(KeyProvider.class)
+        @ConditionalOnProperty(
+            prefix = "simplix.encryption",
+            name = "provider",
+            havingValue = "configurable"
+        )
+        public KeyProvider configurableKeyProvider(SimpliXEncryptionProperties properties) {
+            log.info("✔ Creating ConfigurableKeyProvider bean");
+            ConfigurableKeyProvider provider = new ConfigurableKeyProvider();
+            provider.setConfig(properties.getConfigurable());
             return provider;
         }
     }

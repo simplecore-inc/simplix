@@ -3,6 +3,9 @@ package dev.simplecore.simplix.encryption.config;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * SimpliX Encryption module configuration properties.
  * Defines all configurable properties for the encryption infrastructure.
@@ -61,6 +64,11 @@ public class SimpliXEncryptionProperties {
      */
     private Rotation rotation = new Rotation();
 
+    /**
+     * Configurable key provider configuration for multi-version key management
+     */
+    private Configurable configurable = new Configurable();
+
     @Data
     public static class Simple {
         /**
@@ -98,5 +106,35 @@ public class SimpliXEncryptionProperties {
          * Key rotation interval in days
          */
         private int days = 90;
+    }
+
+    @Data
+    public static class Configurable {
+        /**
+         * Current key version to use for encryption.
+         * Must exist in the keys map and must not be deprecated.
+         */
+        private String currentVersion;
+
+        /**
+         * Map of key versions to their configurations.
+         * Key: version identifier (e.g., "v1", "v2")
+         * Value: KeyConfig containing the key and metadata
+         */
+        private Map<String, KeyConfig> keys = new LinkedHashMap<>();
+
+        @Data
+        public static class KeyConfig {
+            /**
+             * Base64-encoded AES-256 key (32 bytes after decoding)
+             */
+            private String key;
+
+            /**
+             * Whether this key is deprecated.
+             * Deprecated keys can only be used for decryption, not encryption.
+             */
+            private boolean deprecated = false;
+        }
     }
 }

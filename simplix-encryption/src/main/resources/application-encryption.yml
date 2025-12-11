@@ -20,6 +20,19 @@ simplix:
     salt: ${SIMPLIX_ENCRYPTION_SALT:#{null}}  # Encryption salt
     key-store-path: ${SIMPLIX_ENCRYPTION_KEY_STORE_PATH:#{null}}  # Path to key store for ManagedKeyProvider
 
+    # ConfigurableKeyProvider Configuration (multi-version key management)
+    configurable:
+      current-version: ${SIMPLIX_ENCRYPTION_CURRENT_VERSION:#{null}}
+      keys: {}
+      # Example configuration (override in your application.yml):
+      # current-version: v2
+      # keys:
+      #   v1:
+      #     key: "Base64EncodedAES256Key32Bytes=="  # 32 bytes for AES-256
+      #     deprecated: true  # Can only decrypt, not encrypt
+      #   v2:
+      #     key: "Base64EncodedAES256Key32Bytes=="
+
     # VaultKeyProvider Configuration (production/staging)
     vault:
       enabled: ${SIMPLIX_ENCRYPTION_VAULT_ENABLED:true}  # Enable Vault integration
