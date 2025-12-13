@@ -28,6 +28,9 @@ sourceSets {
 dependencies {
     api project(':simplix-core')
 
+    // Optional: simplix-encryption for JWE key rolling support
+    compileOnly project(':simplix-encryption')
+
     // Spring Boot Core (needed for independent usage, will be provided by umbrella starter)
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.springframework.boot:spring-boot-starter-security'

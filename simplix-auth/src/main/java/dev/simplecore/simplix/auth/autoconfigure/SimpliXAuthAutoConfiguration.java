@@ -6,7 +6,7 @@ import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationSuccessHan
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
@@ -17,17 +17,12 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationFa
 
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "simplix.auth", name = "enabled", havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(SimpliXAuthProperties.class)
 @ComponentScan(basePackages = "dev.simplecore.simplix.auth")
 @Import({
     SimpliXAuthSecurityConfiguration.class
 })
 public class SimpliXAuthAutoConfiguration {
-
-    @Bean
-    @ConfigurationProperties(prefix = "simplix.auth")
-    public SimpliXAuthProperties simplixAuthProperties() {
-        return new SimpliXAuthProperties();
-    }
 
     /**
      * Form login success handler - redirects to saved request or default success URL.

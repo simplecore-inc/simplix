@@ -11,6 +11,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
+import dev.simplecore.simplix.auth.jwe.provider.JweKeyProvider;
+import dev.simplecore.simplix.auth.jwe.provider.StaticJweKeyProvider;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.service.TokenBlacklistService;
 import dev.simplecore.simplix.core.exception.ErrorCode;
@@ -36,6 +38,7 @@ import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
@@ -55,6 +58,7 @@ public class SimpliXJweTokenProvider {
     private final MessageSource messageSource;
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService blacklistService;
+    private final JweKeyProvider jweKeyProvider;
     private RSAEncrypter encrypter;
     private RSADecrypter decrypter;
 
@@ -62,11 +66,13 @@ public class SimpliXJweTokenProvider {
             SimpliXAuthProperties properties,
             MessageSource messageSource,
             UserDetailsService userDetailsService,
-            @Autowired(required = false) TokenBlacklistService blacklistService) {
+            @Autowired(required = false) TokenBlacklistService blacklistService,
+            @Autowired(required = false) JweKeyProvider jweKeyProvider) {
         this.properties = properties;
         this.messageSource = messageSource;
         this.userDetailsService = userDetailsService;
         this.blacklistService = blacklistService;
+        this.jweKeyProvider = jweKeyProvider;
     }
 
     @Bean
@@ -75,12 +81,24 @@ public class SimpliXJweTokenProvider {
             SimpliXAuthProperties properties,
             MessageSource messageSource,
             UserDetailsService userDetailsService,
-            @Autowired(required = false) TokenBlacklistService blacklistService) {
-        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService, blacklistService);
+            @Autowired(required = false) TokenBlacklistService blacklistService,
+            @Autowired(required = false) JweKeyProvider jweKeyProvider) {
+        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService, blacklistService, jweKeyProvider);
     }
 
     @PostConstruct
     public void init() throws JOSEException, ParseException {
+        // Check if JweKeyProvider is available and configured (key-rolling mode)
+        if (jweKeyProvider != null && jweKeyProvider.isConfigured()) {
+            KeyPair keyPair = jweKeyProvider.getCurrentKeyPair();
+            this.encrypter = new RSAEncrypter((RSAPublicKey) keyPair.getPublic());
+            this.decrypter = new RSADecrypter((RSAPrivateKey) keyPair.getPrivate());
+            log.info("JweTokenProvider initialized with {} (version: {})",
+                jweKeyProvider.getName(), jweKeyProvider.getCurrentVersion());
+            return;
+        }
+
+        // Legacy mode: load key from properties
         String key = properties.getJwe().getEncryptionKey();
         if (key == null && properties.getJwe().getEncryptionKeyLocation() != null) {
             try {
@@ -89,22 +107,39 @@ public class SimpliXJweTokenProvider {
                 key = new String(bytes, StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new RuntimeException(
-                    messageSource.getMessage("jwe.key.load.failed", 
-                        new Object[]{properties.getJwe().getEncryptionKeyLocation()}, 
-                        "Failed to load JWE key from {0}", 
-                        LocaleContextHolder.getLocale()), 
+                    messageSource.getMessage("jwe.key.load.failed",
+                        new Object[]{properties.getJwe().getEncryptionKeyLocation()},
+                        "Failed to load JWE key from {0}",
+                        LocaleContextHolder.getLocale()),
                     e);
             }
         }
+
+        // If key-rolling is enabled but provider not configured, wait for initialization
+        if (properties.getJwe().getKeyRolling().isEnabled()) {
+            if (key == null) {
+                log.info("JWE key-rolling enabled, waiting for key initialization via JweKeyRotationService");
+                return;
+            }
+        }
+
         if (key == null) {
             throw new IllegalStateException(
                 messageSource.getMessage("jwe.key.not.configured", null,
                     "JWE encryption key is not configured",
                     LocaleContextHolder.getLocale()));
         }
+
         RSAKey rsaKey = RSAKey.parse(key);
         this.encrypter = new RSAEncrypter((RSAPublicKey) rsaKey.toPublicKey());
         this.decrypter = new RSADecrypter((RSAPrivateKey) rsaKey.toPrivateKey());
+
+        // Initialize StaticJweKeyProvider if available (for kid header support)
+        if (jweKeyProvider instanceof StaticJweKeyProvider staticProvider && !staticProvider.isConfigured()) {
+            staticProvider.initialize(key);
+        }
+
+        log.info("JweTokenProvider initialized with static key from properties");
     }
 
     public TokenResponse createTokenPair(String username, String clientIp, String userAgent) throws JOSEException {
@@ -124,6 +159,17 @@ public class SimpliXJweTokenProvider {
     }
 
     private String createToken(String subject, Date expirationTime, String clientIp, String userAgent) throws JOSEException {
+        // Ensure encrypter is available (may be initialized lazily in key-rolling mode)
+        if (encrypter == null && jweKeyProvider != null && jweKeyProvider.isConfigured()) {
+            KeyPair keyPair = jweKeyProvider.getCurrentKeyPair();
+            this.encrypter = new RSAEncrypter((RSAPublicKey) keyPair.getPublic());
+            this.decrypter = new RSADecrypter((RSAPrivateKey) keyPair.getPrivate());
+        }
+
+        if (encrypter == null) {
+            throw new IllegalStateException("JWE encrypter not initialized. Check key configuration.");
+        }
+
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
             .subject(subject)
             .jwtID(UUID.randomUUID().toString())  // Add JTI for blacklist support
@@ -133,9 +179,18 @@ public class SimpliXJweTokenProvider {
             .claim("userAgent", userAgent)
             .build();
 
-        JWEHeader header = new JWEHeader.Builder(JWEAlgorithm.parse(properties.getJwe().getAlgorithm()),
-                EncryptionMethod.parse(properties.getJwe().getEncryptionMethod()))
-            .build();
+        // Build header with kid (Key ID) for multi-key support
+        String kid = jweKeyProvider != null ? jweKeyProvider.getCurrentVersion() : null;
+
+        JWEHeader.Builder headerBuilder = new JWEHeader.Builder(
+            JWEAlgorithm.parse(properties.getJwe().getAlgorithm()),
+            EncryptionMethod.parse(properties.getJwe().getEncryptionMethod()));
+
+        if (kid != null) {
+            headerBuilder.keyID(kid);
+        }
+
+        JWEHeader header = headerBuilder.build();
 
         EncryptedJWT jwt = new EncryptedJWT(header, claims);
         jwt.encrypt(encrypter);
@@ -208,7 +263,24 @@ public class SimpliXJweTokenProvider {
 
     public JWTClaimsSet parseToken(String token) throws ParseException, JOSEException {
         EncryptedJWT jwt = EncryptedJWT.parse(token);
-        jwt.decrypt(decrypter);
+
+        // Get kid (Key ID) from header to select correct decryption key
+        String kid = jwt.getHeader().getKeyID();
+        RSADecrypter tokenDecrypter;
+
+        if (kid != null && jweKeyProvider != null) {
+            // Use key from provider based on kid
+            KeyPair keyPair = jweKeyProvider.getKeyPair(kid);
+            tokenDecrypter = new RSADecrypter((RSAPrivateKey) keyPair.getPrivate());
+        } else {
+            // Fall back to default decrypter (legacy tokens without kid)
+            if (decrypter == null) {
+                throw new IllegalStateException("JWE decrypter not initialized. Check key configuration.");
+            }
+            tokenDecrypter = this.decrypter;
+        }
+
+        jwt.decrypt(tokenDecrypter);
         return jwt.getJWTClaimsSet();
     }
 
