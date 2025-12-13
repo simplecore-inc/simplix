@@ -195,6 +195,8 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 - Be clear and descriptive about what changed and why
 - NEVER add AI-related signatures like "Generated with Claude Code" or "Co-Authored-By: Claude"
 - Keep commit messages clean and professional without any AI attributions
+- Do not include Claude-related content in commit messages
+- Do NOT add "Generated with Claude Code" or "Co-Authored-By: Claude" to commit messages
 
 #### Development Workflow
 - Do not perform git commit/push operations unless explicitly requested
