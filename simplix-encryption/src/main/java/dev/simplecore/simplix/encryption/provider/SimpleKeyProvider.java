@@ -34,7 +34,7 @@ public class SimpleKeyProvider extends AbstractKeyProvider {
         try {
             // Derive a proper AES key from the configured string
             this.secretKey = deriveKeyFromString(staticKey);
-            this.currentVersion = "static-v1";
+            this.currentVersion = "static";
             this.permanentKeyCache.put(currentVersion, secretKey);
 
             log.warn("⚠ SimpleKeyProvider initialized - DO NOT USE IN PRODUCTION");
@@ -62,7 +62,7 @@ public class SimpleKeyProvider extends AbstractKeyProvider {
 
     @Override
     public SecretKey getKey(String version) {
-        if ("static-v1".equals(version) || version == null) {
+        if ("static".equals(version) || version == null) {
             return getCurrentKey();
         }
 
