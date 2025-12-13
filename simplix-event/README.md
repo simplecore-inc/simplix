@@ -1,131 +1,83 @@
-# AccessCore Entra Events Module
+# SimpliX Event Module
 
-Event-driven architecture support module for the AccessCore Entra application.
+이벤트 기반 아키텍처를 위한 유연한 이벤트 발행 모듈입니다.
 
 ## Features
 
-- ✔ **Strategy Pattern** - Runtime selection of event publishing mechanism
-- ✔ **Multiple Brokers** - Local (in-memory), Redis Pub/Sub, Kafka, RabbitMQ support
-- ✔ **SPI Integration** - Automatic integration with Core module via Service Provider Interface
-- ✔ **Auto-Configuration** - Spring Boot auto-configuration for easy setup
-- ✔ **Monitoring** - Micrometer-based metrics and health checks
-- ✔ **Conditional Loading** - Strategies are auto-enabled based on classpath dependencies
+- **Strategy Pattern** - 설정 변경만으로 이벤트 브로커 교체
+- **Multiple Brokers** - Local, Redis Streams, Kafka, RabbitMQ 지원
+- **SPI Integration** - Core 모듈과 자동 연동
+- **Auto-Configuration** - Spring Boot 자동 설정
+- **Monitoring** - Micrometer 메트릭 및 Health Check
 
 ## Quick Start
 
-### 1. Add Dependency
+### 1. Dependency
 
 ```gradle
 dependencies {
-    implementation project(':accesscore-entra-events')
+    implementation 'dev.simplecore:simplix-event:${version}'
 
-    // Optional: Add strategy-specific dependencies
-    // implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // implementation 'org.springframework.kafka:spring-kafka'
-    // implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    // Optional: 브로커 선택
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'  // Redis
+    implementation 'org.springframework.kafka:spring-kafka'                    // Kafka
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'         // RabbitMQ
 }
 ```
 
-### 2. Configure Event Mode
+### 2. Configuration
 
 ```yaml
-accesscore:
+simplix:
   events:
-    mode: local  # Options: local, redis, kafka, rabbit
-    enrich-metadata: true
+    mode: local  # local, redis, kafka, rabbit
 ```
 
-### 3. Publish Events
-
-Events are published through the Core module's `EventManager`:
+### 3. Publish Event
 
 ```java
-@Service
-@RequiredArgsConstructor
-public class MyService {
-    private final EventManager eventManager;
+import dev.simplecore.simplix.core.event.EventManager;
+import dev.simplecore.simplix.core.event.GenericEvent;
 
-    public void doSomething() {
-        DomainEventMessage event = DomainEventMessage.builder()
-            .eventType("SomethingHappened")
-            .aggregateId("123")
-            .build();
+GenericEvent event = GenericEvent.builder()
+    .eventType("OrderCreated")
+    .aggregateId("order-123")
+    .payload(orderData)
+    .build();
 
-        eventManager.publishEvent(event);
-    }
-}
+EventManager.getInstance().publish(event);
 ```
-
-## Architecture
-
-### Core Components
-
-```
-Core Module (SPI)
-    ↓
-CoreEventPublisherImpl (Bridge)
-    ↓
-UnifiedEventPublisher (Main Publisher)
-    ↓
-EventStrategy (Strategy Pattern)
-    ├── LocalEventStrategy
-    ├── RedisEventStrategy
-    ├── KafkaEventStrategy
-    └── RabbitEventStrategy
-```
-
-### Component Descriptions
-
-- **EventPublisher** (Core Interface): Defined in core module for event publishing
-- **UnifiedEventPublisher**: Main implementation that delegates to selected strategy
-- **CoreEventPublisherImpl**: SPI bridge connecting core and events modules
-- **EventStrategy**: Interface for different broker implementations
 
 ## Event Strategies
 
-### Local Strategy (Default)
-- **Mode**: `local`
-- **Broker**: Spring ApplicationEventPublisher
-- **Use Case**: Development, single-instance applications
-- **Dependencies**: None (built-in)
-
-### Redis Strategy
-- **Mode**: `redis`
-- **Broker**: Redis Pub/Sub
-- **Use Case**: Distributed systems with simple event patterns
-- **Dependencies**: `spring-boot-starter-data-redis`
-
-### Kafka Strategy
-- **Mode**: `kafka`
-- **Broker**: Apache Kafka
-- **Use Case**: High-throughput, event streaming applications
-- **Dependencies**: `spring-kafka`
-
-### RabbitMQ Strategy
-- **Mode**: `rabbit`
-- **Broker**: RabbitMQ
-- **Use Case**: Complex routing, DLQ support needed
-- **Dependencies**: `spring-boot-starter-amqp`
+| Mode | Broker | Use Case |
+|------|--------|----------|
+| `local` | Spring ApplicationEventPublisher | 개발/테스트, 단일 인스턴스 |
+| `redis` | Redis Streams | 분산 시스템 (중소규모) |
+| `kafka` | Apache Kafka | 고처리량, 이벤트 스트리밍 |
+| `rabbit` | RabbitMQ | 복잡한 라우팅, DLQ 필요 |
 
 ## Configuration Examples
 
 ### Development (Local)
+
 ```yaml
-accesscore:
+simplix:
   events:
     mode: local
 ```
 
-### Production with Redis
+### Production (Redis)
+
 ```yaml
-accesscore:
+simplix:
   events:
     mode: redis
     redis:
-      channel-prefix: "prod:events:"
-      persistent:
-        enabled: true
-        ttl: 86400
+      stream-prefix: simplix-events
+      stream:
+        consumer-group: my-app-group
+        max-len: 10000
 
 spring:
   data:
@@ -134,17 +86,14 @@ spring:
       port: 6379
 ```
 
-### Production with Kafka
+### Production (Kafka)
+
 ```yaml
-accesscore:
+simplix:
   events:
     mode: kafka
     kafka:
-      topic-prefix: "prod-events"
-      default-topic: "domain-events"
-      producer:
-        acks: "all"
-        compression-type: "snappy"
+      topic-prefix: simplix-events
 
 spring:
   kafka:
@@ -154,54 +103,24 @@ spring:
 ## Monitoring
 
 ### Health Check
+
 ```bash
 curl http://localhost:8080/actuator/health
 ```
 
 ### Metrics
-- `events.publish.total` - Total events published
-- `events.publish.duration` - Publishing duration
-- `events.publish.errors` - Publishing errors
-- `events.publish.critical` - Critical events published
+
+| Metric | Description |
+|--------|-------------|
+| `simplix.events.published` | 발행된 이벤트 수 |
+| `simplix.events.failed` | 실패한 이벤트 수 |
+| `simplix.events.publish.time` | 발행 소요 시간 |
 
 ## Documentation
 
-For detailed documentation, see:
-- [Korean Documentation (한국어 문서)](docs/README_ko.md)
-
-## Testing
-
-### Unit Tests
-```java
-@SpringBootTest
-@TestPropertySource(properties = "simplix.events.mode=local")
-class EventPublishingTest {
-    @Autowired
-    private UnifiedEventPublisher eventPublisher;
-
-    @Test
-    void shouldPublishEvent() {
-        eventPublisher.publish(createTestEvent());
-        assertTrue(eventPublisher.isAvailable());
-    }
-}
-```
-
-### Integration Tests with Testcontainers
-```java
-@SpringBootTest
-@Testcontainers
-@TestPropertySource(properties = "simplix.events.mode=redis")
-class RedisEventPublishingTest {
-    @Container
-    static GenericContainer<?> redis =
-        new GenericContainer<>("redis:7-alpine")
-            .withExposedPorts(6379);
-
-    // Tests...
-}
-```
+- [Overview (상세 문서)](docs/ko/overview.md)
+- [Usage Guide (사용법 가이드)](docs/ko/usage-guide.md)
 
 ## License
 
-This project is developed for internal use.
+SimpleCORE License 1.0 (SCL-1.0)
