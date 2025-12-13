@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SimpliX is a modular Spring Boot starter library that provides common enterprise features. It's built as a multi-module Gradle project with Spring Boot 3.5.7 and Java 17.
 
+## License
+
+This project is licensed under **SimpleCORE License 1.0 (SCL-1.0)**. Always use this license information when creating README files or documentation.
+
 ## Build Commands
 
 ```bash
@@ -239,6 +243,26 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 - Do not create new documentation files unless explicitly requested
 - Maintain existing documentation only when specifically asked
 - Prefer concise inline comments for complex logic over separate docs
+
+#### Documentation Update Requirements
+- **ALWAYS review related documentation** when code is added or modified
+- **ALWAYS update documentation** to reflect the latest code changes
+- This includes:
+  - Module README.md files
+  - API documentation in docs/ folders
+  - Configuration examples and property descriptions
+  - Usage examples and code snippets
+- If documentation is outdated or missing, update it as part of the code change
+- **NEVER include specific version numbers** in documentation (e.g., `1.0.6`, `3.5.7`)
+  - Versions change frequently and cause documentation to become outdated
+  - Use `${version}` placeholder or omit version entirely in examples
+  - Exception: CLAUDE.md may contain versions for internal reference only
+
+#### Documentation Folder Structure
+- **Korean documentation**: Place in `docs/ko/` folder (e.g., `docs/ko/README.md`, `docs/ko/usage-guide.md`)
+- **English documentation**: Place in `docs/` folder directly (e.g., `docs/README.md`)
+- Do NOT use language suffixes in filenames (e.g., `README_ko.md` is incorrect)
+- Use folder-based localization instead of filename-based localization
 
 ## Security Guidelines (Enterprise Best Practices)
 
