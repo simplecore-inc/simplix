@@ -224,8 +224,9 @@ spring-boot-starter-simplix (umbrella)
 
 ## Documentation
 
+- [Application Setup Guide (애플리케이션 설정)](docs/ko/application-setup.md)
 - [Overview (아키텍처 상세)](docs/ko/overview.md)
-- [Configuration Guide (설정 가이드)](docs/ko/configuration.md)
+- [Configuration Guide (YAML 설정)](docs/ko/configuration.md)
 - [DateTime Guide (타임존/날짜시간)](docs/ko/datetime.md)
 - [Exception Handler Guide (예외 처리)](docs/ko/exception-handler.md)
 - [Service & Controller Guide (서비스/컨트롤러)](docs/ko/service-controller.md)
