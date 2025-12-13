@@ -44,29 +44,40 @@ This project is licensed under **SimpleCORE License 1.0 (SCL-1.0)**. Always use 
 
 ```
 simplix/
-├── simplix-core/                      # Core utilities and base classes
-│   └── SimpliXBaseEntity, SimpliXBaseRepository, SimpliXBaseService
-├── spring-boot-starter-simplix/       # Main auto-configuration module
-│   └── autoconfigure/                 # Spring Boot auto-configurations
-├── spring-boot-starter-simplix-auth/  # Authentication & authorization
-│   └── JWT/JWE token support, security filters
-├── spring-boot-starter-simplix-event/ # Event-driven architecture support
-│   └── NATS integration, event publishers/listeners
-├── spring-boot-starter-simplix-excel/ # Excel/CSV import/export
-│   └── POI integration, template processing
-└── spring-boot-starter-simplix-mybatis/ # MyBatis integration
-    └── Mapper configurations, type handlers
+├── simplix-core/                   # Core utilities, base entities/repositories, tree structures, security utilities
+├── spring-boot-starter-simplix/    # Umbrella starter with auto-configuration (includes all modules)
+├── simplix-auth/                   # JWE token authentication, OAuth2 social login, Spring Security integration
+├── simplix-cache/                  # SPI-based caching with Caffeine (local) and Redis (distributed)
+├── simplix-email/                  # Multi-provider email (SMTP, AWS SES, SendGrid, Resend) with templates
+├── simplix-encryption/             # Data encryption with key rotation (Simple, Managed, Vault providers)
+├── simplix-event/                  # Event-driven architecture with NATS messaging
+├── simplix-excel/                  # Excel/CSV import/export with Apache POI
+├── simplix-file/                   # File storage abstraction (local, AWS S3, GCS)
+├── simplix-hibernate/              # Hibernate L2 cache management (Ehcache, Redis, Hazelcast)
+└── simplix-mybatis/                # MyBatis integration with custom type handlers
 ```
 
 ### Key Auto-Configuration Classes
 
-The library uses Spring Boot's `@AutoConfiguration` with specific ordering:
+The `spring-boot-starter-simplix` module provides the following auto-configurations:
 
-1. **SimpliXMessageSourceAutoConfiguration** - Runs before MessageSourceAutoConfiguration and WebMvcAutoConfiguration
-2. **SimpliXValidatorAutoConfiguration** - Runs after MessageSourceAutoConfiguration
-3. **SimpliXJpaAutoConfiguration** - Runs after HibernateJpaAutoConfiguration
-4. **SimpliXTreeRepositoryAutoConfiguration** - Runs after JpaRepositoriesAutoConfiguration
-5. **SimpliXThymeleafAutoConfiguration** - Runs before ErrorMvcAutoConfiguration
+| Class | Description |
+|-------|-------------|
+| SimpliXAutoConfiguration | Core configuration |
+| SimpliXMessageSourceAutoConfiguration | MessageSource with i18n support |
+| SimpliXValidatorAutoConfiguration | Bean Validation integration |
+| SimpliXJpaAutoConfiguration | JPA configuration |
+| SimpliXJpaAuditingAutoConfiguration | JPA auditing (createdAt, updatedAt) |
+| SimpliXTreeRepositoryAutoConfiguration | Tree structure repository support |
+| SimpliXThymeleafAutoConfiguration | Thymeleaf error handling |
+| SimpliXModelMapperAutoConfiguration | ModelMapper configuration |
+| SimpliXDateTimeAutoConfiguration | DateTime handling |
+| SimpliXJacksonAutoConfiguration | Jackson ObjectMapper customization |
+| SimpliXSwaggerAutoConfiguration | SpringDoc OpenAPI integration |
+| SimpliXWebAutoConfiguration | Web MVC configuration |
+| SimpliXSecurityAutoConfiguration | Security defaults |
+
+Each module (simplix-auth, simplix-mybatis, simplix-excel, etc.) registers its own auto-configurations separately.
 
 ### Core Components Integration
 
@@ -83,10 +94,20 @@ simplix.module-name.feature.property=value
 ```
 
 Example:
-```properties
-simplix.message-source.enabled=true
-simplix.excel.export.streaming-threshold=100000
-simplix.auth.jwt.secret-key=your-secret
+```yaml
+simplix:
+  core:
+    enabled: true
+  auth:
+    enabled: true
+    jwe:
+      encryption-key-location: classpath:keys/jwe-key.json
+    token:
+      access-token-lifetime: 1800
+      refresh-token-lifetime: 604800
+  excel:
+    export:
+      streaming-threshold: 100000
 ```
 
 ## Important Configuration Notes
@@ -111,13 +132,21 @@ gpr.token=your_github_personal_access_token
 ## Module Dependencies
 
 ```
-simplix-core (base)
-    ├── spring-boot-starter-simplix (depends on core)
-    ├── spring-boot-starter-simplix-auth (depends on starter)
-    ├── spring-boot-starter-simplix-event (depends on starter)
-    ├── spring-boot-starter-simplix-excel (depends on starter)
-    └── spring-boot-starter-simplix-mybatis (depends on starter)
+simplix-core (base library)
+│
+└── spring-boot-starter-simplix (umbrella starter, depends on all modules)
+    ├── simplix-auth          # Authentication
+    ├── simplix-cache         # Caching
+    ├── simplix-email         # Email
+    ├── simplix-encryption    # Encryption
+    ├── simplix-event         # Events
+    ├── simplix-excel         # Excel/CSV
+    ├── simplix-file          # File storage
+    ├── simplix-hibernate     # L2 Cache
+    └── simplix-mybatis       # MyBatis
 ```
+
+All feature modules depend on `simplix-core`. Use individual modules for selective inclusion, or `spring-boot-starter-simplix` for all features.
 
 ## Common Development Tasks
 
