@@ -4,30 +4,30 @@
 
 ## 자동 캐시 무효화
 
-SimpliX Hibernate는 4가지 인터셉션 포인트를 통해 엔티티 변경을 자동으로 감지하고 캐시를 무효화합니다.
+SimpliX Hibernate는 3가지 인터셉션 포인트를 통해 엔티티 변경을 자동으로 감지하고 캐시를 무효화합니다.
 
-### 1. GlobalEntityListener (JPA)
+### 1. HibernateIntegrator (Hibernate SPI - Primary)
 
-JPA 표준 엔티티 라이프사이클 콜백을 사용합니다.
+Hibernate 내부 SPI를 통한 저수준 인터셉션으로, **트랜잭션 커밋 후** 이벤트를 처리합니다.
 
 ```java
-public class GlobalEntityListener {
-    @PostPersist
-    public void onPersist(Object entity) { ... }
+// requiresPostCommitHandling() = true 로 설정하여 커밋 후 호출됨
+eventListenerRegistry.appendListeners(EventType.POST_INSERT,
+    new PostInsertEventListener() {
+        @Override
+        public void onPostInsert(PostInsertEvent event) {
+            // TransactionAwareCacheEvictionCollector에 eviction 수집
+        }
 
-    @PostUpdate
-    public void onUpdate(Object entity) { ... }
-
-    @PostRemove
-    public void onRemove(Object entity) { ... }
-}
+        @Override
+        public boolean requiresPostCommitHandling(EntityPersister persister) {
+            return true; // 커밋 후에만 호출됨
+        }
+    });
 ```
 
-**동작:**
-- `@Cache` 어노테이션 확인
-- 엔티티 ID 추출
-- `HibernateCacheManager.evictEntity()` 호출
-- `CacheEvictionEvent` 발행
+**장점:** Hibernate 네이티브 통합, 트랜잭션 인식
+**적용:** 모든 EntityManager를 통한 변경
 
 ### 2. AutoCacheEvictionAspect (AOP)
 
@@ -48,62 +48,89 @@ public void handleRepositoryOperation(JoinPoint joinPoint, Object result) {
 ```
 
 **인터셉트 대상:**
-- `save()`, `saveAll()`, `saveAndFlush()`
-- `delete()`, `deleteById()`, `deleteAll()`, `deleteAllById()`
+- `save()`, `saveAll()`, `saveAndFlush()`, `saveAllAndFlush()`
+- `delete()`, `deleteById()`, `deleteAll()`, `deleteAllById()`, `deleteAllInBatch()`
 
-### 3. AutoCacheEvictionListener (Spring Event)
+### 3. ModifyingQueryCacheEvictionAspect (@Modifying 쿼리)
 
-Spring ApplicationEvent 기반 캐시 무효화입니다.
+`@Modifying` 쿼리는 Hibernate 엔티티 이벤트를 발생시키지 않습니다. SimpliX는 이를 보완하기 위해 AOP로 `@Modifying` 쿼리를 인터셉트하고 **JPQL에서 엔티티를 자동 추출**합니다.
 
 ```java
-@EventListener
-public void handleCacheEviction(CacheEvictionEvent event) {
-    Class<?> entityClass = Class.forName(event.getEntityClass());
-    cacheManager.evictEntity(entityClass, event.getEntityId());
-}
-```
+@Aspect
+public class ModifyingQueryCacheEvictionAspect {
 
-**수동 이벤트 발행:**
-```java
-@Service
-@RequiredArgsConstructor
-public class MyService {
-    private final ApplicationEventPublisher eventPublisher;
+    // UPDATE EntityName alias SET ... 패턴 감지
+    private static final Pattern UPDATE_PATTERN =
+            Pattern.compile("(?i)UPDATE\\s+(\\w+)\\s+");
 
-    public void customOperation() {
-        // ... 비즈니스 로직 ...
+    // DELETE FROM EntityName alias WHERE ... 패턴 감지
+    private static final Pattern DELETE_PATTERN =
+            Pattern.compile("(?i)DELETE\\s+(?:FROM\\s+)?(\\w+)\\s+");
 
-        // 수동 캐시 무효화 이벤트 발행
-        eventPublisher.publishEvent(CacheEvictionEvent.builder()
-            .entityClass(User.class.getName())
-            .entityId("123")
-            .operation("CUSTOM")
-            .timestamp(System.currentTimeMillis())
-            .build());
+    @Around("@annotation(org.springframework.data.jpa.repository.Modifying)")
+    public Object handleModifyingQuery(ProceedingJoinPoint joinPoint) {
+        Object result = joinPoint.proceed();
+
+        // @Query에서 JPQL 추출 후 엔티티 자동 감지
+        Class<?> entityClass = extractEntityFromQuery(joinPoint);
+        if (entityClass != null) {
+            evictionCollector.collect(PendingEviction.of(entityClass, ...));
+        }
+        return result;
     }
 }
 ```
 
-### 4. HibernateIntegrator (Hibernate SPI)
+**자동 감지 예시:**
 
-Hibernate 내부 SPI를 통한 저수준 인터셉션입니다. EntityManager를 우회하는 네이티브 쿼리에서도 동작합니다.
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Modifying
+    @Query("UPDATE User u SET u.status = :status WHERE u.role = :role")
+    int updateStatusByRole(@Param("status") Status status, @Param("role") Role role);
+    // → "User" 자동 추출 → User.class 캐시 무효화
+
+    @Modifying
+    @Query("DELETE FROM User u WHERE u.deletedAt < :date")
+    int deleteOldUsers(@Param("date") LocalDateTime date);
+    // → "User" 자동 추출 → User.class 캐시 무효화
+}
+```
+
+**@EvictCache 명시적 지정:**
+
+자동 감지가 어렵거나 여러 엔티티를 무효화해야 할 때 사용합니다:
+
+```java
+@Modifying
+@Query("UPDATE User u SET u.status = :status")
+@EvictCache({User.class, UserProfile.class})  // 여러 엔티티 명시
+int updateUserStatus(@Param("status") Status status);
+```
 
 ---
 
 ## CacheEvictionEvent
 
-캐시 무효화 이벤트의 데이터 구조입니다.
+캐시 무효화 이벤트의 데이터 구조입니다. 불변(Immutable) 객체로 설계되어 동시성 문제를 방지합니다.
 
 ```java
 public class CacheEvictionEvent {
+    String eventId;        // 이벤트 고유 ID (멱등성 보장)
     String entityClass;    // 엔티티 클래스명 (FQCN)
     String entityId;       // 엔티티 ID (null이면 전체 제거)
     String region;         // 캐시 리전
-    String operation;      // INSERT, UPDATE, DELETE, CUSTOM
+    String operation;      // INSERT, UPDATE, DELETE (PendingEviction.EvictionOperation)
     Long timestamp;        // 발생 시각 (ms)
     String nodeId;         // 발생 노드 ID
 }
 ```
+
+**주요 특징:**
+- `eventId`로 이벤트 중복 처리 방지 (네트워크 재시도 시)
+- `@JsonCreator`를 통한 Jackson 역직렬화 지원
+- `withNodeId()` 메서드로 불변성 유지하며 nodeId 설정
 
 ---
 
@@ -283,11 +310,12 @@ After (merged):
 ### 설정
 
 ```yaml
-hibernate:
-  cache:
-    retry:
-      max-attempts: 3      # 최대 재시도 횟수
-      delay: 1000          # 재시도 간격 (ms)
+simplix:
+  hibernate:
+    cache:
+      retry:
+        max-attempts: 3    # 최대 재시도 횟수
+        delay-ms: 1000     # 재시도 간격 (ms)
 ```
 
 ### Dead Letter Queue 재처리
@@ -315,6 +343,8 @@ public class CacheAdminService {
 {
   "retryQueueSize": 0,
   "deadLetterQueueSize": 2,
+  "maxRetryQueueSize": 5000,
+  "maxDlqSize": 1000,
   "maxRetryAttempts": 3,
   "retryDelayMs": 1000
 }
@@ -441,6 +471,19 @@ public class CacheService {
 
 ## 분산 캐시 무효화
 
+### 지원 프로바이더
+
+다중 인스턴스 환경에서 캐시 무효화를 동기화하기 위한 분산 캐시 프로바이더입니다.
+
+| Provider | 의존성 | 설명 |
+|----------|--------|------|
+| Redis | `spring-boot-starter-data-redis` | Redis Pub/Sub 기반 |
+| Hazelcast | `hazelcast` | Hazelcast ITopic 기반 |
+| Infinispan | `infinispan-core` | Infinispan 클러스터 기반 |
+| Local | (기본) | 로컬 전용 (분산 무효화 없음) |
+
+프로바이더는 클래스패스에 따라 자동으로 선택됩니다 (우선순위: Redis > Hazelcast > Infinispan > Local).
+
 ### 브로드캐스트 흐름
 
 ```
@@ -456,7 +499,8 @@ Node A: 엔티티 변경
                  │
                  ▼
 ┌─────────────────────────────────────────┐
-│  Redis Pub/Sub (또는 다른 프로바이더)     │
+│  Redis Pub/Sub / Hazelcast ITopic /     │
+│  Infinispan Cache                        │
 │  channel: hibernate-cache-sync          │
 └────────────────┬────────────────────────┘
                  │

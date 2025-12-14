@@ -12,6 +12,8 @@ SimpliX Hibernate Cache 모듈의 모니터링 및 관리 가이드입니다.
 |--------|------|------|
 | `cache.eviction.local` | Counter | 로컬 캐시 무효화 횟수 |
 | `cache.eviction.distributed` | Counter | 분산 캐시 무효화 횟수 |
+| `cache.eviction.success` | Counter | 성공한 캐시 무효화 횟수 |
+| `cache.eviction.failure` | Counter | 실패한 캐시 무효화 횟수 |
 | `cache.eviction.latency` | Timer | 캐시 무효화 지연 시간 |
 
 ### 메트릭 사용
@@ -37,8 +39,10 @@ public class CacheMonitoringService {
     "localEvictions": 1234,
     "distributedEvictions": 567,
     "broadcasts": 890,
+    "successes": 1789,
     "failures": 12,
-    "failureRate": 1.35
+    "successRate": 99.33,
+    "failureRate": 0.67
   },
   "byEntity": {
     "com.example.domain.User": {
@@ -86,8 +90,10 @@ curl http://localhost:8080/actuator/cache-eviction
     "localEvictions": 1234,
     "distributedEvictions": 567,
     "broadcasts": 890,
+    "successes": 1789,
     "failures": 12,
-    "failureRate": 1.35
+    "successRate": 99.33,
+    "failureRate": 0.67
   },
   "byEntity": { ... },
   "recentActivity": { ... }
@@ -117,13 +123,17 @@ curl http://localhost:8080/actuator/cache-admin
   },
   "batch": {
     "batchMode": false,
+    "batchDepth": 0,
     "pendingEvictions": 0,
     "batchThreshold": 10,
-    "maxDelayMs": 100
+    "maxDelayMs": 100,
+    "shutdown": false
   },
   "retry": {
     "retryQueueSize": 0,
     "deadLetterQueueSize": 0,
+    "maxRetryQueueSize": 5000,
+    "maxDlqSize": 1000,
     "maxRetryAttempts": 3,
     "retryDelayMs": 1000
   },
@@ -140,19 +150,25 @@ curl -X DELETE "http://localhost:8080/actuator/cache-admin?entityClass=com.examp
 curl -X DELETE "http://localhost:8080/actuator/cache-admin?entityClass=com.example.domain.User"
 ```
 
-**DELETE /actuator/cache-admin/evictAll - 전체 제거**
+**POST /actuator/cache-admin - 전체 캐시 제거**
 ```bash
-curl -X DELETE http://localhost:8080/actuator/cache-admin/evictAll
+# action=evict-all 파라미터 필수 (실수 방지)
+curl -X POST "http://localhost:8080/actuator/cache-admin?action=evict-all"
 ```
 
-**POST /actuator/cache-admin/reprocessDLQ - DLQ 재처리**
+> 주의: `action=evict-all` 파라미터를 통해 전체 캐시 제거 의도를 명시적으로 확인합니다.
+
+**POST /actuator/cache-admin - DLQ 재처리**
 ```bash
-curl -X POST http://localhost:8080/actuator/cache-admin/reprocessDLQ
+# 파라미터 없이 POST 호출 시 DLQ 재처리
+curl -X POST http://localhost:8080/actuator/cache-admin
 ```
 
-**POST /actuator/cache-admin/toggleBatchMode - 배치 모드 전환**
+**POST /actuator/cache-admin - 배치 모드 전환**
 ```bash
-curl -X POST "http://localhost:8080/actuator/cache-admin/toggleBatchMode?enable=true"
+# enable 파라미터로 배치 모드 제어
+curl -X POST "http://localhost:8080/actuator/cache-admin?enable=true"
+curl -X POST "http://localhost:8080/actuator/cache-admin?enable=false"
 ```
 
 ---
@@ -243,7 +259,9 @@ public class ClusterMonitoringService {
 | INFO | `✔ SimpliX Hibernate Cache Auto-Management activated` | 모듈 초기화 완료 |
 | INFO | `✔ Found N cached entities across M regions` | 엔티티 스캔 완료 |
 | INFO | `✔ Cache eviction strategy initialized with provider: X` | 전략 초기화 |
+| INFO | `✔ Configuring @Modifying Query Cache Eviction Aspect (auto-detection enabled)` | @Modifying 자동 감지 활성화 |
 | DEBUG | `✔ Auto-evicted cache for X operation on Y` | 자동 무효화 성공 |
+| DEBUG | `✔ Auto-collected eviction for X via @Modifying on Y` | @Modifying 쿼리 캐시 무효화 수집 |
 | DEBUG | `✔ Processed remote cache eviction from node X` | 원격 무효화 수신 |
 | WARN | `⚠ Scheduled retry for failed eviction: X` | 재시도 예약 |
 | WARN | `⚠ Node X is inactive (last seen: Y)` | 노드 비활성 |
@@ -365,6 +383,49 @@ logging:
    }
    ```
 
+### @Modifying 쿼리 캐시 미무효화
+
+**증상:** `@Modifying` 쿼리 실행 후에도 캐시가 갱신되지 않음
+
+**확인 사항:**
+
+1. **JPQL 엔티티명 확인**
+   ```java
+   // 올바른 예 - 엔티티 클래스명과 일치
+   @Query("UPDATE User u SET u.status = :status")
+
+   // 잘못된 예 - 테이블명 사용 (감지 불가)
+   @Query("UPDATE users SET status = :status")  // nativeQuery=true 포함
+   ```
+
+2. **@Cache 어노테이션 확인**
+   ```java
+   @Entity
+   @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)  // 필수
+   public class User { }
+   ```
+
+3. **로그 확인**
+   ```yaml
+   logging:
+     level:
+       dev.simplecore.simplix.hibernate.cache.aspect: DEBUG
+   ```
+
+   정상 작동 시 로그:
+   ```
+   ✔ Auto-collected eviction for User via @Modifying on UserRepository.updateStatus(..)
+   ```
+
+4. **명시적 @EvictCache 사용**
+   자동 감지 실패 시 명시적으로 지정:
+   ```java
+   @Modifying
+   @Query(value = "UPDATE users SET status = ?1", nativeQuery = true)
+   @EvictCache(User.class)  // 네이티브 쿼리는 명시적 지정 필요
+   int updateStatus(String status);
+   ```
+
 ### 분산 환경 동기화 실패
 
 **증상:** 노드 간 캐시 불일치
@@ -402,7 +463,7 @@ logging:
 
 5. **DLQ 재처리**
    ```bash
-   curl -X POST http://localhost:8080/actuator/cache-admin/reprocessDLQ
+   curl -X POST http://localhost:8080/actuator/cache-admin
    ```
 
 ---

@@ -27,7 +27,7 @@ simplix:
 | `mode` | CacheMode | `AUTO` | 캐시 작동 모드 |
 | `query-cache-auto-eviction` | boolean | `true` | 엔티티 변경 시 연관된 쿼리 캐시 자동 제거 |
 | `auto-detect-eviction-strategy` | boolean | `true` | 최적의 무효화 전략 자동 선택 |
-| `node-id` | String | `node-{timestamp}` | 분산 환경에서 노드 식별자 |
+| `node-id` | String | `{hostname}-{uuid}` | 분산 환경에서 노드 식별자 (자동 생성) |
 | `scan-packages` | String[] | (전체 스캔) | @Cache 엔티티 스캔 대상 패키지 |
 
 ### Redis 설정 (`simplix.hibernate.cache.redis.*`)
@@ -39,12 +39,34 @@ simplix:
       redis:
         channel: hibernate-cache-sync    # Pub/Sub 채널명
         pub-sub-enabled: true            # Pub/Sub 활성화
+        key-prefix: "hibernate:cache:"   # 캐시 키 접두사
+        connection-timeout: 5000         # 연결 타임아웃 (ms)
 ```
 
 | 속성 | 타입 | 기본값 | 설명 |
 |------|------|-------|------|
 | `channel` | String | `hibernate-cache-sync` | Redis Pub/Sub 채널명 |
 | `pub-sub-enabled` | boolean | `true` | Redis Pub/Sub 활성화 |
+| `key-prefix` | String | `hibernate:cache:` | 캐시 키 접두사 |
+| `connection-timeout` | int | `5000` | 연결 타임아웃 (ms) |
+
+### 재시도 설정 (`simplix.hibernate.cache.retry.*`)
+
+분산 캐시 무효화 실패 시 재시도 설정입니다.
+
+```yaml
+simplix:
+  hibernate:
+    cache:
+      retry:
+        max-attempts: 3    # 최대 재시도 횟수
+        delay-ms: 1000     # 재시도 간격 (ms)
+```
+
+| 속성 | 타입 | 기본값 | 설명 |
+|------|------|-------|------|
+| `max-attempts` | int | `3` | 최대 재시도 횟수 |
+| `delay-ms` | long | `1000` | 재시도 간격 (ms) |
 
 ---
 
@@ -216,6 +238,73 @@ public class BusinessHoursEvictionStrategy implements CacheEvictionPolicy.Evicti
                now.isBefore(LocalTime.of(18, 0));
     }
 }
+```
+
+---
+
+## @EvictCache 어노테이션
+
+`@Modifying` 쿼리에서 캐시 무효화 대상을 지정합니다.
+
+### 자동 감지 (권장)
+
+SimpliX는 `@Query` 어노테이션의 JPQL을 파싱하여 엔티티를 자동으로 감지합니다. 대부분의 경우 `@EvictCache`가 불필요합니다:
+
+```java
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Modifying
+    @Query("UPDATE User u SET u.status = :status WHERE u.role = :role")
+    int updateStatusByRole(@Param("status") Status status, @Param("role") Role role);
+    // @EvictCache 불필요 - "User"가 JPQL에서 자동 추출됨
+
+    @Modifying
+    @Query("DELETE FROM User u WHERE u.deletedAt < :date")
+    int deleteOldUsers(@Param("date") LocalDateTime date);
+    // @EvictCache 불필요 - "User"가 자동 추출됨
+}
+```
+
+### 명시적 지정
+
+다음 경우에 `@EvictCache`를 사용하세요:
+- 여러 엔티티를 함께 무효화해야 할 때
+- 자동 감지가 실패하는 복잡한 쿼리
+- 특정 캐시 리전을 지정할 때
+
+```java
+import dev.simplecore.simplix.hibernate.cache.annotation.EvictCache;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    @Modifying
+    @Query("UPDATE User u SET u.status = :status")
+    @EvictCache({User.class, UserProfile.class})  // 여러 엔티티 명시
+    int updateUserStatus(@Param("status") Status status);
+
+    @Modifying
+    @Query("DELETE FROM User u WHERE u.orgId = :orgId")
+    @EvictCache(value = User.class, regions = {"users", "user-queries"})  // 리전 지정
+    int deleteByOrgId(@Param("orgId") Long orgId);
+}
+```
+
+### @EvictCache 속성
+
+| 속성 | 타입 | 기본값 | 설명 |
+|------|------|-------|------|
+| `value` | Class<?>[] | 필수 | 캐시 무효화 대상 엔티티 클래스 |
+| `regions` | String[] | `{}` | 추가 캐시 리전 (비어있으면 기본 리전) |
+| `evictQueryCache` | boolean | `true` | 연관 쿼리 캐시 함께 제거 여부 |
+
+### @EvictCache 사용 예시
+
+```java
+// 쿼리 캐시 제거 비활성화 (엔티티 캐시만 제거)
+@Modifying
+@Query("UPDATE Config c SET c.value = :value WHERE c.key = :key")
+@EvictCache(value = Config.class, evictQueryCache = false)
+int updateConfig(@Param("key") String key, @Param("value") String value);
 ```
 
 ---
@@ -404,8 +493,9 @@ simplix:
 
 비활성화 시:
 - 모든 자동 캐시 관리 중단
-- GlobalEntityListener 비활성화
+- HibernateIntegrator 이벤트 처리 비활성화
 - AutoCacheEvictionAspect 비활성화
+- ModifyingQueryCacheEvictionAspect 비활성화
 - EvictionMetrics 비수집
 
 ---
