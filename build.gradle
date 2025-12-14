@@ -27,7 +27,7 @@ ext {
     // ============================================================
     // Searchable JPA (Legacy javax dependencies)
     // ============================================================
-    searchableJpaVersion = '1.0.1'
+    searchableJpaVersion = '1.0.3'
     hibernateValidatorLegacyVersion = '6.2.5.Final'
     javaxPersistenceVersion = '2.2'
     javaxValidationVersion = '2.0.1.Final'

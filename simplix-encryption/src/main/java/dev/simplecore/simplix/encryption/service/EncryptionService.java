@@ -173,7 +173,7 @@ public class EncryptionService {
 
         // Check if version starts with expected prefixes
         String version = parts[0];
-        return version.startsWith("v") || version.startsWith("dev-static") || version.startsWith("static-");
+        return version.startsWith("v") || version.startsWith("dev-static") || version.startsWith("static");
     }
 
     /**
