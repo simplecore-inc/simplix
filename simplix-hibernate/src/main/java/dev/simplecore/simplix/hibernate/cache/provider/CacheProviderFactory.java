@@ -3,6 +3,7 @@ package dev.simplecore.simplix.hibernate.cache.provider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,13 +19,23 @@ public class CacheProviderFactory {
 
     @Autowired
     public CacheProviderFactory(List<CacheProvider> providerList) {
-        this.providers = providerList.stream()
-                .collect(Collectors.toMap(
-                        p -> p.getType().toUpperCase(),
-                        p -> p
-                ));
+        // Make providers map immutable to prevent modification after construction
+        this.providers = Collections.unmodifiableMap(
+                providerList.stream()
+                        .collect(Collectors.toMap(
+                                p -> p.getType().toUpperCase(),
+                                p -> p
+                        )));
 
-        this.localProvider = (LocalCacheProvider) providers.get("LOCAL");
+        LocalCacheProvider foundLocal = (LocalCacheProvider) providers.get("LOCAL");
+        if (foundLocal == null) {
+            // LocalCacheProvider is a required dependency - should always be registered by auto-configuration
+            // Throwing exception instead of manual creation to ensure proper Spring lifecycle management (C10 fix)
+            throw new IllegalStateException(
+                    "LocalCacheProvider not found in provider list. " +
+                    "Ensure SimpliXHibernateCacheAutoConfiguration is enabled and localCacheProvider bean is registered.");
+        }
+        this.localProvider = foundLocal;
 
         log.info("ℹ Available cache providers: {}", providers.keySet());
     }
@@ -75,9 +86,13 @@ public class CacheProviderFactory {
     }
 
     /**
-     * Check if a specific provider type is available
+     * Check if a specific provider type is available.
+     * Added null check for type parameter to prevent NPE.
      */
     public boolean isProviderAvailable(String type) {
+        if (type == null || type.isEmpty()) {
+            return false;
+        }
         CacheProvider provider = providers.get(type.toUpperCase());
         return provider != null && provider.isAvailable();
     }

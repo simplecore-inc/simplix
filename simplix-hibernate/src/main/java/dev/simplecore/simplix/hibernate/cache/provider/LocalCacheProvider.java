@@ -4,10 +4,13 @@ import dev.simplecore.simplix.hibernate.cache.event.CacheEvictionEvent;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Local-only cache provider (no distribution)
+ * Local-only cache provider (no distribution).
+ * Initialize and shutdown are idempotent - multiple calls have no additional effect.
  */
 @Slf4j
 public class LocalCacheProvider implements CacheProvider {
+
+    private volatile boolean initialized = false;
 
     @Override
     public String getType() {
@@ -31,12 +34,20 @@ public class LocalCacheProvider implements CacheProvider {
     }
 
     @Override
-    public void initialize() {
+    public synchronized void initialize() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
         log.info("✔ Local cache provider initialized");
     }
 
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
+        if (!initialized) {
+            return;
+        }
+        initialized = false;
         log.info("✔ Local cache provider shutdown");
     }
 
