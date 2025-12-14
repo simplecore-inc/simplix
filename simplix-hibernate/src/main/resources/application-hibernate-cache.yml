@@ -69,6 +69,11 @@ simplix:
         key-prefix: "hibernate:cache:"
         connection-timeout: 2000
 
+      # Retry configuration for failed evictions
+      retry:
+        max-attempts: 3
+        delay-ms: 1000
+
       # Cache provider configuration
       provider:
         type: "ehcache"

@@ -7,8 +7,9 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Scans classpath for entities with @Cache annotation
@@ -16,8 +17,9 @@ import java.util.Set;
 @Slf4j
 public class EntityCacheScanner {
 
-    private final Set<Class<?>> cachedEntities = new HashSet<>();
-    private final Set<String> cacheRegions = new HashSet<>();
+    // Use thread-safe sets for concurrent access during scanning
+    private final Set<Class<?>> cachedEntities = ConcurrentHashMap.newKeySet();
+    private final Set<String> cacheRegions = ConcurrentHashMap.newKeySet();
 
     /**
      * Scan for all cached entities in given packages
@@ -32,6 +34,9 @@ public class EntityCacheScanner {
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(Entity.class));
 
+        // Track missing entities for better observability
+        AtomicInteger missedCount = new AtomicInteger(0);
+
         for (String basePackage : basePackages) {
             Set<BeanDefinition> candidates = scanner.findCandidateComponents(basePackage);
 
@@ -42,11 +47,15 @@ public class EntityCacheScanner {
                         registerCachedEntity(clazz);
                     }
                 } catch (ClassNotFoundException e) {
-                    log.error("Could not load class: {}", candidate.getBeanClassName(), e);
+                    missedCount.incrementAndGet();
+                    log.error("✖ Could not load class: {}", candidate.getBeanClassName(), e);
                 }
             }
         }
 
+        if (missedCount.get() > 0) {
+            log.warn("⚠ {} entities could not be loaded during cache scan", missedCount.get());
+        }
         log.info("✔ Found {} cached entities across {} regions",
                 cachedEntities.size(), cacheRegions.size());
     }
@@ -68,14 +77,33 @@ public class EntityCacheScanner {
     }
 
     public Set<Class<?>> getCachedEntities() {
-        return new HashSet<>(cachedEntities);
+        return Set.copyOf(cachedEntities);
     }
 
     public Set<String> getCacheRegions() {
-        return new HashSet<>(cacheRegions);
+        return Set.copyOf(cacheRegions);
     }
 
     public boolean isCached(Class<?> entityClass) {
         return cachedEntities.contains(entityClass);
+    }
+
+    /**
+     * Find a cached entity class by its simple name.
+     * Uses case-insensitive comparison since JPQL entity names are case-insensitive.
+     *
+     * @param simpleName the simple class name (e.g., "User", "user", "ORDER")
+     * @return the entity class if found and cached, null otherwise
+     */
+    public Class<?> findBySimpleName(String simpleName) {
+        if (simpleName == null || simpleName.isEmpty()) {
+            return null;
+        }
+
+        // Case-insensitive comparison (7th review fix - JPQL entity names are case-insensitive)
+        return cachedEntities.stream()
+                .filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(simpleName))
+                .findFirst()
+                .orElse(null);
     }
 }

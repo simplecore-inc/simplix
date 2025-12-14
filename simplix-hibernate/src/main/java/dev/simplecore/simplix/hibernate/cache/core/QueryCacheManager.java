@@ -2,7 +2,6 @@ package dev.simplecore.simplix.hibernate.cache.core;
 
 import jakarta.persistence.QueryHint;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -23,18 +22,32 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class QueryCacheManager {
 
-    @Autowired
-    private ApplicationContext applicationContext;
+    // Constructor injection for better initialization order guarantee
+    private final ApplicationContext applicationContext;
 
     private final Map<Class<?>, Set<String>> entityQueryCacheMap = new ConcurrentHashMap<>();
     private final Map<String, Set<Class<?>>> regionEntityMap = new ConcurrentHashMap<>();
+
+    public QueryCacheManager(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
 
     @EventListener(ContextRefreshedEvent.class)
     public void scanRepositoryMethods() {
         log.info("ℹ Scanning repositories for query cache configuration...");
 
+        // Null safety check for ApplicationContext (defensive - should not happen with constructor injection)
+        if (applicationContext == null) {
+            log.warn("⚠ ApplicationContext is null, skipping repository scan");
+            return;
+        }
+
         // Get all JPA repositories
         Map<String, JpaRepository> repositories = applicationContext.getBeansOfType(JpaRepository.class);
+        if (repositories == null || repositories.isEmpty()) {
+            log.debug("ℹ No JPA repositories found");
+            return;
+        }
 
         for (Map.Entry<String, JpaRepository> entry : repositories.entrySet()) {
             String beanName = entry.getKey();
@@ -46,7 +59,8 @@ public class QueryCacheManager {
                     scanRepositoryInterface(repositoryInterface);
                 }
             } catch (Exception e) {
-                log.debug("Could not scan repository {}: {}", beanName, e.getMessage());
+                // Upgraded to warn level for better visibility of scan failures
+                log.warn("⚠ Could not scan repository {}: {}", beanName, e.getMessage());
             }
         }
 
@@ -113,44 +127,71 @@ public class QueryCacheManager {
     }
 
     /**
-     * Register a query cache region for an entity
+     * Lock object for synchronized map registration.
+     */
+    private final Object registrationLock = new Object();
+
+    /**
+     * Register a query cache region for an entity.
+     * Synchronized to ensure both maps are updated atomically with rollback on failure (H2 fix).
      */
     public void registerQueryCache(Class<?> entityClass, String region) {
-        entityQueryCacheMap.computeIfAbsent(entityClass, k -> ConcurrentHashMap.newKeySet())
-                .add(region);
+        synchronized (registrationLock) {
+            Set<String> entityRegions = entityQueryCacheMap.computeIfAbsent(entityClass, k -> ConcurrentHashMap.newKeySet());
+            boolean addedToFirst = entityRegions.add(region);
 
-        regionEntityMap.computeIfAbsent(region, k -> ConcurrentHashMap.newKeySet())
-                .add(entityClass);
-    }
-
-    /**
-     * Get all query cache regions for an entity
-     */
-    public Set<String> getQueryRegionsForEntity(Class<?> entityClass) {
-        Set<String> regions = new HashSet<>();
-
-        // Direct regions for this entity
-        Set<String> directRegions = entityQueryCacheMap.get(entityClass);
-        if (directRegions != null) {
-            regions.addAll(directRegions);
-        }
-
-        // Check for pattern-based regions
-        String entityName = entityClass.getSimpleName().toLowerCase();
-        for (String region : regionEntityMap.keySet()) {
-            if (region.contains(entityName)) {
-                regions.add(region);
+            try {
+                regionEntityMap.computeIfAbsent(region, k -> ConcurrentHashMap.newKeySet())
+                        .add(entityClass);
+            } catch (Exception e) {
+                // Rollback first map update on failure
+                if (addedToFirst) {
+                    entityRegions.remove(region);
+                }
+                throw e;
             }
         }
-
-        return regions;
     }
 
     /**
-     * Get all entities affected by a query cache region
+     * Get all query cache regions for an entity.
+     * Returns an immutable copy to prevent external modification (7th review fix).
+     * Synchronized to prevent reading partially-initialized state during registration (C8 fix).
+     */
+    public Set<String> getQueryRegionsForEntity(Class<?> entityClass) {
+        synchronized (registrationLock) {
+            Set<String> regions = new HashSet<>();
+
+            // Direct regions for this entity
+            Set<String> directRegions = entityQueryCacheMap.get(entityClass);
+            if (directRegions != null) {
+                regions.addAll(directRegions);
+            }
+
+            // Check for pattern-based regions (skip if entity name is empty to avoid matching all)
+            String entityName = entityClass.getSimpleName().toLowerCase();
+            if (!entityName.isEmpty()) {
+                for (String region : regionEntityMap.keySet()) {
+                    if (region.contains(entityName)) {
+                        regions.add(region);
+                    }
+                }
+            }
+
+            // Return immutable copy to prevent external modification
+            return Set.copyOf(regions);
+        }
+    }
+
+    /**
+     * Get all entities affected by a query cache region.
+     * Synchronized to prevent reading partially-initialized state during registration (C8 fix).
      */
     public Set<Class<?>> getEntitiesForRegion(String region) {
-        return regionEntityMap.getOrDefault(region, Set.of());
+        synchronized (registrationLock) {
+            Set<Class<?>> entities = regionEntityMap.get(region);
+            return entities != null ? new HashSet<>(entities) : Set.of();
+        }
     }
 
     /**

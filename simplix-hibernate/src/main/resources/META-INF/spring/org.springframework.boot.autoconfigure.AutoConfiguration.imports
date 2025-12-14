@@ -1,1 +1,2 @@
+dev.simplecore.simplix.hibernate.cache.config.DistributedCacheAutoConfiguration
 dev.simplecore.simplix.hibernate.cache.config.SimpliXHibernateCacheAutoConfiguration

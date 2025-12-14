@@ -53,7 +53,10 @@ public class HibernateCacheManager {
             cache.evictAll();
 
             // Also evict query cache
-            getHibernateCache().evictAllRegions();
+            org.hibernate.Cache hibernateCache = getHibernateCache();
+            if (hibernateCache != null) {
+                hibernateCache.evictAllRegions();
+            }
 
             log.info("✔ Evicted all cache regions");
         } catch (Exception e) {
@@ -66,8 +69,11 @@ public class HibernateCacheManager {
      */
     public void evictRegion(String regionName) {
         try {
-            getHibernateCache().evictRegion(regionName);
-            log.debug("✔ Evicted cache region: {}", regionName);
+            org.hibernate.Cache hibernateCache = getHibernateCache();
+            if (hibernateCache != null) {
+                hibernateCache.evictRegion(regionName);
+                log.debug("✔ Evicted cache region: {}", regionName);
+            }
         } catch (Exception e) {
             log.error("✖ Failed to evict cache region: {}", regionName, e);
         }
@@ -78,8 +84,11 @@ public class HibernateCacheManager {
      */
     public void evictQueryRegion(String queryRegion) {
         try {
-            getHibernateCache().evictQueryRegion(queryRegion);
-            log.debug("✔ Evicted query cache region: {}", queryRegion);
+            org.hibernate.Cache hibernateCache = getHibernateCache();
+            if (hibernateCache != null) {
+                hibernateCache.evictQueryRegion(queryRegion);
+                log.debug("✔ Evicted query cache region: {}", queryRegion);
+            }
         } catch (Exception e) {
             log.error("✖ Failed to evict query cache region: {}", queryRegion, e);
         }
@@ -113,8 +122,20 @@ public class HibernateCacheManager {
         return Set.copyOf(activeRegions);
     }
 
+    /**
+     * Get Hibernate Cache with null safety.
+     * @return Hibernate Cache or null if not available
+     */
     private org.hibernate.Cache getHibernateCache() {
         SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
-        return sessionFactory.getCache();
+        if (sessionFactory == null) {
+            log.warn("⚠ SessionFactory is null, cannot get Hibernate cache");
+            return null;
+        }
+        org.hibernate.Cache cache = sessionFactory.getCache();
+        if (cache == null) {
+            log.debug("Hibernate cache is not configured");
+        }
+        return cache;
     }
 }

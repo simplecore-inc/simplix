@@ -50,8 +50,31 @@ public class CacheAdminController {
      */
     @DeleteOperation
     public Map<String, Object> evict(String entityClass, String entityId) {
+        if (entityClass == null || entityClass.isBlank()) {
+            return Map.of(
+                    "success", false,
+                    "error", "entityClass parameter is required"
+            );
+        }
+
+        // Trim whitespace to prevent ClassNotFoundException for " " input (M3 fix)
+        String trimmedEntityClass = entityClass.trim();
+        if (trimmedEntityClass.isEmpty()) {
+            return Map.of(
+                    "success", false,
+                    "error", "entityClass cannot be whitespace only"
+            );
+        }
+
         try {
-            Class<?> clazz = Class.forName(entityClass);
+            Class<?> clazz = loadClass(trimmedEntityClass);
+
+            if (clazz == null) {
+                return Map.of(
+                        "success", false,
+                        "error", "Entity class not found: " + trimmedEntityClass
+                );
+            }
 
             if (entityId != null && !entityId.isEmpty()) {
                 cacheManager.evictEntity(clazz, entityId);
@@ -67,7 +90,7 @@ public class CacheAdminController {
             );
 
         } catch (Exception e) {
-            log.error("✖ Admin eviction failed", e);
+            log.error("✖ Admin eviction failed for {}", trimmedEntityClass, e);
             return Map.of(
                     "success", false,
                     "error", e.getMessage()
@@ -76,10 +99,49 @@ public class CacheAdminController {
     }
 
     /**
-     * Evict all caches
+     * Loads a class using multiple ClassLoader strategies (8th review fix).
+     * Handles app server / web application scenarios where context ClassLoader matters.
+     *
+     * @param className the fully qualified class name
+     * @return the Class if found, null otherwise
      */
-    @DeleteOperation
-    public Map<String, Object> evictAll() {
+    private Class<?> loadClass(String className) {
+        // Try multiple ClassLoaders
+        ClassLoader[] loaders = {
+                Thread.currentThread().getContextClassLoader(),
+                getClass().getClassLoader(),
+                ClassLoader.getSystemClassLoader()
+        };
+
+        for (ClassLoader loader : loaders) {
+            if (loader != null) {
+                try {
+                    return Class.forName(className, false, loader);
+                } catch (ClassNotFoundException e) {
+                    // Continue to next loader
+                }
+            }
+        }
+
+        log.warn("⚠ Cannot load class {} from any ClassLoader", className);
+        return null;
+    }
+
+    /**
+     * Evict all caches.
+     * Uses @WriteOperation instead of @DeleteOperation to avoid conflict with evict() method.
+     * Call with POST to actuator/cache-admin endpoint with action=evict-all parameter.
+     * (10th review fix - Actuator endpoint method signature conflict)
+     */
+    @WriteOperation
+    public Map<String, Object> evictAll(String action) {
+        // Validate action parameter for safety (prevent accidental invocation)
+        if (!"evict-all".equals(action)) {
+            return Map.of(
+                    "success", false,
+                    "error", "Invalid action. Use action=evict-all to confirm eviction of all caches"
+            );
+        }
         try {
             cacheManager.evictAll();
             log.warn("⚠ Admin evicted ALL caches");

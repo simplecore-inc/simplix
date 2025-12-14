@@ -2,19 +2,20 @@ package dev.simplecore.simplix.hibernate.cache.config;
 
 import dev.simplecore.simplix.hibernate.cache.admin.CacheAdminController;
 import dev.simplecore.simplix.hibernate.cache.aspect.AutoCacheEvictionAspect;
+import dev.simplecore.simplix.hibernate.cache.aspect.ModifyingQueryCacheEvictionAspect;
 import dev.simplecore.simplix.hibernate.cache.batch.BatchEvictionOptimizer;
 import dev.simplecore.simplix.hibernate.cache.cluster.ClusterSyncMonitor;
 import dev.simplecore.simplix.hibernate.cache.core.EntityCacheScanner;
 import dev.simplecore.simplix.hibernate.cache.core.HibernateCacheManager;
 import dev.simplecore.simplix.hibernate.cache.core.QueryCacheManager;
-import dev.simplecore.simplix.hibernate.cache.listener.AutoCacheEvictionListener;
-import dev.simplecore.simplix.hibernate.cache.listener.GlobalEntityListener;
+import dev.simplecore.simplix.hibernate.cache.handler.PostCommitCacheEvictionHandler;
 import dev.simplecore.simplix.hibernate.cache.monitoring.EvictionMetrics;
 import dev.simplecore.simplix.hibernate.cache.provider.CacheProvider;
 import dev.simplecore.simplix.hibernate.cache.provider.CacheProviderFactory;
 import dev.simplecore.simplix.hibernate.cache.provider.LocalCacheProvider;
 import dev.simplecore.simplix.hibernate.cache.resilience.EvictionRetryHandler;
 import dev.simplecore.simplix.hibernate.cache.strategy.CacheEvictionStrategy;
+import dev.simplecore.simplix.hibernate.cache.transaction.TransactionAwareCacheEvictionCollector;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +31,40 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.List;
 
 /**
- * Spring Boot Auto-configuration for SimpliX Hibernate Cache Management
- * Automatically activates when Hibernate is present
+ * Spring Boot Auto-configuration for SimpliX Hibernate Cache Management.
+ *
+ * <p>This configuration automatically activates when Hibernate is present and sets up
+ * transaction-aware cache eviction. Cache eviction only occurs after transaction commit,
+ * preventing cache-database inconsistency on rollback.</p>
+ *
+ * <h3>Architecture</h3>
+ * <pre>
+ * Entity Change
+ *     |
+ *     v
+ * HibernateIntegrator (POST_COMMIT events)
+ *     |
+ *     v
+ * TransactionAwareCacheEvictionCollector
+ *     |
+ *     v (after commit)
+ * PostCommitCacheEvictionHandler
+ *     |
+ *     v
+ * CacheEvictionStrategy (local + distributed)
+ * </pre>
+ *
+ * @see TransactionAwareCacheEvictionCollector
+ * @see PostCommitCacheEvictionHandler
+ * @see CacheEvictionStrategy
  */
 @Slf4j
 @AutoConfiguration(after = HibernateJpaAutoConfiguration.class)
@@ -46,6 +73,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "simplix.hibernate.cache", name = "disabled", havingValue = "false", matchIfMissing = true)
 @EnableConfigurationProperties(HibernateCacheProperties.class)
 @EnableAspectJAutoProxy
+@EnableScheduling
 public class SimpliXHibernateCacheAutoConfiguration {
 
     private final HibernateCacheProperties properties;
@@ -67,6 +95,50 @@ public class SimpliXHibernateCacheAutoConfiguration {
         return new HibernateCacheManager(entityManagerFactory);
     }
 
+    /**
+     * Transaction-aware collector for pending cache evictions.
+     * Collects evictions during transaction and publishes event after commit.
+     */
+    @Bean
+    public TransactionAwareCacheEvictionCollector transactionAwareCacheEvictionCollector(
+            ApplicationEventPublisher eventPublisher) {
+        log.info("✔ Configuring Transaction-Aware Cache Eviction Collector");
+        TransactionAwareCacheEvictionCollector collector =
+                new TransactionAwareCacheEvictionCollector(eventPublisher);
+
+        // Store collector reference for HibernateIntegrator (SPI access)
+        HibernateCacheHolder.setEvictionCollector(collector);
+
+        return collector;
+    }
+
+    /**
+     * Handler for post-commit cache eviction events.
+     * Executes actual cache eviction after transaction successfully commits.
+     */
+    @Bean
+    @ConditionalOnBean({CacheEvictionStrategy.class, EvictionMetrics.class})
+    public PostCommitCacheEvictionHandler postCommitCacheEvictionHandler(
+            CacheEvictionStrategy evictionStrategy,
+            EvictionMetrics evictionMetrics) {
+        log.info("✔ Configuring Post-Commit Cache Eviction Handler");
+        return new PostCommitCacheEvictionHandler(evictionStrategy, evictionMetrics);
+    }
+
+    /**
+     * AOP aspect for @Modifying query cache eviction.
+     * Automatically detects entity from JPQL and evicts cache.
+     * @EvictCache is now optional - entity is auto-extracted from @Query.
+     */
+    @Bean
+    @ConditionalOnBean({TransactionAwareCacheEvictionCollector.class, EntityCacheScanner.class})
+    public ModifyingQueryCacheEvictionAspect modifyingQueryCacheEvictionAspect(
+            TransactionAwareCacheEvictionCollector evictionCollector,
+            EntityCacheScanner entityCacheScanner) {
+        log.info("✔ Configuring @Modifying Query Cache Eviction Aspect (auto-detection enabled)");
+        return new ModifyingQueryCacheEvictionAspect(evictionCollector, entityCacheScanner);
+    }
+
     @Bean
     public EntityCacheScanner entityCacheScanner() {
         log.info("✔ Configuring Entity Cache Scanner");
@@ -74,15 +146,10 @@ public class SimpliXHibernateCacheAutoConfiguration {
     }
 
     @Bean
-    public QueryCacheManager queryCacheManager() {
+    public QueryCacheManager queryCacheManager(ApplicationContext applicationContext) {
+        // Pass ApplicationContext via constructor injection
         log.info("✔ Configuring Query Cache Manager");
-        return new QueryCacheManager();
-    }
-
-    @Bean
-    public GlobalEntityListener globalEntityListener() {
-        log.info("✔ Configuring Global Entity Listener for automatic cache eviction");
-        return new GlobalEntityListener();
+        return new QueryCacheManager(applicationContext);
     }
 
     @Bean
@@ -94,15 +161,6 @@ public class SimpliXHibernateCacheAutoConfiguration {
             log.info("✔ Configuring Eviction Metrics without Micrometer");
             return new EvictionMetrics();
         }
-    }
-
-    @Bean
-    @ConditionalOnBean(HibernateCacheManager.class)
-    public AutoCacheEvictionListener autoCacheEvictionListener(
-            HibernateCacheManager cacheManager,
-            ApplicationEventPublisher eventPublisher) {
-        log.info("✔ Enabling automatic JPA-based cache eviction");
-        return new AutoCacheEvictionListener(cacheManager, eventPublisher);
     }
 
     @Bean
@@ -130,10 +188,15 @@ public class SimpliXHibernateCacheAutoConfiguration {
     @ConditionalOnBean(HibernateCacheManager.class)
     public CacheEvictionStrategy cacheEvictionStrategy(
             HibernateCacheManager cacheManager,
-            ApplicationEventPublisher eventPublisher,
-            CacheProviderFactory providerFactory) {
+            CacheProviderFactory providerFactory,
+            HibernateCacheProperties cacheProperties) {
         log.info("✔ Configuring Cache Eviction Strategy");
-        return new CacheEvictionStrategy(cacheManager, eventPublisher, providerFactory);
+        CacheEvictionStrategy strategy = new CacheEvictionStrategy(cacheManager, providerFactory, cacheProperties);
+
+        // Store strategy reference for fallback eviction when event publishing fails
+        HibernateCacheHolder.setEvictionStrategy(strategy);
+
+        return strategy;
     }
 
     @Bean
@@ -149,9 +212,11 @@ public class SimpliXHibernateCacheAutoConfiguration {
     }
 
     @Bean
-    public EvictionRetryHandler evictionRetryHandler(CacheProviderFactory providerFactory) {
+    public EvictionRetryHandler evictionRetryHandler(
+            CacheProviderFactory providerFactory,
+            HibernateCacheProperties cacheProperties) {
         log.info("✔ Configuring Eviction Retry Handler");
-        return new EvictionRetryHandler(providerFactory);
+        return new EvictionRetryHandler(providerFactory, cacheProperties);
     }
 
     @Bean
@@ -199,8 +264,8 @@ public class SimpliXHibernateCacheAutoConfiguration {
 
         scanner.scanForCachedEntities(basePackages);
 
-        log.info("✔ Hibernate Cache Auto-Management activated - Module will handle all cache operations automatically");
-        log.info("  No additional configuration required - just use @Cache on your entities");
+        log.info("✔ Hibernate Cache Auto-Management activated (transaction-aware mode)");
+        log.info("  Cache eviction only occurs after transaction commit");
     }
 
     private String[] detectBasePackages(ApplicationContext context) {
@@ -218,5 +283,15 @@ public class SimpliXHibernateCacheAutoConfiguration {
             log.debug("Could not detect base packages, scanning all: {}", e.getMessage());
             return new String[]{""};
         }
+    }
+
+    /**
+     * Reset static holder references when ApplicationContext is closed.
+     * This allows new beans to be registered on context refresh (e.g., test suite).
+     */
+    @EventListener(ContextClosedEvent.class)
+    public void onContextClosed(ContextClosedEvent event) {
+        HibernateCacheHolder.reset();
+        log.info("✔ HibernateCacheHolder reset on context close");
     }
 }
