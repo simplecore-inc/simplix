@@ -183,7 +183,8 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 ### CRITICAL SUMMARY (Zero Tolerance)
 - Absolutely NO emojis in code, documentation, or comments
 - Use only log-symbols type symbols (✔ ✖ ⚠ ℹ) for status indicators
-- English-only for all artifacts (code, comments, documentation, commit messages)
+- English-only for code artifacts (code, comments, commit messages)
+- Documentation (README.md, docs/) may be written in Korean
 - Do not generate debug logs unless explicitly requested
 - Do not add defensive logic for uncertain situations
 - Do not write retry logic for uncertain states
@@ -192,15 +193,18 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 ### General Development Rules
 
 #### Language Requirements
-- **ALL code, comments, test names, and documentation must be written in English**
-- **ALL explanations and responses to the user must be written in Korean**
-- This includes:
+- **Code artifacts must be written in English:**
   - Variable names, method names, class names (English only)
   - Comments and JavaDoc (English only)
   - Test method names and @DisplayName annotations (English only)
   - Log messages and debug output (English only)
   - Exception messages (English only)
-  - Explanations, analysis, and responses to user (Korean only)
+  - Git commit messages (English only)
+- **Documentation may be written in Korean:**
+  - README.md files (Korean allowed)
+  - Documentation in docs/ folders (Korean allowed)
+  - API guides and usage examples (Korean allowed)
+- **ALL explanations and responses to the user must be written in Korean**
 - User-facing text should use i18n (messages.properties) for localization
 
 #### Symbol Usage Guidelines
