@@ -1,0 +1,43 @@
+# Integration Test Configuration
+# H2 + EhCache for testing @EvictCache functionality
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        # Enable L2 cache
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: jcache
+          javax.cache.missing_cache_strategy: create
+        # Statistics for verifying cache behavior
+        generate_statistics: true
+        # JCache provider
+        javax:
+          cache:
+            provider: org.ehcache.jsr107.EhcacheCachingProvider
+            uri: classpath:ehcache-test.xml
+
+simplix:
+  hibernate:
+    cache:
+      disabled: false
+      query-cache-auto-eviction: true
+      scan-packages:
+        - dev.simplecore.simplix.hibernate.cache.integration
+
+logging:
+  level:
+    org.hibernate.cache: DEBUG
+    org.hibernate.stat: DEBUG
+    dev.simplecore.simplix.hibernate.cache: DEBUG

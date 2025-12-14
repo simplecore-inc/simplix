@@ -15,7 +15,7 @@ import java.io.Serializable;
  *
  * <h3>Lifecycle</h3>
  * <ol>
- *   <li>Entity change detected by HibernateIntegrator</li>
+ *   <li>@EvictCache annotated method triggers eviction collection</li>
  *   <li>PendingEviction created and collected by TransactionAwareCacheEvictionCollector</li>
  *   <li>On transaction commit: PendingEvictionCompletedEvent published</li>
  *   <li>PostCommitCacheEvictionHandler executes actual eviction</li>
@@ -27,7 +27,7 @@ import java.io.Serializable;
  * to ensure proper serialization across distributed cache providers (Redis, Hazelcast, Infinispan).
  * Use {@link #getEntityClass()} to resolve the actual Class when needed.</p>
  *
- * @see TransactionAwareCacheEvictionCollector
+ * @see dev.simplecore.simplix.hibernate.cache.transaction.TransactionAwareCacheEvictionCollector
  * @see PendingEvictionCompletedEvent
  */
 @Data
@@ -109,7 +109,7 @@ public class PendingEviction implements Serializable {
      *   <li>Current class ClassLoader (fallback)</li>
      * </ul>
      * This ensures proper class loading in multi-WAR deployments and
-     * distributed cache scenarios (8th review fix).</p>
+     * distributed cache scenarios.</p>
      *
      * @return the entity Class, or null if class cannot be found
      */

@@ -1,11 +1,9 @@
 package dev.simplecore.simplix.hibernate.cache.aspect;
 
 import dev.simplecore.simplix.hibernate.cache.annotation.EvictCache;
-import dev.simplecore.simplix.hibernate.cache.core.EntityCacheScanner;
 import dev.simplecore.simplix.hibernate.cache.event.PendingEviction;
 import dev.simplecore.simplix.hibernate.cache.transaction.TransactionAwareCacheEvictionCollector;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.Signature;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,9 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.jpa.repository.Query;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,6 +25,10 @@ import static org.mockito.Mockito.*;
 
 /**
  * Tests for ModifyingQueryCacheEvictionAspect.
+ *
+ * <p>This aspect handles cache eviction via @EvictCache annotation only.
+ * JPQL parsing was removed for reliability - developers must explicitly
+ * declare which entities to evict using @EvictCache annotation.</p>
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -37,9 +37,6 @@ class ModifyingQueryCacheEvictionAspectTest {
 
     @Mock
     private TransactionAwareCacheEvictionCollector evictionCollector;
-
-    @Mock
-    private EntityCacheScanner entityCacheScanner;
 
     @Mock
     private ProceedingJoinPoint joinPoint;
@@ -51,152 +48,10 @@ class ModifyingQueryCacheEvictionAspectTest {
 
     @BeforeEach
     void setUp() {
-        aspect = new ModifyingQueryCacheEvictionAspect(evictionCollector, entityCacheScanner);
+        aspect = new ModifyingQueryCacheEvictionAspect(evictionCollector);
 
         lenient().when(joinPoint.getSignature()).thenReturn(methodSignature);
         lenient().when(methodSignature.toShortString()).thenReturn("Repository.updateEntity()");
-    }
-
-    @Nested
-    @DisplayName("handleModifyingQuery() tests - UPDATE queries")
-    class HandleModifyingQueryUpdateTests {
-
-        @Test
-        @DisplayName("Should extract entity from UPDATE JPQL and collect eviction")
-        void shouldExtractEntityFromUpdateJpql() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("updateUser");
-            when(methodSignature.getMethod()).thenReturn(method);
-            doReturn(User.class).when(entityCacheScanner).findBySimpleName("User");
-            when(entityCacheScanner.isCached(User.class)).thenReturn(true);
-            when(joinPoint.proceed()).thenReturn(5);
-
-            // When
-            Object result = aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            assertThat(result).isEqualTo(5);
-            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
-            verify(evictionCollector).collect(captor.capture());
-
-            PendingEviction eviction = captor.getValue();
-            assertThat(eviction.getEntityClassName()).isEqualTo(User.class.getName());
-            assertThat(eviction.getEntityId()).isNull(); // Bulk operation
-            assertThat(eviction.getOperation()).isEqualTo(PendingEviction.EvictionOperation.BULK_UPDATE);
-        }
-
-        @Test
-        @DisplayName("Should not collect when entity is not cached")
-        void shouldNotCollectWhenEntityNotCached() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("updateUser");
-            when(methodSignature.getMethod()).thenReturn(method);
-            doReturn(User.class).when(entityCacheScanner).findBySimpleName("User");
-            when(entityCacheScanner.isCached(User.class)).thenReturn(false);
-            when(joinPoint.proceed()).thenReturn(5);
-
-            // When
-            Object result = aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            assertThat(result).isEqualTo(5);
-            verify(evictionCollector, never()).collect(any());
-        }
-    }
-
-    @Nested
-    @DisplayName("handleModifyingQuery() tests - DELETE queries")
-    class HandleModifyingQueryDeleteTests {
-
-        @Test
-        @DisplayName("Should extract entity from DELETE JPQL and collect eviction")
-        void shouldExtractEntityFromDeleteJpql() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("deleteUser");
-            when(methodSignature.getMethod()).thenReturn(method);
-            when(methodSignature.toShortString()).thenReturn("Repository.deleteUser()");
-            doReturn(User.class).when(entityCacheScanner).findBySimpleName("User");
-            when(entityCacheScanner.isCached(User.class)).thenReturn(true);
-            when(joinPoint.proceed()).thenReturn(3);
-
-            // When
-            Object result = aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            assertThat(result).isEqualTo(3);
-            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
-            verify(evictionCollector).collect(captor.capture());
-
-            PendingEviction eviction = captor.getValue();
-            assertThat(eviction.getOperation()).isEqualTo(PendingEviction.EvictionOperation.BULK_DELETE);
-        }
-
-        @Test
-        @DisplayName("Should handle DELETE FROM syntax")
-        void shouldHandleDeleteFromSyntax() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("deleteFromOrder");
-            when(methodSignature.getMethod()).thenReturn(method);
-            doReturn(Order.class).when(entityCacheScanner).findBySimpleName("Order");
-            when(entityCacheScanner.isCached(Order.class)).thenReturn(true);
-            when(joinPoint.proceed()).thenReturn(1);
-
-            // When
-            aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
-            verify(evictionCollector).collect(captor.capture());
-            assertThat(captor.getValue().getEntityClassName()).isEqualTo(Order.class.getName());
-        }
-    }
-
-    @Nested
-    @DisplayName("handleModifyingQuery() tests - edge cases")
-    class HandleModifyingQueryEdgeCaseTests {
-
-        @Test
-        @DisplayName("Should not collect when no @Query annotation")
-        void shouldNotCollectWhenNoQueryAnnotation() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("noQueryMethod");
-            when(methodSignature.getMethod()).thenReturn(method);
-            when(joinPoint.proceed()).thenReturn(null);
-
-            // When
-            aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            verify(evictionCollector, never()).collect(any());
-        }
-
-        @Test
-        @DisplayName("Should not collect when entity not found in scanner")
-        void shouldNotCollectWhenEntityNotFound() throws Throwable {
-            // Given
-            Method method = TestRepository.class.getMethod("updateUser");
-            when(methodSignature.getMethod()).thenReturn(method);
-            when(entityCacheScanner.findBySimpleName("User")).thenReturn(null);
-            when(joinPoint.proceed()).thenReturn(5);
-
-            // When
-            aspect.handleModifyingQuery(joinPoint);
-
-            // Then
-            verify(evictionCollector, never()).collect(any());
-        }
-
-        @Test
-        @DisplayName("Should propagate exception from original method")
-        void shouldPropagateExceptionFromOriginalMethod() throws Throwable {
-            // Given
-            when(joinPoint.proceed()).thenThrow(new RuntimeException("DB error"));
-
-            // When/Then
-            assertThatThrownBy(() -> aspect.handleModifyingQuery(joinPoint))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessage("DB error");
-        }
     }
 
     @Nested
@@ -273,6 +128,25 @@ class ModifyingQueryCacheEvictionAspectTest {
             // Should not collect eviction on exception
             verify(evictionCollector, never()).collect(any());
         }
+
+        @Test
+        @DisplayName("Should handle single entity class")
+        void shouldHandleSingleEntityClass() throws Throwable {
+            // Given
+            Method method = TestRepository.class.getMethod("evictSingleEntity");
+            when(methodSignature.getMethod()).thenReturn(method);
+            when(joinPoint.proceed()).thenReturn(1);
+
+            // When
+            aspect.handleEvictCache(joinPoint);
+
+            // Then
+            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
+            verify(evictionCollector, times(1)).collect(captor.capture());
+
+            PendingEviction eviction = captor.getValue();
+            assertThat(eviction.getEntityClassName()).isEqualTo(User.class.getName());
+        }
     }
 
     @Nested
@@ -283,15 +157,13 @@ class ModifyingQueryCacheEvictionAspectTest {
         @DisplayName("Should detect BULK_DELETE from method name containing 'delete'")
         void shouldDetectBulkDeleteFromMethodName() throws Throwable {
             // Given
-            Method method = TestRepository.class.getMethod("updateUser");
+            Method method = TestRepository.class.getMethod("evictSingleEntity");
             when(methodSignature.getMethod()).thenReturn(method);
             when(methodSignature.toShortString()).thenReturn("Repository.deleteAllUsers()");
-            doReturn(User.class).when(entityCacheScanner).findBySimpleName("User");
-            when(entityCacheScanner.isCached(User.class)).thenReturn(true);
             when(joinPoint.proceed()).thenReturn(5);
 
             // When
-            aspect.handleModifyingQuery(joinPoint);
+            aspect.handleEvictCache(joinPoint);
 
             // Then
             ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
@@ -303,35 +175,128 @@ class ModifyingQueryCacheEvictionAspectTest {
         @DisplayName("Should detect BULK_DELETE from method name containing 'remove'")
         void shouldDetectBulkDeleteFromRemove() throws Throwable {
             // Given
-            Method method = TestRepository.class.getMethod("updateUser");
+            Method method = TestRepository.class.getMethod("evictSingleEntity");
             when(methodSignature.getMethod()).thenReturn(method);
             when(methodSignature.toShortString()).thenReturn("Repository.removeOldUsers()");
-            doReturn(User.class).when(entityCacheScanner).findBySimpleName("User");
-            when(entityCacheScanner.isCached(User.class)).thenReturn(true);
             when(joinPoint.proceed()).thenReturn(5);
 
             // When
-            aspect.handleModifyingQuery(joinPoint);
+            aspect.handleEvictCache(joinPoint);
 
             // Then
             ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
             verify(evictionCollector).collect(captor.capture());
             assertThat(captor.getValue().getOperation()).isEqualTo(PendingEviction.EvictionOperation.BULK_DELETE);
         }
+
+        @Test
+        @DisplayName("Should default to BULK_UPDATE for other method names")
+        void shouldDefaultToBulkUpdateForOtherMethodNames() throws Throwable {
+            // Given
+            Method method = TestRepository.class.getMethod("evictSingleEntity");
+            when(methodSignature.getMethod()).thenReturn(method);
+            when(methodSignature.toShortString()).thenReturn("Repository.updateUserStatus()");
+            when(joinPoint.proceed()).thenReturn(5);
+
+            // When
+            aspect.handleEvictCache(joinPoint);
+
+            // Then
+            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
+            verify(evictionCollector).collect(captor.capture());
+            assertThat(captor.getValue().getOperation()).isEqualTo(PendingEviction.EvictionOperation.BULK_UPDATE);
+        }
     }
 
-    // Test repository interface with various annotation combinations
+    @Nested
+    @DisplayName("Multiple regions tests")
+    class MultipleRegionsTests {
+
+        @Test
+        @DisplayName("Should use corresponding regions for multiple entities")
+        void shouldUseCorrespondingRegionsForMultipleEntities() throws Throwable {
+            // Given
+            Method method = TestRepository.class.getMethod("evictMultipleWithRegions");
+            when(methodSignature.getMethod()).thenReturn(method);
+            when(joinPoint.proceed()).thenReturn("result");
+
+            // When
+            aspect.handleEvictCache(joinPoint);
+
+            // Then
+            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
+            verify(evictionCollector, times(2)).collect(captor.capture());
+
+            var evictions = captor.getAllValues();
+            // First entity should have first region
+            assertThat(evictions.get(0).getEntityClassName()).isEqualTo(User.class.getName());
+            assertThat(evictions.get(0).getRegion()).isEqualTo("user-region");
+            // Second entity should have second region
+            assertThat(evictions.get(1).getEntityClassName()).isEqualTo(Order.class.getName());
+            assertThat(evictions.get(1).getRegion()).isEqualTo("order-region");
+        }
+
+        @Test
+        @DisplayName("Should handle fewer regions than entities")
+        void shouldHandleFewerRegionsThanEntities() throws Throwable {
+            // Given
+            Method method = TestRepository.class.getMethod("evictMultipleWithPartialRegions");
+            when(methodSignature.getMethod()).thenReturn(method);
+            when(joinPoint.proceed()).thenReturn("result");
+
+            // When
+            aspect.handleEvictCache(joinPoint);
+
+            // Then
+            ArgumentCaptor<PendingEviction> captor = ArgumentCaptor.forClass(PendingEviction.class);
+            verify(evictionCollector, times(2)).collect(captor.capture());
+
+            var evictions = captor.getAllValues();
+            // First entity should have region
+            assertThat(evictions.get(0).getRegion()).isEqualTo("user-region");
+            // Second entity should have null region (bounds checking)
+            assertThat(evictions.get(1).getRegion()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("Edge case tests")
+    class EdgeCaseTests {
+
+        @Test
+        @DisplayName("Should handle method without @EvictCache annotation gracefully")
+        void shouldHandleMethodWithoutEvictCacheAnnotation() throws Throwable {
+            // Given
+            Method method = TestRepository.class.getMethod("noAnnotationMethod");
+            when(methodSignature.getMethod()).thenReturn(method);
+            when(joinPoint.proceed()).thenReturn("result");
+
+            // When
+            Object result = aspect.handleEvictCache(joinPoint);
+
+            // Then
+            assertThat(result).isEqualTo("result");
+            verify(evictionCollector, never()).collect(any());
+        }
+
+        @Test
+        @DisplayName("Should handle exception when getting annotation")
+        void shouldHandleExceptionWhenGettingAnnotation() throws Throwable {
+            // Given
+            when(joinPoint.getSignature()).thenThrow(new RuntimeException("Signature error"));
+            when(joinPoint.proceed()).thenReturn("result");
+
+            // When
+            Object result = aspect.handleEvictCache(joinPoint);
+
+            // Then - should return result without collecting eviction
+            assertThat(result).isEqualTo("result");
+            verify(evictionCollector, never()).collect(any());
+        }
+    }
+
+    // Test repository interface with @EvictCache annotations
     interface TestRepository {
-        @Query("UPDATE User u SET u.active = false WHERE u.lastLogin < :date")
-        int updateUser();
-
-        @Query("DELETE User u WHERE u.active = false")
-        int deleteUser();
-
-        @Query("DELETE FROM Order o WHERE o.status = 'CANCELLED'")
-        int deleteFromOrder();
-
-        void noQueryMethod();
 
         @EvictCache({User.class, Order.class})
         String evictCacheMethod();
@@ -341,6 +306,17 @@ class ModifyingQueryCacheEvictionAspectTest {
 
         @EvictCache(value = User.class, regions = "custom-region")
         String evictCacheWithRegion();
+
+        @EvictCache(User.class)
+        int evictSingleEntity();
+
+        @EvictCache(value = {User.class, Order.class}, regions = {"user-region", "order-region"})
+        String evictMultipleWithRegions();
+
+        @EvictCache(value = {User.class, Order.class}, regions = {"user-region"})
+        String evictMultipleWithPartialRegions();
+
+        String noAnnotationMethod();
     }
 
     // Test entity classes

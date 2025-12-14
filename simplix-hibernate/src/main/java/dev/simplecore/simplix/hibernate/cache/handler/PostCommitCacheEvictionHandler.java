@@ -2,7 +2,6 @@ package dev.simplecore.simplix.hibernate.cache.handler;
 
 import dev.simplecore.simplix.hibernate.cache.event.PendingEviction;
 import dev.simplecore.simplix.hibernate.cache.event.PendingEvictionCompletedEvent;
-import dev.simplecore.simplix.hibernate.cache.monitoring.EvictionMetrics;
 import dev.simplecore.simplix.hibernate.cache.strategy.CacheEvictionStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +48,6 @@ import org.springframework.context.event.EventListener;
 public class PostCommitCacheEvictionHandler {
 
     private final CacheEvictionStrategy evictionStrategy;
-    private final EvictionMetrics evictionMetrics;
 
     /**
      * Handles cache eviction after transaction commit.
@@ -88,16 +86,6 @@ public class PostCommitCacheEvictionHandler {
                         entityName,
                         pending.getEntityId(),
                         e.getMessage());
-            }
-        }
-
-        // Record both success and failure metrics
-        if (evictionMetrics != null) {
-            for (int i = 0; i < successCount; i++) {
-                evictionMetrics.recordSuccess();
-            }
-            for (int i = 0; i < failureCount; i++) {
-                evictionMetrics.recordFailure();
             }
         }
 

@@ -100,7 +100,7 @@ public class EntityCacheScanner {
             return null;
         }
 
-        // Case-insensitive comparison (7th review fix - JPQL entity names are case-insensitive)
+        // Case-insensitive comparison - JPQL entity names are case-insensitive
         return cachedEntities.stream()
                 .filter(clazz -> clazz.getSimpleName().equalsIgnoreCase(simpleName))
                 .findFirst()

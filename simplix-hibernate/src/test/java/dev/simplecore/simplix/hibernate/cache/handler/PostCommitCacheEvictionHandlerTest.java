@@ -2,7 +2,6 @@ package dev.simplecore.simplix.hibernate.cache.handler;
 
 import dev.simplecore.simplix.hibernate.cache.event.PendingEviction;
 import dev.simplecore.simplix.hibernate.cache.event.PendingEvictionCompletedEvent;
-import dev.simplecore.simplix.hibernate.cache.monitoring.EvictionMetrics;
 import dev.simplecore.simplix.hibernate.cache.strategy.CacheEvictionStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,14 +28,11 @@ class PostCommitCacheEvictionHandlerTest {
     @Mock
     private CacheEvictionStrategy evictionStrategy;
 
-    @Mock
-    private EvictionMetrics evictionMetrics;
-
     private PostCommitCacheEvictionHandler handler;
 
     @BeforeEach
     void setUp() {
-        handler = new PostCommitCacheEvictionHandler(evictionStrategy, evictionMetrics);
+        handler = new PostCommitCacheEvictionHandler(evictionStrategy);
     }
 
     @Nested
@@ -58,8 +54,7 @@ class PostCommitCacheEvictionHandlerTest {
             handler.handlePostCommitEviction(event);
 
             // Then
-            verify(evictionStrategy, times(3)).evict(any(), any());
-            verify(evictionMetrics, times(3)).recordSuccess();
+            verify(evictionStrategy, times(3)).evict(any(Class.class), any());
         }
 
         @Test
@@ -73,7 +68,7 @@ class PostCommitCacheEvictionHandlerTest {
             handler.handlePostCommitEviction(event);
 
             // Then
-            verify(evictionStrategy, never()).evict(any(), any());
+            verify(evictionStrategy, never()).evict(any(Class.class), any());
         }
 
         @Test
@@ -123,8 +118,7 @@ class PostCommitCacheEvictionHandlerTest {
             handler.handlePostCommitEviction(event);
 
             // Then - should only process 2 valid evictions
-            verify(evictionStrategy, times(2)).evict(any(), any());
-            verify(evictionMetrics, times(2)).recordSuccess();
+            verify(evictionStrategy, times(2)).evict(any(Class.class), any());
         }
 
         @Test
@@ -142,15 +136,13 @@ class PostCommitCacheEvictionHandlerTest {
             doNothing()
                     .doThrow(new RuntimeException("Eviction failed"))
                     .doNothing()
-                    .when(evictionStrategy).evict(any(), any());
+                    .when(evictionStrategy).evict(any(Class.class), any());
 
             // When
             handler.handlePostCommitEviction(event);
 
             // Then - all three should be attempted
-            verify(evictionStrategy, times(3)).evict(any(), any());
-            verify(evictionMetrics, times(2)).recordSuccess();
-            verify(evictionMetrics, times(1)).recordFailure();
+            verify(evictionStrategy, times(3)).evict(any(Class.class), any());
         }
 
         @Test
@@ -169,25 +161,9 @@ class PostCommitCacheEvictionHandlerTest {
             handler.handlePostCommitEviction(event);
 
             // Then - should not attempt eviction since class can't be resolved
-            verify(evictionStrategy, never()).evict(any(), any());
+            verify(evictionStrategy, never()).evict(any(Class.class), any());
         }
 
-        @Test
-        @DisplayName("Should work without EvictionMetrics")
-        void shouldWorkWithoutEvictionMetrics() {
-            // Given
-            PostCommitCacheEvictionHandler handlerWithoutMetrics =
-                    new PostCommitCacheEvictionHandler(evictionStrategy, null);
-
-            PendingEviction eviction = createPendingEviction(
-                    TestEntity.class, "1", PendingEviction.EvictionOperation.UPDATE);
-            PendingEvictionCompletedEvent event = new PendingEvictionCompletedEvent(
-                    this, List.of(eviction));
-
-            // When/Then - should not throw
-            handlerWithoutMetrics.handlePostCommitEviction(event);
-            verify(evictionStrategy).evict(TestEntity.class, "1");
-        }
     }
 
     private PendingEviction createPendingEviction(

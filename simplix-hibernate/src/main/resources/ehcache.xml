@@ -1,11 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    EhCache Configuration Template for Hibernate L2 Cache
+
+    CUSTOMIZATION GUIDE:
+    ====================
+
+    1. Entity Cache Regions:
+       - Hibernate creates cache regions using the fully qualified entity class name
+       - Example: com.example.domain.User -> cache alias="com.example.domain.User"
+       - You can create specific cache configurations for each entity
+
+    2. Templates:
+       - default: Standard entities (1 hour TTL, 1000 entries)
+       - small: Lookup tables, code entities (30 min TTL, 500 entries)
+       - large: Frequently accessed entities (2 hour TTL, 5000 entries)
+       - query: Query result caches (15 min TTL, 500 entries)
+
+    3. Usage Example:
+       <cache alias="com.example.domain.User" uses-template="large"/>
+       <cache alias="com.example.domain.OrderStatus" uses-template="small"/>
+
+    4. Required Regions:
+       - default-query-results-region: For query cache
+       - default-update-timestamps-region: For cache invalidation timestamps
+
+    For more details, see: docs/ko/configuration.md
+-->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://www.ehcache.org/v3"
         xsi:schemaLocation="
             http://www.ehcache.org/v3
             http://www.ehcache.org/schema/ehcache-core-3.10.xsd">
 
-    <!-- Default cache template -->
+    <!-- ==================== CACHE TEMPLATES ==================== -->
+
+    <!-- Default template: Standard entities (1 hour TTL) -->
     <cache-template name="default">
         <expiry>
             <ttl unit="seconds">3600</ttl>
@@ -16,7 +45,7 @@
         </resources>
     </cache-template>
 
-    <!-- Small cache template -->
+    <!-- Small template: Lookup tables, code entities (30 min TTL) -->
     <cache-template name="small">
         <expiry>
             <ttl unit="seconds">1800</ttl>
@@ -27,7 +56,7 @@
         </resources>
     </cache-template>
 
-    <!-- Large cache template -->
+    <!-- Large template: Frequently accessed entities (2 hour TTL) -->
     <cache-template name="large">
         <expiry>
             <ttl unit="seconds">7200</ttl>
@@ -38,7 +67,7 @@
         </resources>
     </cache-template>
 
-    <!-- Query cache template -->
+    <!-- Query template: Query result caches (15 min TTL) -->
     <cache-template name="query">
         <expiry>
             <ttl unit="seconds">900</ttl>
@@ -49,23 +78,46 @@
         </resources>
     </cache-template>
 
-    <!-- Default query results region -->
+    <!-- ==================== REQUIRED REGIONS ==================== -->
+
+    <!-- Query results cache (required for query caching) -->
     <cache alias="default-query-results-region" uses-template="query"/>
 
-    <!-- Update timestamps cache -->
+    <!-- Update timestamps (required for cache invalidation) -->
     <cache alias="default-update-timestamps-region">
         <expiry>
-            <none/> <!-- Never expire timestamps -->
+            <none/> <!-- Never expire - timestamps must persist -->
         </expiry>
         <resources>
             <heap unit="entries">10000</heap>
         </resources>
     </cache>
 
-    <!-- Default entity cache region -->
+    <!-- ==================== DEFAULT REGIONS ==================== -->
+
+    <!-- Default entity cache (used when no specific region is defined) -->
     <cache alias="default-entity-region" uses-template="default"/>
 
-    <!-- Default collection cache region -->
+    <!-- Default collection cache -->
     <cache alias="default-collection-region" uses-template="default"/>
+
+    <!-- ==================== ENTITY REGIONS (EXAMPLES) ==================== -->
+    <!--
+    Add your entity-specific cache configurations below.
+    Use fully qualified class names as the cache alias.
+
+    Example configurations:
+
+    <cache alias="com.example.domain.User" uses-template="large">
+        <resources>
+            <heap unit="entries">2000</heap>
+            <offheap unit="MB">20</offheap>
+        </resources>
+    </cache>
+
+    <cache alias="com.example.domain.Product" uses-template="default"/>
+
+    <cache alias="com.example.domain.OrderStatus" uses-template="small"/>
+    -->
 
 </config>

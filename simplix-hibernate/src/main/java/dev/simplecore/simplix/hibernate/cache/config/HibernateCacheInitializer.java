@@ -44,14 +44,8 @@ public class HibernateCacheInitializer {
 
     private void logCacheConfiguration() {
         log.info("Cache Configuration:");
-        log.info("  Mode: {}", properties.getMode());
+        log.info("  Disabled: {}", properties.isDisabled());
         log.info("  Query Cache Auto-Eviction: {}", properties.isQueryCacheAutoEviction());
-        log.info("  Auto-Detection Strategy: {}", properties.isAutoDetectEvictionStrategy());
-        log.info("  Node ID: {}", properties.getNodeId());
-
-        if (properties.getRedis().isPubSubEnabled()) {
-            log.info("  Redis Channel: {}", properties.getRedis().getChannel());
-        }
     }
 
     private void verifyCacheConfiguration() {

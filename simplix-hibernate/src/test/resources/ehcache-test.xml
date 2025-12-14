@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns="http://www.ehcache.org/v3"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.ehcache.org/v3 http://www.ehcache.org/schema/ehcache-core-3.0.xsd">
+
+    <!-- Default cache template for testing -->
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="seconds">300</ttl>
+        </expiry>
+        <resources>
+            <heap unit="entries">100</heap>
+        </resources>
+    </cache-template>
+
+    <!-- Test entity cache region -->
+    <cache alias="dev.simplecore.simplix.hibernate.cache.integration.TestCachedEntity" uses-template="default">
+        <resources>
+            <heap unit="entries">50</heap>
+        </resources>
+    </cache>
+
+    <!-- Query cache region -->
+    <cache alias="default-query-results-region" uses-template="default">
+        <expiry>
+            <ttl unit="seconds">60</ttl>
+        </expiry>
+    </cache>
+
+    <!-- Timestamp cache for query invalidation -->
+    <cache alias="default-update-timestamps-region">
+        <expiry>
+            <none/>
+        </expiry>
+        <resources>
+            <heap unit="entries">1000</heap>
+        </resources>
+    </cache>
+
+</config>

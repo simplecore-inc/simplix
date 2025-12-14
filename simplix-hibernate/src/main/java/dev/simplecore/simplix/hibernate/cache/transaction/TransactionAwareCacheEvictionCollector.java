@@ -1,9 +1,7 @@
 package dev.simplecore.simplix.hibernate.cache.transaction;
 
-import dev.simplecore.simplix.hibernate.cache.config.HibernateCacheHolder;
 import dev.simplecore.simplix.hibernate.cache.event.PendingEviction;
 import dev.simplecore.simplix.hibernate.cache.event.PendingEvictionCompletedEvent;
-import dev.simplecore.simplix.hibernate.cache.strategy.CacheEvictionStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,8 +20,8 @@ import java.util.List;
  *
  * <h3>How It Works</h3>
  * <ol>
- *   <li>Entity changes are detected by HibernateIntegrator (POST_COMMIT events)</li>
- *   <li>Changes are collected via {@link #collect(PendingEviction)} into ThreadLocal storage</li>
+ *   <li>@EvictCache annotated methods trigger eviction via ModifyingQueryCacheEvictionAspect</li>
+ *   <li>Evictions are collected via {@link #collect(PendingEviction)} into ThreadLocal storage</li>
  *   <li>A TransactionSynchronization is registered on first collection</li>
  *   <li>On commit: {@link PendingEvictionCompletedEvent} is published</li>
  *   <li>On rollback: Collected evictions are silently discarded</li>
@@ -166,9 +164,8 @@ public class TransactionAwareCacheEvictionCollector {
 
             @Override
             public void afterCommit() {
-                // CRITICAL FIX (9th review): Wrap in try-finally to ensure cleanup() is called
-                // even if OutOfMemoryError, StackOverflowError, or other fatal errors occur.
-                // Without this, afterCompletion() may not be called, leaving ThreadLocal dirty.
+                // Wrap in try-finally to ensure cleanup() is called
+                // even if OutOfMemoryError or other fatal errors occur.
                 try {
                     // Null-safe access to ThreadLocal
                     List<PendingEviction> evictions = PENDING_EVICTIONS.get();
@@ -201,12 +198,10 @@ public class TransactionAwareCacheEvictionCollector {
                         }
                     }
 
-                    // All retries exhausted - perform synchronous fallback eviction
+                    // All retries exhausted - log error (cache may be stale)
                     log.error("✖ Failed to publish PendingEvictionCompletedEvent after {} attempts. " +
-                            "Attempting fallback synchronous eviction for {} pending evictions.",
+                            "{} cache entries may be stale until next eviction.",
                             MAX_PUBLISH_RETRY_ATTEMPTS, evictionsCopy.size(), lastException);
-
-                    performFallbackEviction(evictionsCopy);
                 } finally {
                     // CRITICAL: Always cleanup ThreadLocal even if afterCommit() throws.
                     // This prevents ThreadLocal leaks in thread pools (Tomcat, HikariCP).
@@ -237,46 +232,6 @@ public class TransactionAwareCacheEvictionCollector {
     }
 
     /**
-     * Performs fallback synchronous eviction when event publishing fails.
-     * This ensures cache eviction happens even when Spring event mechanism fails.
-     *
-     * @param evictions the list of pending evictions to execute
-     */
-    private void performFallbackEviction(List<PendingEviction> evictions) {
-        CacheEvictionStrategy strategy = HibernateCacheHolder.getEvictionStrategy();
-
-        if (strategy == null) {
-            log.error("✖ Fallback eviction failed: CacheEvictionStrategy not available. " +
-                    "{} cache entries may be stale.", evictions.size());
-            return;
-        }
-
-        int successCount = 0;
-        int failureCount = 0;
-
-        for (PendingEviction pending : evictions) {
-            if (pending == null || pending.getEntityClass() == null) {
-                continue;
-            }
-
-            try {
-                strategy.evict(pending.getEntityClass(), pending.getEntityId());
-                successCount++;
-            } catch (Exception e) {
-                failureCount++;
-                log.error("✖ Fallback eviction failed for {} [{}]: {}",
-                        pending.getEntityClassName(), pending.getEntityId(), e.getMessage());
-            }
-        }
-
-        if (failureCount > 0) {
-            log.warn("⚠ Fallback eviction completed: {} success, {} failures", successCount, failureCount);
-        } else {
-            log.info("✔ Fallback eviction completed successfully: {} evictions performed", successCount);
-        }
-    }
-
-    /**
      * Publishes eviction immediately when no transaction is active.
      * This is a fallback for non-transactional operations.
      * Includes simple retry for transient failures.
@@ -304,10 +259,8 @@ public class TransactionAwareCacheEvictionCollector {
         }
 
         log.error("✖ Failed to publish immediate eviction event after {} attempts. " +
-                "Attempting fallback synchronous eviction.",
+                "Cache entry may be stale until next eviction.",
                 MAX_PUBLISH_RETRY_ATTEMPTS, lastException);
-
-        performFallbackEviction(singleEviction);
     }
 
     /**
