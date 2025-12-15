@@ -94,45 +94,46 @@ copy_module_readme "spring-boot-starter-simplix" "starter"
 convert_links() {
   local file="$1"
 
-  # Convert module cross-references to Docsify absolute paths
-  # Also convert README.md internal links (docs/ko/ -> ./)
+  # Convert all links to relative paths for versioned folder structure
   sed \
-    -e 's|(docs/ko/|(./|g' \
-    -e 's|\.\./\.\./simplix-core/docs/ko/|/ko/core/|g' \
-    -e 's|\.\./\.\./simplix-auth/docs/ko/|/ko/auth/|g' \
-    -e 's|\.\./\.\./simplix-cache/docs/ko/|/ko/cache/|g' \
-    -e 's|\.\./\.\./simplix-email/docs/ko/|/ko/email/|g' \
-    -e 's|\.\./\.\./simplix-encryption/docs/ko/|/ko/encryption/|g' \
-    -e 's|\.\./\.\./simplix-event/docs/ko/|/ko/event/|g' \
-    -e 's|\.\./\.\./simplix-excel/docs/ko/|/ko/excel/|g' \
-    -e 's|\.\./\.\./simplix-file/docs/ko/|/ko/file/|g' \
-    -e 's|\.\./\.\./simplix-hibernate/docs/ko/|/ko/hibernate/|g' \
-    -e 's|\.\./\.\./simplix-mybatis/docs/ko/|/ko/mybatis/|g' \
-    -e 's|\.\./\.\./spring-boot-starter-simplix/docs/ko/|/ko/starter/|g' \
-    -e 's|\.\./\.\./simplix-core/README\.md|/ko/core/overview.md|g' \
-    -e 's|\.\./\.\./simplix-auth/README\.md|/ko/auth/getting-started.md|g' \
-    -e 's|\.\./\.\./simplix-cache/README\.md|/ko/cache/overview.md|g' \
-    -e 's|\.\./\.\./simplix-email/README\.md|/ko/email/overview.md|g' \
-    -e 's|\.\./\.\./simplix-encryption/README\.md|/ko/encryption/overview.md|g' \
-    -e 's|\.\./\.\./simplix-event/README\.md|/ko/event/overview.md|g' \
-    -e 's|\.\./\.\./simplix-excel/README\.md|/ko/excel/overview.md|g' \
-    -e 's|\.\./\.\./simplix-file/README\.md|/ko/file/overview.md|g' \
-    -e 's|\.\./\.\./simplix-hibernate/README\.md|/ko/hibernate/overview.md|g' \
-    -e 's|\.\./\.\./simplix-mybatis/README\.md|/ko/mybatis/overview.md|g' \
-    -e 's|\.\./\.\./spring-boot-starter-simplix/README\.md|/ko/starter/overview.md|g' \
-    -e 's|\.\./\.\./README\.md|/ko/README.md|g' \
+    -e 's|(docs/ko/|(|g' \
+    -e 's|(\./|(|g' \
+    -e 's|(/ko/|(ko/|g' \
+    -e 's|\.\./\.\./simplix-core/docs/ko/|ko/core/|g' \
+    -e 's|\.\./\.\./simplix-auth/docs/ko/|ko/auth/|g' \
+    -e 's|\.\./\.\./simplix-cache/docs/ko/|ko/cache/|g' \
+    -e 's|\.\./\.\./simplix-email/docs/ko/|ko/email/|g' \
+    -e 's|\.\./\.\./simplix-encryption/docs/ko/|ko/encryption/|g' \
+    -e 's|\.\./\.\./simplix-event/docs/ko/|ko/event/|g' \
+    -e 's|\.\./\.\./simplix-excel/docs/ko/|ko/excel/|g' \
+    -e 's|\.\./\.\./simplix-file/docs/ko/|ko/file/|g' \
+    -e 's|\.\./\.\./simplix-hibernate/docs/ko/|ko/hibernate/|g' \
+    -e 's|\.\./\.\./simplix-mybatis/docs/ko/|ko/mybatis/|g' \
+    -e 's|\.\./\.\./spring-boot-starter-simplix/docs/ko/|ko/starter/|g' \
+    -e 's|\.\./\.\./simplix-core/README\.md|ko/core/overview.md|g' \
+    -e 's|\.\./\.\./simplix-auth/README\.md|ko/auth/getting-started.md|g' \
+    -e 's|\.\./\.\./simplix-cache/README\.md|ko/cache/overview.md|g' \
+    -e 's|\.\./\.\./simplix-email/README\.md|ko/email/overview.md|g' \
+    -e 's|\.\./\.\./simplix-encryption/README\.md|ko/encryption/overview.md|g' \
+    -e 's|\.\./\.\./simplix-event/README\.md|ko/event/overview.md|g' \
+    -e 's|\.\./\.\./simplix-excel/README\.md|ko/excel/overview.md|g' \
+    -e 's|\.\./\.\./simplix-file/README\.md|ko/file/overview.md|g' \
+    -e 's|\.\./\.\./simplix-hibernate/README\.md|ko/hibernate/overview.md|g' \
+    -e 's|\.\./\.\./simplix-mybatis/README\.md|ko/mybatis/overview.md|g' \
+    -e 's|\.\./\.\./spring-boot-starter-simplix/README\.md|ko/starter/overview.md|g' \
+    -e 's|\.\./\.\./README\.md|ko/README.md|g' \
     -e 's|\.\./\.\./LICENSE|https://github.com/simplecore-inc/simplix/blob/main/LICENSE|g' \
-    -e 's|\.\./\.\./\.\./simplix-core/|/ko/core/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-auth/|/ko/auth/getting-started.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-cache/|/ko/cache/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-email/|/ko/email/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-encryption/|/ko/encryption/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-event/|/ko/event/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-excel/|/ko/excel/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-file/|/ko/file/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-hibernate/|/ko/hibernate/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-mybatis/|/ko/mybatis/overview.md|g' \
-    -e 's|\.\./\.\./\.\./spring-boot-starter-simplix/|/ko/starter/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-core/|ko/core/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-auth/|ko/auth/getting-started.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-cache/|ko/cache/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-email/|ko/email/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-encryption/|ko/encryption/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-event/|ko/event/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-excel/|ko/excel/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-file/|ko/file/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-hibernate/|ko/hibernate/overview.md|g' \
+    -e 's|\.\./\.\./\.\./simplix-mybatis/|ko/mybatis/overview.md|g' \
+    -e 's|\.\./\.\./\.\./spring-boot-starter-simplix/|ko/starter/overview.md|g' \
     "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 }
 
