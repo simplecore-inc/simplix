@@ -94,10 +94,17 @@ copy_module_readme "spring-boot-starter-simplix" "starter"
 convert_links() {
   local file="$1"
 
-  # Convert all links to relative paths for versioned folder structure
+  # Get the directory path relative to build-docs (e.g., ko/core, ko/excel)
+  local dir_path
+  dir_path=$(dirname "${file#$BUILD_DIR/}")
+
+  # Convert ./ relative links to absolute paths based on file location
+  # e.g., ./overview.md in ko/core/ becomes ko/core/overview.md
+  sed -i.bak "s|(\./|($dir_path/|g" "$file" && rm -f "${file}.bak"
+
+  # Convert all other links to relative paths for versioned folder structure
   sed \
     -e 's|(docs/ko/|(|g' \
-    -e 's|(\./|(|g' \
     -e 's|(/ko/|(ko/|g' \
     -e 's|\.\./\.\./simplix-core/docs/ko/|ko/core/|g' \
     -e 's|\.\./\.\./simplix-auth/docs/ko/|ko/auth/|g' \
