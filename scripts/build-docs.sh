@@ -17,6 +17,18 @@ else
 fi
 echo "Building SimpliX documentation... (v${VERSION})"
 
+# Function to convert module name to target directory name
+# e.g., simplix-core -> core, spring-boot-starter-simplix -> starter
+get_target_name() {
+  local module="$1"
+  if [[ "$module" == "spring-boot-starter-simplix" ]]; then
+    echo "starter"
+  else
+    # Remove 'simplix-' prefix
+    echo "${module#simplix-}"
+  fi
+}
+
 # 1. Initialize build directory
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR/ko"
@@ -38,57 +50,40 @@ sed -i.bak "s/{{VERSION}}/${VERSION_ESCAPED}/g" "$BUILD_DIR/_coverpage.md" && rm
 echo "Copying tutorial documents..."
 find docs/ko -maxdepth 1 -name "*.md" -type f -exec cp {} "$BUILD_DIR/ko/" \;
 
-# 4. Copy module documentation
+# 4. Auto-discover and copy module documentation
 echo "Copying module documentation..."
 
-copy_module_docs() {
-  local module="$1"
-  local target="$2"
+# Store module mappings for link conversion (module_name:target_name)
+declare -a MODULE_MAPPINGS=()
 
-  if [ -d "$module/docs/ko" ]; then
+for module_docs_dir in */docs/ko; do
+  if [ -d "$module_docs_dir" ]; then
+    module=$(dirname "$(dirname "$module_docs_dir")")
+    target=$(get_target_name "$module")
+
     mkdir -p "$BUILD_DIR/ko/$target"
-    cp -r "$module/docs/ko/"* "$BUILD_DIR/ko/$target/" 2>/dev/null || true
-    echo "  Copied: $module -> ko/$target"
+    cp -r "$module_docs_dir/"* "$BUILD_DIR/ko/$target/" 2>/dev/null || true
+    echo "  Copied: $module/docs/ko -> ko/$target"
+
+    MODULE_MAPPINGS+=("$module:$target")
   fi
-}
+done
 
-copy_module_docs "simplix-core" "core"
-copy_module_docs "simplix-auth" "auth"
-copy_module_docs "simplix-cache" "cache"
-copy_module_docs "simplix-email" "email"
-copy_module_docs "simplix-encryption" "encryption"
-copy_module_docs "simplix-event" "event"
-copy_module_docs "simplix-excel" "excel"
-copy_module_docs "simplix-file" "file"
-copy_module_docs "simplix-hibernate" "hibernate"
-copy_module_docs "simplix-mybatis" "mybatis"
-copy_module_docs "spring-boot-starter-simplix" "starter"
-
-# 4.5. Copy module README.md files
+# 4.5. Auto-discover and copy module README.md files
 echo "Copying module README files..."
 
-copy_module_readme() {
-  local module="$1"
-  local target="$2"
-
-  if [ -f "$module/README.md" ]; then
-    mkdir -p "$BUILD_DIR/ko/$target"
-    cp "$module/README.md" "$BUILD_DIR/ko/$target/readme.md"
-    echo "  Copied: $module/README.md -> ko/$target/readme.md"
+for readme in */README.md; do
+  if [ -f "$readme" ]; then
+    module=$(dirname "$readme")
+    # Skip root README and non-module directories
+    if [[ "$module" != "." && -d "$module/src" ]]; then
+      target=$(get_target_name "$module")
+      mkdir -p "$BUILD_DIR/ko/$target"
+      cp "$readme" "$BUILD_DIR/ko/$target/readme.md"
+      echo "  Copied: $readme -> ko/$target/readme.md"
+    fi
   fi
-}
-
-copy_module_readme "simplix-core" "core"
-copy_module_readme "simplix-auth" "auth"
-copy_module_readme "simplix-cache" "cache"
-copy_module_readme "simplix-email" "email"
-copy_module_readme "simplix-encryption" "encryption"
-copy_module_readme "simplix-event" "event"
-copy_module_readme "simplix-excel" "excel"
-copy_module_readme "simplix-file" "file"
-copy_module_readme "simplix-hibernate" "hibernate"
-copy_module_readme "simplix-mybatis" "mybatis"
-copy_module_readme "spring-boot-starter-simplix" "starter"
+done
 
 # 5. Link conversion function
 convert_links() {
@@ -102,46 +97,31 @@ convert_links() {
   # e.g., ./overview.md in ko/core/ becomes ko/core/overview.md
   sed -i.bak "s|(\./|($dir_path/|g" "$file" && rm -f "${file}.bak"
 
-  # Convert all other links to relative paths for versioned folder structure
-  sed \
-    -e 's|(docs/ko/|(|g' \
-    -e 's|(/ko/|(ko/|g' \
-    -e 's|\.\./\.\./simplix-core/docs/ko/|ko/core/|g' \
-    -e 's|\.\./\.\./simplix-auth/docs/ko/|ko/auth/|g' \
-    -e 's|\.\./\.\./simplix-cache/docs/ko/|ko/cache/|g' \
-    -e 's|\.\./\.\./simplix-email/docs/ko/|ko/email/|g' \
-    -e 's|\.\./\.\./simplix-encryption/docs/ko/|ko/encryption/|g' \
-    -e 's|\.\./\.\./simplix-event/docs/ko/|ko/event/|g' \
-    -e 's|\.\./\.\./simplix-excel/docs/ko/|ko/excel/|g' \
-    -e 's|\.\./\.\./simplix-file/docs/ko/|ko/file/|g' \
-    -e 's|\.\./\.\./simplix-hibernate/docs/ko/|ko/hibernate/|g' \
-    -e 's|\.\./\.\./simplix-mybatis/docs/ko/|ko/mybatis/|g' \
-    -e 's|\.\./\.\./spring-boot-starter-simplix/docs/ko/|ko/starter/|g' \
-    -e 's|\.\./\.\./simplix-core/README\.md|ko/core/overview.md|g' \
-    -e 's|\.\./\.\./simplix-auth/README\.md|ko/auth/getting-started.md|g' \
-    -e 's|\.\./\.\./simplix-cache/README\.md|ko/cache/overview.md|g' \
-    -e 's|\.\./\.\./simplix-email/README\.md|ko/email/overview.md|g' \
-    -e 's|\.\./\.\./simplix-encryption/README\.md|ko/encryption/overview.md|g' \
-    -e 's|\.\./\.\./simplix-event/README\.md|ko/event/overview.md|g' \
-    -e 's|\.\./\.\./simplix-excel/README\.md|ko/excel/overview.md|g' \
-    -e 's|\.\./\.\./simplix-file/README\.md|ko/file/overview.md|g' \
-    -e 's|\.\./\.\./simplix-hibernate/README\.md|ko/hibernate/overview.md|g' \
-    -e 's|\.\./\.\./simplix-mybatis/README\.md|ko/mybatis/overview.md|g' \
-    -e 's|\.\./\.\./spring-boot-starter-simplix/README\.md|ko/starter/overview.md|g' \
-    -e 's|\.\./\.\./README\.md|ko/README.md|g' \
-    -e 's|\.\./\.\./LICENSE|https://github.com/simplecore-inc/simplix/blob/main/LICENSE|g' \
-    -e 's|\.\./\.\./\.\./simplix-core/|ko/core/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-auth/|ko/auth/getting-started.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-cache/|ko/cache/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-email/|ko/email/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-encryption/|ko/encryption/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-event/|ko/event/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-excel/|ko/excel/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-file/|ko/file/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-hibernate/|ko/hibernate/overview.md|g' \
-    -e 's|\.\./\.\./\.\./simplix-mybatis/|ko/mybatis/overview.md|g' \
-    -e 's|\.\./\.\./\.\./spring-boot-starter-simplix/|ko/starter/overview.md|g' \
-    "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+  # Build sed expressions dynamically based on discovered modules
+  local sed_args=()
+
+  # Common link conversions
+  sed_args+=(-e 's|(docs/ko/|(|g')
+  sed_args+=(-e 's|(/ko/|(ko/|g')
+  sed_args+=(-e 's|\.\./\.\./README\.md|ko/README.md|g')
+  sed_args+=(-e 's|\.\./\.\./LICENSE|https://github.com/simplecore-inc/simplix/blob/main/LICENSE|g')
+
+  # Module-specific link conversions
+  for mapping in "${MODULE_MAPPINGS[@]}"; do
+    local module="${mapping%%:*}"
+    local target="${mapping##*:}"
+
+    # ../../module/docs/ko/ -> ko/target/
+    sed_args+=(-e "s|\\.\\./\\.\\./$(echo "$module" | sed 's/[.[\*^$()+?{|]/\\&/g')/docs/ko/|ko/$target/|g")
+
+    # ../../module/README.md -> ko/target/readme.md
+    sed_args+=(-e "s|\\.\\./\\.\\./$(echo "$module" | sed 's/[.[\*^$()+?{|]/\\&/g')/README\\.md|ko/$target/readme.md|g")
+
+    # ../../../module/ -> ko/target/readme.md
+    sed_args+=(-e "s|\\.\\./\\.\\./\\.\\./$(echo "$module" | sed 's/[.[\*^$()+?{|]/\\&/g')/|ko/$target/readme.md|g")
+  done
+
+  sed "${sed_args[@]}" "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
 }
 
 # 6. Apply link conversion to all markdown files
