@@ -55,6 +55,7 @@
 |  |  |@Unique       | |@UniqueFields | |UniqueValidator     |   |  |
 |  |  |- Field level | |- Class level | |- JPA EntityManager |   |  |
 |  |  |- DB unique   | |- Multi field | |- Update exclusion  |   |  |
+|  |  |- Soft delete | |- Soft delete | |- Soft delete aware |   |  |
 |  |  +--------------+ +--------------+ +--------------------+   |  |
 |  +-------------------------------------------------------------+  |
 |  +-------------------------------------------------------------+  |
@@ -165,7 +166,8 @@ simplix-core/
     │   ├── UniqueValidator.java
     │   ├── UniqueField.java        # 클래스 레벨 유니크 필드 정의
     │   ├── UniqueFields.java       # 클래스 레벨 유니크 검증
-    │   └── UniqueFieldsValidator.java
+    │   ├── UniqueFieldsValidator.java
+    │   └── SoftDeleteType.java     # Soft delete 유형 (BOOLEAN, TIMESTAMP)
     │
     ├── config/                      # 설정 홀더
     │   ├── SimpliXI18nProperties.java
@@ -213,8 +215,9 @@ simplix-core/
 | **DataMaskingUtils** | security.sanitization | 민감 데이터 마스킹 |
 | **@SafeHtml** | security.validation | HTML 검증 어노테이션 |
 | **@ValidateWith** | validator | 커스텀 서비스 메서드 검증 |
-| **@Unique** | validator | 필드 레벨 DB 유니크 검증 어노테이션 |
-| **@UniqueFields** | validator | 클래스 레벨 다중 필드 유니크 검증 |
+| **@Unique** | validator | 필드 레벨 DB 유니크 검증 어노테이션 (soft delete 지원) |
+| **@UniqueFields** | validator | 클래스 레벨 다중 필드 유니크 검증 (soft delete 지원) |
+| **SoftDeleteType** | validator | Soft delete 유형 (NONE, BOOLEAN, TIMESTAMP) |
 | **SimpliXI18nConfigHolder** | config | I18n 번역 설정 홀더 |
 | **@I18nTrans** | jackson.annotation | JSON 필드 다국어 번역 어노테이션 |
 | **ErrorCode** | exception | 30+ 표준화된 에러 코드 |
