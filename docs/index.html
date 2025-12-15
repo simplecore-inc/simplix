@@ -63,13 +63,43 @@
 
     /* Cover page styling */
     section.cover {
-      background: linear-gradient(to bottom right, #3eaf7c 0%, #2c8c5e 100%) !important;
+      background: linear-gradient(to bottom, #86efac 0%, #86efac 50%, #ffffff 100%) !important;
+      background-color: #86efac !important;
+    }
+
+    section.cover.show {
+      background: linear-gradient(to bottom, #86efac 0%, #86efac 50%, #ffffff 100%) !important;
+    }
+
+    .cover-main {
+      background: transparent !important;
+    }
+
+    section.cover h1 {
+      color: #166534 !important;
+    }
+
+    section.cover p {
+      color: #14532d !important;
+    }
+
+    section.cover ul li {
+      color: #14532d !important;
     }
 
     section.cover .cover-main > p:last-child a {
       border-radius: 4px;
       color: #fff !important;
-      border-color: #fff;
+      border-color: #16a34a;
+      background-color: #16a34a;
+    }
+
+    section.cover .cover-main > p:last-child a:hover {
+      background-color: #15803d;
+    }
+
+    section.cover a.github-corner {
+      fill: #16a34a !important;
     }
 
     /* Search styling */
