@@ -130,7 +130,7 @@
   <script>
     window.$docsify = {
       name: '<img src="https://img.shields.io/badge/SimpliX-Framework-3eaf7c?style=for-the-badge" alt="SimpliX Framework">',
-      nameLink: '/',
+      nameLink: '#/',
       repo: 'https://github.com/simplecore-inc/simplix',
       loadSidebar: true,
       loadNavbar: true,
@@ -140,14 +140,13 @@
       maxLevel: 4,
       subMaxLevel: 3,
 
-      // Default to Korean
-      homepage: '/ko/README.md',
-      basePath: '/',
+      // Default to Korean (relative paths for versioned folders)
+      homepage: 'ko/README.md',
 
-      // Alias for sidebar/navbar loading
+      // Alias for sidebar/navbar loading (relative paths)
       alias: {
-        '/.*/_sidebar.md': '/ko/_sidebar.md',
-        '/.*/_navbar.md': '/_navbar.md'
+        '/.*/_sidebar.md': 'ko/_sidebar.md',
+        '/.*/_navbar.md': '_navbar.md'
       },
 
       // Search configuration
