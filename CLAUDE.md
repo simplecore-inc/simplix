@@ -76,6 +76,7 @@ The `spring-boot-starter-simplix` module provides the following auto-configurati
 | SimpliXSwaggerAutoConfiguration | SpringDoc OpenAPI integration |
 | SimpliXWebAutoConfiguration | Web MVC configuration |
 | SimpliXSecurityAutoConfiguration | Security defaults |
+| SimpliXI18nAutoConfiguration | I18n translation configuration |
 
 Each module (simplix-auth, simplix-mybatis, simplix-excel, etc.) registers its own auto-configurations separately.
 

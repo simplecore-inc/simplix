@@ -93,6 +93,7 @@ public class UserController extends SimpliXBaseController<User, Long> {
 | `SimpliXWebAutoConfiguration` | 웹 예외 처리 | 웹 애플리케이션시 |
 | `SimpliXValidatorAutoConfiguration` | Bean Validation | MessageSource 이후 |
 | `SimpliXSecurityAutoConfiguration` | Spring Security | Security 존재시 |
+| `SimpliXI18nAutoConfiguration` | I18n 번역 설정 | Always |
 
 ## Configuration Properties
 
@@ -108,6 +109,13 @@ simplix:
 
   message-source:
     enabled: true                    # 메시지 소스 통합 활성화
+
+  i18n:
+    default-locale: en               # 기본 로케일 (기본값: en)
+    supported-locales:               # 지원 로케일 목록
+      - en
+      - ko
+      - ja
 
   exception-handler:
     enabled: true                    # 전역 예외 핸들러 활성화
