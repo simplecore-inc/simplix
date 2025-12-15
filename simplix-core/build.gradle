@@ -32,7 +32,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-json'
-    implementation 'org.hibernate.validator:hibernate-validator'
+    implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.modelmapper:modelmapper'
     implementation 'com.github.f4b6a3:uuid-creator'
@@ -58,6 +58,7 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'com.h2database:h2'
 }
 
