@@ -5,16 +5,14 @@
 SimpliX Core는 계층 구조(트리) 데이터를 위한 포괄적인 지원을 제공합니다.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Tree Structure                            │
-│  ┌────────────────┐ ┌──────────────────┐ ┌─────────────────────┐│
-│  │ TreeEntity<T,ID>│ │@TreeEntity       │ │SimpliXTreeService   ││
-│  │ - getId()      │ │Attributes        │ │- 40+ 메서드         ││
-│  │ - getParentId()│ │- tableName       │ │- 8개 카테고리       ││
-│  │ - getChildren()│ │- lookupColumns   │ │                     ││
-│  │ - getSortKey() │ │- cascadeDelete   │ │                     ││
-│  └────────────────┘ └──────────────────┘ └─────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
++--------------------+  +--------------------+  +---------------------+
+| TreeEntity<T,ID>   |  | @TreeEntity        |  | SimpliXTreeService  |
+|--------------------|  | Attributes         |  |---------------------|
+| - getId()          |  |--------------------|  | - 40+ methods       |
+| - getParentId()    |  | - tableName        |  | - 8 categories      |
+| - getChildren()    |  | - lookupColumns    |  |                     |
+| - getSortKey()     |  | - cascadeDelete    |  |                     |
++--------------------+  +--------------------+  +---------------------+
 ```
 
 ---

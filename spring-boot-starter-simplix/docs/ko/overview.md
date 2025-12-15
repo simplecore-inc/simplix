@@ -10,26 +10,26 @@
 
 ```
 spring-boot-starter-simplix (umbrella)
-    │
-    ├── simplix-core ─────────── 기반 유틸리티, 예외, API 응답
-    │
-    ├── simplix-auth ─────────── JWT/JWE 토큰, Spring Security 통합
-    │
-    ├── simplix-cache ────────── 분산 캐싱, Redis/Caffeine 지원
-    │
-    ├── simplix-encryption ───── 데이터 암호화, JPA 컨버터
-    │
-    ├── simplix-event ────────── NATS 기반 이벤트 시스템
-    │
-    ├── simplix-excel ────────── Excel/CSV 가져오기/내보내기
-    │
-    ├── simplix-file ─────────── 파일 스토리지 (로컬, S3, GCS)
-    │
-    ├── simplix-email ────────── 이메일 발송, 템플릿 지원
-    │
-    ├── simplix-hibernate ────── Hibernate L2 캐시 통합
-    │
-    └── simplix-mybatis ──────── MyBatis 통합, 타입 핸들러
+    |
+    +-- simplix-core ----------- Base utilities, exceptions, API response
+    |
+    +-- simplix-auth ----------- JWT/JWE tokens, Spring Security integration
+    |
+    +-- simplix-cache ---------- Distributed caching, Redis/Caffeine support
+    |
+    +-- simplix-encryption ----- Data encryption, JPA converters
+    |
+    +-- simplix-event ---------- NATS-based event system
+    |
+    +-- simplix-excel ---------- Excel/CSV import/export
+    |
+    +-- simplix-file ----------- File storage (local, S3, GCS)
+    |
+    +-- simplix-email ---------- Email sending, template support
+    |
+    +-- simplix-hibernate ------ Hibernate L2 cache integration
+    |
+    +-- simplix-mybatis -------- MyBatis integration, type handlers
 ```
 
 ### Auto-Configuration Flow
@@ -38,31 +38,31 @@ SimpliX의 Auto-Configuration은 Spring Boot 표준을 따르며, 특정 순서�
 
 ```
 1. SimpliXAutoConfiguration (Order: 0)
-   └── 메인 구성, 컴포넌트 스캔
+   +-- Main config, component scan
 
 2. SimpliXMessageSourceAutoConfiguration (before: MessageSourceAutoConfiguration)
-   └── i18n 메시지 소스 통합
+   +-- i18n message source integration
 
 3. SimpliXValidatorAutoConfiguration (after: MessageSourceAutoConfiguration)
-   └── Bean Validation 메시지 설정
+   +-- Bean Validation message setup
 
 4. SimpliXDateTimeAutoConfiguration
-   └── 타임존 관리, JVM 기본 시간대 설정
+   +-- Timezone management, JVM default timezone setup
 
 5. SimpliXJpaAutoConfiguration (after: HibernateJpaAutoConfiguration)
-   └── JPA DateTime 컨버터 등록
+   +-- JPA DateTime converter registration
 
 6. SimpliXModelMapperAutoConfiguration
-   └── ModelMapper 타임존 인식 설정
+   +-- ModelMapper timezone-aware setup
 
 7. SimpliXWebAutoConfiguration (after: WebMvcAutoConfiguration)
-   └── 웹 예외 처리, Swagger 스키마 향상
+   +-- Web exception handling, Swagger schema enhancement
 
 8. SimpliXSwaggerAutoConfiguration
-   └── OpenAPI/Swagger 설정, Scalar UI
+   +-- OpenAPI/Swagger config, Scalar UI
 
 9. SimpliXThymeleafAutoConfiguration (before: ErrorMvcAutoConfiguration)
-   └── Thymeleaf 템플릿 리졸버
+   +-- Thymeleaf template resolver
 ```
 
 ## Package Structure

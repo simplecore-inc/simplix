@@ -10,39 +10,40 @@
 
 ```
 MultipartFile
-     │
-     ▼
-┌─────────────────────────────────────────┐
-│  1. 파일 검증 (FileValidator)           │
-│     - 빈 파일 검사                       │
-│     - 크기 검증                         │
-│     - MIME 타입 검증                    │
-│     - 확장자 검증                       │
-└─────────────────────────────────────────┘
-     │
-     ▼
-┌─────────────────────────────────────────┐
-│  2. 카테고리 판별                        │
-│     - IMAGE, VIDEO, AUDIO, DOCUMENT,    │
-│       ARCHIVE, OTHER                    │
-└─────────────────────────────────────────┘
-     │
-     ▼ (이미지인 경우)
-┌─────────────────────────────────────────┐
-│  3. 이미지 처리 (ImageProcessingService) │
-│     - 메타데이터 추출                    │
-│     - WebP 최적화 (선택)                 │
-│     - 리사이징 (선택)                    │
-└─────────────────────────────────────────┘
-     │
-     ▼
-┌─────────────────────────────────────────┐
-│  4. 저장 (FileStorageService)           │
-│     - 파일 저장                         │
-│     - 체크섬 계산                        │
-└─────────────────────────────────────────┘
-     │
-     ▼
+     |
+     v
++-----------------------------------------+
+|  1. File Validation (FileValidator)     |
+|     - Empty file check                  |
+|     - Size validation                   |
+|     - MIME type validation              |
+|     - Extension validation              |
++-----------------------------------------+
+     |
+     v
++-----------------------------------------+
+|  2. Category Detection                  |
+|     - IMAGE, VIDEO, AUDIO, DOCUMENT,    |
+|       ARCHIVE, OTHER                    |
++-----------------------------------------+
+     |
+     v (if image)
++-----------------------------------------+
+|  3. Image Processing                    |
+|     (ImageProcessingService)            |
+|     - Metadata extraction               |
+|     - WebP optimization (optional)      |
+|     - Resize (optional)                 |
++-----------------------------------------+
+     |
+     v
++-----------------------------------------+
+|  4. Storage (FileStorageService)        |
+|     - Store file                        |
+|     - Calculate checksum                |
++-----------------------------------------+
+     |
+     v
 ProcessedFileResult
 ```
 

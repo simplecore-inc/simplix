@@ -49,13 +49,16 @@ SIMPLIX_ENCRYPTION_STATIC_KEY=my-development-key
 ### 키 생성 과정
 
 ```
-입력: "my-development-key"
-    ↓
-SHA-256 해싱
-    ↓
-32 bytes (256 bits) AES 키
-    ↓
-버전: "static"
+Input: "my-development-key"
+    |
+    v
+SHA-256 hashing
+    |
+    v
+32 bytes (256 bits) AES key
+    |
+    v
+Version: "static"
 ```
 
 ### 주의사항
@@ -371,11 +374,13 @@ spring:
 VaultKeyProvider는 `refreshCurrentVersion()` 메서드를 통해 주기적으로 Vault의 현재 버전을 확인합니다. 한 인스턴스에서 키 로테이션이 발생하면 다른 인스턴스들은 다음 요청 시 자동으로 새 버전을 감지합니다.
 
 ```
-Instance A: rotateKey() → Vault 업데이트
-                ↓
+Instance A: rotateKey() --> Vault update
+                |
+                v
 Vault: current = v2
-                ↓
-Instance B: getCurrentKey() → refreshCurrentVersion() → v2 감지 → 새 키 로드
+                |
+                v
+Instance B: getCurrentKey() --> refreshCurrentVersion() --> v2 detected --> Load new key
 ```
 
 ---
@@ -385,15 +390,15 @@ Instance B: getCurrentKey() → refreshCurrentVersion() → v2 감지 → 새 �
 ### 의사결정 트리
 
 ```
-프로젝트가 운영 환경인가?
-├─ Yes → Vault 사용 가능한가?
-│        ├─ Yes → VaultKeyProvider ✓
-│        └─ No  → 키 로테이션이 필요한가?
-│                 ├─ Yes → ManagedKeyProvider
-│                 └─ No  → ConfigurableKeyProvider
-│
-└─ No → 개발/테스트 환경
-        └─ SimpleKeyProvider ✓
+Is this a production environment?
++-- Yes --> Is Vault available?
+|           +-- Yes --> VaultKeyProvider
+|           +-- No  --> Is key rotation needed?
+|                       +-- Yes --> ManagedKeyProvider
+|                       +-- No  --> ConfigurableKeyProvider
+|
++-- No --> Development/Test environment
+           +-- SimpleKeyProvider
 ```
 
 ### 환경별 권장 구성

@@ -297,6 +297,11 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 - Do NOT use language suffixes in filenames (e.g., `README_ko.md` is incorrect)
 - Use folder-based localization instead of filename-based localization
 
+#### ASCII Diagrams
+- **ASCII diagrams MUST use English only** - Korean characters cause alignment issues due to variable-width fonts
+- Use simple ASCII characters (+, -, |, /, \) for box drawing
+- Avoid Unicode box-drawing characters when possible for better compatibility
+
 ## Security Guidelines (Enterprise Best Practices)
 
 ### Data Protection

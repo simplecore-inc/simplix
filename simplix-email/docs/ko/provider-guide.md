@@ -15,13 +15,13 @@ SimpliX Email은 5가지 이메일 Provider를 지원합니다.
 ### Provider Selection Guide
 
 ```
-개발 환경
-    └─→ Console Provider (기본)
+Development
+    +-- Console Provider (default)
 
-운영 환경
-    ├─→ AWS 사용 중 → AWS SES (비용 효율적)
-    ├─→ 간단한 설정 → Resend / SendGrid
-    └─→ 자체 메일 서버 → SMTP
+Production
+    +-- Using AWS --> AWS SES (cost effective)
+    +-- Simple setup --> Resend / SendGrid
+    +-- Self-hosted mail server --> SMTP
 ```
 
 ---
@@ -462,33 +462,33 @@ SimpliX Email은 여러 Provider를 동시에 활성화할 수 있으며, 발송
 
 ```
 EmailService.send()
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│ Sort providers by priority (descending) │
-│ [AWS_SES(100), Resend(55), SMTP(10)]   │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│ Try AWS SES (priority: 100)             │
-│   ├─ Success → Return result            │
-│   └─ Failure (retryable) → Continue     │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│ Try Resend (priority: 55)               │
-│   ├─ Success → Return result            │
-│   └─ Failure (retryable) → Continue     │
-└─────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────┐
-│ Try SMTP (priority: 10)                 │
-│   ├─ Success → Return result            │
-│   └─ Failure → Return last error        │
-└─────────────────────────────────────────┘
+    |
+    v
++-----------------------------------------+
+| Sort providers by priority (descending) |
+| [AWS_SES(100), Resend(55), SMTP(10)]    |
++-----------------------------------------+
+    |
+    v
++-----------------------------------------+
+| Try AWS SES (priority: 100)             |
+|   +-- Success --> Return result         |
+|   +-- Failure (retryable) --> Continue  |
++-----------------------------------------+
+    |
+    v
++-----------------------------------------+
+| Try Resend (priority: 55)               |
+|   +-- Success --> Return result         |
+|   +-- Failure (retryable) --> Continue  |
++-----------------------------------------+
+    |
+    v
++-----------------------------------------+
+| Try SMTP (priority: 10)                 |
+|   +-- Success --> Return result         |
+|   +-- Failure --> Return last error     |
++-----------------------------------------+
 ```
 
 ### Multi-Provider Configuration

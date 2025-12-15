@@ -224,14 +224,18 @@ VaultKeyProvider는 자동으로 동기화됩니다:
 
 ```
 Instance A: rotateKey()
-     ↓
-Vault 업데이트 (current = v3)
-     ↓
+     |
+     v
+Vault update (current = v3)
+     |
+     v
 Instance B: getCurrentKey()
-     ↓
-refreshCurrentVersion() → v3 감지
-     ↓
-새 키 로드 및 캐시
+     |
+     v
+refreshCurrentVersion() --> v3 detected
+     |
+     v
+Load and cache new key
 ```
 
 ---

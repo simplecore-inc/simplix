@@ -3,48 +3,48 @@
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Application Layer                           │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │  FileUploadService (application-specific)                 │  │
-│  │  - Domain entity creation                                 │  │
-│  │  - Repository operations                                  │  │
-│  └──────────────────────────┬────────────────────────────────┘  │
-└─────────────────────────────┼───────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   FileProcessingService                          │
-│                   (Orchestration Layer)                          │
-│  - File validation                                               │
-│  - Category detection                                            │
-│  - Image optimization (WebP)                                     │
-│  - Storage coordination                                          │
-└────────────────┬────────────────────────┬───────────────────────┘
-                 │                        │
-                 ▼                        ▼
-┌────────────────────────┐    ┌────────────────────────────────────┐
-│     FileValidator      │    │     ImageProcessingService         │
-│  - Size validation     │    │  - Resize                          │
-│  - MIME type check     │    │  - Thumbnail generation            │
-│  - Extension matching  │    │  - WebP conversion                 │
-└────────────────────────┘    │  - Metadata extraction             │
-                              └────────────────────────────────────┘
-                                              │
-                                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                     FileStorageService                           │
-│                     (Storage Abstraction)                        │
-└─────────────────────────┬───────────────────┬───────────────────┘
-                          │                   │
-              ┌───────────┘                   └───────────┐
-              ▼                                           ▼
-┌─────────────────────────────┐         ┌─────────────────────────────┐
-│  LocalFileStorageService    │         │    S3FileStorageService     │
-│  - Local filesystem         │         │  - AWS S3                   │
-│  - Date-based directories   │         │  - MinIO / RustFS           │
-│  - Thumbnail caching        │         │  - Presigned URLs           │
-└─────────────────────────────┘         └─────────────────────────────┘
++-------------------------------------------------------------------+
+|                      Application Layer                              |
+|  +---------------------------------------------------------------+  |
+|  |  FileUploadService (application-specific)                     |  |
+|  |  - Domain entity creation                                     |  |
+|  |  - Repository operations                                      |  |
+|  +-----------------------------+---------------------------------+  |
++--------------------------------|------------------------------------+
+                                 |
+                                 v
++-------------------------------------------------------------------+
+|                   FileProcessingService                             |
+|                   (Orchestration Layer)                             |
+|  - File validation                                                  |
+|  - Category detection                                               |
+|  - Image optimization (WebP)                                        |
+|  - Storage coordination                                             |
++------------------+------------------------+-------------------------+
+                   |                        |
+                   v                        v
++------------------------+    +--------------------------------------+
+|     FileValidator      |    |     ImageProcessingService           |
+|  - Size validation     |    |  - Resize                            |
+|  - MIME type check     |    |  - Thumbnail generation              |
+|  - Extension matching  |    |  - WebP conversion                   |
++------------------------+    |  - Metadata extraction               |
+                              +--------------------------------------+
+                                                |
+                                                v
++-------------------------------------------------------------------+
+|                     FileStorageService                              |
+|                     (Storage Abstraction)                           |
++---------------------------+-------------------+--------------------+
+                            |                   |
+                +-----------+                   +-----------+
+                v                                           v
++-----------------------------+         +-----------------------------+
+|  LocalFileStorageService    |         |    S3FileStorageService     |
+|  - Local filesystem         |         |  - AWS S3                   |
+|  - Date-based directories   |         |  - MinIO / RustFS           |
+|  - Thumbnail caching        |         |  - Presigned URLs           |
++-----------------------------+         +-----------------------------+
 ```
 
 ---

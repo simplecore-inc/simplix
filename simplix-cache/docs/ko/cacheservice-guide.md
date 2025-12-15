@@ -227,22 +227,22 @@ public class UserService {
 
 ```
 getOrCompute("users", "user-123", loader, User.class)
-        │
-        ▼
-    캐시 조회
-        │
-        ├── 히트 → 캐시된 값 반환
-        │
-        └── 미스 → valueLoader 실행
-                      │
-                      ▼
-                  DB에서 조회
-                      │
-                      ▼
-                  캐시에 저장
-                      │
-                      ▼
-                  값 반환
+        |
+        v
+    Cache Lookup
+        |
+        +-- HIT --> Return cached value
+        |
+        +-- MISS --> Execute valueLoader
+                          |
+                          v
+                     Query from DB
+                          |
+                          v
+                     Store in cache
+                          |
+                          v
+                     Return value
 ```
 
 ---
