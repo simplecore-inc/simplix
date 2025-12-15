@@ -62,6 +62,30 @@ spring:
     fallback-to-system-locale: true
 ```
 
+### I18n Translation Properties
+
+```yaml
+simplix:
+  i18n:
+    # 기본 로케일 코드 (기본값: en)
+    default-locale: en
+
+    # 지원하는 로케일 목록 (기본값: [en, ko, ja])
+    # Fallback 순서로 사용됨
+    supported-locales:
+      - en
+      - ko
+      - ja
+```
+
+I18n 번역 시스템의 Fallback 순서:
+1. 현재 로케일 정확 매치 (예: "ko_KR")
+2. 언어 코드만 매치 (예: "ko")
+3. 설정된 기본 로케일
+4. 지원 로케일 목록 순서대로
+5. Map에서 첫 번째 사용 가능한 번역
+6. 원본 필드 값
+
 ### Exception Handler Properties
 
 ```yaml
@@ -166,6 +190,12 @@ simplix:
     normalize-timezone: true
   message-source:
     enabled: true
+  i18n:
+    default-locale: en
+    supported-locales:
+      - en
+      - ko
+      - ja
   exception-handler:
     enabled: true
   swagger:

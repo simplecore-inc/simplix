@@ -17,7 +17,7 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 
 | 모듈 | 설명 |
 |------|------|
-| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/리포지토리, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답 |
+| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/리포지토리, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답, 유니크 검증(@Unique), I18n 번역(@I18nTrans) |
 | **simplix-auth** | Spring Security 통합 JWT/JWE 토큰 인증 |
 | **simplix-cache** | Caffeine(로컬) 및 Redis(분산) 지원 SPI 기반 캐싱 |
 | **simplix-encryption** | 다중 키 프로바이더(Simple, Managed, Vault) 및 키 로테이션 지원 데이터 암호화 |
@@ -89,6 +89,9 @@ simplix:
   date-time:
     default-timezone: Asia/Seoul
     use-utc-for-database: true
+  i18n:
+    default-locale: en
+    supported-locales: [en, ko, ja]
 ```
 
 ### 4. SimpliX 컴포넌트 사용

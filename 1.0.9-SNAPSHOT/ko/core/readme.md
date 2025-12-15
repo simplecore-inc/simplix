@@ -12,6 +12,8 @@ SimpliX 프레임워크의 핵심 모듈입니다. 다른 모든 SimpliX 모듈�
 - ✔ **표준화된 예외 처리** - ErrorCode (30+ 에러 코드), SimpliXGeneralException
 - ✔ **표준화된 API 응답** - SimpliXApiResponse (SUCCESS/FAILURE/ERROR)
 - ✔ **캐시 추상화** - SPI 기반 CacheManager
+- ✔ **유니크 검증** - @Unique (필드 레벨), @UniqueFields (클래스 레벨) DB 기반 유니크 검증
+- ✔ **I18n 번역** - @I18nTrans JSON 필드 다국어 번역, 로케일 fallback 지원
 
 ## Quick Start
 

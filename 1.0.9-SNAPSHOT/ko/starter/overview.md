@@ -63,6 +63,9 @@ SimpliX의 Auto-Configuration은 Spring Boot 표준을 따르며, 특정 순서�
 
 9. SimpliXThymeleafAutoConfiguration (before: ErrorMvcAutoConfiguration)
    +-- Thymeleaf template resolver
+
+10. SimpliXI18nAutoConfiguration
+    +-- I18n translation configuration, locale fallback setup
 ```
 
 ## Package Structure
@@ -73,6 +76,7 @@ dev.simplecore.simplix
 │   ├── autoconfigure/           # Auto-Configuration 클래스
 │   │   ├── SimpliXAutoConfiguration.java
 │   │   ├── SimpliXDateTimeAutoConfiguration.java
+│   │   ├── SimpliXI18nAutoConfiguration.java
 │   │   ├── SimpliXJpaAutoConfiguration.java
 │   │   ├── SimpliXMessageSourceAutoConfiguration.java
 │   │   ├── SimpliXModelMapperAutoConfiguration.java
@@ -173,6 +177,7 @@ CRUD 작업을 위한 기본 서비스 추상 클래스:
 |---------------|-----------|---------|
 | SimpliXAutoConfiguration | Always | Enabled |
 | SimpliXMessageSourceAutoConfiguration | `simplix.message-source.enabled` | true |
+| SimpliXI18nAutoConfiguration | Always | Enabled |
 | SimpliXDateTimeAutoConfiguration | `simplix.core.enabled` | true |
 | SimpliXJpaAutoConfiguration | `@ConditionalOnClass(EntityManagerFactory)` | Auto |
 | SimpliXModelMapperAutoConfiguration | `@ConditionalOnClass(ModelMapper)` | Auto |

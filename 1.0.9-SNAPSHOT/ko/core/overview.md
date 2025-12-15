@@ -50,6 +50,22 @@
 |  |  +--------------+ +--------------+                          |  |
 |  +-------------------------------------------------------------+  |
 |  +-------------------------------------------------------------+  |
+|  |  Validation                                                 |  |
+|  |  +--------------+ +--------------+ +--------------------+   |  |
+|  |  |@Unique       | |@UniqueFields | |UniqueValidator     |   |  |
+|  |  |- Field level | |- Class level | |- JPA EntityManager |   |  |
+|  |  |- DB unique   | |- Multi field | |- Update exclusion  |   |  |
+|  |  +--------------+ +--------------+ +--------------------+   |  |
+|  +-------------------------------------------------------------+  |
+|  +-------------------------------------------------------------+  |
+|  |  I18n Translation                                           |  |
+|  |  +-------------------+ +-------------------+                |  |
+|  |  |@I18nTrans         | |I18nConfigHolder   |                |  |
+|  |  |- JSON field trans | |- Config holder    |                |  |
+|  |  |- Locale fallback  | |- Supported locales|                |  |
+|  |  +-------------------+ +-------------------+                |  |
+|  +-------------------------------------------------------------+  |
+|  +-------------------------------------------------------------+  |
 |  |  Exception & API                                            |  |
 |  |  +------------------+ +-------------------------------+     |  |
 |  |  |ErrorCode         | |SimpliXApiResponse<T>          |     |  |
@@ -144,7 +160,16 @@ simplix-core/
     │
     ├── validator/                  # 커스텀 검증
     │   ├── ValidateWith.java
-    │   └── ValidateWithValidator.java
+    │   ├── ValidateWithValidator.java
+    │   ├── Unique.java             # 필드 레벨 유니크 검증
+    │   ├── UniqueValidator.java
+    │   ├── UniqueField.java        # 클래스 레벨 유니크 필드 정의
+    │   ├── UniqueFields.java       # 클래스 레벨 유니크 검증
+    │   └── UniqueFieldsValidator.java
+    │
+    ├── config/                      # 설정 홀더
+    │   ├── SimpliXI18nProperties.java
+    │   └── SimpliXI18nConfigHolder.java
     │
     ├── cache/                      # 캐시 추상화
     │   ├── CacheManager.java
@@ -188,6 +213,10 @@ simplix-core/
 | **DataMaskingUtils** | security.sanitization | 민감 데이터 마스킹 |
 | **@SafeHtml** | security.validation | HTML 검증 어노테이션 |
 | **@ValidateWith** | validator | 커스텀 서비스 메서드 검증 |
+| **@Unique** | validator | 필드 레벨 DB 유니크 검증 어노테이션 |
+| **@UniqueFields** | validator | 클래스 레벨 다중 필드 유니크 검증 |
+| **SimpliXI18nConfigHolder** | config | I18n 번역 설정 홀더 |
+| **@I18nTrans** | jackson.annotation | JSON 필드 다국어 번역 어노테이션 |
 | **ErrorCode** | exception | 30+ 표준화된 에러 코드 |
 | **SimpliXGeneralException** | exception | 표준 예외 클래스 |
 | **SimpliXApiResponse<T>** | model | 표준 API 응답 래퍼 |
