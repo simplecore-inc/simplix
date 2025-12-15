@@ -170,17 +170,17 @@ SimpliX를 시작하기 위한 단계별 가이드:
 
 각 모듈은 상세한 문서가 포함된 README를 제공합니다:
 
-- [simplix-core](ko/core/overview.md) - 핵심 유틸리티 및 베이스 클래스
-- [simplix-auth](ko/auth/getting-started.md) - 인증 및 권한 부여
-- [simplix-cache](ko/cache/overview.md) - 캐싱 추상화
-- [simplix-encryption](ko/encryption/overview.md) - 데이터 암호화
-- [simplix-event](ko/event/overview.md) - 이벤트 시스템
-- [simplix-excel](ko/excel/overview.md) - Excel/CSV 처리
-- [simplix-file](ko/file/overview.md) - 파일 스토리지
-- [simplix-email](ko/email/overview.md) - 이메일 서비스
-- [simplix-hibernate](ko/hibernate/overview.md) - Hibernate L2 캐시
-- [simplix-mybatis](ko/mybatis/overview.md) - MyBatis 통합
-- [spring-boot-starter-simplix](ko/starter/overview.md) - 통합 스타터
+- [simplix-core](ko/core/readme.md) - 핵심 유틸리티 및 베이스 클래스
+- [simplix-auth](ko/auth/readme.md) - 인증 및 권한 부여
+- [simplix-cache](ko/cache/readme.md) - 캐싱 추상화
+- [simplix-encryption](ko/encryption/readme.md) - 데이터 암호화
+- [simplix-event](ko/event/readme.md) - 이벤트 시스템
+- [simplix-excel](ko/excel/readme.md) - Excel/CSV 처리
+- [simplix-file](ko/file/readme.md) - 파일 스토리지
+- [simplix-email](ko/email/readme.md) - 이메일 서비스
+- [simplix-hibernate](ko/hibernate/readme.md) - Hibernate L2 캐시
+- [simplix-mybatis](ko/mybatis/readme.md) - MyBatis 통합
+- [spring-boot-starter-simplix](ko/starter/readme.md) - 통합 스타터
 
 ## 보안
 

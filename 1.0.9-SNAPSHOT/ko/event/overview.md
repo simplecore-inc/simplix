@@ -420,4 +420,4 @@ rate(simplix_events_failed_total[5m]) / rate(simplix_events_published_total[5m])
 ## Related Documents
 
 - [Usage Guide](ko/event/usage-guide.md) - 상세 사용법 가이드
-- [SimpliX Core Module](ko/core/overview.md)
+- [SimpliX Core Module](ko/core/readme.md)
