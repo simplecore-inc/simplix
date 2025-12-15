@@ -97,11 +97,14 @@ convert_links() {
   # e.g., ./overview.md in ko/core/ becomes ko/core/overview.md
   sed -i.bak "s|(\./|($dir_path/|g" "$file" && rm -f "${file}.bak"
 
+  # Convert docs/ko/ links to absolute paths (for README.md files copied from module root)
+  # e.g., docs/ko/overview.md in ko/event/readme.md becomes ko/event/overview.md
+  sed -i.bak "s|(docs/ko/|($dir_path/|g" "$file" && rm -f "${file}.bak"
+
   # Build sed expressions dynamically based on discovered modules
   local sed_args=()
 
   # Common link conversions
-  sed_args+=(-e 's|(docs/ko/|(|g')
   sed_args+=(-e 's|(/ko/|(ko/|g')
   sed_args+=(-e 's|\.\./\.\./README\.md|ko/README.md|g')
   sed_args+=(-e 's|\.\./\.\./LICENSE|https://github.com/simplecore-inc/simplix/blob/main/LICENSE|g')
