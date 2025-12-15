@@ -5,16 +5,20 @@ import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
+import dev.simplecore.simplix.core.config.SimpliXI18nConfigHolder;
 import dev.simplecore.simplix.core.jackson.annotation.I18nTrans;
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 /**
- * Jackson serializer for {@link SimpliXI18nTransSerializer} annotation.
+ * Jackson serializer for {@link I18nTrans} annotation.
  * Automatically translates field values based on the current locale during JSON serialization.
  *
  * <p>This serializer:
@@ -29,10 +33,15 @@ import java.util.Map;
  * <ol>
  *   <li>Exact locale match (e.g., "ko_KR")</li>
  *   <li>Language code only (e.g., "ko")</li>
- *   <li>Default locale from annotation</li>
+ *   <li>Default locale from configuration</li>
+ *   <li>First available translation from supported locales (in priority order)</li>
+ *   <li>Any available translation from the map (for unsupported locales)</li>
  *   <li>Original field value (if not null)</li>
  * </ol>
+ *
+ * @see SimpliXI18nConfigHolder for configuration
  */
+@Slf4j
 public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implements ContextualSerializer {
 
     private String sourceFieldName;
@@ -77,15 +86,21 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
         // Get current locale
         Locale currentLocale = LocaleContextHolder.getLocale();
 
-		// Get i18n Map from source field
+        // Get i18n Map from source field
         Map<String, String> i18nMap = getI18nMap(currentBean);
+
+        log.debug("I18nTrans serialize - sourceField: {}, locale: {}, i18nMap: {}, originalValue: {}",
+                sourceFieldName, currentLocale, i18nMap, value);
+
         if (i18nMap == null || i18nMap.isEmpty()) {
+            log.debug("I18nTrans - i18nMap is null or empty, returning original value: {}", value);
             gen.writeObject(value);
             return;
         }
 
         // Extract translation with fallback chain
         String translatedValue = extractTranslation(i18nMap, currentLocale, value);
+        log.debug("I18nTrans - translated value: {}", translatedValue);
         gen.writeObject(translatedValue);
     }
 
@@ -136,6 +151,15 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
 
     /**
      * Extracts translation from i18n Map with fallback chain.
+     * <p>
+     * Fallback order:
+     * <ol>
+     *   <li>Exact locale match (e.g., "ko_KR")</li>
+     *   <li>Language code only (e.g., "ko")</li>
+     *   <li>Default locale from configuration</li>
+     *   <li>First available from supported locales</li>
+     *   <li>Original field value</li>
+     * </ol>
      *
      * @param i18nMap       the i18n translation Map
      * @param currentLocale the current locale
@@ -155,12 +179,33 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
             return i18nMap.get(languageCode);
         }
 
-        // 3. Try default locale
-        if (i18nMap.containsKey(defaultLocale)) {
+        // 3. Try default locale from configuration (prioritize config over annotation)
+        String configDefaultLocale = SimpliXI18nConfigHolder.getDefaultLocale();
+        if (configDefaultLocale != null && i18nMap.containsKey(configDefaultLocale)) {
+            return i18nMap.get(configDefaultLocale);
+        }
+
+        // 4. Try default locale from annotation (fallback)
+        if (defaultLocale != null && !defaultLocale.equals(configDefaultLocale) && i18nMap.containsKey(defaultLocale)) {
             return i18nMap.get(defaultLocale);
         }
 
-        // 4. Fallback to original value
+        // 5. Try first available from supported locales (in priority order)
+        List<String> supportedLocales = SimpliXI18nConfigHolder.getSupportedLocales();
+        if (supportedLocales != null) {
+            for (String locale : supportedLocales) {
+                if (i18nMap.containsKey(locale)) {
+                    return i18nMap.get(locale);
+                }
+            }
+        }
+
+        // 6. Return any available translation from the map (for locales not in supported list)
+        if (!i18nMap.isEmpty()) {
+            return i18nMap.values().iterator().next();
+        }
+
+        // 7. Fallback to original value
         return originalValue != null ? originalValue.toString() : null;
     }
 }

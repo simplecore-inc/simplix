@@ -1,5 +1,6 @@
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXDateTimeAutoConfiguration
+dev.simplecore.simplix.springboot.autoconfigure.SimpliXI18nAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXJpaAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXMessageSourceAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXModelMapperAutoConfiguration
