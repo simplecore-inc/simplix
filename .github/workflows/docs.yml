@@ -69,12 +69,13 @@ jobs:
           # Create deployment directory
           mkdir -p deploy
 
-          # Copy existing versions if gh-pages exists
+          # Copy existing versions if gh-pages exists (skip all SNAPSHOT versions)
           if [ -d "gh-pages" ]; then
             for dir in gh-pages/*/; do
               if [ -d "$dir" ]; then
                 dirname=$(basename "$dir")
-                if [ "$dirname" != "$VERSION" ]; then
+                # Skip SNAPSHOT versions (only keep releases)
+                if [[ ! "$dirname" =~ SNAPSHOT ]]; then
                   cp -r "$dir" "deploy/"
                 fi
               fi
