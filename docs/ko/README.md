@@ -138,20 +138,20 @@ public class UserController extends SimpliXBaseController<User, Long> {
 
 ```
 SimpliX Framework
-│
-├── simplix-core ─────────────────── 베이스 라이브러리 (자동 구성 없음)
-│   │
-│   └── spring-boot-starter-simplix ─ 통합 스타터
-│       │
-│       ├── simplix-auth ──────────── 인증
-│       ├── simplix-cache ─────────── 캐싱
-│       ├── simplix-encryption ────── 암호화
-│       ├── simplix-event ─────────── 이벤트
-│       ├── simplix-excel ─────────── Excel/CSV
-│       ├── simplix-file ──────────── 파일 스토리지
-│       ├── simplix-email ─────────── 이메일
-│       ├── simplix-hibernate ─────── L2 캐시
-│       └── simplix-mybatis ───────── MyBatis
+|
++-- simplix-core ----------------- Base Library (no auto-config)
+|   |
+|   +-- spring-boot-starter-simplix - Umbrella Starter
+|       |
+|       +-- simplix-auth ------------ Authentication
+|       +-- simplix-cache ----------- Caching
+|       +-- simplix-encryption ------ Encryption
+|       +-- simplix-event ----------- Event
+|       +-- simplix-excel ----------- Excel/CSV
+|       +-- simplix-file ------------ File Storage
+|       +-- simplix-email ----------- Email
+|       +-- simplix-hibernate ------- L2 Cache
+|       +-- simplix-mybatis --------- MyBatis
 ```
 
 ## 튜토리얼
@@ -164,6 +164,7 @@ SimpliX를 시작하기 위한 단계별 가이드:
 | [CRUD 튜토리얼](./crud-tutorial.md) | Entity, Repository, Service, Controller 구현 |
 | [애플리케이션 설정](../../spring-boot-starter-simplix/docs/ko/application-setup.md) | 메인 클래스 및 어노테이션 설정 |
 | [보안 통합](./security-integration.md) | Spring Security 및 JWE 토큰 인증 |
+| [문서 기여 가이드](./documentation-guide.md) | 문서 빌드, 미리보기, 기여 방법 |
 
 ## 문서
 
@@ -223,4 +224,12 @@ cd simplix
 
 ## 라이선스
 
-이 프로젝트는 [SimpleCORE License 1.0 (SCL-1.0)](../../LICENSE) 라이선스를 따릅니다.
+이 프로젝트는 [SimpleCORE License 1.0 (SCL-1.0)](./license.md) 라이선스를 따릅니다.
+
+## 개발팀
+
+SimpliX는 [SimpleCORE Inc.](https://simplecore.kr) CoreLabs에서 만들고 있습니다.
+
+- **Website**: [simplecore.kr](https://simplecore.kr)
+- **GitHub**: [github.com/simplecore-inc](https://github.com/simplecore-inc)
+- **Contact**: license@simplecore.kr

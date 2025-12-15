@@ -1,0 +1,56 @@
+# License
+
+## SimpleCORE License 1.0 (SCL-1.0)
+
+Copyright (c) 2025 SimpleCORE
+
+---
+
+### 요약
+
+SimpliX Framework는 **SimpleCORE License 1.0 (SCL-1.0)** 라이선스를 따릅니다.
+
+| 허용 | 제한 |
+|------|------|
+| 내부 사용 및 수정 | 상업적 재배포 (허가 필요) |
+| 자체 제품에 통합 | 제3자 배포 (허가 필요) |
+| 비상업적 오픈소스 사용 | SaaS/호스팅 서비스 (별도 라이선스 필요) |
+
+---
+
+### 전문
+
+Permission is hereby granted, free of charge, to any individual or organization (the "Licensee") to use, modify, and integrate this software (the "Software") into their own internal or commercial products, subject to the following terms:
+
+#### 1. Internal and Product Use Permitted
+
+The Licensee may use and modify the Software internally, including incorporation into products that are developed, marketed, and sold by the Licensee. This includes the right to compile, bundle, or statically link the Software for use within their own distributed applications.
+
+#### 2. Commercial Redistribution Requires Permission
+
+The Licensee may **not** sell, license, lease, or otherwise redistribute this Software, in source or binary form, to third parties — whether standalone or as part of a product — without prior **written consent** from SimpleCORE.
+
+#### 3. Third-party Distribution Requires Permission
+
+The Licensee may **not** distribute the Software or derivative works to any third party in any form (source, binary, object code, container image, etc.) without prior **written consent** from SimpleCORE.
+
+#### 4. No SaaS / Hosted Service Offering Without Permission
+
+The Licensee may **not** use the Software to provide a hosted service (e.g., SaaS, PaaS, or API-based access) to third parties unless a separate commercial license is obtained from SimpleCORE.
+
+#### 5. Open Source Use Exception (Optional)
+
+Non-commercial open source use (e.g., academic research, nonprofit projects) is permitted, subject to compliance with this License, and with clear attribution to SimpleCORE.
+
+#### 6. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.
+
+---
+
+### 라이선스 문의
+
+라이선스 관련 문의는 아래로 연락해 주세요:
+
+- **Email**: license@simplecore.kr
+- **Website**: [SimpleCORE](https://simplecore.kr)
