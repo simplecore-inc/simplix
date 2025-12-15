@@ -243,7 +243,7 @@ Old keys are quickly deleted after token expiry, saving storage
 
 ## 애플리케이션 구현
 
-자세한 구현 가이드는 [jwe-key-rolling-implementation.md](jwe-key-rolling-implementation.md)를 참조하세요.
+자세한 구현 가이드는 [jwe-key-rolling-implementation.md](ko/auth/jwe-key-rolling-implementation.md)를 참조하세요.
 
 ### 빠른 시작
 
@@ -631,5 +631,5 @@ simplix:
 
 ## 관련 문서
 
-- [애플리케이션 구현 가이드](jwe-key-rolling-implementation.md)
+- [애플리케이션 구현 가이드](ko/auth/jwe-key-rolling-implementation.md)
 - [simplix-encryption 문서](ko/encryption/)

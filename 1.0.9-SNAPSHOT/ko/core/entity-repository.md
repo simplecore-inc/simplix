@@ -223,9 +223,9 @@ public class OrderItem extends SimpliXBaseEntity<OrderItemId> {
 
 ## Related Documents
 
-- [Overview (아키텍처 개요)](overview.md) - 모듈 구조
-- [Tree Structure Guide (트리 구조)](tree-structure.md) - TreeEntity, SimpliXTreeService
-- [Type Converters Guide (타입 변환)](type-converters.md) - Boolean, Enum, DateTime 변환
-- [Security Guide (보안)](security.md) - XSS 방지, 해싱, 마스킹
-- [Exception & API Guide (예외/API)](exception-api.md) - 에러 코드, API 응답
-- [Cache Guide (캐시)](cache.md) - CacheManager, CacheProvider
+- [Overview (아키텍처 개요)](ko/core/overview.md) - 모듈 구조
+- [Tree Structure Guide (트리 구조)](ko/core/tree-structure.md) - TreeEntity, SimpliXTreeService
+- [Type Converters Guide (타입 변환)](ko/core/type-converters.md) - Boolean, Enum, DateTime 변환
+- [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹
+- [Exception & API Guide (예외/API)](ko/core/exception-api.md) - 에러 코드, API 응답
+- [Cache Guide (캐시)](ko/core/cache.md) - CacheManager, CacheProvider

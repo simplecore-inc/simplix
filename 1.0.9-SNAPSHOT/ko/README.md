@@ -160,11 +160,11 @@ SimpliX를 시작하기 위한 단계별 가이드:
 
 | 가이드 | 설명 |
 |--------|------|
-| [빠른 시작](quick-start.md) | 프로젝트 설정 및 기본 구성 |
-| [CRUD 튜토리얼](crud-tutorial.md) | Entity, Repository, Service, Controller 구현 |
+| [빠른 시작](ko/quick-start.md) | 프로젝트 설정 및 기본 구성 |
+| [CRUD 튜토리얼](ko/crud-tutorial.md) | Entity, Repository, Service, Controller 구현 |
 | [애플리케이션 설정](ko/starter/application-setup.md) | 메인 클래스 및 어노테이션 설정 |
-| [보안 통합](security-integration.md) | Spring Security 및 JWE 토큰 인증 |
-| [문서 기여 가이드](documentation-guide.md) | 문서 빌드, 미리보기, 기여 방법 |
+| [보안 통합](ko/security-integration.md) | Spring Security 및 JWE 토큰 인증 |
+| [문서 기여 가이드](ko/documentation-guide.md) | 문서 빌드, 미리보기, 기여 방법 |
 
 ## 문서
 
@@ -224,7 +224,7 @@ cd simplix
 
 ## 라이선스
 
-이 프로젝트는 [SimpleCORE License 1.0 (SCL-1.0)](license.md) 라이선스를 따릅니다.
+이 프로젝트는 [SimpleCORE License 1.0 (SCL-1.0)](ko/license.md) 라이선스를 따릅니다.
 
 ## 개발팀
 

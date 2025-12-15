@@ -151,7 +151,7 @@ simplix:
           auto-cleanup: false
 ```
 
-키 롤링 사용 시 `JweKeyStore` 인터페이스를 구현해야 합니다. 자세한 내용은 [JWE 키 롤링 문서](jwe-key-rolling.md)를 참조하세요.
+키 롤링 사용 시 `JweKeyStore` 인터페이스를 구현해야 합니다. 자세한 내용은 [JWE 키 롤링 문서](ko/auth/jwe-key-rolling.md)를 참조하세요.
 
 ## 빠른 시작 예제
 
@@ -197,9 +197,9 @@ curl -X POST "http://localhost:8080/auth/token/revoke" \
 
 ## 다음 단계
 
-- [JWE 토큰 인증](jwe-token.md) - JWE 토큰 상세 사용법
-- [토큰 블랙리스트](token-blacklist.md) - 토큰 폐기 기능 설정
-- [OAuth2 소셜 로그인](oauth2.md) - 소셜 로그인 구현
-- [보안 설정](security-configuration.md) - 상세 보안 설정
-- [설정 레퍼런스](configuration-reference.md) - 전체 설정 속성 목록
-- [JWE 키 롤링](jwe-key-rolling.md) - 프로덕션 키 관리
+- [JWE 토큰 인증](ko/auth/jwe-token.md) - JWE 토큰 상세 사용법
+- [토큰 블랙리스트](ko/auth/token-blacklist.md) - 토큰 폐기 기능 설정
+- [OAuth2 소셜 로그인](ko/auth/oauth2.md) - 소셜 로그인 구현
+- [보안 설정](ko/auth/security-configuration.md) - 상세 보안 설정
+- [설정 레퍼런스](ko/auth/configuration-reference.md) - 전체 설정 속성 목록
+- [JWE 키 롤링](ko/auth/jwe-key-rolling.md) - 프로덕션 키 관리

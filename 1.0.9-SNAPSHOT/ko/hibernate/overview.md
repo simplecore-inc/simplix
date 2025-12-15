@@ -172,7 +172,7 @@ public class CacheEvictionStrategy {
 int updateStatusByRole(@Param("status") Status status, @Param("role") Role role);
 ```
 
-상세 사용법: [Cache Eviction Guide](cache-eviction.md#evictcache-annotation)
+상세 사용법: [Cache Eviction Guide](ko/hibernate/cache-eviction.md#evictcache-annotation)
 
 ---
 
@@ -215,5 +215,5 @@ int updateStatusByRole(@Param("status") Status status, @Param("role") Role role)
 
 ## Related Documents
 
-- [Configuration Guide (설정 가이드)](configuration.md) - 설정 옵션 및 @Cache 사용법
-- [Cache Eviction Guide (캐시 무효화)](cache-eviction.md) - 수동 제거 및 @EvictCache 사용법
+- [Configuration Guide (설정 가이드)](ko/hibernate/configuration.md) - 설정 옵션 및 @Cache 사용법
+- [Cache Eviction Guide (캐시 무효화)](ko/hibernate/cache-eviction.md) - 수동 제거 및 @EvictCache 사용법

@@ -422,9 +422,9 @@ spring:
 
 ## 관련 문서
 
-- [시작하기](getting-started.md)
-- [JWE 토큰 인증](jwe-token.md)
-- [토큰 블랙리스트](token-blacklist.md)
-- [OAuth2 소셜 로그인](oauth2.md)
-- [보안 설정](security-configuration.md)
-- [JWE 키 롤링](jwe-key-rolling.md)
+- [시작하기](ko/auth/getting-started.md)
+- [JWE 토큰 인증](ko/auth/jwe-token.md)
+- [토큰 블랙리스트](ko/auth/token-blacklist.md)
+- [OAuth2 소셜 로그인](ko/auth/oauth2.md)
+- [보안 설정](ko/auth/security-configuration.md)
+- [JWE 키 롤링](ko/auth/jwe-key-rolling.md)

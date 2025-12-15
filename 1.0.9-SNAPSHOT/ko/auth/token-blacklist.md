@@ -352,5 +352,5 @@ spring:
 
 ## 관련 문서
 
-- [JWE 토큰 인증](jwe-token.md)
-- [설정 레퍼런스](configuration-reference.md)
+- [JWE 토큰 인증](ko/auth/jwe-token.md)
+- [설정 레퍼런스](ko/auth/configuration-reference.md)

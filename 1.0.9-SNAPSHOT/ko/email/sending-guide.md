@@ -641,6 +641,6 @@ EmailRequest.builder()
 
 ## Related Documents
 
-- [Template Guide (템플릿 사용)](template-guide.md) - 템플릿 기반 이메일 발송
-- [Provider Guide (Provider 설정)](provider-guide.md) - Provider 상세 설정
-- [Advanced Guide (고급 기능)](advanced-guide.md) - 대량 발송, 멀티테넌시
+- [Template Guide (템플릿 사용)](ko/email/template-guide.md) - 템플릿 기반 이메일 발송
+- [Provider Guide (Provider 설정)](ko/email/provider-guide.md) - Provider 상세 설정
+- [Advanced Guide (고급 기능)](ko/email/advanced-guide.md) - 대량 발송, 멀티테넌시

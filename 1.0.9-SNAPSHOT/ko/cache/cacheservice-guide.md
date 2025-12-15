@@ -1076,6 +1076,6 @@ public class SettingsService {
 
 ## Related Documents
 
-- [Overview](overview.md) - 모듈 개요 및 아키텍처
-- [Spring Cache Guide](spring-cache-guide.md) - @Cacheable 어노테이션 사용법
-- [Advanced Guide](advanced-guide.md) - 고급 사용법 및 트러블슈팅
+- [Overview](ko/cache/overview.md) - 모듈 개요 및 아키텍처
+- [Spring Cache Guide](ko/cache/spring-cache-guide.md) - @Cacheable 어노테이션 사용법
+- [Advanced Guide](ko/cache/advanced-guide.md) - 고급 사용법 및 트러블슈팅

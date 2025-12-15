@@ -622,5 +622,5 @@ public class Application {
 
 ## 다음 단계
 
-- [JWE 키 롤링 개요](jwe-key-rolling.md)로 돌아가기
+- [JWE 키 롤링 개요](ko/auth/jwe-key-rolling.md)로 돌아가기
 - [simplix-encryption 문서](ko/encryption/) 참조

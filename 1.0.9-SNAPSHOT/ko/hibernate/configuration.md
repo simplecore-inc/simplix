@@ -298,5 +298,5 @@ simplix:
 
 ## Related Documents
 
-- [Overview (아키텍처 상세)](overview.md) - 모듈 구조 및 컴포넌트
-- [Cache Eviction Guide (캐시 무효화)](cache-eviction.md) - 수동 제거 및 @EvictCache 사용법
+- [Overview (아키텍처 상세)](ko/hibernate/overview.md) - 모듈 구조 및 컴포넌트
+- [Cache Eviction Guide (캐시 무효화)](ko/hibernate/cache-eviction.md) - 수동 제거 및 @EvictCache 사용법

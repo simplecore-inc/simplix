@@ -355,6 +355,6 @@ simplix:
 
 ## Related Documents
 
-- [Overview (아키텍처 상세)](overview.md) - 모듈 구조 및 설정
-- [Upload Guide (파일 업로드)](upload-guide.md) - 파일 업로드 및 처리
-- [Image Guide (이미지 처리)](image-guide.md) - 이미지 리사이징, 썸네일, WebP
+- [Overview (아키텍처 상세)](ko/file/overview.md) - 모듈 구조 및 설정
+- [Upload Guide (파일 업로드)](ko/file/upload-guide.md) - 파일 업로드 및 처리
+- [Image Guide (이미지 처리)](ko/file/image-guide.md) - 이미지 리사이징, 썸네일, WebP

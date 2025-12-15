@@ -695,6 +695,6 @@ Korean text appears as ??? or garbled
 
 ## Related Documents
 
-- [Sending Guide (이메일 발송)](sending-guide.md) - 기본 이메일 발송
-- [Provider Guide (Provider 설정)](provider-guide.md) - Provider 상세 설정
-- [Advanced Guide (고급 기능)](advanced-guide.md) - 대량 발송, 멀티테넌시
+- [Sending Guide (이메일 발송)](ko/email/sending-guide.md) - 기본 이메일 발송
+- [Provider Guide (Provider 설정)](ko/email/provider-guide.md) - Provider 상세 설정
+- [Advanced Guide (고급 기능)](ko/email/advanced-guide.md) - 대량 발송, 멀티테넌시

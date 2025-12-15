@@ -328,6 +328,6 @@ simplix:
 
 ## 관련 문서
 
-- [토큰 블랙리스트](token-blacklist.md)
-- [JWE 키 롤링](jwe-key-rolling.md)
-- [설정 레퍼런스](configuration-reference.md)
+- [토큰 블랙리스트](ko/auth/token-blacklist.md)
+- [JWE 키 롤링](ko/auth/jwe-key-rolling.md)
+- [설정 레퍼런스](ko/auth/configuration-reference.md)

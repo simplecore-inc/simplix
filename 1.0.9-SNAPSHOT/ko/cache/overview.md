@@ -322,6 +322,6 @@ logging:
 
 ## Related Documents
 
-- [CacheService Guide](cacheservice-guide.md) - CacheService API 사용법
-- [Spring Cache Guide](spring-cache-guide.md) - @Cacheable 어노테이션 통합
-- [Advanced Guide](advanced-guide.md) - 고급 사용법, 마이그레이션, 트러블슈팅
+- [CacheService Guide](ko/cache/cacheservice-guide.md) - CacheService API 사용법
+- [Spring Cache Guide](ko/cache/spring-cache-guide.md) - @Cacheable 어노테이션 통합
+- [Advanced Guide](ko/cache/advanced-guide.md) - 고급 사용법, 마이그레이션, 트러블슈팅

@@ -568,6 +568,6 @@ simplix:
 
 ## Related Documents
 
-- [Sending Guide (이메일 발송)](sending-guide.md) - 기본 이메일 발송
-- [Template Guide (템플릿 사용)](template-guide.md) - 템플릿 기반 이메일
-- [Advanced Guide (고급 기능)](advanced-guide.md) - 대량 발송, 멀티테넌시
+- [Sending Guide (이메일 발송)](ko/email/sending-guide.md) - 기본 이메일 발송
+- [Template Guide (템플릿 사용)](ko/email/template-guide.md) - 템플릿 기반 이메일
+- [Advanced Guide (고급 기능)](ko/email/advanced-guide.md) - 대량 발송, 멀티테넌시

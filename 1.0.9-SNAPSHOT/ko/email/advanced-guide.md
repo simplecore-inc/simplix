@@ -703,7 +703,7 @@ jar tf app.jar | grep templates/email
 
 ## Related Documents
 
-- [Overview (개요)](overview.md) - 아키텍처 및 설정
-- [Sending Guide (이메일 발송)](sending-guide.md) - 기본 이메일 발송
-- [Template Guide (템플릿 사용)](template-guide.md) - 템플릿 시스템
-- [Provider Guide (Provider 설정)](provider-guide.md) - Provider 설정
+- [Overview (개요)](ko/email/overview.md) - 아키텍처 및 설정
+- [Sending Guide (이메일 발송)](ko/email/sending-guide.md) - 기본 이메일 발송
+- [Template Guide (템플릿 사용)](ko/email/template-guide.md) - 템플릿 시스템
+- [Provider Guide (Provider 설정)](ko/email/provider-guide.md) - Provider 설정

@@ -920,6 +920,6 @@ public User findUserNoNullCache(String userId) {
 
 ## Related Documents
 
-- [Overview](overview.md) - 모듈 개요 및 아키텍처
-- [CacheService Guide](cacheservice-guide.md) - 프로그래밍 방식 캐시 사용법
-- [Advanced Guide](advanced-guide.md) - 고급 사용법 및 트러블슈팅
+- [Overview](ko/cache/overview.md) - 모듈 개요 및 아키텍처
+- [CacheService Guide](ko/cache/cacheservice-guide.md) - 프로그래밍 방식 캐시 사용법
+- [Advanced Guide](ko/cache/advanced-guide.md) - 고급 사용법 및 트러블슈팅

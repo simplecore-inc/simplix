@@ -503,9 +503,9 @@ public class UserDto {
 
 ## Related Documents
 
-- [Overview (아키텍처 개요)](overview.md) - 모듈 구조
-- [Entity & Repository Guide (엔티티/리포지토리)](entity-repository.md) - 베이스 엔티티, 복합 키
-- [Tree Structure Guide (트리 구조)](tree-structure.md) - TreeEntity, SimpliXTreeService
-- [Security Guide (보안)](security.md) - XSS 방지, 해싱, 마스킹
-- [Exception & API Guide (예외/API)](exception-api.md) - 에러 코드, API 응답
-- [Cache Guide (캐시)](cache.md) - CacheManager, CacheProvider
+- [Overview (아키텍처 개요)](ko/core/overview.md) - 모듈 구조
+- [Entity & Repository Guide (엔티티/리포지토리)](ko/core/entity-repository.md) - 베이스 엔티티, 복합 키
+- [Tree Structure Guide (트리 구조)](ko/core/tree-structure.md) - TreeEntity, SimpliXTreeService
+- [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹
+- [Exception & API Guide (예외/API)](ko/core/exception-api.md) - 에러 코드, API 응답
+- [Cache Guide (캐시)](ko/core/cache.md) - CacheManager, CacheProvider

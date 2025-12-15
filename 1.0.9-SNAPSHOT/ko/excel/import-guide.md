@@ -714,5 +714,5 @@ public LocalDate convertExcelDate(double serialDate) {
 
 ## Related Documents
 
-- [Overview](overview.md) - 모듈 개요
-- [Export Guide](export-guide.md) - 내보내기 가이드
+- [Overview](ko/excel/overview.md) - 모듈 개요
+- [Export Guide](ko/excel/export-guide.md) - 내보내기 가이드
