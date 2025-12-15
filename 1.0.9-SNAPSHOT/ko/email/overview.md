@@ -366,7 +366,7 @@ AWS SES (100) → Resend (55) → SendGrid (50) → SMTP (10) → Console (-100)
 
 ## Related Documents
 
-- [Sending Guide (이메일 발송)](./sending-guide.md) - EmailService 사용법
-- [Template Guide (템플릿 사용)](./template-guide.md) - 이메일 템플릿 작성 및 활용
-- [Provider Guide (Provider 설정)](./provider-guide.md) - 각 Provider별 상세 설정
-- [Advanced Guide (고급 기능)](./advanced-guide.md) - 대량 발송, 멀티테넌시, 트러블슈팅
+- [Sending Guide (이메일 발송)](sending-guide.md) - EmailService 사용법
+- [Template Guide (템플릿 사용)](template-guide.md) - 이메일 템플릿 작성 및 활용
+- [Provider Guide (Provider 설정)](provider-guide.md) - 각 Provider별 상세 설정
+- [Advanced Guide (고급 기능)](advanced-guide.md) - 대량 발송, 멀티테넌시, 트러블슈팅

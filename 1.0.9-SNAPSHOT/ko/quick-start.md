@@ -313,9 +313,9 @@ public class JpaAuditingConfig {
 
 ## 6. 다음 단계
 
-- [CRUD Tutorial](./crud-tutorial.md) - 엔티티, 리포지토리, 서비스, 컨트롤러 구현
-- [Application Setup Guide](/ko/starter/application-setup.md) - 상세 설정 가이드
-- [Configuration Guide](/ko/starter/configuration.md) - YAML 설정 속성
+- [CRUD Tutorial](crud-tutorial.md) - 엔티티, 리포지토리, 서비스, 컨트롤러 구현
+- [Application Setup Guide](ko/starter/application-setup.md) - 상세 설정 가이드
+- [Configuration Guide](ko/starter/configuration.md) - YAML 설정 속성
 
 ## 트러블슈팅
 

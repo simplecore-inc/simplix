@@ -118,8 +118,8 @@ curl http://localhost:8080/actuator/health
 
 ## Documentation
 
-- [Overview (상세 문서)](./overview.md)
-- [Usage Guide (사용법 가이드)](./usage-guide.md)
+- [Overview (상세 문서)](overview.md)
+- [Usage Guide (사용법 가이드)](usage-guide.md)
 
 ## License
 

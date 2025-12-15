@@ -475,5 +475,5 @@ ExcelExporter.of(User.class)
 
 ## Related Documents
 
-- [Export Guide](./export-guide.md) - 내보내기 상세 가이드
-- [Import Guide](./import-guide.md) - 가져오기 상세 가이드
+- [Export Guide](export-guide.md) - 내보내기 상세 가이드
+- [Import Guide](import-guide.md) - 가져오기 상세 가이드

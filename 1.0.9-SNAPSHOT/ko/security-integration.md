@@ -528,6 +528,6 @@ Bad credentials
 
 ## Next Steps
 
-- [Application Setup Guide](/ko/starter/application-setup.md) - 애플리케이션 설정
-- [Exception Handler Guide](/ko/starter/exception-handler.md) - 예외 처리
-- [CRUD Tutorial](./crud-tutorial.md) - CRUD 구현 튜토리얼
+- [Application Setup Guide](ko/starter/application-setup.md) - 애플리케이션 설정
+- [Exception Handler Guide](ko/starter/exception-handler.md) - 예외 처리
+- [CRUD Tutorial](crud-tutorial.md) - CRUD 구현 튜토리얼

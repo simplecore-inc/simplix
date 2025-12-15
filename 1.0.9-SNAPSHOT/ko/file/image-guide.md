@@ -500,6 +500,6 @@ public class ImageOptimizationService {
 
 ## Related Documents
 
-- [Overview (아키텍처 상세)](./overview.md) - 모듈 구조 및 설정
-- [Storage Guide (저장소 설정)](./storage-guide.md) - Local/S3 Provider 설정
-- [Upload Guide (파일 업로드)](./upload-guide.md) - 파일 업로드 및 처리
+- [Overview (아키텍처 상세)](overview.md) - 모듈 구조 및 설정
+- [Storage Guide (저장소 설정)](storage-guide.md) - Local/S3 Provider 설정
+- [Upload Guide (파일 업로드)](upload-guide.md) - 파일 업로드 및 처리

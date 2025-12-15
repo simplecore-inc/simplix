@@ -1044,6 +1044,6 @@ public class SmartCacheService {
 
 ## Related Documents
 
-- [Overview](./overview.md) - 모듈 개요 및 아키텍처
-- [CacheService Guide](./cacheservice-guide.md) - CacheService 사용법
-- [Spring Cache Guide](./spring-cache-guide.md) - @Cacheable 어노테이션 사용법
+- [Overview](overview.md) - 모듈 개요 및 아키텍처
+- [CacheService Guide](cacheservice-guide.md) - CacheService 사용법
+- [Spring Cache Guide](spring-cache-guide.md) - @Cacheable 어노테이션 사용법

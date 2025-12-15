@@ -444,7 +444,7 @@ simplix:
 
 ## Related Documents
 
-- [Overview (개요)](./overview.md) - 아키텍처 및 설정
-- [JPA Converter 사용법](./jpa-converter.md) - Entity 필드 자동 암호화
-- [키 로테이션 가이드](./key-rotation.md) - 키 교체 및 데이터 마이그레이션
-- [보안 모범 사례](./security-best-practices.md) - 운영 환경 보안 권장사항
+- [Overview (개요)](overview.md) - 아키텍처 및 설정
+- [JPA Converter 사용법](jpa-converter.md) - Entity 필드 자동 암호화
+- [키 로테이션 가이드](key-rotation.md) - 키 교체 및 데이터 마이그레이션
+- [보안 모범 사례](security-best-practices.md) - 운영 환경 보안 권장사항

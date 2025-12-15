@@ -469,7 +469,7 @@ public class UserService {
 
 ## 관련 문서
 
-- [시작하기](./getting-started.md)
-- [JWE 토큰 인증](./jwe-token.md)
-- [OAuth2 소셜 로그인](./oauth2.md)
-- [설정 레퍼런스](./configuration-reference.md)
+- [시작하기](getting-started.md)
+- [JWE 토큰 인증](jwe-token.md)
+- [OAuth2 소셜 로그인](oauth2.md)
+- [설정 레퍼런스](configuration-reference.md)

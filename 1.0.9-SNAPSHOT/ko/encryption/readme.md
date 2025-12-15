@@ -140,11 +140,11 @@ simplix:
 
 ## Documentation
 
-- [Overview (아키텍처 상세)](./overview.md)
-- [KeyProvider Guide (환경별 설정)](./key-providers.md)
-- [JPA Converter (Entity 암호화)](./jpa-converter.md)
-- [Key Rotation (키 교체)](./key-rotation.md)
-- [Security Best Practices (보안 권장사항)](./security-best-practices.md)
+- [Overview (아키텍처 상세)](overview.md)
+- [KeyProvider Guide (환경별 설정)](key-providers.md)
+- [JPA Converter (Entity 암호화)](jpa-converter.md)
+- [Key Rotation (키 교체)](key-rotation.md)
+- [Security Best Practices (보안 권장사항)](security-best-practices.md)
 
 ## License
 

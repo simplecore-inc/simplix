@@ -95,13 +95,13 @@ simplix-core는 Auto-Configuration이 없는 순수 라이브러리 모듈입니
 
 ## Documentation
 
-- [Overview (아키텍처 상세)](./overview.md)
-- [Entity & Repository Guide (엔티티/리포지토리)](./entity-repository.md)
-- [Tree Structure Guide (트리 구조)](./tree-structure.md)
-- [Type Converters Guide (타입 변환)](./type-converters.md)
-- [Security Guide (보안)](./security.md)
-- [Exception & API Guide (예외/API)](./exception-api.md)
-- [Cache Guide (캐시)](./cache.md)
+- [Overview (아키텍처 상세)](overview.md)
+- [Entity & Repository Guide (엔티티/리포지토리)](entity-repository.md)
+- [Tree Structure Guide (트리 구조)](tree-structure.md)
+- [Type Converters Guide (타입 변환)](type-converters.md)
+- [Security Guide (보안)](security.md)
+- [Exception & API Guide (예외/API)](exception-api.md)
+- [Cache Guide (캐시)](cache.md)
 
 ## Requirements
 

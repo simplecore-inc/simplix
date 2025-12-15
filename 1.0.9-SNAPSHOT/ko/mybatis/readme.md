@@ -82,7 +82,7 @@ mybatis:
 
 ## Documentation
 
-- [Overview (상세 가이드)](./overview.md)
+- [Overview (상세 가이드)](overview.md)
 
 ## Requirements
 

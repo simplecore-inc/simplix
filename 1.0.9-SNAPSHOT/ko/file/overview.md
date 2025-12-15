@@ -347,6 +347,6 @@ simplix:
 
 ## Related Documents
 
-- [Storage Guide (저장소 설정)](./storage-guide.md) - Local/S3 Provider 설정
-- [Upload Guide (파일 업로드)](./upload-guide.md) - 파일 업로드 및 처리
-- [Image Guide (이미지 처리)](./image-guide.md) - 이미지 리사이징, 썸네일, WebP
+- [Storage Guide (저장소 설정)](storage-guide.md) - Local/S3 Provider 설정
+- [Upload Guide (파일 업로드)](upload-guide.md) - 파일 업로드 및 처리
+- [Image Guide (이미지 처리)](image-guide.md) - 이미지 리사이징, 썸네일, WebP

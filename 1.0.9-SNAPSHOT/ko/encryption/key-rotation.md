@@ -491,7 +491,7 @@ public void checkRotationStatus() {
 
 ## Related Documents
 
-- [Overview (개요)](./overview.md) - 아키텍처 및 설정
-- [KeyProvider 가이드](./key-providers.md) - 환경별 KeyProvider 상세 설정
-- [JPA Converter 사용법](./jpa-converter.md) - Entity 필드 자동 암호화
-- [보안 모범 사례](./security-best-practices.md) - 운영 환경 보안 권장사항
+- [Overview (개요)](overview.md) - 아키텍처 및 설정
+- [KeyProvider 가이드](key-providers.md) - 환경별 KeyProvider 상세 설정
+- [JPA Converter 사용법](jpa-converter.md) - Entity 필드 자동 암호화
+- [보안 모범 사례](security-best-practices.md) - 운영 환경 보안 권장사항

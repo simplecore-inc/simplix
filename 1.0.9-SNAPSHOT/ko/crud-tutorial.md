@@ -773,6 +773,6 @@ curl -X DELETE http://localhost:8080/api/v1/products/{productId}
 
 ## 다음 단계
 
-- [Authentication Guide](/ko/auth/getting-started.md) - JWE 토큰 인증 추가
-- [Exception Handler Guide](/ko/starter/exception-handler.md) - 예외 처리 커스터마이징
-- [Tree Structure Guide](/ko/core/tree-structure.md) - 트리 구조 엔티티 구현
+- [Authentication Guide](ko/auth/getting-started.md) - JWE 토큰 인증 추가
+- [Exception Handler Guide](ko/starter/exception-handler.md) - 예외 처리 커스터마이징
+- [Tree Structure Guide](ko/core/tree-structure.md) - 트리 구조 엔티티 구현

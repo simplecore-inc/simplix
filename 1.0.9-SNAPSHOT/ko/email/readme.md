@@ -158,11 +158,11 @@ simplix:
 
 ## Documentation
 
-- [Overview (아키텍처 상세)](./overview.md)
-- [Sending Guide (이메일 발송)](./sending-guide.md)
-- [Template Guide (템플릿 사용)](./template-guide.md)
-- [Provider Guide (Provider 설정)](./provider-guide.md)
-- [Advanced Guide (고급 기능)](./advanced-guide.md)
+- [Overview (아키텍처 상세)](overview.md)
+- [Sending Guide (이메일 발송)](sending-guide.md)
+- [Template Guide (템플릿 사용)](template-guide.md)
+- [Provider Guide (Provider 설정)](provider-guide.md)
+- [Advanced Guide (고급 기능)](advanced-guide.md)
 
 ## License
 

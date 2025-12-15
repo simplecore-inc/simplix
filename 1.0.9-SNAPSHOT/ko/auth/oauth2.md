@@ -547,7 +547,7 @@ public class CustomKakaoUserInfoExtractor implements OAuth2UserInfoExtractor {
 
 ## 관련 문서
 
-- [시작하기](./getting-started.md)
-- [JWE 토큰 인증](./jwe-token.md)
-- [보안 설정](./security-configuration.md)
-- [설정 레퍼런스](./configuration-reference.md)
+- [시작하기](getting-started.md)
+- [JWE 토큰 인증](jwe-token.md)
+- [보안 설정](security-configuration.md)
+- [설정 레퍼런스](configuration-reference.md)

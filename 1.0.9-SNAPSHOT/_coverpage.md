@@ -11,6 +11,6 @@
 - Multi-Provider Caching, Email, File Storage
 - Data Encryption with Key Rotation
 
-[한국어 문서](/ko/)
+[한국어 문서](ko/)
 [GitHub](https://github.com/simplecore-inc/simplix)
-[Get Started](/ko/quick-start.md)
+[Get Started](ko/quick-start.md)

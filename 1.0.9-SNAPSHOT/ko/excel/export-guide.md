@@ -583,5 +583,5 @@ response.setHeader("Content-Disposition", "attachment; filename=\"export.xlsx\""
 
 ## Related Documents
 
-- [Overview](./overview.md) - 모듈 개요
-- [Import Guide](./import-guide.md) - 가져오기 가이드
+- [Overview](overview.md) - 모듈 개요
+- [Import Guide](import-guide.md) - 가져오기 가이드

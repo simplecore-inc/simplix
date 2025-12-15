@@ -193,6 +193,6 @@ public class UserService {
 
 ## Related Documents
 
-- [Overview (아키텍처 상세)](./overview.md) - 모듈 구조 및 컴포넌트
-- [Configuration Guide (설정 가이드)](./configuration.md) - 설정 옵션 및 @Cache 사용법
-- [Distributed Cache](./overview.md#distributed-cache) - 분산 캐시 설정
+- [Overview (아키텍처 상세)](overview.md) - 모듈 구조 및 컴포넌트
+- [Configuration Guide (설정 가이드)](configuration.md) - 설정 옵션 및 @Cache 사용법
+- [Distributed Cache](overview.md#distributed-cache) - 분산 캐시 설정

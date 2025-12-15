@@ -388,6 +388,6 @@ public class ArticleService {
 
 ## Related Documents
 
-- [Overview (아키텍처 상세)](./overview.md) - 모듈 구조 및 설정
-- [Storage Guide (저장소 설정)](./storage-guide.md) - Local/S3 Provider 설정
-- [Image Guide (이미지 처리)](./image-guide.md) - 이미지 리사이징, 썸네일, WebP
+- [Overview (아키텍처 상세)](overview.md) - 모듈 구조 및 설정
+- [Storage Guide (저장소 설정)](storage-guide.md) - Local/S3 Provider 설정
+- [Image Guide (이미지 처리)](image-guide.md) - 이미지 리사이징, 썸네일, WebP

@@ -68,7 +68,7 @@ http://localhost:3000
 
 ```markdown
 * **모듈명**
-  * [새 문서](/ko/module/new-doc.md)
+  * [새 문서](ko/module/new-doc.md)
 ```
 
 ### 모듈 간 링크
@@ -77,7 +77,7 @@ http://localhost:3000
 
 ```markdown
 <!-- simplix-auth/docs/ko/getting-started.md 에서 -->
-자세한 내용은 [Core 모듈](/ko/core/overview.md)을 참조하세요.
+자세한 내용은 [Core 모듈](ko/core/overview.md)을 참조하세요.
 ```
 
 빌드 시 자동으로 Docsify 경로(`/ko/core/overview.md`)로 변환됩니다.

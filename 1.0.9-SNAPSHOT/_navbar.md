@@ -1,5 +1,5 @@
 * Languages
-  * [한국어](/ko/)
+  * [한국어](ko/)
   * [English](/en/) <small>(Coming Soon)</small>
 
 * Links

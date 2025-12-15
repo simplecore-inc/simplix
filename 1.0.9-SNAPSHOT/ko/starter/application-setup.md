@@ -286,6 +286,6 @@ public class ApiServerApplication {
 
 ## Related Documents
 
-- [Configuration Guide](./configuration.md) - YAML 설정 속성
-- [Tree Structure Guide](/ko/core/tree-structure.md) - 트리 구조 상세 가이드
-- [Service & Controller Guide](./service-controller.md) - 서비스/컨트롤러 가이드
+- [Configuration Guide](configuration.md) - YAML 설정 속성
+- [Tree Structure Guide](ko/core/tree-structure.md) - 트리 구조 상세 가이드
+- [Service & Controller Guide](service-controller.md) - 서비스/컨트롤러 가이드
