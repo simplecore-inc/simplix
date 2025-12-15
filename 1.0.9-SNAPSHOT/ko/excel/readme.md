@@ -119,9 +119,9 @@ simplix:
 
 ## Documentation
 
-- [Overview (상세 문서)](overview.md)
-- [Export Guide (내보내기 가이드)](export-guide.md)
-- [Import Guide (가져오기 가이드)](import-guide.md)
+- [Overview (상세 문서)](ko/excel/overview.md)
+- [Export Guide (내보내기 가이드)](ko/excel/export-guide.md)
+- [Import Guide (가져오기 가이드)](ko/excel/import-guide.md)
 
 ## License
 

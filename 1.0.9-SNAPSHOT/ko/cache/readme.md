@@ -136,10 +136,10 @@ curl http://localhost:8080/actuator/metrics/cache.hits
 
 ## Documentation
 
-- [Overview (상세 문서)](overview.md)
-- [CacheService Guide (CacheService 사용법)](cacheservice-guide.md)
-- [Spring Cache Guide (@Cacheable 통합)](spring-cache-guide.md)
-- [Advanced Guide (고급 사용법)](advanced-guide.md)
+- [Overview (상세 문서)](ko/cache/overview.md)
+- [CacheService Guide (CacheService 사용법)](ko/cache/cacheservice-guide.md)
+- [Spring Cache Guide (@Cacheable 통합)](ko/cache/spring-cache-guide.md)
+- [Advanced Guide (고급 사용법)](ko/cache/advanced-guide.md)
 
 ## License
 

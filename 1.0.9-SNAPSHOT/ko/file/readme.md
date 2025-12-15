@@ -162,10 +162,10 @@ simplix:
 
 ## Documentation
 
-- [Overview (아키텍처 상세)](overview.md)
-- [Storage Guide (저장소 설정)](storage-guide.md)
-- [Upload Guide (파일 업로드)](upload-guide.md)
-- [Image Guide (이미지 처리)](image-guide.md)
+- [Overview (아키텍처 상세)](ko/file/overview.md)
+- [Storage Guide (저장소 설정)](ko/file/storage-guide.md)
+- [Upload Guide (파일 업로드)](ko/file/upload-guide.md)
+- [Image Guide (이미지 처리)](ko/file/image-guide.md)
 
 ## License
 

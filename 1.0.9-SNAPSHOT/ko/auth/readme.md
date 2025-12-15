@@ -52,14 +52,14 @@ public class CustomUserDetailsService implements SimpliXUserDetailsService {
 
 | 문서 | 설명 |
 |------|------|
-| [시작하기](getting-started.md) | 빠른 시작 가이드 |
-| [JWE 토큰 인증](jwe-token.md) | JWE 토큰 생성, 검증, 갱신, 폐기 |
-| [토큰 블랙리스트](token-blacklist.md) | InMemory, Caffeine, Redis 구현체 |
-| [OAuth2 소셜 로그인](oauth2.md) | 소셜 로그인 설정 및 구현 |
-| [보안 설정](security-configuration.md) | Security Filter Chain, CORS, CSRF |
-| [설정 레퍼런스](configuration-reference.md) | 전체 설정 속성 목록 |
-| [JWE 키 롤링](jwe-key-rolling.md) | 키 로테이션 개념 |
-| [JWE 키 롤링 구현](jwe-key-rolling-implementation.md) | 키 로테이션 구현 가이드 |
+| [시작하기](ko/auth/getting-started.md) | 빠른 시작 가이드 |
+| [JWE 토큰 인증](ko/auth/jwe-token.md) | JWE 토큰 생성, 검증, 갱신, 폐기 |
+| [토큰 블랙리스트](ko/auth/token-blacklist.md) | InMemory, Caffeine, Redis 구현체 |
+| [OAuth2 소셜 로그인](ko/auth/oauth2.md) | 소셜 로그인 설정 및 구현 |
+| [보안 설정](ko/auth/security-configuration.md) | Security Filter Chain, CORS, CSRF |
+| [설정 레퍼런스](ko/auth/configuration-reference.md) | 전체 설정 속성 목록 |
+| [JWE 키 롤링](ko/auth/jwe-key-rolling.md) | 키 로테이션 개념 |
+| [JWE 키 롤링 구현](ko/auth/jwe-key-rolling-implementation.md) | 키 로테이션 구현 가이드 |
 
 ## 아키텍처
 
@@ -149,7 +149,7 @@ public interface JweKeyStore {
 | `simplix.auth.jwe.key-rolling.enabled` | `false` | 키 롤링 활성화 |
 | `simplix.auth.oauth2.enabled` | `true` | OAuth2 활성화 |
 
-전체 설정은 [설정 레퍼런스](configuration-reference.md)를 참조하세요.
+전체 설정은 [설정 레퍼런스](ko/auth/configuration-reference.md)를 참조하세요.
 
 ## 요구사항
 

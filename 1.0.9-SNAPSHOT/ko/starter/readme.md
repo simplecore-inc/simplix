@@ -224,13 +224,13 @@ spring-boot-starter-simplix (umbrella)
 
 ## Documentation
 
-- [Application Setup Guide (애플리케이션 설정)](application-setup.md)
-- [Overview (아키텍처 상세)](overview.md)
-- [Configuration Guide (YAML 설정)](configuration.md)
-- [DateTime Guide (타임존/날짜시간)](datetime.md)
-- [Exception Handler Guide (예외 처리)](exception-handler.md)
-- [Service & Controller Guide (서비스/컨트롤러)](service-controller.md)
-- [Swagger Guide (API 문서)](swagger.md)
+- [Application Setup Guide (애플리케이션 설정)](ko/starter/application-setup.md)
+- [Overview (아키텍처 상세)](ko/starter/overview.md)
+- [Configuration Guide (YAML 설정)](ko/starter/configuration.md)
+- [DateTime Guide (타임존/날짜시간)](ko/starter/datetime.md)
+- [Exception Handler Guide (예외 처리)](ko/starter/exception-handler.md)
+- [Service & Controller Guide (서비스/컨트롤러)](ko/starter/service-controller.md)
+- [Swagger Guide (API 문서)](ko/starter/swagger.md)
 
 ## Requirements
 
