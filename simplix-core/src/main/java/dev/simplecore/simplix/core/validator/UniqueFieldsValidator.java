@@ -5,6 +5,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.stereotype.Component;
@@ -22,6 +24,8 @@ import org.springframework.util.StringUtils;
  */
 @Component
 public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, Object> {
+
+    private static final Logger log = LoggerFactory.getLogger(UniqueFieldsValidator.class);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -83,13 +87,20 @@ public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, 
 
         // Get the ID value for update exclusion
         Object idValue = null;
-        if (StringUtils.hasText(field.idProperty()) && wrapper.isReadableProperty(field.idProperty())) {
-            idValue = wrapper.getPropertyValue(field.idProperty());
+        if (StringUtils.hasText(field.idProperty())) {
+            if (wrapper.isReadableProperty(field.idProperty())) {
+                idValue = wrapper.getPropertyValue(field.idProperty());
+                log.debug("UniqueFieldsValidator - idProperty: {}, idValue: {}, idValueType: {}",
+                    field.idProperty(), idValue, idValue != null ? idValue.getClass().getSimpleName() : "null");
+            } else {
+                log.warn("UniqueFieldsValidator - idProperty '{}' is not readable on {}",
+                    field.idProperty(), wrapper.getWrappedClass().getSimpleName());
+            }
         }
 
         // Check uniqueness
         boolean isUnique = checkUniqueness(field.entity(), field.field(), fieldValue,
-                field.idField(), idValue);
+                field.idField(), idValue, field.softDeleteField(), field.softDeleteType());
 
         if (!isUnique) {
             // Add constraint violation for the specific property
@@ -104,11 +115,13 @@ public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, 
     /**
      * Checks if the given value is unique in the database.
      *
-     * @param entityClass the entity class
-     * @param fieldName   the field name in entity
-     * @param fieldValue  the value to check
-     * @param idFieldName the ID field name in entity
-     * @param idValue     the current entity's ID (for update exclusion), or null
+     * @param entityClass     the entity class
+     * @param fieldName       the field name in entity
+     * @param fieldValue      the value to check
+     * @param idFieldName     the ID field name in entity
+     * @param idValue         the current entity's ID (for update exclusion), or null
+     * @param softDeleteField the soft delete field name
+     * @param softDeleteType  the soft delete type
      * @return true if the value is unique (or belongs to the current entity)
      */
     private boolean checkUniqueness(
@@ -116,7 +129,9 @@ public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, 
             String fieldName,
             Object fieldValue,
             String idFieldName,
-            Object idValue) {
+            Object idValue,
+            String softDeleteField,
+            SoftDeleteType softDeleteType) {
 
         String entityName = entityClass.getSimpleName();
         StringBuilder jpql = new StringBuilder();
@@ -126,6 +141,9 @@ public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, 
         if (idValue != null) {
             jpql.append(" AND e.").append(idFieldName).append(" != :id");
         }
+
+        // Add soft delete condition
+        UniqueValidator.appendSoftDeleteCondition(jpql, softDeleteField, softDeleteType);
 
         TypedQuery<Long> query = entityManager.createQuery(jpql.toString(), Long.class);
         query.setParameter("value", fieldValue);

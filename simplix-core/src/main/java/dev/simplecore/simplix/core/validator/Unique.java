@@ -69,6 +69,30 @@ public @interface Unique {
     String idProperty() default "";
 
     /**
+     * The soft delete field name in the entity.
+     * <p>
+     * When specified, soft-deleted records are excluded from the uniqueness check.
+     * Leave empty if the entity does not use soft delete.
+     *
+     * @return soft delete field name (e.g., "deleted", "deletedAt")
+     */
+    String softDeleteField() default "";
+
+    /**
+     * The type of soft delete field.
+     * <p>
+     * Determines how to filter out soft-deleted records:
+     * <ul>
+     *   <li>{@link SoftDeleteType#NONE} - No filtering (default)</li>
+     *   <li>{@link SoftDeleteType#BOOLEAN} - Filter where field = false</li>
+     *   <li>{@link SoftDeleteType#TIMESTAMP} - Filter where field IS NULL</li>
+     * </ul>
+     *
+     * @return soft delete type
+     */
+    SoftDeleteType softDeleteType() default SoftDeleteType.NONE;
+
+    /**
      * Error message when validation fails.
      *
      * @return error message
