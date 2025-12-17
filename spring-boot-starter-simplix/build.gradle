@@ -90,6 +90,9 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
 
     implementation 'com.google.code.findbugs:jsr305'
+
+    // Jackson Hibernate module for lazy loading support
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate6'
 }
 
 bootJar {

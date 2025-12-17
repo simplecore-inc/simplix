@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import dev.simplecore.simplix.core.jackson.*;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -115,6 +116,13 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
         SimpleModule enumModule = new SimpleModule();
         enumModule.addSerializer((Class)Enum.class, new SimpliXEnumSerializer());
         objectMapper.registerModule(enumModule);
+
+        // Hibernate6Module for lazy loading support
+        // Prevents LazyInitializationException during JSON serialization
+        Hibernate6Module hibernate6Module = new Hibernate6Module();
+        hibernate6Module.disable(Hibernate6Module.Feature.FORCE_LAZY_LOADING);
+        hibernate6Module.enable(Hibernate6Module.Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS);
+        objectMapper.registerModule(hibernate6Module);
 
         return objectMapper;
     }
