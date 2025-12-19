@@ -181,9 +181,12 @@ simplix-core/
     │   └── SimpliXLabeledEnum.java
     │
     ├── jackson/                    # Jackson 직렬화
+    │   ├── annotation/
+    │   │   └── I18nTrans.java       # 다국어 번역 어노테이션
     │   ├── SimpliXBooleanSerializer.java
     │   ├── SimpliXEnumSerializer.java
-    │   └── SimpliXDateTimeSerializer.java
+    │   ├── SimpliXDateTimeSerializer.java
+    │   └── SimpliXI18nTransSerializer.java  # I18n 번역 시리얼라이저
     │
     ├── hibernate/                  # Hibernate 확장
     │   ├── UuidV7Generator.java
@@ -324,3 +327,4 @@ ServiceLoader.load(CacheProvider.class)
 - [Security Guide (보안)](./security.md) - XSS 방지, 해싱, 마스킹
 - [Exception & API Guide (예외/API)](./exception-api.md) - 에러 코드, API 응답
 - [Cache Guide (캐시)](./cache.md) - CacheManager, CacheProvider
+- [I18n Translation Guide (다국어 번역)](./i18n-translation.md) - @I18nTrans, 자동 번역
