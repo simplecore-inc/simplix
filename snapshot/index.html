@@ -385,12 +385,12 @@
         select.id = 'version-select';
 
         // Add SNAPSHOT first if exists
-        if (versions.snapshot) {
+        if (versions.snapshotVersion) {
           var opt = document.createElement('option');
-          opt.value = versions.snapshot;
-          opt.textContent = versions.snapshot + ' (SNAPSHOT)';
+          opt.value = 'snapshot'; // Folder is always 'snapshot'
+          opt.textContent = versions.snapshotVersion + ' (SNAPSHOT)';
           opt.className = 'version-snapshot';
-          if (versions.snapshot === currentVersion) opt.selected = true;
+          if (currentVersion === 'snapshot') opt.selected = true;
           select.appendChild(opt);
         }
 
