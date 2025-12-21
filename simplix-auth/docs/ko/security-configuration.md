@@ -8,6 +8,8 @@ SimpliX Auth의 보안 관련 설정을 상세히 설명합니다. Spring Securi
 - [토큰 엔드포인트 보안](#토큰-엔드포인트-보안)
 - [API 보안](#api-보안)
 - [웹 보안](#웹-보안)
+  - [커스텀 LogoutHandler](#커스텀-logouthandler)
+  - [커스텀 LogoutSuccessHandler](#커스텀-logoutsuccesshandler)
 - [CORS 설정](#cors-설정)
 - [CSRF 설정](#csrf-설정)
 - [HTTPS 설정](#https-설정)
@@ -142,6 +144,78 @@ http.formLogin(form -> form
 - SecurityContext 클리어
 - 세션 무효화
 - 쿠키 삭제: `JSESSIONID`, `access_token`, `refresh_token`
+
+### 커스텀 LogoutHandler
+
+로그아웃 시 감사 로깅, 토큰 블랙리스트 등록 등 추가 작업을 수행할 수 있습니다.
+
+```java
+@Configuration
+public class LogoutConfig {
+
+    @Bean
+    public LogoutHandler auditLogoutHandler(AuditService auditService) {
+        return (request, response, authentication) -> {
+            if (authentication != null) {
+                String username = authentication.getName();
+                String ip = request.getRemoteAddr();
+
+                // 감사 로그 기록
+                auditService.logLogout(username, ip, LocalDateTime.now());
+
+                // 토큰 블랙리스트 등록
+                String token = extractToken(request);
+                if (token != null) {
+                    tokenBlacklistService.addToBlacklist(token);
+                }
+            }
+        };
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
+    }
+}
+```
+
+### 커스텀 LogoutSuccessHandler
+
+로그아웃 성공 후 커스텀 리다이렉트 또는 JSON 응답을 반환할 수 있습니다.
+
+```java
+@Bean
+public LogoutSuccessHandler customLogoutSuccessHandler() {
+    return (request, response, authentication) -> {
+        // API 요청인 경우 JSON 응답
+        if (isApiRequest(request)) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write("{\"message\": \"Logged out successfully\"}");
+        } else {
+            // 웹 요청인 경우 커스텀 페이지로 리다이렉트
+            response.sendRedirect("/goodbye?user=" +
+                (authentication != null ? authentication.getName() : ""));
+        }
+    };
+}
+
+private boolean isApiRequest(HttpServletRequest request) {
+    return request.getRequestURI().startsWith("/api/") ||
+           "application/json".equals(request.getHeader("Accept"));
+}
+```
+
+### 핸들러 등록 순서
+
+`LogoutHandler`와 `LogoutSuccessHandler`가 모두 등록된 경우:
+
+1. `LogoutHandler.logout()` 실행 (토큰 폐기, 감사 로깅 등)
+2. Spring Security 기본 로그아웃 처리 (세션 무효화, SecurityContext 클리어)
+3. `LogoutSuccessHandler.onLogoutSuccess()` 실행 (리다이렉트/응답)
 
 ### 커스텀 Success/Failure Handler
 

@@ -55,6 +55,61 @@ public interface TreeEntity<T extends TreeEntity<T, ID>, ID> {
 
 ---
 
+## SortableTreeEntity Interface
+
+정렬 순서를 프로그래밍 방식으로 변경할 수 있는 트리 엔티티를 위한 확장 인터페이스입니다.
+
+```java
+public interface SortableTreeEntity<T extends SortableTreeEntity<T, ID>, ID>
+        extends TreeEntity<T, ID> {
+
+    Integer getSortOrder();
+    void setSortOrder(Integer sortOrder);
+}
+```
+
+### 사용 시점
+
+| 인터페이스 | 사용 시점 |
+|-----------|----------|
+| `TreeEntity` | 정렬 키가 불변인 경우 (`createdAt`, `name` 등) |
+| `SortableTreeEntity` | 정렬 순서를 변경할 수 있는 경우 (`sortOrder` 필드) |
+
+### 구현 예제
+
+```java
+@Entity
+public class Category implements SortableTreeEntity<Category, Long> {
+
+    @Id
+    private Long id;
+    private Long parentId;
+    private Integer sortOrder;
+
+    @Transient
+    private List<Category> children = new ArrayList<>();
+
+    @Override
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    @Override
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    @Override
+    public Comparable<?> getSortKey() {
+        return sortOrder;
+    }
+
+    // ... 기타 getter/setter
+}
+```
+
+---
+
 ## @TreeEntityAttributes
 
 트리 엔티티의 메타데이터를 설정하는 어노테이션입니다.
@@ -470,6 +525,124 @@ public class CategoryService extends SimpliXTreeBaseService<Category, Long> {
     }
 }
 ```
+
+---
+
+## SimpliXSortableTreeBaseService
+
+`SortableTreeEntity`를 구현한 엔티티를 위한 확장 서비스입니다. `reorderChildren()` 메서드의 기본 구현을 제공합니다.
+
+```java
+@Service
+public class CategoryService extends SimpliXSortableTreeBaseService<Category, Long> {
+
+    public CategoryService(SimpliXTreeRepository<Category, Long> repository) {
+        super(repository);
+    }
+
+    // reorderChildren()이 기본 구현됨
+}
+```
+
+### reorderChildren 동작
+
+```java
+// 자식 노드 순서 변경
+List<Long> newOrder = List.of(3L, 1L, 2L);
+categoryService.reorderChildren(parentId, newOrder);
+
+// 내부 동작:
+// - ID 3의 sortOrder = 0
+// - ID 1의 sortOrder = 1
+// - ID 2의 sortOrder = 2
+```
+
+---
+
+## 유틸리티 메서드
+
+`SimpliXTreeBaseService`는 트리 작업에 유용한 protected 유틸리티 메서드를 제공합니다.
+
+### normalizeParentId
+
+빈 문자열을 null로 변환합니다. 폼 입력에서 빈 문자열이 루트를 의미할 때 유용합니다.
+
+```java
+@Override
+public Category create(CategoryDTO dto) {
+    Category entity = new Category();
+    entity.setParentId(normalizeParentId(dto.getParentId()));  // "" -> null
+    return save(entity);
+}
+```
+
+### validateNoCircularReference
+
+순환 참조를 방지합니다. 노드를 자신의 하위 노드로 이동하려 할 때 예외를 발생시킵니다.
+
+```java
+@Override
+public Category move(Long id, Long newParentId) {
+    validateNoCircularReference(id, newParentId);
+    // 또는 커스텀 예외 사용
+    validateNoCircularReference(id, newParentId,
+        () -> new SimpliXGeneralException(ErrorCode.TREE_CIRCULAR_REFERENCE));
+    return super.move(id, newParentId);
+}
+```
+
+### validateNoChildren
+
+자식이 있는 노드의 삭제를 방지합니다.
+
+```java
+@Override
+public void deleteById(Long id) {
+    validateNoChildren(id);
+    // 또는 커스텀 예외 사용
+    validateNoChildren(id,
+        () -> new SimpliXGeneralException(ErrorCode.TREE_HAS_CHILDREN));
+    super.deleteById(id);
+}
+```
+
+### buildTreeFromFlatList
+
+플랫 리스트에서 트리 구조를 재구성합니다. JPA 관계 없이 노드를 가져온 후 메모리에서 트리를 구성할 때 유용합니다.
+
+```java
+public List<Category> getTreeFromCustomQuery() {
+    List<Category> flatNodes = categoryRepository.findByCustomCriteria();
+    return buildTreeFromFlatList(flatNodes, null);  // null = 루트 노드들 반환
+}
+```
+
+### mapToTreeDto
+
+엔티티 트리를 DTO 트리로 재귀적으로 변환합니다.
+
+```java
+public List<CategoryDTO> getTreeAsDto() {
+    List<Category> entityTree = findCompleteHierarchy();
+
+    return mapToTreeDto(
+        entityTree,
+        entity -> modelMapper.map(entity, CategoryDTO.class),  // 엔티티 -> DTO 변환
+        Category::getChildren,                                   // 자식 getter
+        CategoryDTO::setChildren                                 // 자식 setter
+    );
+}
+```
+
+### 유틸리티 메서드 요약
+
+| 메서드 | 설명 |
+|--------|------|
+| `normalizeParentId(ID)` | 빈 문자열을 null로 변환 |
+| `validateNoCircularReference(ID, ID)` | 순환 참조 검증 |
+| `validateNoChildren(ID)` | 자식 존재 여부 검증 |
+| `buildTreeFromFlatList(List, ID)` | 플랫 리스트 → 트리 구조 |
+| `mapToTreeDto(List, Function, Function, BiConsumer)` | 엔티티 트리 → DTO 트리 |
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## 최근 변경 사항
 
-### 2024-12
+### 2025-12
 
 #### 새로운 기능
 - **@I18nTrans 중첩 모드 지원** [`9d3e4e9`](https://github.com/simplecore-dev/simplix/commit/9d3e4e9)
