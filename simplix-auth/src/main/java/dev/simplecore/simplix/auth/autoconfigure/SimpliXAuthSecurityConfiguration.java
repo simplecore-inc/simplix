@@ -5,6 +5,7 @@ import dev.simplecore.simplix.auth.security.SimpliXAccessDeniedHandler;
 import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
 import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter;
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -29,6 +30,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -135,7 +138,9 @@ public class SimpliXAuthSecurityConfiguration {
             HttpSecurity http,
             SimpliXUserDetailsService userDetailsService,
             @Qualifier("authenticationSuccessHandler") AuthenticationSuccessHandler authenticationSuccessHandler,
-            @Qualifier("authenticationFailureHandler") AuthenticationFailureHandler authenticationFailureHandler) throws Exception {
+            @Qualifier("authenticationFailureHandler") AuthenticationFailureHandler authenticationFailureHandler,
+            ObjectProvider<LogoutHandler> logoutHandlerProvider,
+            ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider) throws Exception {
         final String loginPage = properties.getSecurity().getLoginPageTemplate().startsWith("/") ? 
             properties.getSecurity().getLoginPageTemplate() : "/" + properties.getSecurity().getLoginPageTemplate();
         
@@ -167,16 +172,31 @@ public class SimpliXAuthSecurityConfiguration {
                 .successHandler(authenticationSuccessHandler)
                 .failureHandler(authenticationFailureHandler)
                 .permitAll())
-            .logout(logout -> logout
-                .logoutUrl(logoutUrl)
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    SecurityContextHolder.clearContext();
-                    response.sendRedirect(loginPage + "?logout");
-                })
-                .clearAuthentication(true)
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID", "accessToken", "refreshToken", "access_token", "refresh_token")
-                .permitAll())
+            .logout(logout -> {
+                logout.logoutUrl(logoutUrl);
+
+                // Add custom logout handler if provided (for audit logging, token blacklisting, etc.)
+                LogoutHandler customLogoutHandler = logoutHandlerProvider.getIfAvailable();
+                if (customLogoutHandler != null) {
+                    logout.addLogoutHandler(customLogoutHandler);
+                }
+
+                // Use custom logout success handler if provided, otherwise use default
+                LogoutSuccessHandler customLogoutSuccessHandler = logoutSuccessHandlerProvider.getIfAvailable();
+                if (customLogoutSuccessHandler != null) {
+                    logout.logoutSuccessHandler(customLogoutSuccessHandler);
+                } else {
+                    logout.logoutSuccessHandler((request, response, authentication) -> {
+                        SecurityContextHolder.clearContext();
+                        response.sendRedirect(loginPage + "?logout");
+                    });
+                }
+
+                logout.clearAuthentication(true)
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID", "accessToken", "refreshToken", "access_token", "refresh_token")
+                    .permitAll();
+            })
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .userDetailsService(userDetailsService)

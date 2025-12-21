@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -33,6 +34,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -56,6 +58,7 @@ public class SimpliXAuthTokenController {
     private final SimpliXUserDetailsService userDetailsService;
     private final AuthenticationSuccessHandler tokenAuthenticationSuccessHandler;
     private final AuthenticationFailureHandler tokenAuthenticationFailureHandler;
+    private final ObjectProvider<LogoutHandler> logoutHandlerProvider;
 
     @Operation(
             summary = "Issue JWE token",
@@ -302,6 +305,13 @@ public class SimpliXAuthTokenController {
                                     LocaleContextHolder.getLocale())
                     )
             );
+        }
+
+        // Call custom logout handler if available (for audit logging)
+        LogoutHandler logoutHandler = logoutHandlerProvider.getIfAvailable();
+        if (logoutHandler != null) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            logoutHandler.logout(request, null, authentication);
         }
 
         // Revoke access token
