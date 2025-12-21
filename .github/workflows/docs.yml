@@ -84,9 +84,11 @@ jobs:
 
           # Copy new version (SNAPSHOT goes to fixed 'snapshot' folder)
           if [[ "$VERSION" =~ SNAPSHOT ]]; then
-            cp -r build-docs "deploy/snapshot"
+            mkdir -p deploy/snapshot
+            cp -r build-docs/* deploy/snapshot/
           else
-            cp -r build-docs "deploy/$VERSION"
+            mkdir -p "deploy/$VERSION"
+            cp -r build-docs/* "deploy/$VERSION/"
           fi
 
           # Generate versions.json from folders
