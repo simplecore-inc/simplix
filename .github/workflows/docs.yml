@@ -82,8 +82,12 @@ jobs:
             done
           fi
 
-          # Copy new version
-          cp -r build-docs "deploy/$VERSION"
+          # Copy new version (SNAPSHOT goes to fixed 'snapshot' folder)
+          if [[ "$VERSION" =~ SNAPSHOT ]]; then
+            cp -r build-docs "deploy/snapshot"
+          else
+            cp -r build-docs "deploy/$VERSION"
+          fi
 
           # Generate versions.json from folders
           node -e "
@@ -95,8 +99,8 @@ jobs:
             const versions = { releases: [], snapshot: null };
 
             dirs.forEach(dir => {
-              if (dir.includes('SNAPSHOT')) {
-                versions.snapshot = dir;
+              if (dir === 'snapshot') {
+                versions.snapshot = 'snapshot';
               } else if (/^\d+\.\d+/.test(dir)) {
                 versions.releases.push(dir);
               }
