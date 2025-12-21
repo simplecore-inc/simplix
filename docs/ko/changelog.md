@@ -18,6 +18,13 @@
   - 직렬화 후 원본 객체 복원으로 side-effect 방지
   - [상세 문서](/ko/core/i18n-translation.md)
 
+- **정렬 가능한 트리 서비스** [`e5774bd`](https://github.com/simplecore-dev/simplix/commit/e5774bd)
+  - `SortableTreeEntity` 인터페이스 추가 (정렬 순서 변경 가능한 엔티티)
+  - `SimpliXSortableTreeBaseService` 추가 (`reorderChildren()` 기본 구현)
+  - 트리 유틸리티 메서드: `normalizeParentId()`, `validateNoCircularReference()`, `validateNoChildren()`
+  - 트리 변환 메서드: `buildTreeFromFlatList()`, `mapToTreeDto()`
+  - [상세 문서](/ko/core/tree-structure.md)
+
 - **커스텀 로그아웃 핸들러 지원** [`1e7ceef`](https://github.com/simplecore-dev/simplix/commit/1e7ceef)
   - `LogoutHandler` 빈 주입 지원 (감사 로깅, 토큰 블랙리스트 등)
   - `LogoutSuccessHandler` 빈 주입 지원 (커스텀 리다이렉트)
