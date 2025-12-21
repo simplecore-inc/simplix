@@ -10,6 +10,7 @@
   * [엔티티/리포지토리](ko/core/entity-repository.md)
   * [트리 구조](ko/core/tree-structure.md)
   * [타입 변환](ko/core/type-converters.md)
+  * [I18n 번역](ko/core/i18n-translation.md)
   * [보안 유틸리티](ko/core/security.md)
   * [예외/API 응답](ko/core/exception-api.md)
 
@@ -85,5 +86,6 @@
   * [개요](ko/mybatis/overview.md)
 
 * **기타**
+  * [변경 이력](ko/changelog.md)
   * [라이선스](ko/license.md)
   * [문서 기여 가이드](ko/documentation-guide.md)
