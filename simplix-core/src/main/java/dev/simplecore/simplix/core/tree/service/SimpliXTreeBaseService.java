@@ -15,7 +15,9 @@ import org.springframework.util.ReflectionUtils;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -868,6 +870,181 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     @Override
     public List<T> getRootItems() {
         return simpliXTreeRepository.findRootItems();
+    }
+
+    // =================================================================================
+    // COMMON UTILITY METHODS
+    // =================================================================================
+
+    /**
+     * Normalizes a parentId by converting empty/blank strings to null.
+     * <p>
+     * Useful for handling form inputs where empty string represents no parent (root node).
+     * This is commonly needed when processing DTOs from web forms.
+     *
+     * @param parentId The parentId to normalize
+     * @return null if parentId is null or blank, otherwise the original value
+     */
+    protected ID normalizeParentId(ID parentId) {
+        if (parentId == null) {
+            return null;
+        }
+        if (parentId instanceof String && ((String) parentId).trim().isEmpty()) {
+            return null;
+        }
+        return parentId;
+    }
+
+    /**
+     * Validates that moving a node to a new parent won't create a circular reference.
+     * <p>
+     * A circular reference occurs when attempting to move a node to one of its descendants.
+     *
+     * @param nodeId The ID of the node being moved
+     * @param newParentId The proposed new parent ID
+     * @throws IllegalArgumentException if circular reference would be created
+     */
+    protected void validateNoCircularReference(ID nodeId, ID newParentId) {
+        if (newParentId == null || nodeId == null) {
+            return;
+        }
+        if (isDescendantOf(newParentId, nodeId)) {
+            throw new IllegalArgumentException(
+                "Cannot move node " + nodeId + " to its descendant " + newParentId);
+        }
+    }
+
+    /**
+     * Validates that moving a node to a new parent won't create a circular reference.
+     * <p>
+     * Allows custom exception throwing via supplier for framework-specific exceptions.
+     *
+     * @param nodeId The ID of the node being moved
+     * @param newParentId The proposed new parent ID
+     * @param exceptionSupplier Supplier providing the exception to throw
+     * @param <X> The exception type
+     * @throws X if circular reference would be created
+     */
+    protected <X extends RuntimeException> void validateNoCircularReference(
+            ID nodeId,
+            ID newParentId,
+            Supplier<X> exceptionSupplier) throws X {
+        if (newParentId != null && nodeId != null && isDescendantOf(newParentId, nodeId)) {
+            throw exceptionSupplier.get();
+        }
+    }
+
+    /**
+     * Validates that a node has no children before deletion.
+     *
+     * @param id The ID of the node to validate
+     * @throws IllegalStateException if the node has children
+     */
+    protected void validateNoChildren(ID id) {
+        List<T> children = findDirectChildren(id);
+        if (!children.isEmpty()) {
+            throw new IllegalStateException(
+                "Cannot delete node " + id + " because it has " + children.size() + " children");
+        }
+    }
+
+    /**
+     * Validates that a node has no children before deletion.
+     * <p>
+     * Allows custom exception throwing via supplier.
+     *
+     * @param id The ID of the node to validate
+     * @param exceptionSupplier Supplier providing the exception to throw
+     * @param <X> The exception type
+     * @throws X if the node has children
+     */
+    protected <X extends RuntimeException> void validateNoChildren(
+            ID id,
+            Supplier<X> exceptionSupplier) throws X {
+        List<T> children = findDirectChildren(id);
+        if (!children.isEmpty()) {
+            throw exceptionSupplier.get();
+        }
+    }
+
+    /**
+     * Builds a tree structure from a flat list of nodes.
+     * <p>
+     * Uses the parentId relationship to reconstruct the tree hierarchy in memory.
+     * This is useful when fetching nodes without JPA relationship and need to build tree.
+     *
+     * @param flatNodes List of all nodes in flat format
+     * @param rootParentId The parent ID for root nodes (null for top-level roots)
+     * @return List of root nodes with children populated recursively
+     */
+    protected List<T> buildTreeFromFlatList(List<T> flatNodes, ID rootParentId) {
+        if (flatNodes == null || flatNodes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Create a map for quick ID lookup
+        Map<ID, T> nodeMap = new HashMap<>();
+        for (T node : flatNodes) {
+            node.setChildren(new ArrayList<>());
+            nodeMap.put(node.getId(), node);
+        }
+
+        // Build parent-child relationships
+        List<T> roots = new ArrayList<>();
+        for (T node : flatNodes) {
+            ID parentId = node.getParentId();
+            if (Objects.equals(parentId, rootParentId)) {
+                // This is a root node (relative to rootParentId)
+                roots.add(node);
+            } else if (parentId != null) {
+                T parent = nodeMap.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(node);
+                }
+            } else if (rootParentId == null) {
+                // parentId is null and we're looking for top-level roots
+                roots.add(node);
+            }
+        }
+
+        return roots;
+    }
+
+    /**
+     * Recursively converts entity tree to DTO tree using provided mappers.
+     * <p>
+     * This method handles the recursive traversal and child mapping automatically.
+     *
+     * @param entities List of entities with children populated
+     * @param mapper Function to map entity to DTO
+     * @param childrenGetter Function to get children from entity
+     * @param childrenSetter BiConsumer to set children on DTO
+     * @param <D> DTO type
+     * @return List of DTOs with children populated
+     */
+    protected <D> List<D> mapToTreeDto(
+            List<T> entities,
+            Function<T, D> mapper,
+            Function<T, List<T>> childrenGetter,
+            java.util.function.BiConsumer<D, List<D>> childrenSetter) {
+
+        if (entities == null || entities.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return entities.stream()
+            .map(entity -> {
+                D dto = mapper.apply(entity);
+                List<T> children = childrenGetter.apply(entity);
+                if (children != null && !children.isEmpty()) {
+                    List<D> childDtos = mapToTreeDto(children, mapper, childrenGetter, childrenSetter);
+                    childrenSetter.accept(dto, childDtos);
+                } else {
+                    childrenSetter.accept(dto, new ArrayList<>());
+                }
+                return dto;
+            })
+            .collect(Collectors.toList());
     }
 
 } 
