@@ -86,6 +86,8 @@ jobs:
           if [[ "$VERSION" =~ SNAPSHOT ]]; then
             mkdir -p deploy/snapshot
             cp -r build-docs/* deploy/snapshot/
+            # Store actual version for display in version selector
+            echo "$VERSION" > deploy/snapshot/.version
           else
             mkdir -p "deploy/$VERSION"
             cp -r build-docs/* "deploy/$VERSION/"
@@ -98,11 +100,17 @@ jobs:
               .filter(d => d.isDirectory())
               .map(d => d.name);
 
-            const versions = { releases: [], snapshot: null };
+            const versions = { releases: [], snapshotVersion: null };
 
             dirs.forEach(dir => {
               if (dir === 'snapshot') {
-                versions.snapshot = 'snapshot';
+                // Read actual version from .version file for display
+                const versionFile = 'deploy/snapshot/.version';
+                if (fs.existsSync(versionFile)) {
+                  versions.snapshotVersion = fs.readFileSync(versionFile, 'utf8').trim();
+                } else {
+                  versions.snapshotVersion = 'SNAPSHOT';
+                }
               } else if (/^\d+\.\d+/.test(dir)) {
                 versions.releases.push(dir);
               }
@@ -121,8 +129,8 @@ jobs:
             fs.writeFileSync('deploy/versions.json', JSON.stringify(versions, null, 2));
             console.log('Generated versions.json:', versions);
 
-            // Create root redirect
-            const defaultVersion = versions.releases[0] || versions.snapshot;
+            // Create root redirect (use 'snapshot' folder for SNAPSHOT versions)
+            const defaultVersion = versions.releases[0] || (versions.snapshotVersion ? 'snapshot' : null);
             const html = '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta http-equiv=\"refresh\" content=\"0; url=./' + defaultVersion + '/\"><script>window.location.href=\"./' + defaultVersion + '/\";</script></head><body><p>Redirecting...</p></body></html>';
             fs.writeFileSync('deploy/index.html', html);
             console.log('Root redirect to:', defaultVersion);
