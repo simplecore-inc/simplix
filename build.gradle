@@ -207,6 +207,10 @@ subprojects {
                         'simplix-email': [
                             name: 'SimpliX Email',
                             description: 'Multi-provider email service supporting SMTP, AWS SES, SendGrid, and Resend with template support'
+                        ],
+                        'simplix-scheduler': [
+                            name: 'SimpliX Scheduler',
+                            description: 'Scheduler execution logging with support for @Scheduled methods, ShedLock integration, and multiple storage strategies'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {
