@@ -11,6 +11,15 @@
 ### 2025-12
 
 #### 새로운 기능
+- **simplix-scheduler 모듈 추가**
+  - Spring `@Scheduled` 메서드 실행 자동 로깅
+  - AOP 기반 실행 시간 추적 및 상태 기록
+  - database/in-memory 저장 전략 지원
+  - ShedLock 통합으로 분산 환경 지원
+  - `@SchedulerName` 어노테이션으로 커스텀 이름 지정
+  - Spring `${...}` placeholder를 실제 값으로 치환하여 저장
+  - [상세 문서](ko/scheduler/overview.md)
+
 - **@I18nTrans 중첩 모드 지원** [`9d3e4e9`](https://github.com/simplecore-inc/simplix/commit/9d3e4e9)
   - `target` 속성 추가로 중첩 객체의 필드 번역 지원
   - Dot notation 경로 지원 (예: `tagGroup.nameI18n`)
