@@ -27,6 +27,7 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 | **simplix-email** | 템플릿 지원 멀티 프로바이더 이메일 서비스 (SMTP, AWS SES, SendGrid, Resend) |
 | **simplix-hibernate** | Ehcache, Redis, Hazelcast 지원 Hibernate L2 캐시 관리 |
 | **simplix-mybatis** | 커스텀 타입 핸들러 포함 MyBatis 통합 |
+| **simplix-scheduler** | @Scheduled 메서드 실행 로깅 및 모니터링 (ShedLock 연동 지원) |
 | **spring-boot-starter-simplix** | 모든 모듈을 포함하는 자동 구성 통합 스타터 |
 
 ## 빠른 시작
@@ -155,6 +156,7 @@ SimpliX Framework
 |       +-- simplix-email ----------- Email
 |       +-- simplix-hibernate ------- L2 Cache
 |       +-- simplix-mybatis --------- MyBatis
+|       +-- simplix-scheduler ------- Scheduler Logging
 ```
 
 ## 튜토리얼
@@ -183,6 +185,7 @@ SimpliX를 시작하기 위한 단계별 가이드:
 - [simplix-email](../../simplix-email/README.md) - 이메일 서비스
 - [simplix-hibernate](../../simplix-hibernate/README.md) - Hibernate L2 캐시
 - [simplix-mybatis](../../simplix-mybatis/README.md) - MyBatis 통합
+- [simplix-scheduler](../../simplix-scheduler/README.md) - 스케줄러 실행 로깅
 - [spring-boot-starter-simplix](../../spring-boot-starter-simplix/README.md) - 통합 스타터
 
 ## 보안

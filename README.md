@@ -27,6 +27,7 @@ SimpliX provides a comprehensive set of modules for building enterprise applicat
 | **simplix-email** | Multi-provider email service (SMTP, AWS SES, SendGrid, Resend) with template support |
 | **simplix-hibernate** | Hibernate L2 cache management with Ehcache, Redis, Hazelcast support |
 | **simplix-mybatis** | MyBatis integration with custom type handlers |
+| **simplix-scheduler** | @Scheduled method execution logging and monitoring with ShedLock integration |
 | **spring-boot-starter-simplix** | Umbrella starter that includes all modules with auto-configuration |
 
 ## Quick Start
@@ -151,7 +152,8 @@ SimpliX Framework
 │       ├── simplix-file ──────────── File Storage
 │       ├── simplix-email ─────────── Email
 │       ├── simplix-hibernate ─────── L2 Cache
-│       └── simplix-mybatis ───────── MyBatis
+│       ├── simplix-mybatis ───────── MyBatis
+│       └── simplix-scheduler ─────── Scheduler Logging
 ```
 
 ## Tutorials
@@ -179,6 +181,7 @@ Each module has its own README with detailed documentation:
 - [simplix-email](simplix-email/README.md) - Email service
 - [simplix-hibernate](simplix-hibernate/README.md) - Hibernate L2 cache
 - [simplix-mybatis](simplix-mybatis/README.md) - MyBatis integration
+- [simplix-scheduler](simplix-scheduler/README.md) - Scheduler execution logging
 - [spring-boot-starter-simplix](spring-boot-starter-simplix/README.md) - Umbrella starter
 
 ## Security
