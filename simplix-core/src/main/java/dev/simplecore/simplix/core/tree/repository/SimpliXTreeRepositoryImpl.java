@@ -242,6 +242,56 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
     }
 
     /**
+     * Counts direct children for each parent ID using a single GROUP BY query.
+     *
+     * @return list of [parentId, count] pairs
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<Object[]> countChildrenByParentId() {
+        String dbType = getDatabaseType();
+        String query = queries.getChildCountQuery(dbType);
+        return entityManager.createNativeQuery(query).getResultList();
+    }
+
+    /**
+     * Retrieves root items with child count in a single query.
+     * <p>
+     * Uses a correlated subquery to include child_count for each root item.
+     * Returns raw Object[] where the last element is the child_count.
+     *
+     * @return list of raw result rows (entity columns + child_count as last column)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<Object[]> findRootItemsWithChildCount() {
+        String dbType = getDatabaseType();
+        String query = queries.getRootItemsWithChildCountQuery(dbType);
+        // Don't use entity class mapping - need to preserve child_count column
+        return entityManager.createNativeQuery(query).getResultList();
+    }
+
+    /**
+     * Retrieves direct children with child count in a single query.
+     * <p>
+     * Uses a correlated subquery to include child_count for each child item.
+     * Returns raw Object[] where the last element is the child_count.
+     *
+     * @param parentId the parent ID to find children for
+     * @return list of raw result rows (entity columns + child_count as last column)
+     */
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<Object[]> findDirectChildrenWithChildCount(ID parentId) {
+        String dbType = getDatabaseType();
+        String query = queries.getDirectChildrenWithChildCountQuery(dbType);
+        // Don't use entity class mapping - need to preserve child_count column
+        return entityManager.createNativeQuery(query)
+            .setParameter(1, parentId)
+            .getResultList();
+    }
+
+    /**
      * Determines the type of database being used.
      * This information is used to generate appropriate database-specific queries.
      *

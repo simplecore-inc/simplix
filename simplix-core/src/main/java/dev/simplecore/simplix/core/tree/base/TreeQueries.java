@@ -412,4 +412,107 @@ public class TreeQueries {
                 getOrderByClauseWithNullsLast(dbType));
         }
     }
+
+    /**
+     * Generates a query to count direct children grouped by parent ID.
+     * <p>
+     * Returns rows with [parentId, count] pairs for parents that have children.
+     * Parents with no children will not appear in the result.
+     * <p>
+     * Note: This query only checks for NOT NULL since parent_id can be numeric or string.
+     * For string-type parent_id columns with empty string values, use findRoots/findDirectChildren methods.
+     *
+     * @param dbType the database type
+     * @return SQL query string
+     */
+    public String getChildCountQuery(String dbType) {
+        // Only check for NOT NULL to support both numeric and string ID types
+        return String.format(
+            "SELECT %s, COUNT(*) FROM %s " +
+            "WHERE %s IS NOT NULL " +
+            "GROUP BY %s",
+            parentIdColumn, tableName,
+            parentIdColumn,
+            parentIdColumn);
+    }
+
+    /**
+     * Generates a correlated subquery for counting direct children.
+     * <p>
+     * This subquery counts children where parent_id matches the outer query's id.
+     *
+     * @return SQL subquery string for child count
+     */
+    private String getChildCountSubquery() {
+        return String.format(
+            "(SELECT COUNT(*) FROM %s child WHERE child.%s = t.%s)",
+            tableName, parentIdColumn, idColumn);
+    }
+
+    /**
+     * Generates a query to retrieve root items with child count in a single query.
+     * <p>
+     * Uses a correlated subquery to include child_count for each root item.
+     * This eliminates the need for a separate GROUP BY query.
+     *
+     * @param dbType the database type
+     * @return SQL query string that returns entity columns plus child_count
+     */
+    public String getRootItemsWithChildCountQuery(String dbType) {
+        String countSubquery = getChildCountSubquery();
+
+        if ("h2".equals(dbType)) {
+            return String.format(
+                "SELECT t.*, %s as child_count FROM %s t " +
+                "WHERE t.%s IS NULL %s",
+                countSubquery, tableName, parentIdColumn,
+                getOrderByClauseWithAlias(dbType));
+        } else {
+            return String.format(
+                "SELECT t.*, %s as child_count FROM %s t " +
+                "WHERE t.%s IS NULL OR TRIM(t.%s) = '' %s",
+                countSubquery, tableName, parentIdColumn, parentIdColumn,
+                getOrderByClauseWithAlias(dbType));
+        }
+    }
+
+    /**
+     * Generates a query to retrieve direct children with child count in a single query.
+     * <p>
+     * Uses a correlated subquery to include child_count for each child item.
+     * This eliminates the need for a separate GROUP BY query.
+     *
+     * @param dbType the database type
+     * @return SQL query string that returns entity columns plus child_count
+     */
+    public String getDirectChildrenWithChildCountQuery(String dbType) {
+        String countSubquery = getChildCountSubquery();
+
+        return String.format(
+            "SELECT t.*, %s as child_count FROM %s t " +
+            "WHERE t.%s = ?1 %s",
+            countSubquery, tableName, parentIdColumn,
+            getOrderByClauseWithAlias(dbType));
+    }
+
+    /**
+     * Generates ORDER BY clause with table alias for queries using 't' alias.
+     *
+     * @param dbType the database type
+     * @return ORDER BY clause with 't.' prefix on column names
+     */
+    private String getOrderByClauseWithAlias(String dbType) {
+        String dir = getSortDirectionSql();
+        String nullsLast = sortDirection == SortDirection.DESC ? "NULLS FIRST" : "NULLS LAST";
+
+        if ("postgresql".equals(dbType) || "oracle".equals(dbType)) {
+            return sortOrderColumn != null ?
+                String.format("ORDER BY t.%s %s %s, t.%s %s", sortOrderColumn, dir, nullsLast, idColumn, dir) :
+                String.format("ORDER BY t.%s %s", idColumn, dir);
+        } else {
+            return sortOrderColumn != null ?
+                String.format("ORDER BY t.%s %s, t.%s %s", sortOrderColumn, dir, idColumn, dir) :
+                String.format("ORDER BY t.%s %s", idColumn, dir);
+        }
+    }
 } 

@@ -1047,4 +1047,110 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
             .collect(Collectors.toList());
     }
 
+    // =================================================================================
+    // CHILD COUNT OPERATIONS
+    // =================================================================================
+
+    /**
+     * Gets a map of parent ID to child count using a single GROUP BY query.
+     * <p>
+     * This method is useful for efficiently determining hasChildren/childCount
+     * for multiple nodes without N+1 query problems.
+     * <p>
+     * Usage example:
+     * <pre>{@code
+     * Map<ID, Long> childCounts = getChildCountMap();
+     * for (T entity : entities) {
+     *     Long count = childCounts.getOrDefault(entity.getId(), 0L);
+     *     dto.setHasChildren(count > 0);
+     *     dto.setChildCount(count.intValue());
+     * }
+     * }</pre>
+     *
+     * @return Map where key is parent ID and value is the number of direct children
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<ID, Long> getChildCountMap() {
+        List<Object[]> results = simpliXTreeRepository.countChildrenByParentId();
+        Map<ID, Long> countMap = new HashMap<>();
+        for (Object[] row : results) {
+            ID parentId = (ID) row[0];
+            Long count = ((Number) row[1]).longValue();
+            if (parentId != null) {
+                countMap.put(parentId, count);
+            }
+        }
+        return countMap;
+    }
+
+    /**
+     * Functional interface for setting children with count information.
+     *
+     * @param <D> DTO type
+     */
+    @FunctionalInterface
+    public interface ChildrenWithCountSetter<D> {
+        /**
+         * Sets children and child count information on a DTO.
+         *
+         * @param dto the DTO to update
+         * @param children the list of child DTOs (may be empty)
+         * @param childCount the number of direct children
+         */
+        void accept(D dto, List<D> children, int childCount);
+    }
+
+    /**
+     * Recursively converts entity tree to DTO tree with hasChildren/childCount support.
+     * <p>
+     * This method is similar to {@link #mapToTreeDto} but includes child count information
+     * for each node. When fullTree=true, childCount is derived from children list size.
+     * <p>
+     * Usage example:
+     * <pre>{@code
+     * List<CategoryDTO> dtos = mapToTreeDtoWithChildInfo(
+     *     entities,
+     *     entity -> modelMapper.map(entity, CategoryDTO.class),
+     *     CmsCategory::getChildren,
+     *     (dto, children, count) -> {
+     *         dto.setChildren(children);
+     *         dto.setChildCount(count);
+     *         dto.setHasChildren(count > 0);
+     *     }
+     * );
+     * }</pre>
+     *
+     * @param entities List of entities with children populated
+     * @param mapper Function to map entity to DTO
+     * @param childrenGetter Function to get children from entity
+     * @param childrenWithCountSetter Consumer to set children and count on DTO
+     * @param <D> DTO type
+     * @return List of DTOs with children and count information populated
+     */
+    protected <D> List<D> mapToTreeDtoWithChildInfo(
+            List<T> entities,
+            Function<T, D> mapper,
+            Function<T, List<T>> childrenGetter,
+            ChildrenWithCountSetter<D> childrenWithCountSetter) {
+
+        if (entities == null || entities.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return entities.stream()
+            .map(entity -> {
+                D dto = mapper.apply(entity);
+                List<T> children = childrenGetter.apply(entity);
+                if (children != null && !children.isEmpty()) {
+                    List<D> childDtos = mapToTreeDtoWithChildInfo(
+                        children, mapper, childrenGetter, childrenWithCountSetter);
+                    childrenWithCountSetter.accept(dto, childDtos, children.size());
+                } else {
+                    childrenWithCountSetter.accept(dto, new ArrayList<>(), 0);
+                }
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
 } 

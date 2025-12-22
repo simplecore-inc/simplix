@@ -127,6 +127,59 @@ class SimpliXTreeRepositoryTest {
             .containsExactly("ROOT");
     }
 
+    @Test
+    @DisplayName("countChildrenByParentId - Count direct children for each parent")
+    void countChildrenByParentId() {
+        // when
+        List<Object[]> results = treeRepository.countChildrenByParentId();
+
+        // then
+        assertThat(results).isNotEmpty();
+
+        // Find child count for root (should have 2 children)
+        Long rootChildCount = results.stream()
+            .filter(row -> root.getId().equals(row[0]))
+            .map(row -> ((Number) row[1]).longValue())
+            .findFirst()
+            .orElse(0L);
+
+        assertThat(rootChildCount).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("findRootItemsWithChildCount - Retrieve root items with child count in single query")
+    void findRootItemsWithChildCount() {
+        // when
+        List<Object[]> results = treeRepository.findRootItemsWithChildCount();
+
+        // then
+        assertThat(results).hasSize(1);
+
+        // First result should be the root node with child count
+        Object[] rootResult = results.get(0);
+
+        // Verify child count (root has 2 direct children)
+        Number childCount = (Number) rootResult[rootResult.length - 1];
+        assertThat(childCount.intValue()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("findDirectChildrenWithChildCount - Retrieve children with child count in single query")
+    void findDirectChildrenWithChildCount() {
+        // when
+        List<Object[]> results = treeRepository.findDirectChildrenWithChildCount(root.getId());
+
+        // then
+        assertThat(results).hasSize(2); // CHILD1 and CHILD2
+
+        // CHILD1 should have 1 grandchild, CHILD2 should have 0
+        int totalGrandchildren = results.stream()
+            .mapToInt(row -> ((Number) row[row.length - 1]).intValue())
+            .sum();
+
+        assertThat(totalGrandchildren).isEqualTo(1); // Only GRANDCHILD1 under CHILD1
+    }
+
     private CodeItem createCodeItem(String key, String value, Long parentId, int sortOrder) {
         CodeItem item = new CodeItem();
         item.setCodeGroup(codeGroup);
