@@ -62,13 +62,132 @@ springdoc:
 
 ### Scalar UI Configuration
 
-Scalar는 현대적인 API 문서 UI입니다:
+Scalar는 Swagger UI의 현대적인 대안으로, 더 깔끔하고 사용자 친화적인 API 문서 UI를 제공합니다.
+
+#### 의존성
+
+SimpliX starter에 이미 포함되어 있습니다:
+```gradle
+// spring-boot-starter-simplix에 포함
+api 'com.scalar.maven:scalar'
+```
+
+#### 기본 설정
+
+```yaml
+scalar:
+  enabled: true           # Scalar UI 활성화 (기본값: true)
+  url: /api-docs          # OpenAPI spec URL (프로젝트에 맞게 설정)
+  path: /scalar           # Scalar UI 접근 경로
+```
+
+#### 상세 설정 옵션
 
 ```yaml
 scalar:
   enabled: true
-  url: /v3/api-docs    # OpenAPI spec URL
-  path: /scalar        # Scalar UI 경로
+  url: /api-docs
+  path: /scalar
+
+  # 테마 설정
+  theme: default          # default, alternate, moon, purple, solarized,
+                          # bluePlanet, deepSpace, saturn, kepler, elysiajs,
+                          # fastify, mars, none
+
+  # 레이아웃 설정
+  layout: modern          # modern, classic
+
+  # 다운로드 옵션
+  document-download-type: both  # both, spec, markdown
+
+  # 기타 옵션
+  show-sidebar: true
+  hide-download-button: false
+  hide-models: false
+  hide-dark-mode-toggle: false
+  dark-mode: false
+  force-dark-mode-state: ""     # dark, light (빈 값이면 시스템 설정 따름)
+
+  # 메타데이터
+  metadata-title: "API Reference"
+
+  # 인증 설정
+  authentication:
+    preferred-security-scheme: ""  # 기본 인증 스킴 선택
+    api-key:
+      token: ""                    # 기본 API 키 값
+```
+
+#### 엔드포인트 비교
+
+| Feature | Swagger UI | Scalar |
+|---------|-----------|--------|
+| 경로 | `/swagger-ui.html` | `/scalar` |
+| 디자인 | 클래식 | 모던/미니멀 |
+| 다크 모드 | 미지원 | 지원 |
+| 코드 예제 | 기본 | 다양한 언어 |
+| 검색 | 기본 | 향상된 검색 |
+| 모바일 | 제한적 | 반응형 |
+
+#### 보안 설정
+
+Scalar 엔드포인트는 SwaggerSecurityConfig에서 관리됩니다:
+
+```java
+@Configuration
+public class SwaggerSecurityConfig {
+
+    @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            .securityMatcher("/swagger-ui/**", "/swagger-ui.html",
+                           "/api-docs/**", "/scalar/**")
+            .authorizeHttpRequests(auth -> auth
+                // localhost에서만 API 문서 접근 허용
+                .requestMatchers("/api-docs/**").access((auth2, ctx) ->
+                    new AuthorizationDecision(isLocalhostRequest(ctx.getRequest()))
+                )
+                .anyRequest().permitAll()
+            )
+            .build();
+    }
+}
+```
+
+#### 문제 해결
+
+**"Failed to fetch document" 오류**
+
+Scalar가 OpenAPI 스펙을 가져오지 못하는 경우:
+
+1. `scalar.url` 설정 확인:
+   ```yaml
+   scalar:
+     url: /api-docs  # springdoc.api-docs.path와 일치해야 함
+   ```
+
+2. 보안 설정 확인:
+   - `/api-docs/**` 경로가 접근 가능한지 확인
+   - localhost 제한이 있는 경우 브라우저에서 직접 접근 테스트
+
+3. CORS 설정 확인:
+   ```yaml
+   simplix:
+     auth:
+       cors:
+         allowed-origins:
+           - http://localhost:8080
+   ```
+
+**기본 데모 API가 표시되는 경우**
+
+`scalar.url`이 설정되지 않으면 Scalar 데모 API가 표시됩니다.
+반드시 프로젝트의 OpenAPI 스펙 경로를 설정하세요:
+
+```yaml
+scalar:
+  url: /api-docs  # 또는 /v3/api-docs
 ```
 
 ## SimpliX Schema Enhancers
