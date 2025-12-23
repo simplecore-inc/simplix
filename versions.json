@@ -1,4 +1,6 @@
 {
-  "releases": [],
+  "releases": [
+    "1.0.14"
+  ],
   "snapshotVersion": "1.0.14-SNAPSHOT"
 }
