@@ -51,12 +51,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         try {
             OAuth2UserInfo userInfo = extractor.extract(authentication);
             HttpSession session = request.getSession(false);
-            String linkingUserId = session != null ?
-                    (String) session.getAttribute(LINKING_USER_ID_ATTR) : null;
+
+            // Atomically get and remove linking user ID to prevent race conditions
+            // when multiple OAuth2 callbacks arrive simultaneously (e.g., double-click)
+            String linkingUserId = null;
+            if (session != null) {
+                synchronized (session) {
+                    linkingUserId = (String) session.getAttribute(LINKING_USER_ID_ATTR);
+                    if (linkingUserId != null) {
+                        session.removeAttribute(LINKING_USER_ID_ATTR);
+                    }
+                }
+            }
 
             if (linkingUserId != null) {
                 // Account linking mode
-                session.removeAttribute(LINKING_USER_ID_ATTR);
                 handleLinking(request, response, linkingUserId, userInfo);
             } else {
                 // Login/signup mode
