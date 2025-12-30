@@ -57,6 +57,11 @@
 |  |  |- DB unique   | |- Multi field | |- Update exclusion  |   |  |
 |  |  |- Soft delete | |- Soft delete | |- Soft delete aware |   |  |
 |  |  +--------------+ +--------------+ +--------------------+   |  |
+|  |  +------------------+ +-------------------------------+     |  |
+|  |  |@UniqueComposites | |UniqueCompositeValidator       |     |  |
+|  |  |- Composite key   | |- Multi-column unique check    |     |  |
+|  |  |- Class level     | |- Update exclusion supported   |     |  |
+|  |  +------------------+ +-------------------------------+     |  |
 |  +-------------------------------------------------------------+  |
 |  +-------------------------------------------------------------+  |
 |  |  I18n Translation                                           |  |
@@ -167,6 +172,9 @@ simplix-core/
     │   ├── UniqueField.java        # 클래스 레벨 유니크 필드 정의
     │   ├── UniqueFields.java       # 클래스 레벨 유니크 검증
     │   ├── UniqueFieldsValidator.java
+    │   ├── UniqueComposite.java    # 복합 유니크 제약 정의
+    │   ├── UniqueComposites.java   # 복합 유니크 검증 (다중 컬럼)
+    │   ├── UniqueCompositeValidator.java
     │   └── SoftDeleteType.java     # Soft delete 유형 (BOOLEAN, TIMESTAMP)
     │
     ├── config/                      # 설정 홀더
@@ -220,6 +228,7 @@ simplix-core/
 | **@ValidateWith** | validator | 커스텀 서비스 메서드 검증 |
 | **@Unique** | validator | 필드 레벨 DB 유니크 검증 어노테이션 (soft delete 지원) |
 | **@UniqueFields** | validator | 클래스 레벨 다중 필드 유니크 검증 (soft delete 지원) |
+| **@UniqueComposites** | validator | 복합 유니크 제약 검증 (다중 컬럼 조합, soft delete 지원) |
 | **SoftDeleteType** | validator | Soft delete 유형 (NONE, BOOLEAN, TIMESTAMP) |
 | **SimpliXI18nConfigHolder** | config | I18n 번역 설정 홀더 |
 | **@I18nTrans** | jackson.annotation | JSON 필드 다국어 번역 어노테이션 |
