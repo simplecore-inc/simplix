@@ -28,12 +28,27 @@ public enum SoftDeleteType {
     BOOLEAN,
 
     /**
-     * Timestamp-based soft delete.
+     * Timestamp-based soft delete using date/time types.
      * <p>
      * Excludes records where the soft delete field is not null.
      * Query condition: {@code field IS NULL}
      * <p>
+     * Use this for {@code LocalDateTime}, {@code Instant}, or {@code Date} fields.
+     * <p>
      * Example fields: {@code deletedAt}, {@code deletedDate}
      */
-    TIMESTAMP
+    TIMESTAMP,
+
+    /**
+     * Timestamp-based soft delete using Long (epoch milliseconds).
+     * <p>
+     * Excludes records where the soft delete field has a positive value.
+     * Query condition: {@code (field IS NULL OR field < 0)}
+     * <p>
+     * Use this when storing epoch time as Long and using -1 or negative values
+     * to indicate "not deleted".
+     * <p>
+     * Example fields: {@code deletedAt} (Long type with -1 for not deleted)
+     */
+    LONG_TIMESTAMP
 }

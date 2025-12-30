@@ -95,8 +95,13 @@ public class UniqueValidator implements ConstraintValidator<Unique, Object> {
                     .append(" IS NULL OR e.").append(softDeleteField).append(" = false)");
                 break;
             case TIMESTAMP:
-                // Include records where deletedAt is null
+                // Include records where deletedAt is null (for LocalDateTime, Instant, Date)
                 jpql.append(" AND e.").append(softDeleteField).append(" IS NULL");
+                break;
+            case LONG_TIMESTAMP:
+                // Include records where deletedAt is null or negative (for Long with -1 = not deleted)
+                jpql.append(" AND (e.").append(softDeleteField)
+                    .append(" IS NULL OR e.").append(softDeleteField).append(" < 0)");
                 break;
             default:
                 break;
