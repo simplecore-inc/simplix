@@ -27,7 +27,7 @@ public class LocalEventStrategy implements EventStrategy {
         }
 
         try {
-            log.debug("Publishing event locally: {} with ID: {}",
+            log.trace("Publishing event locally: {} with ID: {}",
                 event.getClass().getSimpleName(), event.getEventId());
 
             // For local events, we ignore most options since they're synchronous in-memory

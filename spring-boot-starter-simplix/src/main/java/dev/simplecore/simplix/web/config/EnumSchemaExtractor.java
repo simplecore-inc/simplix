@@ -140,7 +140,7 @@ public class EnumSchemaExtractor implements OpenApiCustomizer {
             }
 
             extractedEnums.put(enumName, enumSchema);
-            log.debug("Extracted enum '{}' from property '{}' with values: {}",
+            log.trace("Extracted enum '{}' from property '{}' with values: {}",
                 enumName, propertyName, enumValues);
         }
 

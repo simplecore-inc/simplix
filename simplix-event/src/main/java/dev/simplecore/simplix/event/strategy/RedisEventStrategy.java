@@ -54,7 +54,7 @@ public class RedisEventStrategy implements EventStrategy {
             // Ensure consumer group exists for this stream (lazy creation)
             ensureConsumerGroup(streamKey);
 
-            log.debug("Publishing event to Redis Stream {}: {}", streamKey, event.getEventId());
+            log.trace("Publishing event to Redis Stream {}: {}", streamKey, event.getEventId());
 
             // Prepare stream record
             Map<String, Object> messageBody = new HashMap<>();

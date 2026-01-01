@@ -44,7 +44,7 @@ public class ValidationArgumentProcessor {
         // Extract non-resolvable arguments (skip field names, extract from maps)
         List<Object> arguments = extractValidationArguments(error.getArguments());
 
-        log.debug("Processing validation arguments - constraint: {}, extracted args: {}",
+        log.trace("Processing validation arguments - constraint: {}, extracted args: {}",
                 constraintType, arguments);
 
         // If no arguments extracted, return empty array
@@ -106,7 +106,7 @@ public class ValidationArgumentProcessor {
             }
         }
 
-        log.debug("Extracted constraint attributes: {}", attributeMap);
+        log.trace("Extracted constraint attributes: {}", attributeMap);
         return attributeMap;
     }
 

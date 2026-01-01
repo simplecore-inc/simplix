@@ -39,11 +39,11 @@ public class CacheEvictionStrategy {
             if (entityId != null) {
                 // Single entity eviction
                 cacheManager.evictEntity(entityClass, entityId);
-                log.debug("✔ Evicted entity cache: {}[{}]", entityClass.getSimpleName(), entityId);
+                log.trace("✔ Evicted entity cache: {}[{}]", entityClass.getSimpleName(), entityId);
             } else {
                 // Bulk eviction - evict entire entity cache
                 cacheManager.evictEntityCache(entityClass);
-                log.debug("✔ Evicted all entity cache: {}", entityClass.getSimpleName());
+                log.trace("✔ Evicted all entity cache: {}", entityClass.getSimpleName());
             }
         } catch (Exception e) {
             log.error("✖ Cache eviction failed for {}: {}", entityClass.getSimpleName(), e.getMessage());

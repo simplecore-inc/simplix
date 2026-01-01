@@ -90,7 +90,7 @@ public class UniqueFieldsValidator implements ConstraintValidator<UniqueFields, 
         if (StringUtils.hasText(field.idProperty())) {
             if (wrapper.isReadableProperty(field.idProperty())) {
                 idValue = wrapper.getPropertyValue(field.idProperty());
-                log.debug("UniqueFieldsValidator - idProperty: {}, idValue: {}, idValueType: {}",
+                log.trace("UniqueFieldsValidator - idProperty: {}, idValue: {}, idValueType: {}",
                     field.idProperty(), idValue, idValue != null ? idValue.getClass().getSimpleName() : "null");
             } else {
                 log.warn("UniqueFieldsValidator - idProperty '{}' is not readable on {}",

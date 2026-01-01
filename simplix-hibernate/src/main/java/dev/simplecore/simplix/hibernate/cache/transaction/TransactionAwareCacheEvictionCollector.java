@@ -87,7 +87,7 @@ public class TransactionAwareCacheEvictionCollector {
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             // No active transaction - publish immediately as fallback
             // Also ensure ThreadLocal is cleaned up to prevent memory leaks
-            log.debug("ℹ No active transaction, publishing eviction immediately for {}",
+            log.trace("ℹ No active transaction, publishing eviction immediately for {}",
                     getSimpleClassName(eviction.getEntityClassName()));
 
             try {
@@ -133,7 +133,7 @@ public class TransactionAwareCacheEvictionCollector {
 
         // Add to pending list
         pendingList.add(eviction);
-        log.debug("✔ Collected pending eviction: {} [{}] operation={}",
+        log.trace("✔ Collected pending eviction: {} [{}] operation={}",
                 getSimpleClassName(eviction.getEntityClassName()),
                 eviction.getEntityId(),
                 eviction.getOperation());
@@ -173,7 +173,7 @@ public class TransactionAwareCacheEvictionCollector {
                         return;
                     }
 
-                    log.debug("✔ Transaction committed, publishing {} pending evictions", evictions.size());
+                    log.trace("✔ Transaction committed, publishing {} pending evictions", evictions.size());
 
                     // Create immutable copy for the event
                     List<PendingEviction> evictionsCopy = new ArrayList<>(evictions);
@@ -219,7 +219,7 @@ public class TransactionAwareCacheEvictionCollector {
                     List<PendingEviction> evictions = PENDING_EVICTIONS.get();
                     int evictionCount = (evictions != null) ? evictions.size() : 0;
                     if (status == STATUS_ROLLED_BACK && evictionCount > 0) {
-                        log.debug("ℹ Transaction rolled back, discarding {} pending evictions", evictionCount);
+                        log.trace("ℹ Transaction rolled back, discarding {} pending evictions", evictionCount);
                     }
                 } finally {
                     cleanup();
@@ -228,7 +228,7 @@ public class TransactionAwareCacheEvictionCollector {
         });
 
         SYNCHRONIZATION_REGISTERED.set(Boolean.TRUE);
-        log.debug("✔ TransactionSynchronization registered for cache eviction");
+        log.trace("✔ TransactionSynchronization registered for cache eviction");
     }
 
     /**

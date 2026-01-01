@@ -46,7 +46,7 @@ public class SimpliXResponseBodyAdvice implements ResponseBodyAdvice<Object> {
                                 @Nullable Class<? extends HttpMessageConverter<?>> selectedConverterType, 
                                 @Nullable ServerHttpRequest request,
                                 @Nullable ServerHttpResponse response) {
-        log.debug("Processing response body: {}", body != null ? body.getClass().getName() : "null");
+        log.trace("Processing response body: {}", body != null ? body.getClass().getName() : "null");
 
         // Handle null case
         if (body == null) {

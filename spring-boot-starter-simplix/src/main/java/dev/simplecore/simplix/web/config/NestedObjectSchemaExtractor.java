@@ -82,7 +82,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
 
         // Prevent infinite recursion by checking if we're already processing this context
         if (processingStack.contains(contextPath)) {
-            log.debug("Skipping already processing context: {}", contextPath);
+            log.trace("Skipping already processing context: {}", contextPath);
             return;
         }
 
@@ -105,7 +105,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                         Schema extractedSchema = createExtractedSchema(propSchema);
                         extractedSchemas.put(extractedSchemaName, extractedSchema);
 
-                        log.debug("Extracted nested object '{}' from property '{}'",
+                        log.trace("Extracted nested object '{}' from property '{}'",
                             extractedSchemaName, propPath);
 
                         // Replace with reference
@@ -147,7 +147,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                     Schema extractedSchema = createExtractedSchema(itemSchema);
                     extractedSchemas.put(extractedSchemaName, extractedSchema);
 
-                    log.debug("Extracted array item object '{}' from '{}'",
+                    log.trace("Extracted array item object '{}' from '{}'",
                         extractedSchemaName, contextPath);
 
                     // Replace with reference
@@ -192,7 +192,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                     Schema extractedSchema = createExtractedSchema(additionalPropSchema);
                     extractedSchemas.put(extractedSchemaName, extractedSchema);
 
-                    log.debug("Extracted additionalProperties value object '{}' from '{}'",
+                    log.trace("Extracted additionalProperties value object '{}' from '{}'",
                         extractedSchemaName, contextPath);
 
                     // Replace with reference

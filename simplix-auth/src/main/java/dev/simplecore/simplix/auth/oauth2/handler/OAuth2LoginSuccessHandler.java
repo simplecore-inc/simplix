@@ -85,12 +85,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletResponse response,
             OAuth2UserInfo userInfo) throws IOException {
 
-        log.debug("Processing OAuth2 login for provider: {}, providerId: {}",
+        log.trace("Processing OAuth2 login for provider: {}, providerId: {}",
                 userInfo.getProvider(), userInfo.getProviderId());
 
         // Get intent from session
         OAuth2Intent intent = getOAuth2Intent(request);
-        log.debug("OAuth2 intent: {}", intent);
+        log.trace("OAuth2 intent: {}", intent);
 
         // Authenticate or create user with intent
         UserDetails user = authService.authenticateOAuth2User(userInfo, intent);
@@ -254,7 +254,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             String userId,
             OAuth2UserInfo userInfo) throws IOException {
 
-        log.debug("Processing account linking for user: {}, provider: {}",
+        log.trace("Processing account linking for user: {}, provider: {}",
                 userId, userInfo.getProvider());
 
         try {
@@ -296,7 +296,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                         );
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("Restored app authentication for user: {}", userId);
+                log.trace("Restored app authentication for user: {}", userId);
             } else {
                 log.warn("Could not restore app authentication - user not found: {}", userId);
             }
@@ -383,22 +383,22 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletResponse response,
             String errorCode) throws IOException {
 
-        log.debug("handleError called: errorCode={}, tokenDeliveryMethod={}",
+        log.trace("handleError called: errorCode={}, tokenDeliveryMethod={}",
                 errorCode, properties.getTokenDeliveryMethod());
 
         // For POST_MESSAGE mode, send errors via postMessage
         if (properties.getTokenDeliveryMethod() == SimpliXOAuth2Properties.TokenDeliveryMethod.POST_MESSAGE) {
             if (OAuth2AuthenticationException.NO_LINKED_ACCOUNT.equals(errorCode)) {
-                log.debug("Delivering NO_LINKED_ACCOUNT via postMessage");
+                log.trace("Delivering NO_LINKED_ACCOUNT via postMessage");
                 deliverNoLinkedAccountViaPostMessage(request, response);
             } else if (OAuth2AuthenticationException.EMAIL_ACCOUNT_EXISTS_NOT_LINKED.equals(errorCode)) {
-                log.debug("Delivering EMAIL_ACCOUNT_EXISTS_NOT_LINKED via postMessage");
+                log.trace("Delivering EMAIL_ACCOUNT_EXISTS_NOT_LINKED via postMessage");
                 deliverErrorViaPostMessage(response, "OAUTH2_EMAIL_EXISTS_NOT_LINKED", errorCode);
             } else if (OAuth2AuthenticationException.SOCIAL_ALREADY_REGISTERED.equals(errorCode)) {
-                log.debug("Delivering SOCIAL_ALREADY_REGISTERED via postMessage");
+                log.trace("Delivering SOCIAL_ALREADY_REGISTERED via postMessage");
                 deliverErrorViaPostMessage(response, "OAUTH2_ERROR", errorCode);
             } else {
-                log.debug("Delivering error via postMessage: {}", errorCode);
+                log.trace("Delivering error via postMessage: {}", errorCode);
                 deliverErrorViaPostMessage(response, "OAUTH2_ERROR", errorCode);
             }
             return;
@@ -411,7 +411,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .build()
                 .toUriString();
 
-        log.debug("Redirecting to failure URL: {}", redirectUrl);
+        log.trace("Redirecting to failure URL: {}", redirectUrl);
         response.sendRedirect(redirectUrl);
     }
 
@@ -465,7 +465,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpServletRequest request,
             HttpServletResponse response) throws IOException {
 
-        log.debug("deliverNoLinkedAccountViaPostMessage called");
+        log.trace("deliverNoLinkedAccountViaPostMessage called");
         response.setContentType("text/html;charset=UTF-8");
         PrintWriter writer = response.getWriter();
 
@@ -475,11 +475,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String email = null;
         String name = null;
 
-        log.debug("Session available: {}", session != null);
+        log.trace("Session available: {}", session != null);
 
         if (session != null) {
             Object pendingObj = session.getAttribute("oauth2.pending");
-            log.debug("Pending social info in session: {}", pendingObj != null);
+            log.trace("Pending social info in session: {}", pendingObj != null);
             if (pendingObj != null) {
                 // Use reflection or duck typing to get values
                 // The actual type is PendingSocialRegistration from the demo server

@@ -164,9 +164,9 @@ public class SimpliXExceptionHandler<T> {
                             }
                         }
                         message = processedMessage;
-                        log.debug("Substituted named placeholders to: '{}'", message);
+                        log.trace("Substituted named placeholders to: '{}'", message);
                     } catch (Exception e) {
-                        log.debug("Failed to substitute named placeholders: {}", e.getMessage());
+                        log.trace("Failed to substitute named placeholders: {}", e.getMessage());
                     }
                 }
                 // Check for numeric placeholders like {0}, {1}, {2}
@@ -177,9 +177,9 @@ public class SimpliXExceptionHandler<T> {
 
                         // Use MessageFormat to replace {0}, {1} placeholders
                         message = java.text.MessageFormat.format(message, messageArguments);
-                        log.debug("Substituted numeric placeholders to: '{}'", message);
+                        log.trace("Substituted numeric placeholders to: '{}'", message);
                     } catch (Exception e) {
-                        log.debug("Failed to substitute numeric placeholders: {}", e.getMessage());
+                        log.trace("Failed to substitute numeric placeholders: {}", e.getMessage());
                     }
                 }
                 // If message is in {key} format, try to translate with proper arguments
@@ -189,9 +189,9 @@ public class SimpliXExceptionHandler<T> {
                         // Get constraint annotation attributes for parameter substitution
                         Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
                         message = messageSource.getMessage(messageKey, messageArguments, currentLocale);
-                        log.debug("Translated validation message key '{}' to: '{}'", messageKey, message);
+                        log.trace("Translated validation message key '{}' to: '{}'", messageKey, message);
                     } catch (Exception e) {
-                        log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                        log.trace("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
                     }
                 }
             }
@@ -212,7 +212,7 @@ public class SimpliXExceptionHandler<T> {
                 code
             );
 
-            log.debug("Field validation - Field: {}, Message: {}, Code: {}", error.getField(), message, code);
+            log.trace("Field validation - Field: {}, Message: {}, Code: {}", error.getField(), message, code);
             errors.add(fieldError);
         });
         
@@ -255,10 +255,10 @@ public class SimpliXExceptionHandler<T> {
             try {
                 // Try to get the message without arguments first (for simple messages)
                 String resolvedMessage = messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
-                log.debug("Translated validation message key '{}' to: '{}'", messageKey, resolvedMessage);
+                log.trace("Translated validation message key '{}' to: '{}'", messageKey, resolvedMessage);
                 return resolvedMessage;
             } catch (Exception e) {
-                log.debug("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
+                log.trace("Failed to translate validation message key '{}': {}", messageKey, e.getMessage());
                 return originalMessage;
             }
         }
@@ -275,11 +275,11 @@ public class SimpliXExceptionHandler<T> {
         try {
             Locale currentLocale = LocaleContextHolder.getLocale();
             String resolvedMessage = messageSource.getMessage(messageKey, null, currentLocale);
-            log.debug("Resolved message key '{}' for locale '{}': '{}'", messageKey, currentLocale, resolvedMessage);
+            log.trace("Resolved message key '{}' for locale '{}': '{}'", messageKey, currentLocale, resolvedMessage);
             return resolvedMessage;
         } catch (Exception e) {
             Locale currentLocale = LocaleContextHolder.getLocale();
-            log.debug("Failed to resolve message key '{}' for locale '{}', using default: '{}'. Error: {}", 
+            log.trace("Failed to resolve message key '{}' for locale '{}', using default: '{}'. Error: {}", 
                 messageKey, currentLocale, englishDefault, e.getMessage());
             return englishDefault;
         }
@@ -422,9 +422,9 @@ public class SimpliXExceptionHandler<T> {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @Order(10)
     public T handleNoResourceFoundException(NoResourceFoundException ex, HttpServletRequest request) {
-        // Log at DEBUG level only - this is not an error
-        if (log.isDebugEnabled()) {
-            log.debug("Resource not found: {}", request.getRequestURI());
+        // Log at TRACE level only - this is not an error
+        if (log.isTraceEnabled()) {
+            log.trace("Resource not found: {}", request.getRequestURI());
         }
 
         String message = messageSource.getMessage(
@@ -645,9 +645,9 @@ public class SimpliXExceptionHandler<T> {
                 int status = statusCode.value();
 
                 if (status == 404) {
-                    // 404 is very common and not an error - log at DEBUG level only
-                    if (log.isDebugEnabled()) {
-                        log.debug("Resource not found - TraceId: {}, Code: {}, Path: {}",
+                    // 404 is very common and not an error - log at TRACE level only
+                    if (log.isTraceEnabled()) {
+                        log.trace("Resource not found - TraceId: {}, Code: {}, Path: {}",
                             traceId, errorCode, path);
                     }
                 } else if (status >= 400 && status < 500) {

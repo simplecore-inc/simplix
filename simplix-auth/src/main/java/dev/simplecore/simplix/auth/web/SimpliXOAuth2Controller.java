@@ -126,7 +126,7 @@ public class SimpliXOAuth2Controller {
         HttpSession session = request.getSession(true);
         session.setAttribute(OAuth2LoginSuccessHandler.LINKING_USER_ID_ATTR, userId);
 
-        log.debug("Initiating OAuth2 account linking: user={}, provider={}", userId, provider);
+        log.trace("Initiating OAuth2 account linking: user={}, provider={}", userId, provider);
 
         // Redirect to OAuth2 authorization endpoint
         String authorizationUrl = properties.getAuthorizationBaseUrl() + "/" + provider;
@@ -260,7 +260,7 @@ public class SimpliXOAuth2Controller {
         } catch (NoSuchMethodException e) {
             // Method not found, try other approaches
         } catch (Exception e) {
-            log.debug("Failed to invoke getId() on principal", e);
+            log.trace("Failed to invoke getId() on principal", e);
         }
 
         // Try getUserId() method
@@ -273,7 +273,7 @@ public class SimpliXOAuth2Controller {
         } catch (NoSuchMethodException e) {
             // Method not found, try other approaches
         } catch (Exception e) {
-            log.debug("Failed to invoke getUserId() on principal", e);
+            log.trace("Failed to invoke getUserId() on principal", e);
         }
 
         // Handle OAuth2 authenticated users
@@ -287,12 +287,12 @@ public class SimpliXOAuth2Controller {
                 OAuth2ProviderType providerType = OAuth2ProviderType.fromRegistrationId(registrationId);
                 String userId = authService.findUserIdByProviderConnection(providerType, providerId);
                 if (userId != null) {
-                    log.debug("Found user ID from OAuth2 connection: provider={}, userId={}", registrationId, userId);
+                    log.trace("Found user ID from OAuth2 connection: provider={}, userId={}", registrationId, userId);
                     return userId;
                 }
-                log.debug("No social connection found for provider={}, providerId={}", registrationId, providerId);
+                log.trace("No social connection found for provider={}, providerId={}", registrationId, providerId);
             } catch (Exception e) {
-                log.debug("Failed to lookup user by OAuth2 connection", e);
+                log.trace("Failed to lookup user by OAuth2 connection", e);
             }
 
             // Fallback: try to find by email from OAuth2 attributes
@@ -302,12 +302,12 @@ public class SimpliXOAuth2Controller {
                 try {
                     String userId = authService.findUserIdByEmail(email);
                     if (userId != null) {
-                        log.debug("Found user ID by email: email={}, userId={}", email, userId);
+                        log.trace("Found user ID by email: email={}, userId={}", email, userId);
                         return userId;
                     }
                     log.warn("No user found for email: {}", email);
                 } catch (Exception e) {
-                    log.debug("Failed to lookup user by email", e);
+                    log.trace("Failed to lookup user by email", e);
                 }
             }
         }

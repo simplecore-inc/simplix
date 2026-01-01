@@ -73,7 +73,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                     log.info("Found class {} for schema {}", clazz.getName(), schemaName);
                     addI18nExtensionsToSchema(schema, clazz);
                 } else {
-                    log.debug("No class found for schema: {}", schemaName);
+                    log.trace("No class found for schema: {}", schemaName);
                 }
             });
         } else {
@@ -121,28 +121,28 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
     }
     
     private Class<?> findClassForSchema(String schemaName) {
-        log.debug("Finding class for schema: {}", schemaName);
-        
+        log.trace("Finding class for schema: {}", schemaName);
+
         // Handle SearchCondition schemas specially
         if (schemaName.startsWith("SearchCondition") && schemaName.endsWith("SearchDTO")) {
             String searchDtoName = schemaName.substring("SearchCondition".length());
-            log.debug("Extracted SearchDTO name from SearchCondition: {}", searchDtoName);
-            
+            log.trace("Extracted SearchDTO name from SearchCondition: {}", searchDtoName);
+
             Class<?> searchDtoClass = schemaClassCache.get(searchDtoName);
             if (searchDtoClass != null) {
-                log.debug("Found SearchDTO class: {}", searchDtoClass.getName());
+                log.trace("Found SearchDTO class: {}", searchDtoClass.getName());
                 return searchDtoClass;
             }
         }
-        
+
         // Handle regular schemas
         Class<?> clazz = schemaClassCache.get(schemaName);
         if (clazz != null) {
-            log.debug("Found class: {} for schema: {}", clazz.getName(), schemaName);
+            log.trace("Found class: {} for schema: {}", clazz.getName(), schemaName);
             return clazz;
         }
-        
-        log.debug("No class found for schema: {}", schemaName);
+
+        log.trace("No class found for schema: {}", schemaName);
         return null;
     }
     
@@ -186,17 +186,17 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
     }
     
     private Field findField(Class<?> clazz, String fieldName) {
-        log.debug("Looking for field '{}' in class '{}'", fieldName, clazz.getName());
+        log.trace("Looking for field '{}' in class '{}'", fieldName, clazz.getName());
         try {
             Field field = clazz.getDeclaredField(fieldName);
-            log.debug("Found field '{}' in class '{}'", fieldName, clazz.getName());
+            log.trace("Found field '{}' in class '{}'", fieldName, clazz.getName());
             return field;
         } catch (NoSuchFieldException e) {
-            log.debug("Field '{}' not found in class '{}', checking superclass", fieldName, clazz.getName());
+            log.trace("Field '{}' not found in class '{}', checking superclass", fieldName, clazz.getName());
             if (clazz.getSuperclass() != null) {
                 return findField(clazz.getSuperclass(), fieldName);
             }
-            log.debug("Field '{}' not found in class hierarchy starting from '{}'", fieldName, clazz.getName());
+            log.trace("Field '{}' not found in class hierarchy starting from '{}'", fieldName, clazz.getName());
             return null;
         }
     }
@@ -218,13 +218,13 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
     
     @SuppressWarnings("rawtypes")
     private void addSearchableFieldExtensions(Field field, Schema propertySchema, String fieldName) {
-        log.debug("Checking SearchableField annotation for field: {}", fieldName);
-        
+        log.trace("Checking SearchableField annotation for field: {}", fieldName);
+
         // Check all annotations on the field
         Annotation[] annotations = field.getAnnotations();
-        log.debug("Field {} has {} annotations", fieldName, annotations.length);
+        log.trace("Field {} has {} annotations", fieldName, annotations.length);
         for (Annotation annotation : annotations) {
-            log.debug("Found annotation: {} on field {}", annotation.annotationType().getName(), fieldName);
+            log.trace("Found annotation: {} on field {}", annotation.annotationType().getName(), fieldName);
         }
         
         // Try different ways to get the SearchableField annotation
@@ -237,7 +237,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 log.info("Found SearchableField annotation using direct lookup on field: {}", fieldName);
             }
         } catch (Exception e) {
-            log.debug("Direct annotation lookup failed for field {}: {}", fieldName, e.getMessage());
+            log.trace("Direct annotation lookup failed for field {}: {}", fieldName, e.getMessage());
         }
         
         // Method 2: Check if any annotation is SearchableField by class name
@@ -253,7 +253,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                         Object entityFieldValue = annotationType.getMethod("entityField").invoke(annotation);
                         
                         Map<String, Object> searchableInfo = new HashMap<>();
-                        
+
                         // Add operators information
                         if (operatorsValue != null && operatorsValue.getClass().isArray()) {
                             Object[] operators = (Object[]) operatorsValue;
@@ -261,19 +261,19 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                                 .map(Object::toString)
                                 .collect(Collectors.toList());
                             searchableInfo.put("operators", operatorNames);
-                            log.debug("Added operators for field {}: {}", fieldName, operatorNames);
+                            log.trace("Added operators for field {}: {}", fieldName, operatorNames);
                         }
-                        
+
                         // Add sortable information
                         if (sortableValue != null) {
                             searchableInfo.put("sortable", sortableValue);
-                            log.debug("Added sortable for field {}: {}", fieldName, sortableValue);
+                            log.trace("Added sortable for field {}: {}", fieldName, sortableValue);
                         }
-                        
+
                         // Add entityField information if present
                         if (entityFieldValue != null && !entityFieldValue.toString().isEmpty()) {
                             searchableInfo.put("entityField", entityFieldValue);
-                            log.debug("Added entityField for field {}: {}", fieldName, entityFieldValue);
+                            log.trace("Added entityField for field {}: {}", fieldName, entityFieldValue);
                         }
                         
                         propertySchema.addExtension("x-searchable-field", searchableInfo);
@@ -351,7 +351,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
             }
         } else {
-            log.debug("No SearchableField annotation found on field: {}", fieldName);
+            log.trace("No SearchableField annotation found on field: {}", fieldName);
         }
     }
     
@@ -412,7 +412,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
             }
         } else {
-            log.debug("No ID field annotation found on field: {}", fieldName);
+            log.trace("No ID field annotation found on field: {}", fieldName);
         }
     }
 private Map<String, String> getValidationMessages(Field field, String fieldName) {
@@ -495,7 +495,7 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
                             Arrays.toString(searchableField.operators()),
                             searchableField.sortable());
                     } else {
-                        log.debug("No SearchableField on field: {}", field.getName());
+                        log.trace("No SearchableField on field: {}", field.getName());
                     }
                 }
             } else {
@@ -589,29 +589,29 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
                         Class<?> clazz = Class.forName(className);
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
-                        log.debug("Could not load class: {}", className);
+                        log.trace("Could not load class: {}", className);
                     }
                 }
             }
         }
     }
-    
+
     private void findClassesInJar(String jarPath, String packageName, Set<Class<?>> classes) {
         try (JarFile jar = new JarFile(jarPath)) {
             Enumeration<JarEntry> entries = jar.entries();
             String packagePath = packageName.replace('.', '/');
-            
+
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 String name = entry.getName();
-                
+
                 if (name.startsWith(packagePath) && name.endsWith(".class") && !entry.isDirectory()) {
                     String className = name.replace('/', '.').substring(0, name.length() - 6);
                     try {
                         Class<?> clazz = Class.forName(className);
                         classes.add(clazz);
                     } catch (ClassNotFoundException e) {
-                        log.debug("Could not load class: {}", className);
+                        log.trace("Could not load class: {}", className);
                     }
                 }
             }
@@ -658,7 +658,7 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
                     }
                     
                     searchableFields.put(field.getName(), fieldInfo);
-                    log.debug("Added searchable field info for {}: {}", field.getName(), fieldInfo);
+                    log.trace("Added searchable field info for {}: {}", field.getName(), fieldInfo);
                 }
             }
             

@@ -39,7 +39,7 @@ public class KafkaEventStrategy implements EventStrategy {
             String key = options.getPartitionKey() != null ?
                 options.getPartitionKey() : event.getAggregateId();
 
-            log.debug("Publishing event to Kafka topic {}: {}", topic, event.getEventId());
+            log.trace("Publishing event to Kafka topic {}: {}", topic, event.getEventId());
 
             ProducerRecord<String, Object> record = new ProducerRecord<>(topic, key, event);
 

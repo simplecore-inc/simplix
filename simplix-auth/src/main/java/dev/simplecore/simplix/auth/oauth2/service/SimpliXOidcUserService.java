@@ -19,11 +19,11 @@ public class SimpliXOidcUserService implements OAuth2UserService<OidcUserRequest
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        log.debug("Loading OIDC user from provider: {}", registrationId);
+        log.trace("Loading OIDC user from provider: {}", registrationId);
 
         OidcUser oidcUser = delegate.loadUser(userRequest);
 
-        log.debug("OIDC user loaded successfully: sub={}", oidcUser.getSubject());
+        log.trace("OIDC user loaded successfully: sub={}", oidcUser.getSubject());
         return oidcUser;
     }
 }

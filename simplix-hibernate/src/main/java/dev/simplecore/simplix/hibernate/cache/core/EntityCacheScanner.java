@@ -68,10 +68,10 @@ public class EntityCacheScanner {
 
         if (region != null && !region.isEmpty()) {
             cacheRegions.add(region);
-            log.debug("Registered cached entity: {} in region: {}",
+            log.trace("Registered cached entity: {} in region: {}",
                     entityClass.getSimpleName(), region);
         } else {
-            log.debug("Registered cached entity: {} (default region)",
+            log.trace("Registered cached entity: {} (default region)",
                     entityClass.getSimpleName());
         }
     }

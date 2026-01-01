@@ -25,7 +25,7 @@ public class HibernateCacheManager {
         try {
             jakarta.persistence.Cache cache = entityManagerFactory.getCache();
             cache.evict(entityClass);
-            log.debug("✔ Evicted entity cache for: {}", entityClass.getSimpleName());
+            log.trace("✔ Evicted entity cache for: {}", entityClass.getSimpleName());
         } catch (Exception e) {
             log.error("✖ Failed to evict entity cache for: {}", entityClass.getSimpleName(), e);
         }
@@ -38,7 +38,7 @@ public class HibernateCacheManager {
         try {
             jakarta.persistence.Cache cache = entityManagerFactory.getCache();
             cache.evict(entityClass, id);
-            log.debug("✔ Evicted entity from cache: {} [{}]", entityClass.getSimpleName(), id);
+            log.trace("✔ Evicted entity from cache: {} [{}]", entityClass.getSimpleName(), id);
         } catch (Exception e) {
             log.error("✖ Failed to evict entity from cache: {} [{}]", entityClass.getSimpleName(), id, e);
         }
@@ -72,7 +72,7 @@ public class HibernateCacheManager {
             org.hibernate.Cache hibernateCache = getHibernateCache();
             if (hibernateCache != null) {
                 hibernateCache.evictRegion(regionName);
-                log.debug("✔ Evicted cache region: {}", regionName);
+                log.trace("✔ Evicted cache region: {}", regionName);
             }
         } catch (Exception e) {
             log.error("✖ Failed to evict cache region: {}", regionName, e);
@@ -87,7 +87,7 @@ public class HibernateCacheManager {
             org.hibernate.Cache hibernateCache = getHibernateCache();
             if (hibernateCache != null) {
                 hibernateCache.evictQueryRegion(queryRegion);
-                log.debug("✔ Evicted query cache region: {}", queryRegion);
+                log.trace("✔ Evicted query cache region: {}", queryRegion);
             }
         } catch (Exception e) {
             log.error("✖ Failed to evict query cache region: {}", queryRegion, e);
@@ -112,7 +112,7 @@ public class HibernateCacheManager {
      */
     public void registerRegion(String regionName) {
         activeRegions.add(regionName);
-        log.debug("ℹ Registered cache region: {}", regionName);
+        log.trace("ℹ Registered cache region: {}", regionName);
     }
 
     /**
@@ -134,7 +134,7 @@ public class HibernateCacheManager {
         }
         org.hibernate.Cache cache = sessionFactory.getCache();
         if (cache == null) {
-            log.debug("Hibernate cache is not configured");
+            log.trace("Hibernate cache is not configured");
         }
         return cache;
     }

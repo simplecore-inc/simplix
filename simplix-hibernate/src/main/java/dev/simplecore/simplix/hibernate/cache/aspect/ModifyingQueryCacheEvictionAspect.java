@@ -115,7 +115,7 @@ public class ModifyingQueryCacheEvictionAspect {
         PendingEviction.EvictionOperation operation = determineBulkOperation(methodName);
 
         if (!evictQueryCache) {
-            log.debug("Query cache eviction disabled via @EvictCache(evictQueryCache=false) on {}",
+            log.trace("Query cache eviction disabled via @EvictCache(evictQueryCache=false) on {}",
                     methodName);
         }
 
@@ -132,7 +132,7 @@ public class ModifyingQueryCacheEvictionAspect {
 
             evictionCollector.collect(pendingEviction);
 
-            log.debug("✔ Collected bulk eviction for {} via @EvictCache on {} (evictQueryCache={})",
+            log.trace("✔ Collected bulk eviction for {} via @EvictCache on {} (evictQueryCache={})",
                     entityClass.getSimpleName(), methodName, evictQueryCache);
         }
     }

@@ -37,7 +37,7 @@ public class EventManager {
         List<EventPublisher> publishers = new ArrayList<>();
         for (EventPublisher publisher : loader) {
             publishers.add(publisher);
-            log.debug("Found event publisher: {} with priority: {}", 
+            log.trace("Found event publisher: {} with priority: {}",
                 publisher.getName(), publisher.getPriority());
         }
 
@@ -67,7 +67,7 @@ public class EventManager {
 
         try {
             publisher.publish(event);
-            log.debug("Published event: {} for aggregate: {}",
+            log.trace("Published event: {} for aggregate: {}",
                 event.getEventType(), event.getAggregateId());
         } catch (Exception e) {
             log.error("Failed to publish event: {} for aggregate: {}",

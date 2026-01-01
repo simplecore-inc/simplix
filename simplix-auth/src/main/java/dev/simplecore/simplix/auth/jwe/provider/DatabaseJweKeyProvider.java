@@ -137,7 +137,7 @@ public class DatabaseJweKeyProvider implements JweKeyProvider {
     public void refresh() {
         // Prevent concurrent refresh operations
         if (!refreshLock.tryLock()) {
-            log.debug("Refresh already in progress, skipping");
+            log.trace("Refresh already in progress, skipping");
             return;
         }
         try {
@@ -258,7 +258,7 @@ public class DatabaseJweKeyProvider implements JweKeyProvider {
             PrivateKey privateKey = rsaKeyFactory.generatePrivate(
                 new PKCS8EncodedKeySpec(privateKeyBytes));
 
-            log.debug("Decrypted JWE key version: {}", keyData.getVersion());
+            log.trace("Decrypted JWE key version: {}", keyData.getVersion());
             return new KeyPair(publicKey, privateKey);
 
         } catch (InvalidKeySpecException e) {
@@ -292,7 +292,7 @@ public class DatabaseJweKeyProvider implements JweKeyProvider {
                 newKeys.put(version, keyPair);
                 this.cacheState = new KeyCacheState(newKeys, currentState.currentVersion());
 
-                log.debug("Loaded JWE key on-demand: {}", version);
+                log.trace("Loaded JWE key on-demand: {}", version);
                 return keyPair;
             })
             .orElse(null);

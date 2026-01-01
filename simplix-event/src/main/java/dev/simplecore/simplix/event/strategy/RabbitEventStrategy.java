@@ -121,7 +121,7 @@ public class RabbitEventStrategy implements EventStrategy {
 
             rabbitTemplate.send(exchangeName, routingKey, message);
 
-            log.debug("Event published to RabbitMQ - Exchange: {}, RoutingKey: {}, EventId: {}",
+            log.trace("Event published to RabbitMQ - Exchange: {}, RoutingKey: {}, EventId: {}",
                 exchangeName, routingKey, event.getEventId());
             return null;
         });
@@ -140,7 +140,7 @@ public class RabbitEventStrategy implements EventStrategy {
                     configureMessageProperties(props, event, options);
                     return message;
                 });
-                log.debug("Event published asynchronously to RabbitMQ - EventId: {} (attempt: {})",
+                log.trace("Event published asynchronously to RabbitMQ - EventId: {} (attempt: {})",
                     event.getEventId(), attempt + 1);
             } catch (Exception e) {
                 log.error("Failed to asynchronously publish event to RabbitMQ: {} (attempt: {})",

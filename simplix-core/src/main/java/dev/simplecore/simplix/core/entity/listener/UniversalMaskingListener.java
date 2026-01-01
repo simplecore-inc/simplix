@@ -71,7 +71,7 @@ public class UniversalMaskingListener {
         String maskedValue = applyMasking(stringValue, annotation);
         if (!stringValue.equals(maskedValue)) {
             field.set(entity, maskedValue);
-            log.debug("Masked field '{}' in entity '{}'", field.getName(), entity.getClass().getSimpleName());
+            log.trace("Masked field '{}' in entity '{}'", field.getName(), entity.getClass().getSimpleName());
         }
     }
 

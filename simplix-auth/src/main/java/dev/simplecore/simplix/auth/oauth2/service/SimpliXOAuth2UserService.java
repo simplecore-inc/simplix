@@ -19,11 +19,11 @@ public class SimpliXOAuth2UserService implements OAuth2UserService<OAuth2UserReq
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        log.debug("Loading OAuth2 user from provider: {}", registrationId);
+        log.trace("Loading OAuth2 user from provider: {}", registrationId);
 
         OAuth2User oauth2User = delegate.loadUser(userRequest);
 
-        log.debug("OAuth2 user loaded successfully: {}", oauth2User.getName());
+        log.trace("OAuth2 user loaded successfully: {}", oauth2User.getName());
         return oauth2User;
     }
 }

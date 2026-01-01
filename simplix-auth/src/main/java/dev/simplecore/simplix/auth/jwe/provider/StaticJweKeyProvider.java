@@ -88,7 +88,7 @@ public class StaticJweKeyProvider implements JweKeyProvider {
         // Static provider only has one key, return it regardless of version
         // This allows backward compatibility with tokens created before versioning
         if (!STATIC_VERSION.equals(version) && version != null) {
-            log.debug("StaticJweKeyProvider requested version '{}', returning static key", version);
+            log.trace("StaticJweKeyProvider requested version '{}', returning static key", version);
         }
         return keyPair;
     }

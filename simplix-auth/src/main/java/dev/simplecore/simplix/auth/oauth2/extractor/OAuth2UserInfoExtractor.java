@@ -78,7 +78,7 @@ public class OAuth2UserInfoExtractor {
         OAuth2User oauth2User = token.getPrincipal();
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        log.debug("Extracting user info from provider: {}", provider);
+        log.trace("Extracting user info from provider: {}", provider);
 
         OAuth2UserInfoExtractorStrategy strategy = extractors.get(provider);
         if (strategy == null) {

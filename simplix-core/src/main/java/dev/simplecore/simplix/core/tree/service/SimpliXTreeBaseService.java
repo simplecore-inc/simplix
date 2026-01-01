@@ -134,7 +134,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
 
     @Override
     public List<T> findCompleteHierarchy() {
-        log.debug("Finding complete tree hierarchy");
+        log.trace("Finding complete tree hierarchy");
         return simpliXTreeRepository.findCompleteHierarchy();
     }
 
@@ -142,7 +142,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     public List<T> findWithDescendants(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
         return descendantsCache.computeIfAbsent(id, k -> {
-            log.debug("Computing descendants for entity: {}", k);
+            log.trace("Computing descendants for entity: {}", k);
             try {
                 return simpliXTreeRepository.findItemWithAllDescendants(k);
             } catch (Exception e) {
@@ -154,7 +154,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
 
     @Override
     public List<T> findRoots() {
-        log.debug("Finding root entities");
+        log.trace("Finding root entities");
         return simpliXTreeRepository.findRootItems();
     }
 
@@ -168,7 +168,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     public List<T> findAncestors(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
         return ancestorsCache.computeIfAbsent(id, k -> {
-            log.debug("Computing ancestors for entity: {}", k);
+            log.trace("Computing ancestors for entity: {}", k);
             List<T> ancestors = new ArrayList<>();
             Optional<T> current = findById(k);
             
@@ -401,7 +401,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     @Override
     public List<T> findByLevel(int level) {
         Assert.isTrue(level >= 0, "Level must be non-negative");
-        log.debug("Finding entities at level: {}", level);
+        log.trace("Finding entities at level: {}", level);
         
         return simpliXTreeRepository.findAll().stream()
                 .filter(entity -> getDepth(entity.getId()) == level)
@@ -410,7 +410,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
 
     @Override
     public List<T> findLeafNodes() {
-        log.debug("Finding leaf nodes");
+        log.trace("Finding leaf nodes");
         return simpliXTreeRepository.findAll().stream()
                 .filter(this::isLeafNode)
                 .collect(Collectors.toList());
@@ -419,7 +419,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     @Override
     public List<T> findByPredicate(Predicate<T> predicate) {
         Assert.notNull(predicate, "Predicate cannot be null");
-        log.debug("Finding entities by custom predicate");
+        log.trace("Finding entities by custom predicate");
         
         return simpliXTreeRepository.findAll().stream()
                 .filter(predicate)
@@ -514,7 +514,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
 
     @Override
     public Map<String, Number> getTreeMetrics() {
-        log.debug("Calculating tree metrics");
+        log.trace("Calculating tree metrics");
         List<T> allNodes = simpliXTreeRepository.findAll();
         Map<String, Number> metrics = new HashMap<>();
         
@@ -552,7 +552,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
                 .orElse(0.0);
         metrics.put("avgChildren", avgChildren);
         
-        log.debug("Calculated tree metrics: {}", metrics);
+        log.trace("Calculated tree metrics: {}", metrics);
         return metrics;
     }
 
@@ -575,7 +575,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     @Override
     public List<T> getPath(ID id) {
         Assert.notNull(id, "Entity ID cannot be null");
-        log.debug("Getting path for entity: {}", id);
+        log.trace("Getting path for entity: {}", id);
         
         List<T> path = new ArrayList<>();
         Optional<T> current = findById(id);

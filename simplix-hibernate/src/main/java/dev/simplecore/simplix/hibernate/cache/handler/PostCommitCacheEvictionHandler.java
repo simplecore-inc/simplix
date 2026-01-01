@@ -67,7 +67,7 @@ public class PostCommitCacheEvictionHandler {
         int successCount = 0;
         int failureCount = 0;
 
-        log.debug("✔ Processing {} post-commit cache evictions", event.getEvictionCount());
+        log.trace("✔ Processing {} post-commit cache evictions", event.getEvictionCount());
 
         for (PendingEviction pending : event.getPendingEvictions()) {
             // Skip null entries to prevent NPE
@@ -93,7 +93,7 @@ public class PostCommitCacheEvictionHandler {
             log.warn("⚠ Completed post-commit eviction: {} success, {} failures",
                     successCount, failureCount);
         } else {
-            log.debug("✔ Completed post-commit eviction: {} success", successCount);
+            log.trace("✔ Completed post-commit eviction: {} success", successCount);
         }
     }
 

@@ -169,7 +169,7 @@ public class CacheManager {
         List<CacheProvider> providers = new ArrayList<>();
         for (CacheProvider provider : loader) {
             providers.add(provider);
-            log.debug("Found cache provider: {} with priority: {}", 
+            log.trace("Found cache provider: {} with priority: {}",
                 provider.getName(), provider.getPriority());
         }
 

@@ -105,7 +105,7 @@ public class UnifiedEventPublisher implements EventPublisher {
             enrichedOptions = enrichEventMetadata(event, options);
         }
 
-        log.debug("Publishing event: {} with type: {} using strategy: {}",
+        log.trace("Publishing event: {} with type: {} using strategy: {}",
             event.getEventId(), event.getEventType(), activeStrategy.getName());
 
         try {

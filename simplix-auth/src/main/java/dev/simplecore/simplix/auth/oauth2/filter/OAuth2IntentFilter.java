@@ -55,14 +55,14 @@ public class OAuth2IntentFilter extends OncePerRequestFilter {
         String registerBaseUrl = properties.getRegisterBaseUrl();
         String authorizationBaseUrl = properties.getAuthorizationBaseUrl();
 
-        log.debug("OAuth2IntentFilter processing request: uri={}, loginBaseUrl={}, registerBaseUrl={}",
+        log.trace("OAuth2IntentFilter processing request: uri={}, loginBaseUrl={}, registerBaseUrl={}",
                 requestUri, loginBaseUrl, registerBaseUrl);
 
         // Handle login endpoint
         if (requestUri.startsWith(loginBaseUrl + "/")) {
             String provider = extractProvider(requestUri, loginBaseUrl);
             if (provider != null && !provider.isEmpty()) {
-                log.debug("OAuth2 login intent detected for provider: {}", provider);
+                log.trace("OAuth2 login intent detected for provider: {}", provider);
                 request.getSession().setAttribute(OAUTH2_INTENT_ATTR, INTENT_LOGIN);
                 String redirectUrl = authorizationBaseUrl + "/" + provider;
                 log.info("OAuth2 login intent stored in session (id={}), redirecting to: {}",
@@ -76,7 +76,7 @@ public class OAuth2IntentFilter extends OncePerRequestFilter {
         if (requestUri.startsWith(registerBaseUrl + "/")) {
             String provider = extractProvider(requestUri, registerBaseUrl);
             if (provider != null && !provider.isEmpty()) {
-                log.debug("OAuth2 register intent detected for provider: {}", provider);
+                log.trace("OAuth2 register intent detected for provider: {}", provider);
                 request.getSession().setAttribute(OAUTH2_INTENT_ATTR, INTENT_REGISTER);
                 String redirectUrl = authorizationBaseUrl + "/" + provider;
                 log.info("OAuth2 register intent stored in session (id={}), redirecting to: {}",

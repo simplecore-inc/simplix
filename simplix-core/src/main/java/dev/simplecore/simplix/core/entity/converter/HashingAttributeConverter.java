@@ -45,7 +45,7 @@ public class HashingAttributeConverter implements AttributeConverter<String, Str
      */
     @Override
     public String convertToDatabaseColumn(String attribute) {
-        log.debug("convertToDatabaseColumn called with input: {}",
+        log.trace("convertToDatabaseColumn called with input: {}",
                 attribute == null ? "null" : "length=" + attribute.length());
 
         if (attribute == null || attribute.isEmpty()) {
@@ -55,13 +55,13 @@ public class HashingAttributeConverter implements AttributeConverter<String, Str
         try {
             // Check if already hashed to prevent double-hashing
             if (isAlreadyHashed(attribute)) {
-                log.debug("Value is already hashed (length: {}), storing as-is", attribute.length());
+                log.trace("Value is already hashed (length: {}), storing as-is", attribute.length());
                 return attribute;
             }
 
             // Hash the plain text value
             String hashed = HashingUtils.hash(attribute);
-            log.debug("Hashed value for database: input='{}' (length={}), hash='{}' (length={})",
+            log.trace("Hashed value for database: input='{}' (length={}), hash='{}' (length={})",
                     attribute, attribute.length(), hashed, hashed.length());
             return hashed;
         } catch (Exception e) {

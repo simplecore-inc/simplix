@@ -104,17 +104,17 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
         // Simple mode: translate the annotated field itself
         Map<String, String> i18nMap = getI18nMapByPath(currentBean, sourceFieldPath);
 
-        log.debug("I18nTrans serialize - sourceField: {}, locale: {}, i18nMap: {}, originalValue: {}",
+        log.trace("I18nTrans serialize - sourceField: {}, locale: {}, i18nMap: {}, originalValue: {}",
                 sourceFieldPath, currentLocale, i18nMap, value);
 
         if (i18nMap == null || i18nMap.isEmpty()) {
-            log.debug("I18nTrans - i18nMap is null or empty, returning original value: {}", value);
+            log.trace("I18nTrans - i18nMap is null or empty, returning original value: {}", value);
             gen.writeObject(value);
             return;
         }
 
         String translatedValue = extractTranslation(i18nMap, currentLocale, value);
-        log.debug("I18nTrans - translated value: {}", translatedValue);
+        log.trace("I18nTrans - translated value: {}", translatedValue);
         gen.writeObject(translatedValue);
     }
 
@@ -137,7 +137,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
         // 1. Get i18n Map from source path
         Map<String, String> i18nMap = getI18nMapByPath(bean, sourceFieldPath);
 
-        log.debug("I18nTrans nested - source: {}, target: {}, locale: {}, i18nMap: {}",
+        log.trace("I18nTrans nested - source: {}, target: {}, locale: {}, i18nMap: {}",
                 sourceFieldPath, targetFieldPath, locale, i18nMap);
 
         String translatedValue = null;
@@ -152,7 +152,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
             // 3. Extract translated value
             translatedValue = extractTranslation(i18nMap, locale, targetCurrentValue);
 
-            log.debug("I18nTrans nested - targetCurrentValue: {}, translatedValue: {}",
+            log.trace("I18nTrans nested - targetCurrentValue: {}, translatedValue: {}",
                     targetCurrentValue, translatedValue);
 
             // 4. Set translated value to target field in the nested object
@@ -218,7 +218,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
 
             Field field = findField(current.getClass(), segment);
             if (field == null) {
-                log.debug("I18nTrans - field not found: {} in class {}", segment, current.getClass().getName());
+                log.trace("I18nTrans - field not found: {} in class {}", segment, current.getClass().getName());
                 return null;
             }
 
@@ -226,7 +226,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
                 field.setAccessible(true);
                 current = field.get(current);
             } catch (IllegalAccessException | SecurityException e) {
-                log.debug("I18nTrans - failed to access field: {}", segment, e);
+                log.trace("I18nTrans - failed to access field: {}", segment, e);
                 return null;
             }
         }
@@ -295,7 +295,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
 
             Field field = findField(current.getClass(), segments[i]);
             if (field == null) {
-                log.debug("I18nTrans - field not found during path navigation: {} in class {}",
+                log.trace("I18nTrans - field not found during path navigation: {} in class {}",
                         segments[i], current.getClass().getName());
                 return;
             }
@@ -304,7 +304,7 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
                 field.setAccessible(true);
                 current = field.get(current);
             } catch (IllegalAccessException | SecurityException e) {
-                log.debug("I18nTrans - failed to access field during path navigation: {}", segments[i], e);
+                log.trace("I18nTrans - failed to access field during path navigation: {}", segments[i], e);
                 return;
             }
         }
