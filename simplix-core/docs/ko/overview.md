@@ -2,97 +2,76 @@
 
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                     Application Modules                           |
-|  +-------------+ +-------------+ +-------------+ +------------+   |
-|  |simplix-auth | |simplix-file | |simplix-event| |simplix-... |   |
-|  +------+------+ +------+------+ +------+------+ +-----+------+   |
-+--------+---------------+---------------+--------------+-----------+
-         |               |               |              |
-         +---------------+-------+-------+--------------+
-                                 v
-+-------------------------------------------------------------------+
-|                        SimpliX Core                               |
-|  +-------------------------------------------------------------+  |
-|  |  Entity & Repository                                        |  |
-|  |  +-----------------+  +---------------------------------+   |  |
-|  |  |SimpliXBaseEntity|  |SimpliXBaseRepository            |   |  |
-|  |  |- getId()        |  |- JpaRepository +                |   |  |
-|  |  |- setId()        |  |  JpaSpecificationExecutor       |   |  |
-|  |  +-----------------+  +---------------------------------+   |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Tree Structure                                             |  |
-|  |  +------------+ +------------------+ +-----------------+    |  |
-|  |  |TreeEntity  | |SimpliXTree       | |SimpliXTree      |    |  |
-|  |  |- parentId  | |Repository        | |Service          |    |  |
-|  |  |- children  | |- findHierarchy() | |- move()         |    |  |
-|  |  |- sortKey   | |- findDescendants | |- copySubtree()  |    |  |
-|  |  +------------+ +------------------+ +-----------------+    |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Type Conversion                                            |  |
-|  |  +----------------+ +----------------+ +---------------+    |  |
-|  |  |BooleanConverter| |EnumConverter   | |DateTime       |    |  |
-|  |  |                | |- toMap()       | |Converter      |    |  |
-|  |  +----------------+ +----------------+ +---------------+    |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Security                                                   |  |
-|  |  +--------------+ +--------------+ +--------------------+   |  |
-|  |  |HtmlSanitizer | |HashingUtils  | |DataMaskingUtils    |   |  |
-|  |  |- XSS prevent | |- SHA-256/512 | |- Sensitive masking |   |  |
-|  |  +--------------+ +--------------+ +--------------------+   |  |
-|  |  +--------------+ +--------------+                          |  |
-|  |  |@SafeHtml     | |@ValidateWith |                          |  |
-|  |  |- Bean Valid. | |- Custom valid|                          |  |
-|  |  +--------------+ +--------------+                          |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Validation                                                 |  |
-|  |  +--------------+ +--------------+ +--------------------+   |  |
-|  |  |@Unique       | |@UniqueFields | |UniqueValidator     |   |  |
-|  |  |- Field level | |- Class level | |- JPA EntityManager |   |  |
-|  |  |- DB unique   | |- Multi field | |- Update exclusion  |   |  |
-|  |  |- Soft delete | |- Soft delete | |- Soft delete aware |   |  |
-|  |  +--------------+ +--------------+ +--------------------+   |  |
-|  |  +------------------+ +-------------------------------+     |  |
-|  |  |@UniqueComposites | |UniqueCompositeValidator       |     |  |
-|  |  |- Composite key   | |- Multi-column unique check    |     |  |
-|  |  |- Class level     | |- Update exclusion supported   |     |  |
-|  |  +------------------+ +-------------------------------+     |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  I18n Translation                                           |  |
-|  |  +-------------------+ +-------------------+                |  |
-|  |  |@I18nTrans         | |I18nConfigHolder   |                |  |
-|  |  |- JSON field trans | |- Config holder    |                |  |
-|  |  |- Locale fallback  | |- Supported locales|                |  |
-|  |  +-------------------+ +-------------------+                |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Exception & API                                            |  |
-|  |  +------------------+ +-------------------------------+     |  |
-|  |  |ErrorCode         | |SimpliXApiResponse<T>          |     |  |
-|  |  |- 30+ std codes   | |- success(), failure(), error()|     |  |
-|  |  |- Categorized     | |- Standard API response wrapper|     |  |
-|  |  +------------------+ +-------------------------------+     |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  Utilities                                                  |  |
-|  |  +------------+ +------------+ +------------+               |  |
-|  |  |CacheManager| |EntityUtils | |UuidV7      |               |  |
-|  |  |- SPI based | |- Conv util | |Generator   |               |  |
-|  |  +------------+ +------------+ +------------+               |  |
-|  +-------------------------------------------------------------+  |
-+-------------------------------------------------------------------+
-                                 |
-                                 v
-+-------------------------------------------------------------------+
-|                    External Dependencies                          |
-|  Spring Boot Data JPA | OWASP Sanitizer | ModelMapper | ...       |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션_모듈["애플리케이션 모듈"]
+        AUTH[simplix-auth]
+        FILE[simplix-file]
+        EVENT[simplix-event]
+        OTHER[simplix-...]
+    end
+
+    subgraph CORE["SimpliX Core"]
+        subgraph ENTITY["Entity & Repository"]
+            E1[SimpliXBaseEntity]
+            E2[SimpliXBaseRepository]
+        end
+
+        subgraph TREE["트리 구조"]
+            T1[TreeEntity]
+            T2[SimpliXTreeRepository]
+            T3[SimpliXTreeService]
+        end
+
+        subgraph CONVERT["타입 변환"]
+            C1[BooleanConverter]
+            C2[EnumConverter]
+            C3[DateTimeConverter]
+        end
+
+        subgraph SECURITY["보안"]
+            S1[HtmlSanitizer]
+            S2[HashingUtils]
+            S3[DataMaskingUtils]
+            S4["@SafeHtml"]
+            S5["@ValidateWith"]
+        end
+
+        subgraph VALIDATION["검증"]
+            V1["@Unique"]
+            V2["@UniqueFields"]
+            V3["@UniqueComposites"]
+            V4[UniqueValidator]
+        end
+
+        subgraph I18N["다국어 번역"]
+            I1["@I18nTrans"]
+            I2[I18nConfigHolder]
+        end
+
+        subgraph EXCEPTION["예외 & API"]
+            X1[ErrorCode]
+            X2["SimpliXApiResponse&lt;T&gt;"]
+        end
+
+        subgraph UTIL["유틸리티"]
+            U1[CacheManager]
+            U2[EntityUtils]
+            U3[UuidV7Generator]
+        end
+    end
+
+    subgraph DEPS["외부 의존성"]
+        D1[Spring Boot Data JPA]
+        D2[OWASP Sanitizer]
+        D3[ModelMapper]
+    end
+
+    AUTH --> CORE
+    FILE --> CORE
+    EVENT --> CORE
+    OTHER --> CORE
+    CORE --> DEPS
 ```
 
 ---
@@ -108,7 +87,8 @@ simplix-core/
     │   ├── converter/              # JPA 컨버터
     │   │   ├── HashingAttributeConverter.java
     │   │   ├── MaskingConverter.java
-    │   │   └── JsonMapConverter.java
+    │   │   ├── JsonMapConverter.java
+    │   │   └── JsonListConverter.java
     │   └── listener/               # JPA 리스너
     │       ├── MaskSensitive.java
     │       └── UniversalMaskingListener.java
@@ -175,7 +155,7 @@ simplix-core/
     │   ├── UniqueComposite.java    # 복합 유니크 제약 정의
     │   ├── UniqueComposites.java   # 복합 유니크 검증 (다중 컬럼)
     │   ├── UniqueCompositeValidator.java
-    │   └── SoftDeleteType.java     # Soft delete 유형 (BOOLEAN, TIMESTAMP)
+    │   └── SoftDeleteType.java     # Soft delete 유형 (BOOLEAN, TIMESTAMP, LONG_TIMESTAMP)
     │
     ├── config/                      # 설정 홀더
     │   ├── SimpliXI18nProperties.java
@@ -229,7 +209,7 @@ simplix-core/
 | **@Unique** | validator | 필드 레벨 DB 유니크 검증 어노테이션 (soft delete 지원) |
 | **@UniqueFields** | validator | 클래스 레벨 다중 필드 유니크 검증 (soft delete 지원) |
 | **@UniqueComposites** | validator | 복합 유니크 제약 검증 (다중 컬럼 조합, soft delete 지원) |
-| **SoftDeleteType** | validator | Soft delete 유형 (NONE, BOOLEAN, TIMESTAMP) |
+| **SoftDeleteType** | validator | Soft delete 유형 (NONE, BOOLEAN, TIMESTAMP, LONG_TIMESTAMP) |
 | **SimpliXI18nConfigHolder** | config | I18n 번역 설정 홀더 |
 | **@I18nTrans** | jackson.annotation | JSON 필드 다국어 번역 어노테이션 |
 | **ErrorCode** | exception | 30+ 표준화된 에러 코드 |
@@ -244,23 +224,29 @@ simplix-core/
 
 simplix-core는 다른 모든 SimpliX 모듈의 기반입니다:
 
-```
-                    +-----------------+
-                    |   simplix-core  |
-                    +--------+--------+
-                             |
-        +--------------------+--------------------+
-        |                    |                    |
-        v                    v                    v
-+---------------+   +---------------+   +---------------+
-| simplix-auth  |   | simplix-file  |   |simplix-event  |
-+-------+-------+   +-------+-------+   +-------+-------+
-        |                   |                   |
-        v                   v                   v
-+---------------+   +---------------+   +---------------+
-|simplix-mybatis|   |simplix-excel  |   |simplix-       |
-|               |   |               |   |hibernate      |
-+---------------+   +---------------+   +---------------+
+```mermaid
+flowchart TD
+    CORE[simplix-core]
+
+    AUTH[simplix-auth]
+    FILE[simplix-file]
+    EVENT[simplix-event]
+    MYBATIS[simplix-mybatis]
+    EXCEL[simplix-excel]
+    HIBERNATE[simplix-hibernate]
+    CACHE[simplix-cache]
+    EMAIL[simplix-email]
+    ENCRYPTION[simplix-encryption]
+
+    CORE --> AUTH
+    CORE --> FILE
+    CORE --> EVENT
+    CORE --> MYBATIS
+    CORE --> EXCEL
+    CORE --> HIBERNATE
+    CORE --> CACHE
+    CORE --> EMAIL
+    CORE --> ENCRYPTION
 ```
 
 ---
@@ -277,6 +263,14 @@ simplix-core는 다른 모든 SimpliX 모듈의 기반입니다:
 | `modelmapper` | 객체 변환 |
 | `uuid-creator` | UUID v7 생성 |
 | `springdoc-openapi` | API 문서화 |
+
+---
+
+## 설정 속성
+
+simplix-core는 Auto-Configuration이 없는 순수 라이브러리 모듈로, 별도의 설정 속성이 없습니다.
+
+의존성만 추가하면 모든 클래스를 바로 사용할 수 있습니다.
 
 ---
 

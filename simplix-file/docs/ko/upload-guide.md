@@ -2,49 +2,58 @@
 
 파일 업로드 및 처리 가이드입니다.
 
+## 목차
+
+- [FileProcessingService](#fileprocessingservice)
+- [API Reference](#api-reference)
+- [FileProcessingRequest](#fileprocessingrequest)
+- [ProcessedFileResult](#processedfileresult)
+- [FileValidator 검증 규칙](#filevalidator-검증-규칙)
+- [코드 예제](#코드-예제)
+- [Related Documents](#related-documents)
+
+---
+
 ## FileProcessingService
 
 파일 업로드의 메인 오케스트레이션 서비스입니다. 도메인에 독립적으로 설계되어 어떤 애플리케이션에서도 재사용할 수 있습니다.
 
 ### 처리 흐름
 
-```
-MultipartFile
-     |
-     v
-+-----------------------------------------+
-|  1. File Validation (FileValidator)     |
-|     - Empty file check                  |
-|     - Size validation                   |
-|     - MIME type validation              |
-|     - Extension validation              |
-+-----------------------------------------+
-     |
-     v
-+-----------------------------------------+
-|  2. Category Detection                  |
-|     - IMAGE, VIDEO, AUDIO, DOCUMENT,    |
-|       ARCHIVE, OTHER                    |
-+-----------------------------------------+
-     |
-     v (if image)
-+-----------------------------------------+
-|  3. Image Processing                    |
-|     (ImageProcessingService)            |
-|     - Metadata extraction               |
-|     - WebP optimization (optional)      |
-|     - Resize (optional)                 |
-+-----------------------------------------+
-     |
-     v
-+-----------------------------------------+
-|  4. Storage (FileStorageService)        |
-|     - Store file                        |
-|     - Calculate checksum                |
-+-----------------------------------------+
-     |
-     v
-ProcessedFileResult
+```mermaid
+flowchart TB
+    INPUT["MultipartFile"]
+
+    subgraph VALIDATION["1. 파일 검증 (FileValidator)"]
+        V1["빈 파일 확인"]
+        V2["크기 검증"]
+        V3["MIME 타입 검증"]
+        V4["확장자 검증"]
+    end
+
+    subgraph CATEGORY["2. 카테고리 감지"]
+        C1["IMAGE, VIDEO, AUDIO,<br/>DOCUMENT, ARCHIVE, OTHER"]
+    end
+
+    subgraph IMAGE["3. 이미지 처리 (조건부)"]
+        I1["메타데이터 추출"]
+        I2["WebP 최적화 (선택)"]
+        I3["리사이징 (선택)"]
+    end
+
+    subgraph STORAGE["4. 저장소 (FileStorageService)"]
+        S1["파일 저장"]
+        S2["체크섬 계산"]
+    end
+
+    OUTPUT["ProcessedFileResult"]
+
+    INPUT --> VALIDATION
+    VALIDATION --> CATEGORY
+    CATEGORY -->|"이미지인 경우"| IMAGE
+    CATEGORY -->|"이미지가 아닌 경우"| STORAGE
+    IMAGE --> STORAGE
+    STORAGE --> OUTPUT
 ```
 
 ---
@@ -228,6 +237,8 @@ if (result.isAudio()) {
 | `image/png` | png |
 | `image/gif` | gif |
 | `image/webp` | webp |
+| `image/bmp` | bmp |
+| `image/tiff` | tiff, tif |
 | `image/svg+xml` | svg |
 | `application/pdf` | pdf |
 | `application/msword` | doc |
@@ -235,8 +246,13 @@ if (result.isAudio()) {
 | `application/vnd.ms-excel` | xls |
 | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` | xlsx |
 | `application/zip` | zip |
+| `application/gzip` | gz, gzip |
+| `application/x-tar` | tar |
 | `text/plain` | txt |
 | `text/csv` | csv |
+| `text/rtf` | rtf |
+
+> MIME 타입과 확장자가 불일치하는 경우 경고만 로깅되고 처리는 계속 진행됩니다.
 
 ---
 

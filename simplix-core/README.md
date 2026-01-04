@@ -87,12 +87,12 @@ simplix-core (base)
     └── spring-boot-starter-simplix-mybatis
 ```
 
-## Library Module
+## 설정
 
 simplix-core는 Auto-Configuration이 없는 순수 라이브러리 모듈입니다:
 
 - Spring Boot starter가 아닌 일반 라이브러리
-- 의존성 추가만으로 클래스 사용 가능
+- 별도의 설정 속성 없음 (의존성 추가만으로 사용 가능)
 - 다른 모듈에서 공통 기능 제공
 
 ## Documentation

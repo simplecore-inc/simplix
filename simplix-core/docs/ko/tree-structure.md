@@ -4,15 +4,14 @@
 
 SimpliX Core는 계층 구조(트리) 데이터를 위한 포괄적인 지원을 제공합니다.
 
-```
-+--------------------+  +--------------------+  +---------------------+
-| TreeEntity<T,ID>   |  | @TreeEntity        |  | SimpliXTreeService  |
-|--------------------|  | Attributes         |  |---------------------|
-| - getId()          |  |--------------------|  | - 40+ methods       |
-| - getParentId()    |  | - tableName        |  | - 8 categories      |
-| - getChildren()    |  | - lookupColumns    |  |                     |
-| - getSortKey()     |  | - cascadeDelete    |  |                     |
-+--------------------+  +--------------------+  +---------------------+
+```mermaid
+flowchart LR
+    TE["TreeEntity&lt;T,ID&gt;<br/>- getId()<br/>- getParentId()<br/>- getChildren()<br/>- getSortKey()"]
+    TEA["@TreeEntityAttributes<br/>- tableName<br/>- lookupColumns<br/>- cascadeDelete"]
+    STS["SimpliXTreeService<br/>- 40+ methods<br/>- 8 categories"]
+
+    TE --- TEA
+    TEA --- STS
 ```
 
 ---
@@ -707,3 +706,4 @@ public class Category implements TreeEntity<Category, Long> {
 - [Security Guide (보안)](./security.md) - XSS 방지, 해싱, 마스킹
 - [Exception & API Guide (예외/API)](./exception-api.md) - 에러 코드, API 응답
 - [Cache Guide (캐시)](./cache.md) - CacheManager, CacheProvider
+- [I18n Translation Guide (다국어 번역)](./i18n-translation.md) - @I18nTrans, 자동 번역

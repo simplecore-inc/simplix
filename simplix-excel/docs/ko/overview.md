@@ -1,49 +1,61 @@
 # SimpliX Excel Module Overview
 
+## Table of Contents
+
+- [Architecture](#architecture)
+- [핵심 컴포넌트](#핵심-컴포넌트)
+- [@ExcelColumn Annotation](#excelcolumn-annotation)
+- [Export Implementations](#export-implementations)
+- [Import Functionality](#import-functionality)
+- [Type Conversion](#type-conversion)
+- [Style Management](#style-management)
+- [Formatter System](#formatter-system)
+- [Template Processing](#template-processing)
+- [설정 속성](#설정-속성)
+- [Performance Optimization](#performance-optimization)
+- [Utility Classes](#utility-classes)
+- [Exception Handling](#exception-handling)
+- [Related Documents](#related-documents)
+
+---
+
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                          Application                               |
-|                               |                                    |
-|       ExcelExporter / JxlsExporter / CsvExporter                  |
-|                               |                                    |
-+-------------------------------+------------------------------------+
-                                |
-                                v
-+-------------------------------------------------------------------+
-|                      SimpliX Excel Module                          |
-|                                                                    |
-|   +--------------+  +--------------+  +--------------+            |
-|   | Standard     |  | Jxls         |  | Unified      |            |
-|   | Excel        |  | Exporter     |  | Csv          |            |
-|   | Exporter     |  | Impl         |  | Exporter     |            |
-|   +------+-------+  +------+-------+  +------+-------+            |
-|          |                 |                 |                     |
-|          +-----------------+-----------------+                     |
-|                            |                                       |
-|                            v                                       |
-|   +-------------------------------------------------------+       |
-|   |                   AbstractExporter                     |       |
-|   |  - Field extraction (@ExcelColumn)                    |       |
-|   |  - HTTP response handling                              |       |
-|   |  - Batch processing                                    |       |
-|   +-------------------------------------------------------+       |
-|                            |                                       |
-|          +-----------------+-----------------+                     |
-|          |                 |                 |                     |
-|          v                 v                 v                     |
-|   +------------+    +------------+    +------------+              |
-|   | Excel      |    | Formatter  |    | Excel      |              |
-|   | Style      |    | Cache      |    | Converter  |              |
-|   | Manager    |    |            |    |            |              |
-|   +------------+    +------------+    +------------+              |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션["애플리케이션"]
+        APP["ExcelExporter / JxlsExporter / CsvExporter"]
+    end
+
+    subgraph EXCEL_MODULE["SimpliX Excel Module"]
+        subgraph EXPORTERS["Exporter"]
+            STANDARD[StandardExcelExporter]
+            JXLS[JxlsExporterImpl]
+            CSV[UnifiedCsvExporter]
+        end
+
+        ABSTRACT["AbstractExporter<br/>- @ExcelColumn 필드 추출<br/>- HTTP 응답 처리<br/>- 배치 처리"]
+
+        subgraph COMPONENTS["컴포넌트"]
+            STYLE[ExcelStyleManager]
+            FORMATTER[FormatterCache]
+            CONVERTER[ExcelConverter]
+        end
+
+        STANDARD --> ABSTRACT
+        JXLS --> ABSTRACT
+        CSV --> ABSTRACT
+        ABSTRACT --> STYLE
+        ABSTRACT --> FORMATTER
+        ABSTRACT --> CONVERTER
+    end
+
+    APP --> EXCEL_MODULE
 ```
 
 ---
 
-## Core Interfaces
+## 핵심 컴포넌트
 
 ### ExcelExporter<T>
 
@@ -143,7 +155,28 @@ public @interface ExcelColumn {
 | `backgroundColor` | IndexedColors | AUTOMATIC | 배경색 |
 | `fontColor` | IndexedColors | AUTOMATIC | 글꼴색 |
 | `alignment` | HorizontalAlignment | LEFT | 정렬 (LEFT, CENTER, RIGHT) |
-| `wrapText` | boolean | false | 텍스트 줄바꿈 |
+| `wrapText` | boolean | true | 텍스트 줄바꿈 |
+
+### order 속성 동작
+
+- 기본값: `Integer.MAX_VALUE`
+- 정렬 규칙: order 값이 같으면 필드 선언 순서로 정렬
+- 사용법:
+  ```java
+  @ExcelColumn(name = "ID", order = 1)      // 첫 번째 컬럼
+  private Long id;
+
+  @ExcelColumn(name = "Name", order = 2)    // 두 번째 컬럼
+  private String name;
+
+  @ExcelColumn(name = "Email")              // order 미지정 → 마지막
+  private String email;
+  ```
+
+### 색상 제약사항
+
+- **IndexedColors Enum만 지원** (RGB/HEX 미지원)
+- 사용 가능 색상: `IndexedColors.WHITE`, `IndexedColors.BLACK`, `IndexedColors.RED`, `IndexedColors.GREEN`, `IndexedColors.BLUE`, `IndexedColors.YELLOW`, `IndexedColors.GREY_25_PERCENT` 등
 
 ---
 
@@ -210,6 +243,39 @@ CsvExporter.of(User.class)
     .quoteStrings()           // 문자열 인용
     .includeHeader(true)      // 헤더 포함
     .export(response, users);
+```
+
+#### Encoding Enum
+
+형식 안전한 인코딩 설정:
+
+```java
+public enum Encoding {
+    UTF8("UTF-8", null),
+    UTF8_BOM("UTF-8", new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF}),
+    ISO_8859_1("ISO-8859-1", null),
+    UTF16_LE("UTF-16LE", new byte[]{(byte)0xFF, (byte)0xFE}),
+    UTF16_BE("UTF-16BE", new byte[]{(byte)0xFE, (byte)0xFF});
+
+    // ...
+}
+
+// 사용법
+CsvExporter.of(User.class)
+    .encoding(UnifiedCsvExporter.Encoding.UTF8_BOM)  // Enum 사용
+    .export(response, users);
+```
+
+#### 추가 메서드
+
+```java
+CsvExporter.of(User.class)
+    .dateFormat("yyyy-MM-dd")         // 날짜 포맷 패턴
+    .numberFormat("#,##0.00")         // 숫자 포맷 패턴
+    .lineEnding("\r\n")               // 라인 종료 문자 (기본: \r\n)
+    .batchSize(5000)                  // 스트리밍 배치 크기
+    .dataProvider(pageRequest -> ...) // 페이지 단위 데이터 조회
+    .export(response);
 ```
 
 ---
@@ -340,6 +406,22 @@ DecimalFormat formatter = FormatterCache.getDecimalFormatter("#,##0.00");
 SimpleDateFormat formatter = FormatterCache.getLegacyDateFormatter("yyyy-MM-dd");
 ```
 
+#### 추가 메서드
+
+```java
+// 기본 타임존 조회
+ZoneId defaultZone = FormatterCache.getDefaultZone();
+
+// Enum 값 추출 함수 등록 (커스텀 Enum 처리)
+FormatterCache.registerEnumValueExtractor(
+    MyEnum.class,
+    myEnum -> myEnum.getDisplayValue()
+);
+
+// 등록된 Enum 추출 함수 조회
+Function<?, String> extractor = FormatterCache.getEnumValueExtractor(MyEnum.class);
+```
+
 ### 기본 포맷
 
 | 타입 | 기본 포맷 |
@@ -368,6 +450,34 @@ byte[] template = ExcelTemplateManager.loadTemplate("templates/report.xlsx");
 byte[] template = ExcelTemplateManager.getOrCreateTemplate("templates/default.xlsx", User.class);
 ```
 
+#### 유틸리티 메서드
+
+```java
+ExcelTemplateManager templateManager = new ExcelTemplateManager();
+
+// 템플릿 존재 여부 확인
+boolean exists = templateManager.templateExists("templates/report.xlsx");
+
+// 캐시에서 템플릿 제거
+templateManager.removeFromCache("templates/report.xlsx");
+
+// 템플릿을 InputStream으로 조회
+InputStream stream = templateManager.getTemplateStream("templates/report.xlsx");
+```
+
+#### 자동 템플릿 생성
+
+classpath/filesystem에서 템플릿을 찾을 수 없으면 temp 디렉토리에 기본 템플릿을 자동 생성합니다:
+
+```java
+// 내부적으로 @ExcelColumn 어노테이션을 분석하여 헤더가 포함된 템플릿 생성
+byte[] template = templateManager.getOrCreateTemplate(
+    "nonexistent-template.xlsx",
+    UserExportDto.class
+);
+// → temp 디렉토리에 UserExportDto 필드 기반 헤더가 포함된 템플릿 생성
+```
+
 ### JXLS Markers
 
 템플릿에서 사용하는 JXLS 마커:
@@ -381,7 +491,7 @@ jx:area(A1:D100)       - 영역 지정
 
 ---
 
-## Configuration Reference
+## 설정 속성
 
 ### 전체 설정
 
@@ -469,6 +579,78 @@ ExcelExporter.of(User.class)
 
 ```java
 // 패턴 기반 캐싱 - 동일 패턴은 캐시에서 반환
+```
+
+---
+
+## Utility Classes
+
+### StreamingCollection
+
+대용량 데이터를 가상 컬렉션으로 처리:
+
+```java
+// 내부적으로 스트리밍 모드에서 사용
+// 페이지 제공자를 사용하여 대용량 데이터를 메모리 효율적으로 처리
+
+StreamingCollection<User> streamingData = new StreamingCollection<>(
+    pageRequest -> userRepository.findAll(pageRequest),
+    1000  // 페이지 크기
+);
+
+// ExcelExporter에서 내부적으로 사용
+ExcelExporter.of(User.class)
+    .streaming()
+    .export(response, largeUserList);  // 내부적으로 StreamingCollection 사용
+```
+
+### ExcelConverter
+
+JXLS 템플릿용 데이터 모델 변환:
+
+```java
+ExcelConverter converter = new ExcelConverter();
+
+// JXLS 템플릿용 데이터 모델 맵 준비
+Map<String, Object> dataModel = converter.prepareDataModel(users, User.class);
+// → { "items": users, "entityClass": User.class }
+
+// 필드/컬럼 캐시 초기화
+converter.clearCaches();
+```
+
+---
+
+## Exception Handling
+
+### ExcelExportException
+
+Excel 내보내기 중 발생하는 예외:
+
+```java
+public class ExcelExportException extends RuntimeException {
+    public ExcelExportException(String message) { super(message); }
+    public ExcelExportException(String message, Throwable cause) { super(message, cause); }
+}
+```
+
+**발생 조건:**
+- 파일 생성 실패
+- 템플릿 로드 실패
+- 데이터 변환 오류
+- 스트리밍 처리 중 오류
+
+**처리 예시:**
+
+```java
+try {
+    ExcelExporter.of(User.class)
+        .filename("users.xlsx")
+        .export(response, users);
+} catch (ExcelExportException e) {
+    log.error("Excel export failed: {}", e.getMessage(), e);
+    response.sendError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Export failed");
+}
 ```
 
 ---

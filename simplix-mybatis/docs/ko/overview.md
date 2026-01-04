@@ -1,40 +1,48 @@
 # SimpliX MyBatis Module Overview
 
+## 목차
+
+- [Architecture](#architecture)
+- [Core Components](#core-components)
+  - [SimpliXMyBatisAutoConfiguration](#simplixmybatisautoconfiguration)
+  - [Auto-Configuration 순서](#auto-configuration-순서)
+  - [Mapper 스캐닝](#mapper-스캐닝)
+  - [트랜잭션 관리](#트랜잭션-관리)
+  - [DataSource 생성](#datasource-생성)
+  - [SimpliXMyBatisProperties](#simplixmybatisproperties)
+- [Configuration Properties](#configuration-properties)
+- [기본 Configuration](#기본-configuration)
+- [사용 예제](#사용-예제)
+- [프로젝트 구조](#프로젝트-구조)
+- [Type Aliases](#type-aliases)
+- [MyBatis 설정 파일 사용](#mybatis-설정-파일-사용)
+- [환경별 설정](#환경별-설정)
+- [비활성화](#비활성화)
+- [트러블슈팅](#트러블슈팅)
+
+---
+
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                      Application Layer                            |
-|  +-------------------------------------------------------------+  |
-|  |  @Mapper interfaces                                         |  |
-|  |  XML Mapper files                                           |  |
-|  +--------------------------+----------------------------------+  |
-+-----------------------------+-------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|              SimpliXMyBatisAutoConfiguration                      |
-|  +-------------------------------------------------------------+  |
-|  |  SqlSessionFactory                                          |  |
-|  |  - DataSource connection                                    |  |
-|  |  - Mapper XML location config                               |  |
-|  |  - Type Aliases package config                              |  |
-|  |  - Default Configuration                                    |  |
-|  |    * mapUnderscoreToCamelCase = true                        |  |
-|  |    * callSettersOnNulls = true                              |  |
-|  +-------------------------------------------------------------+  |
-|  +-------------------------------------------------------------+  |
-|  |  SqlSessionTemplate                                         |  |
-|  |  - Thread-safe SQL execution                                |  |
-|  |  - Transaction management                                   |  |
-|  +-------------------------------------------------------------+  |
-+-------------------------------------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                          DataSource                               |
-|                  (Spring Boot auto-configured)                    |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션_레이어["애플리케이션 레이어"]
+        MAPPER["@Mapper interfaces"]
+        XML["XML Mapper files"]
+    end
+
+    subgraph AUTO_CONFIG["SimpliXMyBatisAutoConfiguration"]
+        FACTORY["SqlSessionFactory<br/>- DataSource 연결<br/>- Mapper XML 위치 설정<br/>- Type Aliases 패키지 설정<br/>- mapUnderscoreToCamelCase = true<br/>- callSettersOnNulls = true"]
+        TEMPLATE["SqlSessionTemplate<br/>- Thread-safe SQL 실행<br/>- 트랜잭션 관리"]
+    end
+
+    subgraph DATASOURCE["DataSource"]
+        DS["Spring Boot 자동 구성"]
+    end
+
+    MAPPER --> AUTO_CONFIG
+    XML --> AUTO_CONFIG
+    AUTO_CONFIG --> DATASOURCE
 ```
 
 ---
@@ -55,6 +63,59 @@ MyBatis 자동 구성 클래스입니다.
 |------|------|
 | SqlSessionFactory | MyBatis SQL 세션 팩토리 |
 | SqlSessionTemplate | Thread-safe SQL 세션 템플릿 |
+
+### Auto-Configuration 순서
+
+SimpliX MyBatis는 Spring Boot의 기본 `MybatisAutoConfiguration` **이후에** 실행됩니다:
+
+```java
+@AutoConfiguration(after = MybatisAutoConfiguration.class)
+```
+
+**우선순위:**
+1. Spring Boot 기본 MyBatis 설정
+2. SimpliX MyBatis 추가 설정 (덮어쓰기)
+
+### Mapper 스캐닝
+
+기본적으로 다음 패키지에서 `@Mapper` 인터페이스를 스캔합니다:
+
+```java
+@MapperScan(basePackages = "${mybatis.mapper-locations:dev.simplecore.simplix.**.mapper}")
+```
+
+**커스텀 베이스 패키지:**
+```yaml
+mybatis:
+  mapper-base-packages: com.example.mapper
+```
+
+### 트랜잭션 관리
+
+`@EnableTransactionManagement`가 자동으로 활성화됩니다:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserMapper userMapper;
+
+    @Transactional  // 자동 트랜잭션 관리 지원
+    public void createUser(User user) {
+        userMapper.insert(user);
+    }
+}
+```
+
+### DataSource 생성
+
+SimpliX는 `DataSourceProperties`를 사용하여 DataSource를 직접 생성합니다:
+
+```java
+sessionFactory.setDataSource(dataSourceProperties.initializeDataSourceBuilder().build());
+```
+
+**주의:** 커스텀 DataSource 빈이 정의된 경우, SimpliX의 자동 생성 대신 해당 빈이 사용됩니다.
 
 ### SimpliXMyBatisProperties
 

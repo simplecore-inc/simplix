@@ -14,14 +14,17 @@ SimpliX Email은 5가지 이메일 Provider를 지원합니다.
 
 ### Provider Selection Guide
 
-```
-Development
-    +-- Console Provider (default)
+```mermaid
+flowchart TB
+    subgraph DEV["Development"]
+        CONSOLE["Console Provider (default)"]
+    end
 
-Production
-    +-- Using AWS --> AWS SES (cost effective)
-    +-- Simple setup --> Resend / SendGrid
-    +-- Self-hosted mail server --> SMTP
+    subgraph PROD["Production"]
+        AWS["Using AWS"] --> SES["AWS SES (cost effective)"]
+        SIMPLE["Simple setup"] --> RESEND["Resend / SendGrid"]
+        SELF["Self-hosted mail server"] --> SMTP["SMTP"]
+    end
 ```
 
 ---
@@ -298,7 +301,7 @@ SES에서 도메인을 검증해야 합니다:
 - **Custom Headers**: ✔
 - **Tags**: ✔
 
-### Pricing (2024 기준)
+### Pricing
 
 - 월 62,000통 무료 (EC2에서 발송 시)
 - 이후 $0.10 / 1,000통
@@ -374,7 +377,7 @@ EmailRequest request = EmailRequest.builder()
 
 SendGrid는 Rate Limit 초과 시 HTTP 429를 반환합니다. SimpliX Email은 이를 retryable 에러로 처리합니다.
 
-### Pricing (2024 기준)
+### Pricing
 
 | Plan | Price | Emails/day |
 |------|-------|------------|
@@ -444,7 +447,7 @@ EmailRequest request = EmailRequest.builder()
     .build();
 ```
 
-### Pricing (2024 기준)
+### Pricing
 
 | Plan | Price | Emails/month |
 |------|-------|--------------|
@@ -460,35 +463,27 @@ EmailRequest request = EmailRequest.builder()
 
 SimpliX Email은 여러 Provider를 동시에 활성화할 수 있으며, 발송 실패 시 자동으로 다음 Provider로 전환합니다.
 
-```
-EmailService.send()
-    |
-    v
-+-----------------------------------------+
-| Sort providers by priority (descending) |
-| [AWS_SES(100), Resend(55), SMTP(10)]    |
-+-----------------------------------------+
-    |
-    v
-+-----------------------------------------+
-| Try AWS SES (priority: 100)             |
-|   +-- Success --> Return result         |
-|   +-- Failure (retryable) --> Continue  |
-+-----------------------------------------+
-    |
-    v
-+-----------------------------------------+
-| Try Resend (priority: 55)               |
-|   +-- Success --> Return result         |
-|   +-- Failure (retryable) --> Continue  |
-+-----------------------------------------+
-    |
-    v
-+-----------------------------------------+
-| Try SMTP (priority: 10)                 |
-|   +-- Success --> Return result         |
-|   +-- Failure --> Return last error     |
-+-----------------------------------------+
+```mermaid
+flowchart TB
+    START["EmailService.send()"]
+    SORT["Sort providers by priority<br/>[AWS_SES(100), Resend(55), SMTP(10)]"]
+
+    subgraph FAILOVER["Failover Chain"]
+        AWS["Try AWS SES (priority: 100)"]
+        RESEND["Try Resend (priority: 55)"]
+        SMTP["Try SMTP (priority: 10)"]
+    end
+
+    SUCCESS["Return result"]
+    ERROR["Return last error"]
+
+    START --> SORT --> AWS
+    AWS -->|Success| SUCCESS
+    AWS -->|Failure (retryable)| RESEND
+    RESEND -->|Success| SUCCESS
+    RESEND -->|Failure (retryable)| SMTP
+    SMTP -->|Success| SUCCESS
+    SMTP -->|Failure| ERROR
 ```
 
 ### Multi-Provider Configuration

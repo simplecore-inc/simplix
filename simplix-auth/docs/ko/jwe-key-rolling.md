@@ -35,66 +35,44 @@ JWE(JSON Web Encryption) 토큰의 암호화 키를 주기적으로 교체하여
 
 ## 아키텍처
 
-```
-+-------------------------------------------------------------------+
-|                        SimpliX Library                            |
-+-------------------------------------------------------------------+
-|                                                                   |
-|  +------------------+    +------------------+                     |
-|  | JweKeyProvider   |<---| SimpliXJwe       |                     |
-|  | (interface)      |    | TokenProvider    |                     |
-|  +--------+---------+    +------------------+                     |
-|           |                                                       |
-|  +--------+----------+                                            |
-|  |                   |                                            |
-|  v                   v                                            |
-|  +--------------+  +------------------+                           |
-|  | Static       |  | Database         |                           |
-|  | JweKey       |  | JweKeyProvider   |<--- Key Rolling Mode      |
-|  | Provider     |  +--------+---------+                           |
-|  +--------------+           |                                     |
-|  (Legacy Mode)              |                                     |
-|                             v                                     |
-|                    +------------------+                           |
-|                    | JweKeyRotation   |                           |
-|                    | Service          |                           |
-|                    +--------+---------+                           |
-|                             |                                     |
-+-----------------------------+-------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                      Application Implementation                   |
-+-------------------------------------------------------------------+
-|  +------------------+    +------------------+                     |
-|  | JweKeyStore      |    | Scheduler        |                     |
-|  | (impl interface) |    | (ShedLock etc)   |                     |
-|  +--------+---------+    +------------------+                     |
-|           |                                                       |
-|           v                                                       |
-|  +------------------+                                             |
-|  | Database         |                                             |
-|  | (JWE Key Table)  |                                             |
-|  +------------------+                                             |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph LIBRARY["SimpliX Library"]
+        JKP["JweKeyProvider<br/>(interface)"]
+        STP["SimpliXJweTokenProvider"]
+        STATIC["StaticJweKeyProvider<br/>(Legacy Mode)"]
+        DB_PROV["DatabaseJweKeyProvider<br/>(Key Rolling Mode)"]
+        ROTATION["JweKeyRotationService"]
+
+        STP --> JKP
+        JKP --> STATIC
+        JKP --> DB_PROV
+        DB_PROV --> ROTATION
+    end
+
+    subgraph APP["Application Implementation"]
+        STORE["JweKeyStore<br/>(impl interface)"]
+        SCHEDULER["Scheduler<br/>(ShedLock etc)"]
+        DATABASE["Database<br/>(JWE Key Table)"]
+
+        STORE --> DATABASE
+    end
+
+    ROTATION --> STORE
 ```
 
 ### 키 생명주기
 
-```
-Created                 Expires
-  |                      |
-  v                      v
---o----------------------o----------------------> Time
-  |                      |
-  |<-- Token Lifetime -->|<- Buffer ->|
-  |      (7 days)        |  (1 day)   |
-  |                      |            |
-  | All tokens issued    |            |
-  | during this period   |            |
-  | can be decrypted     |            |
-  |                                   |
-  +---- Can be deleted after 8 days --+
+```mermaid
+timeline
+    title Key Lifecycle
+    section Token Lifetime (7 days)
+        Created : Key generated
+        Active : All tokens issued during this period can be decrypted
+    section Buffer (1 day)
+        Expires : Grace period for remaining tokens
+    section Cleanup
+        Delete : Key can be deleted after 8 days
 ```
 
 ---
@@ -223,21 +201,18 @@ simplix:
 
 #### 조합 예시
 
+```mermaid
+timeline
+    title 키 로테이션 예시 (refresh-token: 3시간, 버퍼: 1시간)
+    section Day 0
+        Key v1 생성 : 활성 상태
+    section Day 7
+        Key v2 생성 : v1은 4시간 후 삭제 가능
+    section Day 14
+        Key v3 생성 : v2는 4시간 후 삭제 가능
 ```
-refresh-token-lifetime = 3 hours
-Rotation period = Every Sunday (7 days)
-Key retention = 3 hours + 1 hour (buffer) = 4 hours
 
-Timeline:
-+--------------------------------------------------------------+
-| Day 0: Key v1 created (active)                               |
-| Day 7: Key v2 created (active), v1 deletable after 4 hours   |
-| Day 14: Key v3 created (active), v2 deletable after 4 hours  |
-+--------------------------------------------------------------+
-
-Even with short token lifetime, rotation period can be long!
-Old keys are quickly deleted after token expiry, saving storage
-```
+> 토큰 유효기간이 짧더라도 로테이션 주기는 길게 설정 가능합니다. 이전 키는 토큰 만료 후 빠르게 삭제되어 저장 공간을 절약합니다.
 
 ---
 
@@ -288,23 +263,21 @@ Old keys are quickly deleted after token expiry, saving storage
 
 ### 멀티 노드 환경에서의 키 관리
 
-```
-+-------------------------------------------------------------------+
-|                         Database                                  |
-|                    +---------------------+                        |
-|                    |  jwe-v1702345678901 | (active)               |
-|                    |  jwe-v1702245678901 | (inactive, not expired)|
-|                    +---------------------+                        |
-+---------------------------+---------------------------------------+
-                            |
-        +-------------------+-------------------+
-        v                   v                   v
-   +---------+         +---------+         +---------+
-   | Node A  |         | Node B  |         | Node C  |
-   | +-----+ |         | +-----+ |         | +-----+ |
-   | |Cache| |         | |Cache| |         | |Cache| |
-   | +-----+ |         | +-----+ |         | +-----+ |
-   +---------+         +---------+         +---------+
+```mermaid
+flowchart TB
+    subgraph DB["Database"]
+        KEYS["jwe_keys table<br/>- jwe-v1702345678901 (active)<br/>- jwe-v1702245678901 (inactive)"]
+    end
+
+    subgraph NODES["Application Nodes"]
+        A["Node A<br/>[Cache]"]
+        B["Node B<br/>[Cache]"]
+        C["Node C<br/>[Cache]"]
+    end
+
+    DB --> A
+    DB --> B
+    DB --> C
 ```
 
 ### 스케줄러 전략
@@ -434,40 +407,34 @@ jwe-v1702345678901-a1b2c3d4
 
 토큰에는 `kid` (Key ID) 헤더가 포함되어 있어, 복호화 시 정확한 키 버전을 알 수 있습니다. 캐시에 해당 키가 없으면 **DB에서 직접 조회**합니다:
 
-```
-Token decrypt request (kid=v2)
-              |
-              v
-      +---------------+
-      | v2 in cache?  |----Yes----> Return immediately
-      +---------------+
-              |
-             No
-              |
-              v
-      +-------------------+
-      |loadKeyOnDemand(v2)|
-      +-------------------+
-              |
-              v
-      +---------------------+
-      | Load from DB &      |
-      | add to cache        |
-      +---------------------+
-              |
-              v
-       Decrypt success
+```mermaid
+flowchart TD
+    A["토큰 복호화 요청 (kid=v2)"] --> B{v2 캐시 존재?}
+    B --> |Yes| C[즉시 반환]
+    B --> |No| D["loadKeyOnDemand(v2)"]
+    D --> E[DB에서 로드 & 캐시 추가]
+    E --> F[복호화 성공]
 ```
 
 #### 동기화 지연 시나리오 분석
 
-```
-T+0s:  ServerA creates & activates new key v2
-T+0s:  ServerA encrypts token with v2 (kid=v2) -> issued to user
-T+1s:  User requests to ServerB (ServerB cache: only v1)
-T+1s:  ServerB checks token's kid=v2
-T+1s:  Cache miss -> loadKeyOnDemand("v2") -> Load from DB
-T+1s:  Decrypt success!
+```mermaid
+sequenceDiagram
+    participant ServerA
+    participant DB as Database
+    participant ServerB
+    participant User as 사용자
+
+    Note over ServerA: T+0s
+    ServerA->>DB: 새 키 v2 생성 및 활성화
+    ServerA->>User: v2로 암호화된 토큰 발급 (kid=v2)
+
+    Note over User,ServerB: T+1s
+    User->>ServerB: 토큰으로 요청 (ServerB 캐시: v1만 존재)
+    ServerB->>ServerB: kid=v2 확인, 캐시 미스
+    ServerB->>DB: loadKeyOnDemand("v2")
+    DB-->>ServerB: 키 v2 반환
+    ServerB->>ServerB: 복호화 성공!
 ```
 
 **결론**: 캐시 갱신 주기와 관계없이 토큰 복호화는 항상 성공합니다.
