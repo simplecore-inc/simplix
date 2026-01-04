@@ -10,6 +10,9 @@ import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.simplecore.simplix.auth.audit.TokenAuditEvent;
+import dev.simplecore.simplix.auth.audit.TokenAuditEventPublisher;
+import dev.simplecore.simplix.auth.audit.TokenFailureReason;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.jwe.provider.JweKeyProvider;
 import dev.simplecore.simplix.auth.jwe.provider.StaticJweKeyProvider;
@@ -20,6 +23,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -47,6 +51,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -59,6 +64,7 @@ public class SimpliXJweTokenProvider {
     private final UserDetailsService userDetailsService;
     private final TokenBlacklistService blacklistService;
     private final JweKeyProvider jweKeyProvider;
+    private final ObjectProvider<TokenAuditEventPublisher> auditPublisherProvider;
     private RSAEncrypter encrypter;
     private RSADecrypter decrypter;
 
@@ -67,12 +73,14 @@ public class SimpliXJweTokenProvider {
             MessageSource messageSource,
             UserDetailsService userDetailsService,
             @Autowired(required = false) TokenBlacklistService blacklistService,
-            @Autowired(required = false) JweKeyProvider jweKeyProvider) {
+            @Autowired(required = false) JweKeyProvider jweKeyProvider,
+            ObjectProvider<TokenAuditEventPublisher> auditPublisherProvider) {
         this.properties = properties;
         this.messageSource = messageSource;
         this.userDetailsService = userDetailsService;
         this.blacklistService = blacklistService;
         this.jweKeyProvider = jweKeyProvider;
+        this.auditPublisherProvider = auditPublisherProvider;
     }
 
     @Bean
@@ -82,8 +90,108 @@ public class SimpliXJweTokenProvider {
             MessageSource messageSource,
             UserDetailsService userDetailsService,
             @Autowired(required = false) TokenBlacklistService blacklistService,
-            @Autowired(required = false) JweKeyProvider jweKeyProvider) {
-        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService, blacklistService, jweKeyProvider);
+            @Autowired(required = false) JweKeyProvider jweKeyProvider,
+            ObjectProvider<TokenAuditEventPublisher> auditPublisherProvider) {
+        return new SimpliXJweTokenProvider(properties, messageSource, userDetailsService, blacklistService, jweKeyProvider, auditPublisherProvider);
+    }
+
+    /**
+     * Gets the audit event publisher if available.
+     */
+    private TokenAuditEventPublisher getAuditPublisher() {
+        return auditPublisherProvider != null ? auditPublisherProvider.getIfAvailable() : null;
+    }
+
+    /**
+     * Publishes a token validation failure audit event.
+     */
+    private void publishValidationFailed(String username, String jti, TokenFailureReason reason,
+                                         String clientIp, String userAgent, String tokenType) {
+        TokenAuditEventPublisher publisher = getAuditPublisher();
+        if (publisher != null) {
+            try {
+                publisher.publishTokenValidationFailed(
+                    TokenAuditEvent.failure(username, jti, reason, clientIp, userAgent, tokenType)
+                );
+            } catch (Exception e) {
+                log.warn("Failed to publish token validation audit event: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Publishes a token refresh success audit event.
+     */
+    private void publishRefreshSuccess(String username, String oldJti, String newJti,
+                                        String clientIp, String userAgent) {
+        TokenAuditEventPublisher publisher = getAuditPublisher();
+        if (publisher != null) {
+            try {
+                publisher.publishTokenRefreshSuccess(
+                    new TokenAuditEvent(
+                        username,
+                        newJti,
+                        TokenFailureReason.NONE,
+                        clientIp,
+                        userAgent,
+                        "refresh",
+                        Map.of("oldJti", oldJti, "newJti", newJti)
+                    )
+                );
+            } catch (Exception e) {
+                log.warn("Failed to publish token refresh success audit event: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Publishes a token refresh failure audit event.
+     */
+    private void publishRefreshFailed(String username, String jti, TokenFailureReason reason,
+                                       String clientIp, String userAgent, String errorMessage) {
+        TokenAuditEventPublisher publisher = getAuditPublisher();
+        if (publisher != null) {
+            try {
+                Map<String, Object> details = errorMessage != null
+                    ? Map.of("errorMessage", errorMessage)
+                    : null;
+                publisher.publishTokenRefreshFailed(
+                    new TokenAuditEvent(username, jti, reason, clientIp, userAgent, "refresh", details)
+                );
+            } catch (Exception e) {
+                log.warn("Failed to publish token refresh failure audit event: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Publishes a token revocation audit event.
+     */
+    private void publishTokenRevoked(String username, String jti, String clientIp, String userAgent) {
+        TokenAuditEventPublisher publisher = getAuditPublisher();
+        if (publisher != null) {
+            try {
+                publisher.publishTokenRevoked(
+                    TokenAuditEvent.success(username, jti, clientIp, userAgent, "access")
+                );
+            } catch (Exception e) {
+                log.warn("Failed to publish token revocation audit event: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Publishes a token blacklisted audit event.
+     */
+    private void publishTokenBlacklisted(String jti, Duration ttl, String username) {
+        TokenAuditEventPublisher publisher = getAuditPublisher();
+        if (publisher != null) {
+            try {
+                publisher.publishTokenBlacklisted(jti, ttl, username);
+            } catch (Exception e) {
+                log.warn("Failed to publish token blacklisted audit event: {}", e.getMessage());
+            }
+        }
     }
 
     @PostConstruct
@@ -199,14 +307,17 @@ public class SimpliXJweTokenProvider {
     }
 
     public TokenResponse refreshTokens(String refreshToken, String remoteAddr, String userAgent) {
+        String username = null;
+        String oldJti = null;
+
         try {
             // Clear existing authentication
             SecurityContextHolder.clearContext();
 
             // Validate refresh token and extract claims
             JWTClaimsSet claims = parseToken(refreshToken);
-            String username = claims.getSubject();
-            String oldJti = claims.getJWTID();
+            username = claims.getSubject();
+            oldJti = claims.getJWTID();
 
             // Token validation
             if (!validateToken(refreshToken, remoteAddr, userAgent)) {
@@ -226,6 +337,15 @@ public class SimpliXJweTokenProvider {
                 userAgent
             );
 
+            // Extract new JTI from generated access token for audit
+            String newJti = null;
+            try {
+                JWTClaimsSet newClaims = parseToken(tokens.getAccessToken());
+                newJti = newClaims.getJWTID();
+            } catch (Exception e) {
+                log.warn("Failed to extract new JTI for audit: {}", e.getMessage());
+            }
+
             // Blacklist old refresh token (if enabled and rotation is enabled)
             if (properties.getToken().isEnableBlacklist() &&
                 properties.getToken().isEnableTokenRotation() &&
@@ -238,6 +358,8 @@ public class SimpliXJweTokenProvider {
                 // Add old refresh token's JTI to blacklist (only if not already expired)
                 if (ttl.toSeconds() > 0) {
                     blacklistService.blacklist(oldJti, ttl);
+                    // Audit: Token blacklisted (during refresh)
+                    publishTokenBlacklisted(oldJti, ttl, username);
                 }
             }
 
@@ -250,8 +372,18 @@ public class SimpliXJweTokenProvider {
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // Audit: Token refresh success
+            publishRefreshSuccess(username, oldJti, newJti != null ? newJti : "unknown", remoteAddr, userAgent);
+
             return tokens;
+        } catch (TokenValidationException ex) {
+            // Re-throw TokenValidationException (already audited in validateToken)
+            SecurityContextHolder.clearContext();
+            throw ex;
         } catch (Exception ex) {
+            // Audit: Token refresh failed (for non-validation errors)
+            publishRefreshFailed(username, oldJti, TokenFailureReason.UNKNOWN, remoteAddr, userAgent, ex.getMessage());
+
             SecurityContextHolder.clearContext();
             throw new TokenValidationException(
                 messageSource.getMessage("token.refresh.failed", null,
@@ -286,11 +418,26 @@ public class SimpliXJweTokenProvider {
 
     /**
      * Revoke a token by adding its JTI to the blacklist.
+     * <p>
+     * Note: This method does not publish audit events. Use
+     * {@link #revokeToken(String, String, String)} for audit logging support.
      *
      * @param token the token to revoke
      * @return true if the token was added to blacklist, false if blacklist is disabled or token already expired
      */
     public boolean revokeToken(String token) {
+        return revokeToken(token, null, null);
+    }
+
+    /**
+     * Revoke a token by adding its JTI to the blacklist with audit logging.
+     *
+     * @param token the token to revoke
+     * @param clientIp the client IP address (for audit logging)
+     * @param userAgent the User-Agent header (for audit logging)
+     * @return true if the token was added to blacklist, false if blacklist is disabled or token already expired
+     */
+    public boolean revokeToken(String token, String clientIp, String userAgent) {
         if (!properties.getToken().isEnableBlacklist() || blacklistService == null) {
             log.warn("Token blacklist is disabled. Tokens will remain valid until expiry.");
             return false;
@@ -299,6 +446,7 @@ public class SimpliXJweTokenProvider {
         try {
             JWTClaimsSet claims = parseToken(token);
             String jti = claims.getJWTID();
+            String username = claims.getSubject();
             Date expiryDate = claims.getExpirationTime();
 
             if (jti == null || expiryDate == null) {
@@ -310,6 +458,15 @@ public class SimpliXJweTokenProvider {
             if (ttl.toSeconds() > 0) {
                 blacklistService.blacklist(jti, ttl);
                 log.debug("Token revoked successfully, JTI: {}", jti);
+
+                // Audit: Token blacklisted
+                publishTokenBlacklisted(jti, ttl, username);
+
+                // Audit: Token revoked (user action)
+                if (clientIp != null) {
+                    publishTokenRevoked(username, jti, clientIp, userAgent);
+                }
+
                 return true;
             } else {
                 log.debug("Token already expired, no need to blacklist");
@@ -322,13 +479,25 @@ public class SimpliXJweTokenProvider {
     }
 
     public boolean validateToken(String token, String remoteAddr, String userAgent) {
+        String username = null;
+        String jti = null;
+
         try {
             JWTClaimsSet claims = parseToken(token);
-            String jti = claims.getJWTID();
+            jti = claims.getJWTID();
+            username = claims.getSubject();
 
             // Check blacklist (if enabled)
             if (properties.getToken().isEnableBlacklist() && blacklistService != null) {
                 if (blacklistService.isBlacklisted(jti)) {
+                    // Audit: Blacklisted token used
+                    TokenAuditEventPublisher publisher = getAuditPublisher();
+                    if (publisher != null) {
+                        publisher.publishBlacklistedTokenUsed(jti, username, remoteAddr);
+                    }
+                    publishValidationFailed(username, jti, TokenFailureReason.TOKEN_REVOKED,
+                        remoteAddr, userAgent, "access");
+
                     throw new TokenValidationException(
                         messageSource.getMessage("token.revoked", null,
                             "Token has been revoked",
@@ -343,6 +512,10 @@ public class SimpliXJweTokenProvider {
             // Check token expiration (always required)
             Date expirationTime = claims.getExpirationTime();
             if (expirationTime != null && expirationTime.before(new Date())) {
+                // Audit: Token expired
+                publishValidationFailed(username, jti, TokenFailureReason.TOKEN_EXPIRED,
+                    remoteAddr, userAgent, "access");
+
                 throw new TokenValidationException(
                     ErrorCode.AUTH_TOKEN_EXPIRED,
                     messageSource.getMessage("token.expired", null,
@@ -358,6 +531,10 @@ public class SimpliXJweTokenProvider {
             if (properties.getToken().isEnableIpValidation()) {
                 String tokenIp = claims.getStringClaim("clientIp");
                 if (!Objects.equals(tokenIp, remoteAddr)) {
+                    // Audit: IP mismatch
+                    publishValidationFailed(username, jti, TokenFailureReason.IP_MISMATCH,
+                        remoteAddr, userAgent, "access");
+
                     throw new TokenValidationException(
                         messageSource.getMessage("token.ip.mismatch", null,
                             "IP address mismatch",
@@ -374,6 +551,10 @@ public class SimpliXJweTokenProvider {
             if (properties.getToken().isEnableUserAgentValidation()) {
                 String tokenUserAgent = claims.getStringClaim("userAgent");
                 if (!Objects.equals(tokenUserAgent, userAgent)) {
+                    // Audit: User-Agent mismatch
+                    publishValidationFailed(username, jti, TokenFailureReason.USER_AGENT_MISMATCH,
+                        remoteAddr, userAgent, "access");
+
                     throw new TokenValidationException(
                         messageSource.getMessage("token.useragent.mismatch", null,
                             "User Agent mismatch",
@@ -388,8 +569,12 @@ public class SimpliXJweTokenProvider {
 
             return true;
         } catch (TokenValidationException e) {
-            throw e;  // Pass through custom exceptions
+            throw e;  // Pass through custom exceptions (already audited)
         } catch (Exception e) {
+            // Audit: Malformed or unparseable token
+            publishValidationFailed(username, jti, TokenFailureReason.MALFORMED_TOKEN,
+                remoteAddr, userAgent, "access");
+
             throw new TokenValidationException(
                 messageSource.getMessage("token.validation.failed", null,
                     "Token validation failed",

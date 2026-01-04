@@ -16,25 +16,32 @@ SimpliX Auth의 보안 관련 설정을 상세히 설명합니다. Spring Securi
 - [세션 관리](#세션-관리)
 - [예외 처리](#예외-처리)
 - [Method Security](#method-security)
+- [토큰 감사 로깅](#토큰-감사-로깅)
 
 ## Security Filter Chain 구조
 
 SimpliX Auth는 3개의 Security Filter Chain을 순서대로 적용합니다:
 
-```
-Order 50:  tokenSecurityFilterChain  - 토큰 발급/갱신 엔드포인트
-Order 100: apiSecurityFilterChain    - /api/** 엔드포인트
-Order 102: webSecurityFilterChain    - 웹 페이지 (폼 로그인)
+```mermaid
+flowchart LR
+    subgraph 필터체인["Security Filter Chains"]
+        A["Order 50<br/>tokenSecurityFilterChain"]
+        B["Order 100<br/>apiSecurityFilterChain"]
+        C["Order 102<br/>webSecurityFilterChain"]
+    end
+
+    A --> |"토큰 발급/갱신"| D["/auth/token/**"]
+    B --> |"API 요청"| E["/api/**"]
+    C --> |"웹 페이지"| F["기타 경로"]
 ```
 
 ### Filter Chain 우선순위
 
-```yaml
-# 요청 예시
-/auth/token/issue    -> tokenSecurityFilterChain (Order 50)
-/api/users           -> apiSecurityFilterChain (Order 100)
-/dashboard           -> webSecurityFilterChain (Order 102)
-```
+| 요청 경로 | Filter Chain | Order |
+|----------|--------------|-------|
+| `/auth/token/issue` | tokenSecurityFilterChain | 50 |
+| `/api/users` | apiSecurityFilterChain | 100 |
+| `/dashboard` | webSecurityFilterChain | 102 |
 
 ## 토큰 엔드포인트 보안
 
@@ -57,11 +64,17 @@ simplix:
 
 ### 토큰 발급 흐름
 
-```
-1. 클라이언트 -> /auth/token/issue (Basic Auth)
-2. Spring Security가 인증 처리
-3. 인증 성공 시 JWE 토큰 발급
-4. (선택) 세션 생성 및 인증 정보 저장
+```mermaid
+sequenceDiagram
+    participant 클라이언트
+    participant SpringSecurity as Spring Security
+    participant 토큰발급 as Token Endpoint
+
+    클라이언트->>SpringSecurity: 1. /auth/token/issue (Basic Auth)
+    SpringSecurity->>SpringSecurity: 2. 인증 처리
+    SpringSecurity->>토큰발급: 3. 인증 성공
+    토큰발급->>토큰발급: 4. JWE 토큰 발급
+    토큰발급-->>클라이언트: 5. 토큰 응답 (+ 선택적 세션 생성)
 ```
 
 ## API 보안
@@ -81,14 +94,18 @@ simplix:
 
 ### 인증 흐름
 
-```
-1. 요청 수신
-2. SimpliXTokenAuthenticationFilter 실행
-   - Authorization: Bearer {token} 헤더 확인
-   - 쿠키에서 토큰 확인 (OAuth2 쿠키 모드)
-3. 토큰 검증 (만료, 블랙리스트, IP/UA 검증)
-4. 인증 성공 시 SecurityContext 설정
-5. 컨트롤러 실행
+```mermaid
+flowchart TD
+    A[요청 수신] --> B[SimpliXTokenAuthenticationFilter]
+    B --> C{토큰 추출}
+    C --> |"Authorization: Bearer"| D[헤더에서 추출]
+    C --> |"OAuth2 쿠키 모드"| E[쿠키에서 추출]
+    D --> F[토큰 검증]
+    E --> F
+    F --> G{검증 결과}
+    G --> |"만료/블랙리스트/IP 불일치"| H[인증 실패]
+    G --> |"유효"| I[SecurityContext 설정]
+    I --> J[컨트롤러 실행]
 ```
 
 ### 토큰 vs 세션 우선순위
@@ -540,6 +557,225 @@ public class UserService {
 | `#paramName` | 메서드 파라미터 참조 |
 | `authentication.name` | 현재 인증된 사용자명 |
 | `returnObject` | 메서드 반환값 (PostAuthorize) |
+
+## 토큰 감사 로깅
+
+SimpliX Auth는 토큰 관련 이벤트에 대한 감사 로깅을 지원합니다. 보안 모니터링 및 컴플라이언스 요구사항(ISO 27001, SOC2, GDPR)을 충족하기 위해 사용할 수 있습니다.
+
+### 감사 이벤트 유형
+
+| 이벤트 | 설명 | 발생 시점 |
+|--------|------|----------|
+| Token Validation Failed | 토큰 검증 실패 | 만료/폐기/IP불일치/UA불일치/손상 |
+| Token Refresh Success | 토큰 갱신 성공 | 리프레시 토큰으로 새 토큰 발급 |
+| Token Refresh Failed | 토큰 갱신 실패 | 리프레시 토큰 검증 실패 |
+| Token Revoked | 토큰 폐기 | 로그아웃 또는 명시적 폐기 |
+| Token Blacklisted | 토큰 블랙리스트 등록 | 토큰이 블랙리스트에 추가됨 |
+| Blacklisted Token Used | 블랙리스트 토큰 사용 시도 | 폐기된 토큰으로 접근 시도 |
+
+### 실패 사유 (TokenFailureReason)
+
+| 사유 | 설명 |
+|------|------|
+| `TOKEN_EXPIRED` | 토큰 만료 (exp 클레임 초과) |
+| `TOKEN_REVOKED` | 토큰 폐기됨 (블랙리스트) |
+| `INVALID_SIGNATURE` | 서명 검증 실패 |
+| `MALFORMED_TOKEN` | 토큰 파싱 불가 |
+| `IP_MISMATCH` | IP 주소 불일치 |
+| `USER_AGENT_MISMATCH` | User-Agent 불일치 |
+| `MISSING_TOKEN` | 토큰 누락 |
+| `MISSING_REFRESH_TOKEN` | 리프레시 토큰 헤더 누락 |
+| `INVALID_CREDENTIALS` | 인증 정보 오류 |
+| `USER_NOT_FOUND` | 사용자 없음 |
+| `ACCOUNT_LOCKED` | 계정 잠금 |
+| `ACCOUNT_DISABLED` | 계정 비활성화 |
+
+### TokenAuditEventPublisher 구현
+
+감사 이벤트를 수신하려면 `TokenAuditEventPublisher` 인터페이스를 구현합니다:
+
+```java
+@Component
+@Slf4j
+public class CustomTokenAuditPublisher implements TokenAuditEventPublisher {
+
+    private final AuditLogRepository auditLogRepository;
+
+    @Override
+    public void publishTokenValidationFailed(TokenAuditEvent event) {
+        log.warn("Token validation failed: user={}, reason={}, ip={}",
+            event.username(), event.failureReason(), event.clientIp());
+
+        saveAuditLog("TOKEN_VALIDATION_FAILED", event);
+    }
+
+    @Override
+    public void publishTokenRefreshSuccess(TokenAuditEvent event) {
+        log.info("Token refreshed: user={}, ip={}",
+            event.username(), event.clientIp());
+
+        saveAuditLog("TOKEN_REFRESH_SUCCESS", event);
+    }
+
+    @Override
+    public void publishTokenRefreshFailed(TokenAuditEvent event) {
+        log.warn("Token refresh failed: user={}, reason={}, ip={}",
+            event.username(), event.failureReason(), event.clientIp());
+
+        saveAuditLog("TOKEN_REFRESH_FAILED", event);
+    }
+
+    @Override
+    public void publishTokenIssueSuccess(TokenAuditEvent event) {
+        log.info("Token issued: user={}, ip={}",
+            event.username(), event.clientIp());
+
+        saveAuditLog("TOKEN_ISSUED", event);
+    }
+
+    @Override
+    public void publishTokenIssueFailed(TokenAuditEvent event) {
+        log.warn("Token issue failed: user={}, reason={}, ip={}",
+            event.username(), event.failureReason(), event.clientIp());
+
+        saveAuditLog("TOKEN_ISSUE_FAILED", event);
+    }
+
+    @Override
+    public void publishTokenRevoked(TokenAuditEvent event) {
+        log.info("Token revoked: user={}, jti={}, ip={}",
+            event.username(), event.jti(), event.clientIp());
+
+        saveAuditLog("TOKEN_REVOKED", event);
+    }
+
+    @Override
+    public void publishTokenBlacklisted(String jti, Duration ttl, String username) {
+        log.info("Token blacklisted: jti={}, ttl={}, user={}",
+            jti, ttl, username);
+
+        // 블랙리스트 등록 감사 로그
+    }
+
+    @Override
+    public void publishBlacklistedTokenUsed(String jti, String username, String clientIp) {
+        log.warn("Blacklisted token used: jti={}, user={}, ip={}",
+            jti, username, clientIp);
+
+        // 보안 경고: 폐기된 토큰 재사용 시도 감지
+    }
+
+    private void saveAuditLog(String eventType, TokenAuditEvent event) {
+        // IP 주소 마스킹 (GDPR 준수)
+        String maskedIp = maskIpAddress(event.clientIp());
+
+        AuditLog log = AuditLog.builder()
+            .eventType(eventType)
+            .username(event.username())
+            .tokenId(event.jti())
+            .failureReason(event.failureReason().name())
+            .clientIp(maskedIp)
+            .userAgent(event.userAgent())
+            .tokenType(event.tokenType())
+            .timestamp(Instant.now())
+            .build();
+
+        auditLogRepository.save(log);
+    }
+}
+```
+
+### TokenAuditEvent 구조
+
+```java
+public record TokenAuditEvent(
+    String username,          // 사용자명 (null 가능)
+    String jti,               // JWT ID (토큰 식별자)
+    TokenFailureReason failureReason,  // 실패 사유
+    String clientIp,          // 클라이언트 IP
+    String userAgent,         // User-Agent 헤더
+    String tokenType,         // "access" 또는 "refresh"
+    Map<String, Object> additionalDetails  // 추가 정보
+) {
+    // 성공 이벤트 생성
+    public static TokenAuditEvent success(...) { ... }
+
+    // 실패 이벤트 생성
+    public static TokenAuditEvent failure(...) { ... }
+
+    // 성공 여부 확인
+    public boolean isSuccess() {
+        return failureReason == TokenFailureReason.NONE;
+    }
+}
+```
+
+### 보안 모니터링 활용
+
+감사 이벤트를 활용한 보안 모니터링 예시:
+
+```java
+@Component
+@RequiredArgsConstructor
+public class SecurityMonitor implements TokenAuditEventPublisher {
+
+    private final AlertService alertService;
+    private final Cache<String, Integer> failedAttempts;
+
+    @Override
+    public void publishTokenValidationFailed(TokenAuditEvent event) {
+        // IP별 실패 횟수 추적
+        String ip = event.clientIp();
+        int attempts = failedAttempts.get(ip, k -> 0) + 1;
+        failedAttempts.put(ip, attempts);
+
+        // 5회 이상 실패 시 알림
+        if (attempts >= 5) {
+            alertService.sendSecurityAlert(
+                "Suspicious activity detected from IP: " + ip
+            );
+        }
+    }
+
+    @Override
+    public void publishBlacklistedTokenUsed(String jti, String username, String clientIp) {
+        // 블랙리스트 토큰 재사용은 즉시 알림
+        alertService.sendSecurityAlert(
+            "Blacklisted token reuse attempt: user=" + username + ", ip=" + clientIp
+        );
+    }
+
+    // 기타 메서드 구현...
+}
+```
+
+### 감사 이벤트 흐름
+
+```mermaid
+sequenceDiagram
+    participant 클라이언트
+    participant 토큰Provider as SimpliXJweTokenProvider
+    participant 감사Publisher as TokenAuditEventPublisher
+    participant 저장소 as AuditLogRepository
+
+    클라이언트->>토큰Provider: 1. 토큰 검증 요청
+    토큰Provider->>토큰Provider: 2. 토큰 검증 수행
+
+    alt 검증 실패
+        토큰Provider->>감사Publisher: 3a. publishTokenValidationFailed()
+        감사Publisher->>저장소: 4a. 감사 로그 저장
+        토큰Provider-->>클라이언트: 5a. 401 Unauthorized
+    else 검증 성공
+        토큰Provider-->>클라이언트: 3b. 인증 성공
+    end
+```
+
+### 구현 시 주의사항
+
+- **비동기 처리**: 감사 로그 저장이 메인 요청 흐름을 차단하지 않도록 비동기로 처리하세요
+- **예외 처리**: 감사 로그 저장 실패가 인증 흐름에 영향을 주지 않도록 예외를 적절히 처리하세요
+- **민감 데이터 마스킹**: IP 주소, User-Agent 등 개인정보는 필요에 따라 마스킹하세요
+- **보존 기간**: 규정 요구사항에 맞는 로그 보존 정책을 수립하세요
 
 ## 관련 문서
 

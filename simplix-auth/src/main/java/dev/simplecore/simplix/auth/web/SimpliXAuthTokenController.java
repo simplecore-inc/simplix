@@ -1,5 +1,8 @@
 package dev.simplecore.simplix.auth.web;
 
+import dev.simplecore.simplix.auth.audit.TokenAuditEvent;
+import dev.simplecore.simplix.auth.audit.TokenAuditEventPublisher;
+import dev.simplecore.simplix.auth.audit.TokenFailureReason;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
@@ -59,6 +62,7 @@ public class SimpliXAuthTokenController {
     private final AuthenticationSuccessHandler tokenAuthenticationSuccessHandler;
     private final AuthenticationFailureHandler tokenAuthenticationFailureHandler;
     private final ObjectProvider<LogoutHandler> logoutHandlerProvider;
+    private final ObjectProvider<TokenAuditEventPublisher> auditPublisherProvider;
 
     @Operation(
             summary = "Issue JWE token",
@@ -190,6 +194,10 @@ public class SimpliXAuthTokenController {
         try {
             String refreshToken = request.getHeader("X-Refresh-Token");
             if (refreshToken == null) {
+                // Audit: Missing refresh token header
+                publishRefreshFailed(null, null, TokenFailureReason.MISSING_REFRESH_TOKEN,
+                        request.getRemoteAddr(), request.getHeader("User-Agent"));
+
                 throw new TokenValidationException(
                         messageSource.getMessage("token.refresh.header.missing", null,
                                 "Missing refresh token header",
@@ -314,14 +322,18 @@ public class SimpliXAuthTokenController {
             logoutHandler.logout(request, null, authentication);
         }
 
+        // Get client info for audit logging
+        String clientIp = request.getRemoteAddr();
+        String userAgent = request.getHeader("User-Agent");
+
         // Revoke access token
         if (hasAccessToken) {
-            tokenProvider.revokeToken(accessToken);
+            tokenProvider.revokeToken(accessToken, clientIp, userAgent);
         }
 
         // Revoke refresh token
         if (hasRefreshToken) {
-            tokenProvider.revokeToken(refreshToken);
+            tokenProvider.revokeToken(refreshToken, clientIp, userAgent);
         }
 
         // Clear security context
@@ -371,6 +383,23 @@ public class SimpliXAuthTokenController {
                             LocaleContextHolder.getLocale()),
                     e
             );
+        }
+    }
+
+    /**
+     * Publishes a token refresh failure audit event.
+     */
+    private void publishRefreshFailed(String username, String jti, TokenFailureReason reason,
+                                       String clientIp, String userAgent) {
+        TokenAuditEventPublisher publisher = auditPublisherProvider.getIfAvailable();
+        if (publisher != null) {
+            try {
+                publisher.publishTokenRefreshFailed(
+                        TokenAuditEvent.failure(username, jti, reason, clientIp, userAgent, "refresh")
+                );
+            } catch (Exception e) {
+                // Silently ignore audit publishing errors
+            }
         }
     }
 } 
