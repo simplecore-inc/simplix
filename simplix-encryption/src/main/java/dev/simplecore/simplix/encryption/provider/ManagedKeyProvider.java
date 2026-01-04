@@ -63,6 +63,7 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
     // ManagedKeyProvider-specific constants
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int PBKDF2_ITERATIONS = 100000;
+    private static final int VERSION_PADDING = 4;  // v0001, v0002, ...
 
     // Use keyRegistry instead of permanentKeyCache for compatibility
     private final Map<String, KeyMetadata> keyRegistry = new ConcurrentHashMap<>();
@@ -137,13 +138,13 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
     private void initializeInMemoryKey() throws NoSuchAlgorithmException, InvalidKeySpecException {
         if (masterKey != null && salt != null) {
             SecretKey key = deriveKeyFromMaster(masterKey, salt);
-            currentKeyVersion = KEY_VERSION_PREFIX + "1";
+            currentKeyVersion = formatVersion(1);
             keyRegistry.put(currentKeyVersion, new KeyMetadata(key, currentKeyVersion, Instant.now()));
             lastRotation = Instant.now();
             log.info("✔ In-memory key initialized");
         } else {
             SecretKey key = generateNewKey();
-            currentKeyVersion = KEY_VERSION_PREFIX + "1";
+            currentKeyVersion = formatVersion(1);
             keyRegistry.put(currentKeyVersion, new KeyMetadata(key, currentKeyVersion, Instant.now()));
             lastRotation = Instant.now();
             log.warn("⚠ Using randomly generated key - configure master key for production");
@@ -260,7 +261,7 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
         try {
             SecretKey newKey = generateNewKey();
             int nextVersion = keyRegistry.size() + 1;
-            String newVersion = KEY_VERSION_PREFIX + nextVersion;
+            String newVersion = formatVersion(nextVersion);
 
             if (currentKeyVersion != null) {
                 KeyMetadata current = keyRegistry.get(currentKeyVersion);
@@ -353,6 +354,18 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
     // generateNewKey() method is inherited from AbstractKeyProvider
 
     /**
+     * Creates a formatted version string with zero-padding.
+     * <p>
+     * Example: formatVersion(1) returns "v0001", formatVersion(42) returns "v0042"
+     *
+     * @param versionNumber the version number
+     * @return formatted version string
+     */
+    private String formatVersion(int versionNumber) {
+        return KEY_VERSION_PREFIX + String.format("%0" + VERSION_PADDING + "d", versionNumber);
+    }
+
+    /**
      * Derives a key from master key using PBKDF2
      */
     private SecretKey deriveKeyFromMaster(String masterKey, String salt)
@@ -386,7 +399,7 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
             }
 
             SecretKey initialKey = generateNewKey();
-            currentKeyVersion = KEY_VERSION_PREFIX + "1";
+            currentKeyVersion = formatVersion(1);
             keyRegistry.put(currentKeyVersion, new KeyMetadata(initialKey, currentKeyVersion, Instant.now()));
             lastRotation = Instant.now();
             saveKeyToSecureStore(currentKeyVersion, initialKey);
@@ -412,16 +425,21 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
     }
 
     /**
-     * Load a single key from file
+     * Load a single key from file.
+     * <p>
+     * Key file format: {@code {base64_encoded_key}:{ISO_8601_timestamp}}
+     * <p>
+     * Example: {@code WiBjBcT+ddPnwZA5qfTm6hWfqc2TLR7RzK93QJeDUCU=:2026-01-03T16:54:40.814695Z}
      */
     private void loadKeyFromFile(Path keyFile) throws IOException {
         String fileName = keyFile.getFileName().toString();
         String version = fileName.substring(4, fileName.lastIndexOf('.'));
 
         byte[] keyBytes = Files.readAllBytes(keyFile);
-        String keyString = new String(keyBytes, StandardCharsets.UTF_8);
+        String keyString = new String(keyBytes, StandardCharsets.UTF_8).trim();
 
-        String[] parts = keyString.split(":");
+        // Split only on first colon to preserve ISO 8601 timestamp (which contains colons)
+        String[] parts = keyString.split(":", 2);
         byte[] decodedKey = Base64.getDecoder().decode(parts[0]);
         Instant createdAt = parts.length > 1 ? Instant.parse(parts[1]) : Instant.now();
 

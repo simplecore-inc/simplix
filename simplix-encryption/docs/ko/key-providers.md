@@ -48,17 +48,11 @@ SIMPLIX_ENCRYPTION_STATIC_KEY=my-development-key
 
 ### 키 생성 과정
 
-```
-Input: "my-development-key"
-    |
-    v
-SHA-256 hashing
-    |
-    v
-32 bytes (256 bits) AES key
-    |
-    v
-Version: "static"
+```mermaid
+flowchart TB
+    A["입력: 'my-development-key'"] --> B["SHA-256 해싱"]
+    B --> C["32 bytes (256 bits) AES 키"]
+    C --> D["버전: 'static'"]
 ```
 
 ### 주의사항
@@ -154,6 +148,26 @@ openssl rand -base64 32
 | 암호화 | `current-version` 키 | deprecated가 false여야 함 |
 | 복호화 | 데이터의 버전에 해당하는 키 | deprecated여도 사용 가능 |
 
+### 유틸리티 메서드
+
+```java
+@Autowired
+private KeyProvider keyProvider;
+
+// 특정 버전이 deprecated인지 확인
+boolean isOldKeyDeprecated = ((ConfigurableKeyProvider) keyProvider).isDeprecated("v1");
+// true if deprecated: true
+
+// 사용 가능한 모든 키 버전 조회
+Set<String> versions = ((ConfigurableKeyProvider) keyProvider).getAvailableVersions();
+// ["v1", "v2", "v3"]
+```
+
+**사용 사례:**
+- 감사 로그: 어떤 키 버전들이 존재하는지 기록
+- 마이그레이션: deprecated 버전의 데이터 식별 후 재암호화
+- 모니터링: 활성 키 버전 수 추적
+
 ### 검증 규칙
 
 초기화 시 다음을 검증합니다:
@@ -221,20 +235,45 @@ simplix:
     auto-rotation: true
 ```
 
+### 버전 포맷
+
+버전은 4자리 제로 패딩된 순차 번호를 사용합니다:
+
+| 버전 번호 | 포맷 |
+|-----------|------|
+| 1 | `v0001` |
+| 2 | `v0002` |
+| 42 | `v0042` |
+
+이 포맷은 파일 시스템에서 자연스러운 정렬을 보장합니다.
+
 ### 키 저장소 구조
 
 ```
 /var/simplix/encryption/keys/
-├── key_v1734567890123.key    # Base64(key):timestamp
-├── key_v1734667890123.key
-├── key_v1734767890123.key
-└── metadata.json             # 메타데이터
+├── key_v0001.key    # 첫 번째 키
+├── key_v0002.key    # 두 번째 키 (첫 로테이션 후)
+├── key_v0003.key    # 세 번째 키
+└── metadata.json    # 메타데이터
+```
+
+**키 파일 포맷:**
+
+각 키 파일은 다음 형식으로 저장됩니다:
+
+```
+{base64_encoded_key}:{ISO_8601_timestamp}
+```
+
+예시:
+```
+WiBjBcT+ddPnwZA5qfTm6hWfqc2TLR7RzK93QJeDUCU=:2025-01-15T10:30:00.123456Z
 ```
 
 **metadata.json 예시:**
 ```json
 {
-  "currentVersion": "v1734767890123",
+  "currentVersion": "v0003",
   "lastRotation": "2025-01-15T10:30:00Z",
   "totalKeys": 3
 }
@@ -254,6 +293,18 @@ Unix 계열 시스템에서 보안을 위해 파일 권한이 자동 설정됩�
 
 - 키 파일: `600` (소유자만 읽기/쓰기)
 - 디렉토리: `700` (소유자만 접근)
+
+### 유틸리티 메서드
+
+```java
+@Autowired
+private KeyProvider keyProvider;
+
+// 저장소에서 최신 메타데이터 새로고침
+((ManagedKeyProvider) keyProvider).refreshFromStorage();
+```
+
+이 메서드는 파일 시스템에서 `metadata.json`을 다시 읽어 최신 상태로 동기화합니다. 분산 환경에서 다른 인스턴스가 키를 로테이션한 경우 유용합니다.
 
 ### 분산 환경 설정
 
@@ -369,18 +420,30 @@ spring:
         service-account-token-file: /var/run/secrets/kubernetes.io/serviceaccount/token
 ```
 
+### 장애 허용 (Fault Tolerance)
+
+VaultKeyProvider는 Vault 일시 장애 시 캐시된 키를 사용합니다:
+
+```
+1. Vault 정상 -> 키 로드 -> 메모리 캐시에 저장
+2. Vault 일시 장애 -> 캐시된 키 사용 (DEBUG 로그만 출력)
+3. Vault 복구 -> 정상 동작 재개
+```
+
+> 한 번 로드된 키는 메모리에 영구 캐싱되므로, 애플리케이션 실행 중 Vault가 잠시 중단되어도 기존 키로 암호화/복호화가 가능합니다.
+
 ### 다중 인스턴스 동기화
 
 VaultKeyProvider는 `refreshCurrentVersion()` 메서드를 통해 주기적으로 Vault의 현재 버전을 확인합니다. 한 인스턴스에서 키 로테이션이 발생하면 다른 인스턴스들은 다음 요청 시 자동으로 새 버전을 감지합니다.
 
-```
-Instance A: rotateKey() --> Vault update
-                |
-                v
-Vault: current = v2
-                |
-                v
-Instance B: getCurrentKey() --> refreshCurrentVersion() --> v2 detected --> Load new key
+```mermaid
+flowchart LR
+    A["Instance A: rotateKey()"] --> B["Vault 업데이트"]
+    B --> C["Vault: current = v2"]
+    C --> D["Instance B: getCurrentKey()"]
+    D --> E["refreshCurrentVersion()"]
+    E --> F["v2 감지"]
+    F --> G["새 키 로드"]
 ```
 
 ---
@@ -389,16 +452,17 @@ Instance B: getCurrentKey() --> refreshCurrentVersion() --> v2 detected --> Load
 
 ### 의사결정 트리
 
-```
-Is this a production environment?
-+-- Yes --> Is Vault available?
-|           +-- Yes --> VaultKeyProvider
-|           +-- No  --> Is key rotation needed?
-|                       +-- Yes --> ManagedKeyProvider
-|                       +-- No  --> ConfigurableKeyProvider
-|
-+-- No --> Development/Test environment
-           +-- SimpleKeyProvider
+```mermaid
+flowchart TB
+    Q1{"운영 환경인가?"} -->|예| Q2{"Vault 사용 가능?"}
+    Q1 -->|아니오| DEV["개발/테스트 환경"]
+    DEV --> SIMPLE["SimpleKeyProvider"]
+
+    Q2 -->|예| VAULT["VaultKeyProvider"]
+    Q2 -->|아니오| Q3{"키 로테이션 필요?"}
+
+    Q3 -->|예| MANAGED["ManagedKeyProvider"]
+    Q3 -->|아니오| CONFIG["ConfigurableKeyProvider"]
 ```
 
 ### 환경별 권장 구성
