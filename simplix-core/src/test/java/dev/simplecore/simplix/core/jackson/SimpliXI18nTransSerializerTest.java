@@ -285,6 +285,128 @@ class SimpliXI18nTransSerializerTest {
     }
 
     // ===========================================
+    // Repeatable Annotation Tests
+    // ===========================================
+
+    @Nested
+    @DisplayName("Repeatable @I18nTrans Annotation Tests")
+    class RepeatableAnnotationTests {
+
+        @Test
+        @DisplayName("Should translate multiple nested fields with repeatable @I18nTrans")
+        void shouldTranslateMultipleNestedFieldsWithRepeatableAnnotation() throws JsonProcessingException {
+            // Given
+            LocaleContextHolder.setLocale(Locale.KOREAN);
+
+            ProductTranslations translations = new ProductTranslations();
+            translations.setName("Default Name");
+            translations.setNameI18n(createI18nMap("en", "English Name", "ko", "Korean Name"));
+            translations.setDescription("Default Description");
+            translations.setDescriptionI18n(createI18nMap("en", "English Description", "ko", "Korean Description"));
+            translations.setCategory("Default Category");
+            translations.setCategoryI18n(createI18nMap("en", "English Category", "ko", "Korean Category"));
+
+            ProductWithRepeatableDto dto = new ProductWithRepeatableDto();
+            dto.setTranslations(translations);
+
+            // When
+            String json = objectMapper.writeValueAsString(dto);
+            System.out.println("Repeatable annotation JSON: " + json);
+
+            // Then
+            assertTrue(json.contains("\"name\":\"Korean Name\""),
+                    "name should be translated to Korean");
+            assertTrue(json.contains("\"description\":\"Korean Description\""),
+                    "description should be translated to Korean");
+            assertTrue(json.contains("\"category\":\"Korean Category\""),
+                    "category should be translated to Korean");
+        }
+
+        @Test
+        @DisplayName("Should translate multiple nested fields with English locale")
+        void shouldTranslateMultipleNestedFieldsWithEnglishLocale() throws JsonProcessingException {
+            // Given
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+
+            ProductTranslations translations = new ProductTranslations();
+            translations.setName("Default Name");
+            translations.setNameI18n(createI18nMap("en", "English Name", "ko", "Korean Name"));
+            translations.setDescription("Default Description");
+            translations.setDescriptionI18n(createI18nMap("en", "English Description", "ko", "Korean Description"));
+
+            ProductWithRepeatableDto dto = new ProductWithRepeatableDto();
+            dto.setTranslations(translations);
+
+            // When
+            String json = objectMapper.writeValueAsString(dto);
+
+            // Then
+            assertTrue(json.contains("\"name\":\"English Name\""));
+            assertTrue(json.contains("\"description\":\"English Description\""));
+        }
+
+        @Test
+        @DisplayName("Should correctly translate when locale changes on same object with repeatable annotations")
+        void shouldTranslateCorrectlyWhenLocaleChangesWithRepeatableAnnotations() throws JsonProcessingException {
+            // Given
+            ProductTranslations translations = new ProductTranslations();
+            translations.setName("Default Name");
+            translations.setNameI18n(createI18nMap("en", "English Name", "ko", "Korean Name"));
+            translations.setDescription("Default Description");
+            translations.setDescriptionI18n(createI18nMap("en", "English Description", "ko", "Korean Description"));
+
+            ProductWithRepeatableDto dto = new ProductWithRepeatableDto();
+            dto.setTranslations(translations);
+
+            // When - serialize with Korean
+            LocaleContextHolder.setLocale(Locale.KOREAN);
+            String jsonKo = objectMapper.writeValueAsString(dto);
+            System.out.println("Korean locale JSON (repeatable): " + jsonKo);
+
+            // When - serialize with English (same object!)
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+            String jsonEn = objectMapper.writeValueAsString(dto);
+            System.out.println("English locale JSON (repeatable): " + jsonEn);
+
+            // Then - both should have correct translations
+            assertTrue(jsonKo.contains("\"name\":\"Korean Name\""));
+            assertTrue(jsonKo.contains("\"description\":\"Korean Description\""));
+            assertTrue(jsonEn.contains("\"name\":\"English Name\""));
+            assertTrue(jsonEn.contains("\"description\":\"English Description\""));
+        }
+
+        @Test
+        @DisplayName("Should handle partial i18n maps with repeatable annotations")
+        void shouldHandlePartialI18nMapsWithRepeatableAnnotations() throws JsonProcessingException {
+            // Given
+            LocaleContextHolder.setLocale(Locale.KOREAN);
+
+            ProductTranslations translations = new ProductTranslations();
+            translations.setName("Default Name");
+            translations.setNameI18n(createI18nMap("en", "English Name", "ko", "Korean Name"));
+            translations.setDescription("Default Description");
+            translations.setDescriptionI18n(null);  // null i18n map
+            translations.setCategory("Default Category");
+            translations.setCategoryI18n(new HashMap<>());  // empty i18n map
+
+            ProductWithRepeatableDto dto = new ProductWithRepeatableDto();
+            dto.setTranslations(translations);
+
+            // When
+            String json = objectMapper.writeValueAsString(dto);
+            System.out.println("Partial i18n maps JSON: " + json);
+
+            // Then
+            assertTrue(json.contains("\"name\":\"Korean Name\""),
+                    "name should be translated to Korean");
+            assertTrue(json.contains("\"description\":\"Default Description\""),
+                    "description should keep original value (null i18n map)");
+            assertTrue(json.contains("\"category\":\"Default Category\""),
+                    "category should keep original value (empty i18n map)");
+        }
+    }
+
+    // ===========================================
     // Edge Case Tests
     // ===========================================
 
@@ -776,6 +898,89 @@ class SimpliXI18nTransSerializerTest {
 
         public void setTagGroup(TagGroupNoClassAnnotation tagGroup) {
             this.tagGroup = tagGroup;
+        }
+    }
+
+    /**
+     * Nested object with multiple i18n fields for repeatable annotation tests.
+     */
+    static class ProductTranslations {
+        private String name;
+        @JsonIgnore
+        private Map<String, String> nameI18n;
+
+        private String description;
+        @JsonIgnore
+        private Map<String, String> descriptionI18n;
+
+        private String category;
+        @JsonIgnore
+        private Map<String, String> categoryI18n;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Map<String, String> getNameI18n() {
+            return nameI18n;
+        }
+
+        public void setNameI18n(Map<String, String> nameI18n) {
+            this.nameI18n = nameI18n;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public Map<String, String> getDescriptionI18n() {
+            return descriptionI18n;
+        }
+
+        public void setDescriptionI18n(Map<String, String> descriptionI18n) {
+            this.descriptionI18n = descriptionI18n;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public void setCategory(String category) {
+            this.category = category;
+        }
+
+        public Map<String, String> getCategoryI18n() {
+            return categoryI18n;
+        }
+
+        public void setCategoryI18n(Map<String, String> categoryI18n) {
+            this.categoryI18n = categoryI18n;
+        }
+    }
+
+    /**
+     * DTO using repeatable @I18nTrans annotations to translate multiple nested fields.
+     */
+    static class ProductWithRepeatableDto {
+        @I18nTrans(source = "translations.nameI18n", target = "translations.name")
+        @I18nTrans(source = "translations.descriptionI18n", target = "translations.description")
+        @I18nTrans(source = "translations.categoryI18n", target = "translations.category")
+        private ProductTranslations translations;
+
+        public ProductTranslations getTranslations() {
+            return translations;
+        }
+
+        public void setTranslations(ProductTranslations translations) {
+            this.translations = translations;
         }
     }
 }

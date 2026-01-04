@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import dev.simplecore.simplix.core.jackson.SimpliXI18nTransSerializer;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -46,7 +47,20 @@ import java.lang.annotation.Target;
  *   <li>Fallback to defaultLocale if current locale is not found</li>
  *   <li>Return original value if no translation is available</li>
  * </ul>
+ * <p>
+ * This annotation is repeatable. Multiple {@code @I18nTrans} annotations can be applied
+ * to the same field to translate multiple nested fields:
+ * <pre>{@code
+ * public class ProductDto {
+ *     @I18nTrans(source = "nameI18n", target = "name")
+ *     @I18nTrans(source = "descriptionI18n", target = "description")
+ *     private ProductTranslations translations;
+ * }
+ * }</pre>
+ *
+ * @see I18nTransList
  */
+@Repeatable(I18nTransList.class)
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 @JacksonAnnotationsInside

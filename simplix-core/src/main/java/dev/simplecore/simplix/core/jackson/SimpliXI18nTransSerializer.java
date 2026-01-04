@@ -7,12 +7,14 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.ContextualSerializer;
 import dev.simplecore.simplix.core.config.SimpliXI18nConfigHolder;
 import dev.simplecore.simplix.core.jackson.annotation.I18nTrans;
+import dev.simplecore.simplix.core.jackson.annotation.I18nTransList;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,44 +44,66 @@ import java.util.Map;
 @Slf4j
 public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implements ContextualSerializer {
 
-    private String sourceFieldPath;
-    private String targetFieldPath;
-    private String defaultLocale;
-    private BeanProperty beanProperty;
+    /**
+     * Specification for a single translation mapping.
+     *
+     * @param sourceFieldPath path to the source field containing i18n Map
+     * @param targetFieldPath path to the target field to set translated value
+     * @param defaultLocale   default locale code
+     */
+    private record TranslationSpec(String sourceFieldPath, String targetFieldPath, String defaultLocale) {}
+
+    private final List<TranslationSpec> translationSpecs;
+    private final BeanProperty beanProperty;
 
     /**
      * Default constructor for Jackson.
      */
     public SimpliXI18nTransSerializer() {
+        this.translationSpecs = new ArrayList<>();
+        this.beanProperty = null;
     }
 
     /**
-     * Constructor with annotation metadata.
+     * Constructor with multiple translation specifications.
      *
-     * @param sourceFieldPath path to the source field containing i18n Map (supports dot notation)
-     * @param targetFieldPath path to the target field to set translated value (supports dot notation)
-     * @param defaultLocale   default locale code
-     * @param beanProperty    the bean property for contextual serialization
+     * @param translationSpecs list of translation specifications
+     * @param beanProperty     the bean property for contextual serialization
      */
-    public SimpliXI18nTransSerializer(String sourceFieldPath, String targetFieldPath,
-                                       String defaultLocale, BeanProperty beanProperty) {
-        this.sourceFieldPath = sourceFieldPath;
-        this.targetFieldPath = targetFieldPath;
-        this.defaultLocale = defaultLocale;
+    public SimpliXI18nTransSerializer(List<TranslationSpec> translationSpecs, BeanProperty beanProperty) {
+        this.translationSpecs = translationSpecs;
         this.beanProperty = beanProperty;
     }
 
     @Override
     public JsonSerializer<?> createContextual(SerializerProvider prov, BeanProperty property) {
         if (property != null) {
-            I18nTrans annotation = property.getAnnotation(I18nTrans.class);
-            if (annotation != null) {
-                return new SimpliXI18nTransSerializer(
-                        annotation.source(),
-                        annotation.target(),
-                        annotation.defaultLocale(),
-                        property  // Store the property for field-level annotations
-                );
+            List<TranslationSpec> specs = new ArrayList<>();
+
+            // 1. Check for container annotation (multiple @I18nTrans)
+            I18nTransList list = property.getAnnotation(I18nTransList.class);
+            if (list != null) {
+                for (I18nTrans trans : list.value()) {
+                    specs.add(new TranslationSpec(
+                            trans.source(),
+                            trans.target(),
+                            trans.defaultLocale()
+                    ));
+                }
+            }
+
+            // 2. Check for single annotation (single @I18nTrans)
+            I18nTrans single = property.getAnnotation(I18nTrans.class);
+            if (single != null && specs.isEmpty()) {
+                specs.add(new TranslationSpec(
+                        single.source(),
+                        single.target(),
+                        single.defaultLocale()
+                ));
+            }
+
+            if (!specs.isEmpty()) {
+                return new SimpliXI18nTransSerializer(specs, property);
             }
         }
         return this;
@@ -88,24 +112,28 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
     @Override
     public void serialize(Object value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         Object currentBean = gen.currentValue();
-        if (currentBean == null) {
+        if (currentBean == null || translationSpecs.isEmpty()) {
             gen.writeObject(value);
             return;
         }
 
         Locale currentLocale = LocaleContextHolder.getLocale();
 
+        // Determine mode based on first spec (all specs should use same mode for a field)
+        TranslationSpec firstSpec = translationSpecs.get(0);
+        boolean isNestedMode = firstSpec.targetFieldPath() != null && !firstSpec.targetFieldPath().isEmpty();
+
         // Nested mode: target is specified
-        if (targetFieldPath != null && !targetFieldPath.isEmpty()) {
+        if (isNestedMode) {
             serializeNestedObject(value, gen, currentBean, currentLocale, serializers);
             return;
         }
 
-        // Simple mode: translate the annotated field itself
-        Map<String, String> i18nMap = getI18nMapByPath(currentBean, sourceFieldPath);
+        // Simple mode: translate the annotated field itself (uses first spec only)
+        Map<String, String> i18nMap = getI18nMapByPath(currentBean, firstSpec.sourceFieldPath());
 
         log.trace("I18nTrans serialize - sourceField: {}, locale: {}, i18nMap: {}, originalValue: {}",
-                sourceFieldPath, currentLocale, i18nMap, value);
+                firstSpec.sourceFieldPath(), currentLocale, i18nMap, value);
 
         if (i18nMap == null || i18nMap.isEmpty()) {
             log.trace("I18nTrans - i18nMap is null or empty, returning original value: {}", value);
@@ -113,13 +141,19 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
             return;
         }
 
-        String translatedValue = extractTranslation(i18nMap, currentLocale, value);
+        String translatedValue = extractTranslation(i18nMap, currentLocale, value, firstSpec.defaultLocale());
         log.trace("I18nTrans - translated value: {}", translatedValue);
         gen.writeObject(translatedValue);
     }
 
     /**
-     * Serializes a nested object after translating its target field.
+     * Record to hold original value info for restoration after serialization.
+     */
+    private record OriginalValueInfo(String relativeTargetPath, String originalValue) {}
+
+    /**
+     * Serializes a nested object after translating its target fields.
+     * Supports multiple translation specs (repeatable @I18nTrans).
      *
      * @param value         the nested object to serialize
      * @param gen           JSON generator
@@ -134,31 +168,42 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
             return;
         }
 
-        // 1. Get i18n Map from source path
-        Map<String, String> i18nMap = getI18nMapByPath(bean, sourceFieldPath);
+        // Store original values to restore after serialization
+        List<OriginalValueInfo> originalValues = new ArrayList<>();
 
-        log.trace("I18nTrans nested - source: {}, target: {}, locale: {}, i18nMap: {}",
-                sourceFieldPath, targetFieldPath, locale, i18nMap);
+        // Apply all translation specs
+        for (TranslationSpec spec : translationSpecs) {
+            String sourceFieldPath = spec.sourceFieldPath();
+            String targetFieldPath = spec.targetFieldPath();
+            String defaultLocale = spec.defaultLocale();
 
-        String translatedValue = null;
-        String originalValue = null;
-        String relativeTargetPath = null;
+            // 1. Get i18n Map from source path
+            Map<String, String> i18nMap = getI18nMapByPath(bean, sourceFieldPath);
 
-        if (i18nMap != null && !i18nMap.isEmpty()) {
-            // 2. Get current value of target field
-            Object targetCurrentValue = getValueByPath(bean, targetFieldPath);
-            originalValue = targetCurrentValue != null ? targetCurrentValue.toString() : null;
+            log.trace("I18nTrans nested - source: {}, target: {}, locale: {}, i18nMap: {}",
+                    sourceFieldPath, targetFieldPath, locale, i18nMap);
 
-            // 3. Extract translated value
-            translatedValue = extractTranslation(i18nMap, locale, targetCurrentValue);
+            if (i18nMap != null && !i18nMap.isEmpty()) {
+                // 2. Get current value of target field
+                Object targetCurrentValue = getValueByPath(bean, targetFieldPath);
+                String originalValue = targetCurrentValue != null ? targetCurrentValue.toString() : null;
 
-            log.trace("I18nTrans nested - targetCurrentValue: {}, translatedValue: {}",
-                    targetCurrentValue, translatedValue);
+                // 3. Extract translated value
+                String translatedValue = extractTranslation(i18nMap, locale, targetCurrentValue, defaultLocale);
 
-            // 4. Set translated value to target field in the nested object
-            // Remove the first path segment (the annotated field name) from target path
-            relativeTargetPath = removeFirstPathSegment(targetFieldPath);
-            setValueByPath(value, relativeTargetPath, translatedValue);
+                log.trace("I18nTrans nested - targetCurrentValue: {}, translatedValue: {}",
+                        targetCurrentValue, translatedValue);
+
+                // 4. Set translated value to target field in the nested object
+                // Remove the first path segment (the annotated field name) from target path
+                String relativeTargetPath = removeFirstPathSegment(targetFieldPath);
+                setValueByPath(value, relativeTargetPath, translatedValue);
+
+                // Store original value for restoration
+                if (originalValue != null) {
+                    originalValues.add(new OriginalValueInfo(relativeTargetPath, originalValue));
+                }
+            }
         }
 
         try {
@@ -173,9 +218,9 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
                 serializers.defaultSerializeValue(value, gen);
             }
         } finally {
-            // 6. Restore original value to avoid side effects on the original object
-            if (relativeTargetPath != null && originalValue != null) {
-                setValueByPath(value, relativeTargetPath, originalValue);
+            // 6. Restore original values to avoid side effects on the original object
+            for (OriginalValueInfo info : originalValues) {
+                setValueByPath(value, info.relativeTargetPath(), info.originalValue());
             }
         }
     }
@@ -364,9 +409,10 @@ public class SimpliXI18nTransSerializer extends JsonSerializer<Object> implement
      * @param i18nMap       the i18n translation Map
      * @param currentLocale the current locale
      * @param originalValue the original field value
+     * @param defaultLocale the default locale from annotation
      * @return translated value or original value if no translation found
      */
-    private String extractTranslation(Map<String, String> i18nMap, Locale currentLocale, Object originalValue) {
+    private String extractTranslation(Map<String, String> i18nMap, Locale currentLocale, Object originalValue, String defaultLocale) {
         // 1. Try exact locale match (e.g., "ko_KR")
         String localeKey = currentLocale.toString();
         if (i18nMap.containsKey(localeKey)) {
