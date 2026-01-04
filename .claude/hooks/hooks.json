@@ -1,0 +1,26 @@
+{
+  "description": "SimpliX documentation workflow automation hooks",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Before completing this session, check if any source code files (.java, .kt, .gradle) were modified. If so, remind the user to verify documentation is up-to-date. Check for: 1) README.md examples match current API, 2) Configuration properties documented, 3) New features have docs. Respond with JSON: {\"decision\": \"approve\", \"reason\": \"Documentation reminder provided if applicable\"}"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "If a documentation file (.md) was just written or edited, verify it follows SimpliX documentation guidelines: 1) No emojis (only symbols allowed), 2) No hardcoded versions, 3) Required sections present. Respond with JSON: {\"decision\": \"allow\", \"reason\": \"Documentation guidelines check passed or N/A\"}"
+          }
+        ]
+      }
+    ]
+  }
+}

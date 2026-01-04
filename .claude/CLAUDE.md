@@ -272,13 +272,31 @@ Core converters are in `simplix-core/convert`. To add custom converter:
 - Monitor and review application performance metrics
 
 ### Documentation Guidelines
+
+> **IMPORTANT**: Before creating or modifying documentation, ALWAYS read the comprehensive documentation guidelines at:
+> `.claude/references/documentation-guidelines.md`
+
+#### Quick Reference (Summary)
+
 - **All documentation files MUST be created in the `docs/` folder**
 - Never create documentation files in the project root directory
 - Do not create new documentation files unless explicitly requested
-- Maintain existing documentation only when specifically asked
-- Prefer concise inline comments for complex logic over separate docs
+
+#### Key Rules
+
+| Rule | Description |
+|------|-------------|
+| Folder Structure | Korean: `docs/ko/`, English: `docs/` |
+| File Naming | Use lowercase with hyphens (e.g., `feature-guide.md`) |
+| Language Suffixes | NEVER use (e.g., `README_ko.md` is incorrect) |
+| Version Numbers | NEVER hardcode; use `${version}` or omit |
+| Diagrams | Use `.claude/skills/mermaid` skill for Mermaid diagrams |
+| Mermaid Language | Korean docs use Korean labels; English docs use English |
+| Directory Diagrams | ASCII only (English text only) |
+| Symbols | Only ✔ ✖ ⚠ ℹ allowed; NO emojis |
 
 #### Documentation Update Requirements
+
 - **ALWAYS review related documentation** when code is added or modified
 - **ALWAYS update documentation** to reflect the latest code changes
 - This includes:
@@ -287,21 +305,65 @@ Core converters are in `simplix-core/convert`. To add custom converter:
   - Configuration examples and property descriptions
   - Usage examples and code snippets
 - If documentation is outdated or missing, update it as part of the code change
-- **NEVER include specific version numbers** in documentation (e.g., `1.0.6`, `3.5.7`)
-  - Versions change frequently and cause documentation to become outdated
-  - Use `${version}` placeholder or omit version entirely in examples
-  - Exception: CLAUDE.md may contain versions for internal reference only
 
-#### Documentation Folder Structure
-- **Korean documentation**: Place in `docs/ko/` folder (e.g., `docs/ko/README.md`, `docs/ko/usage-guide.md`)
-- **English documentation**: Place in `docs/` folder directly (e.g., `docs/README.md`)
-- Do NOT use language suffixes in filenames (e.g., `README_ko.md` is incorrect)
-- Use folder-based localization instead of filename-based localization
+#### For Complete Guidelines
 
-#### ASCII Diagrams
-- **ASCII diagrams MUST use English only** - Korean characters cause alignment issues due to variable-width fonts
-- Use simple ASCII characters (+, -, |, /, \) for box drawing
-- Avoid Unicode box-drawing characters when possible for better compatibility
+See `.claude/references/documentation-guidelines.md` for:
+- Detailed folder structure and module mapping
+- File naming conventions
+- **Diagram guidelines** (Mermaid skill usage, language rules, when to include)
+- Markdown formatting standards
+- Code example templates
+- Build process documentation
+- Sidebar integration guide
+
+#### Documentation Templates (MANDATORY)
+
+> **IMPORTANT**: All documentation MUST follow the templates in `.claude/references/documentation-templates.md`
+
+| Document Type | Template |
+|--------------|----------|
+| Module README | README.md Template |
+| Module Overview | Overview Document Template |
+| Feature Guide | Feature Guide Template |
+| Configuration Reference | Configuration Reference Template |
+| API Documentation | API Documentation Template |
+
+### Documentation Workflow (MANDATORY)
+
+> ⚠ 코드 변경 시 반드시 관련 문서를 검토하고 업데이트해야 합니다.
+
+#### Documentation Tools
+
+| Tool | Command | Description |
+|------|---------|-------------|
+| Structure Validation | `/validate-docs` | Validate document structure and formatting |
+| Code Sync Validation | `/validate-code-sync` | Validate docs match actual code |
+| Structure (CLI) | `node .claude/scripts/validate-docs.mjs` | CLI structure validation |
+| Code Sync (CLI) | `node .claude/scripts/validate-code-sync.mjs` | CLI code-doc sync validation |
+| Strict Mode | `--strict` | Treat warnings as errors (both tools) |
+| Module Only | `simplix-auth` | Validate specific module (both tools) |
+
+#### Available Skills
+
+| Skill | Usage |
+|-------|-------|
+| `documentation` | Documentation writing following templates |
+| `mermaid` | Create Mermaid diagrams for documentation |
+
+#### Automated Hooks
+
+- **PostToolUse**: Validates documentation files after Write/Edit
+- **Stop**: Reminds to update documentation if source code was modified
+
+#### Code Change Documentation Checklist
+
+When modifying code, verify these documentation updates:
+
+- [ ] Public API changes -> Update README.md examples
+- [ ] New components added -> Update overview.md architecture
+- [ ] Configuration properties changed -> Update configuration examples
+- [ ] New features added -> Consider creating feature guide
 
 ## Security Guidelines (Enterprise Best Practices)
 
