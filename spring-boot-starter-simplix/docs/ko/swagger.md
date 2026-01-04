@@ -248,12 +248,72 @@ simplix:
 
 ### SwaggerSchemaEnhancer
 
-i18n 지원을 위한 스키마 향상:
+스키마 향상 기능을 제공합니다:
+
+#### 1. @SearchableField 메타데이터 추출
+
+`@SearchableField` 어노테이션이 있는 필드의 검색 정보를 OpenAPI 스키마에 추가:
+
+```java
+public class UserSearchDto {
+    @SearchableField(operators = {EQ, LIKE}, sortable = true)
+    private String username;
+}
+```
+
+생성되는 OpenAPI 확장:
+```json
+{
+  "username": {
+    "type": "string",
+    "x-searchable-field": {
+      "operators": ["EQ", "LIKE"],
+      "sortable": true,
+      "entityField": "username"
+    }
+  }
+}
+```
+
+#### 2. @Id 필드 감지
+
+JPA `@Id` 및 `@EmbeddedId` 어노테이션을 감지하여 메타데이터 추가:
+
+```json
+{
+  "id": {
+    "type": "integer",
+    "x-id-field": {
+      "type": "SINGLE"
+    }
+  }
+}
+```
+
+#### 3. i18n 검증 메시지
+
+Bean Validation 어노테이션의 메시지를 MessageSource에서 자동 조회:
+
+```java
+@NotBlank(message = "{validation.username.required}")
+private String username;
+```
+
+OpenAPI description에 한국어/영어 메시지 자동 추가
+
+#### 4. 클래스 스캐닝 패키지
+
+다음 패키지의 클래스를 자동 스캔:
+- `dev.simplecore.simplix.demo`
+- `dev.simplecore.simplix.core.model`
+- `dev.simplecore.simplix.web.model`
+
+#### 설정
 
 ```yaml
 simplix:
   swagger:
-    i18n-enabled: true
+    i18n-enabled: true  # i18n 메시지 추출 활성화
 ```
 
 ## API Documentation Best Practices

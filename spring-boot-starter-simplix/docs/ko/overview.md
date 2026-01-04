@@ -8,64 +8,51 @@
 
 ### Umbrella Starter Pattern
 
-```
-spring-boot-starter-simplix (umbrella)
-    |
-    +-- simplix-core ----------- Base utilities, exceptions, API response
-    |
-    +-- simplix-auth ----------- JWT/JWE tokens, Spring Security integration
-    |
-    +-- simplix-cache ---------- Distributed caching, Redis/Caffeine support
-    |
-    +-- simplix-encryption ----- Data encryption, JPA converters
-    |
-    +-- simplix-event ---------- NATS-based event system
-    |
-    +-- simplix-excel ---------- Excel/CSV import/export
-    |
-    +-- simplix-file ----------- File storage (local, S3, GCS)
-    |
-    +-- simplix-email ---------- Email sending, template support
-    |
-    +-- simplix-hibernate ------ Hibernate L2 cache integration
-    |
-    +-- simplix-mybatis -------- MyBatis integration, type handlers
+```mermaid
+flowchart LR
+    STARTER[spring-boot-starter-simplix<br/>umbrella]
+
+    CORE[simplix-core<br/>Base utilities, exceptions, API response]
+    AUTH[simplix-auth<br/>JWT/JWE tokens, Spring Security]
+    CACHE[simplix-cache<br/>Redis/Caffeine caching]
+    ENCRYPTION[simplix-encryption<br/>Data encryption, JPA converters]
+    EVENT[simplix-event<br/>Event system]
+    EXCEL[simplix-excel<br/>Excel/CSV import/export]
+    FILE[simplix-file<br/>File storage - local, S3, GCS]
+    EMAIL[simplix-email<br/>Email sending, templates]
+    HIBERNATE[simplix-hibernate<br/>Hibernate L2 cache]
+    MYBATIS[simplix-mybatis<br/>MyBatis integration]
+
+    STARTER --> CORE
+    STARTER --> AUTH
+    STARTER --> CACHE
+    STARTER --> ENCRYPTION
+    STARTER --> EVENT
+    STARTER --> EXCEL
+    STARTER --> FILE
+    STARTER --> EMAIL
+    STARTER --> HIBERNATE
+    STARTER --> MYBATIS
 ```
 
 ### Auto-Configuration Flow
 
 SimpliX의 Auto-Configuration은 Spring Boot 표준을 따르며, 특정 순서로 실행됩니다:
 
-```
-1. SimpliXAutoConfiguration (Order: 0)
-   +-- Main config, component scan
+```mermaid
+flowchart TD
+    A1["1. SimpliXAutoConfiguration<br/>Order: 0 - Main config, component scan"]
+    A2["2. SimpliXMessageSourceAutoConfiguration<br/>before: MessageSourceAutoConfiguration"]
+    A3["3. SimpliXValidatorAutoConfiguration<br/>after: MessageSourceAutoConfiguration"]
+    A4["4. SimpliXDateTimeAutoConfiguration<br/>Timezone management"]
+    A5["5. SimpliXJpaAutoConfiguration<br/>after: HibernateJpaAutoConfiguration"]
+    A6["6. SimpliXModelMapperAutoConfiguration<br/>ModelMapper timezone-aware"]
+    A7["7. SimpliXWebAutoConfiguration<br/>after: WebMvcAutoConfiguration"]
+    A8["8. SimpliXSwaggerAutoConfiguration<br/>OpenAPI/Swagger, Scalar UI"]
+    A9["9. SimpliXThymeleafAutoConfiguration<br/>before: ErrorMvcAutoConfiguration"]
+    A10["10. SimpliXI18nAutoConfiguration<br/>I18n, locale fallback"]
 
-2. SimpliXMessageSourceAutoConfiguration (before: MessageSourceAutoConfiguration)
-   +-- i18n message source integration
-
-3. SimpliXValidatorAutoConfiguration (after: MessageSourceAutoConfiguration)
-   +-- Bean Validation message setup
-
-4. SimpliXDateTimeAutoConfiguration
-   +-- Timezone management, JVM default timezone setup
-
-5. SimpliXJpaAutoConfiguration (after: HibernateJpaAutoConfiguration)
-   +-- JPA DateTime converter registration
-
-6. SimpliXModelMapperAutoConfiguration
-   +-- ModelMapper timezone-aware setup
-
-7. SimpliXWebAutoConfiguration (after: WebMvcAutoConfiguration)
-   +-- Web exception handling, Swagger schema enhancement
-
-8. SimpliXSwaggerAutoConfiguration
-   +-- OpenAPI/Swagger config, Scalar UI
-
-9. SimpliXThymeleafAutoConfiguration (before: ErrorMvcAutoConfiguration)
-   +-- Thymeleaf template resolver
-
-10. SimpliXI18nAutoConfiguration
-    +-- I18n translation configuration, locale fallback setup
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6 --> A7 --> A8 --> A9 --> A10
 ```
 
 ## Package Structure
@@ -118,7 +105,7 @@ dev.simplecore.simplix
         └── SimpliXErrorController.java
 ```
 
-## Key Components
+## 핵심 컴포넌트
 
 ### SimpliXProperties
 
@@ -169,6 +156,54 @@ CRUD 작업을 위한 기본 서비스 추상 클래스:
 - 일반 예외 래핑 및 로깅
 - Trace ID 헤더 추가
 
+### SimpliXResponseBodyAdvice
+
+모든 API 응답을 자동으로 `SimpliXApiResponse`로 래핑:
+
+```java
+// Controller 반환값
+return user;
+
+// 실제 응답
+{
+  "type": "SUCCESS",
+  "data": { ... },
+  "message": null,
+  "traceId": "20250101-120000-abc12345"
+}
+```
+
+**제외 대상:**
+- `org.springdoc.*`, `io.swagger.*`, `springfox.*` 패키지
+- 이미 `SimpliXApiResponse`로 래핑된 응답
+
+### SimpliXSecurityAutoConfiguration
+
+`simplix.auth.enabled=false` 설정 시 기본 보안 필터 체인 제공:
+
+```java
+@AutoConfiguration
+@ConditionalOnProperty(name = "simplix.auth.enabled", havingValue = "false")
+public class SimpliXSecurityAutoConfiguration {
+    // CSRF 비활성화, 모든 요청 허용
+}
+```
+
+**사용 시기:** 개발/테스트 환경에서 인증 없이 API 테스트 필요 시
+
+### Trace ID 생성
+
+모든 HTTP 요청에 Trace ID 자동 생성:
+
+```
+X-Trace-Id: 20250101-120000-abc12345
+          ├─ 날짜 ─┤ 시간 │ UUID(8자)
+```
+
+- MDC에 자동 등록 (`SimpliXConstants.TRACE_ID`)
+- 로깅에서 `%X{traceId}` 패턴으로 사용 가능
+- 요청 완료 후 자동 정리
+
 ## Conditional Registration
 
 각 Auto-Configuration은 조건부로 등록됩니다:
@@ -184,6 +219,33 @@ CRUD 작업을 위한 기본 서비스 추상 클래스:
 | SimpliXSwaggerAutoConfiguration | `@ConditionalOnClass(OpenAPI)` | Auto |
 | SimpliXThymeleafAutoConfiguration | `@ConditionalOnClass(SpringTemplateEngine)` | Auto |
 | SimpliXWebAutoConfiguration | `@ConditionalOnWebApplication` | Auto |
+
+## 설정 속성
+
+```yaml
+simplix:
+  core:
+    enabled: true                 # 코어 기능 활성화
+  message-source:
+    enabled: true                 # 메시지 소스 통합
+  date-time:
+    timezone: Asia/Seoul          # 애플리케이션 타임존
+    use-utc-for-database: true    # DB 저장 시 UTC 사용
+    normalize-timezone: true      # 타임존 정규화
+  exception-handler:
+    include-stack-trace: false    # 스택 트레이스 포함 여부
+    log-full-stack-trace: true    # 전체 스택 트레이스 로깅
+```
+
+| 속성 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `simplix.core.enabled` | boolean | `true` | 코어 기능 활성화 |
+| `simplix.message-source.enabled` | boolean | `true` | 메시지 소스 통합 |
+| `simplix.date-time.timezone` | String | 시스템 기본값 | 애플리케이션 타임존 |
+| `simplix.date-time.use-utc-for-database` | boolean | `true` | DB 저장 시 UTC 사용 |
+| `simplix.exception-handler.include-stack-trace` | boolean | `false` | API 응답에 스택 트레이스 포함 |
+
+상세 설정: [Configuration Guide](configuration.md)
 
 ## Related Documentation
 
