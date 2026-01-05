@@ -18,51 +18,38 @@ SimpliX Scheduler 모듈은 Spring `@Scheduled` 메서드의 실행을 자동으
 
 ## Architecture
 
-```
-+---------------------------------------------------------------------+
-|                        Application                                  |
-|                             |                                       |
-|              @Scheduled + @SchedulerName                            |
-|                             |                                       |
-+-----------------------------+---------------------------------------+
-                              |
-                              v
-+---------------------------------------------------------------------+
-|                  SimpliX Scheduler Module                           |
-|                                                                     |
-|  +--------------------+    +--------------------------+             |
-|  | SchedulerExecution |--->| SchedulerLoggingService  |             |
-|  | Aspect (AOP)       |    | (Main Entry Point)       |             |
-|  +--------------------+    +------------+-------------+             |
-|                                         |                           |
-|                    +--------------------+--------------------+      |
-|                    |                                         |      |
-|                    v                                         v      |
-|           +-----------------+                  +------------------+ |
-|           | InMemory        |                  | Database         | |
-|           | LoggingStrategy |                  | LoggingStrategy  | |
-|           +-----------------+                  +--------+---------+ |
-|                                                         |           |
-+---------------------------------------------------------------------+
-                                                          |
-                              +---------------------------+
-                              |
-              +---------------+---------------+
-              |                               |
-              v                               v
-+------------------------+    +---------------------------+
-| SchedulerRegistry      |    | SchedulerExecutionLog     |
-| Provider               |    | Provider                  |
-| (User Implementation)  |    | (User Implementation)     |
-+------------------------+    +---------------------------+
-              |                               |
-              v                               v
-+--------------------------------------------------------------------+
-|                     User's Database                                |
-|  +------------------------+    +---------------------------+       |
-|  | scheduler_job_registry |    | scheduler_execution_log   |       |
-|  +------------------------+    +---------------------------+       |
-+--------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph Application["애플리케이션"]
+        Scheduled["@Scheduled + @SchedulerName"]
+    end
+
+    subgraph Module["SimpliX Scheduler 모듈"]
+        Aspect["SchedulerExecutionAspect<br/>(AOP)"]
+        Service["SchedulerLoggingService<br/>(메인 진입점)"]
+        InMemory["InMemory<br/>LoggingStrategy"]
+        Database["Database<br/>LoggingStrategy"]
+
+        Aspect --> Service
+        Service --> InMemory
+        Service --> Database
+    end
+
+    subgraph Provider["Provider (사용자 구현)"]
+        RegistryProvider["SchedulerRegistry<br/>Provider"]
+        LogProvider["SchedulerExecutionLog<br/>Provider"]
+    end
+
+    subgraph UserDB["사용자 데이터베이스"]
+        RegistryTable["scheduler_job_registry"]
+        LogTable["scheduler_execution_log"]
+    end
+
+    Scheduled --> Aspect
+    Database --> RegistryProvider
+    Database --> LogProvider
+    RegistryProvider --> RegistryTable
+    LogProvider --> LogTable
 ```
 
 ---

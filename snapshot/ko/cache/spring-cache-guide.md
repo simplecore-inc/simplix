@@ -83,21 +83,14 @@ public class UserService {
 
 ### 동작 흐름
 
-```
-@Cacheable 메서드 호출
-        │
-        ▼
-    캐시 조회 (key로)
-        │
-        ├── 히트 → 캐시된 값 반환 (메서드 실행 안함)
-        │
-        └── 미스 → 메서드 실행
-                      │
-                      ▼
-                  반환값 캐싱
-                      │
-                      ▼
-                  값 반환
+```mermaid
+flowchart TD
+    A["@Cacheable 메서드 호출"] --> B["캐시 조회 (key로)"]
+    B --> C{"캐시 결과"}
+    C -->|히트| D["캐시된 값 반환<br/>(메서드 실행 안함)"]
+    C -->|미스| E["메서드 실행"]
+    E --> F["반환값 캐싱"]
+    F --> G["값 반환"]
 ```
 
 ### 속성
@@ -173,17 +166,11 @@ public class UserService {
 
 ### 동작 흐름
 
-```
-@CachePut 메서드 호출
-        │
-        ▼
-    메서드 실행 (항상)
-        │
-        ▼
-    결과를 캐시에 저장
-        │
-        ▼
-    값 반환
+```mermaid
+flowchart TD
+    A["@CachePut 메서드 호출"] --> B["메서드 실행 (항상)"]
+    B --> C["결과를 캐시에 저장"]
+    C --> D["값 반환"]
 ```
 
 ### @Cacheable vs @CachePut

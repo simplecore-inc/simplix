@@ -162,10 +162,12 @@ public void rotateKey() {
 
 ```
 /var/simplix/encryption/keys/
-├── key_v1734567890123.key  (이전 키 - 복호화 가능)
-├── key_v1734667890123.key  (이전 키 - 복호화 가능)
-└── key_v1734767890123.key  (현재 키 - 암호화/복호화)
+├── key_v0001.key  (이전 키 - 복호화 가능)
+├── key_v0002.key  (이전 키 - 복호화 가능)
+└── key_v0003.key  (현재 키 - 암호화/복호화)
 ```
+
+> 버전은 4자리 제로 패딩된 순차 번호 (`v0001`, `v0002`, ...) 형식을 사용합니다.
 
 ---
 
@@ -222,20 +224,13 @@ vault kv put secret/encryption/keys/current \
 
 VaultKeyProvider는 자동으로 동기화됩니다:
 
-```
-Instance A: rotateKey()
-     |
-     v
-Vault update (current = v3)
-     |
-     v
-Instance B: getCurrentKey()
-     |
-     v
-refreshCurrentVersion() --> v3 detected
-     |
-     v
-Load and cache new key
+```mermaid
+flowchart TB
+    A["Instance A: rotateKey()"] --> B["Vault 업데이트 (current = v3)"]
+    B --> C["Instance B: getCurrentKey()"]
+    C --> D["refreshCurrentVersion()"]
+    D --> E["v3 감지"]
+    E --> F["새 키 로드 및 캐시"]
 ```
 
 ---

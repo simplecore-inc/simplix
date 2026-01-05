@@ -198,21 +198,28 @@ public void exportMonthlyReport(HttpServletResponse response) {
 
 ### Template Structure
 
-템플릿 파일 (`monthly-report.xlsx`) 예시:
+템플릿 파일 (`monthly-report.xlsx`) 구조:
 
-```
-+---------------------------------------------+
-| Monthly Sales Report                         |
-| Date: ${reportDate}                         |
-| Department: ${department}                   |
-| Prepared by: ${preparedBy}                  |
-+---------------------------------------------+
-| Product   | Quantity | Price   | Total      |
-+---------------------------------------------+
-| ${item.product} | ${item.qty} | ... | ...  |  <- jx:each
-+---------------------------------------------+
-|           |          | Total:  | =SUM(D:D)  |
-+---------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 헤더["헤더 영역"]
+        TITLE["Monthly Sales Report"]
+        DATE["Date: ${reportDate}"]
+        DEPT["Department: ${department}"]
+        PREP["Prepared by: ${preparedBy}"]
+    end
+
+    subgraph 데이터["데이터 영역"]
+        HEADER_ROW["Product | Quantity | Price | Total"]
+        DATA_ROW["${item.product} | ${item.qty} | ... | ...<br/>← jx:each 반복"]
+    end
+
+    subgraph 푸터["푸터 영역"]
+        TOTAL["Total: =SUM(D:D)"]
+    end
+
+    헤더 --> 데이터
+    데이터 --> 푸터
 ```
 
 ### JXLS Comments

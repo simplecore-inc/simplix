@@ -174,6 +174,31 @@ public ResponseEntity<ImportResult> importUsers(@RequestParam MultipartFile file
 }
 ```
 
+### Application TimeZone
+
+`OffsetDateTime`, `ZonedDateTime`, `Instant` 타입 변환 시 사용할 타임존 설정:
+
+```java
+StandardExcelImporter<Event> importer = new StandardExcelImporter<>(Event.class);
+
+// 애플리케이션 타임존 설정
+importer.setApplicationZoneId(ZoneId.of("Asia/Seoul"));
+
+List<Event> events = importer.importFromExcel(file);
+// → OffsetDateTime, ZonedDateTime, Instant 필드가 Asia/Seoul 타임존으로 변환됨
+```
+
+### Excel Date Serial Number Handling
+
+Excel은 날짜를 1900년 1월 1일부터의 일수(시리얼 번호)로 저장합니다. StandardExcelImporter는 이를 자동으로 처리합니다:
+
+```
+Excel 시리얼 값 처리:
+- 1900-03-01 이후: 1일 감산 (Excel의 1900년 윤년 버그 보정)
+- LocalDate, LocalDateTime, OffsetDateTime, ZonedDateTime, Instant로 자동 변환
+- applicationZoneId 설정에 따라 타임존 적용
+```
+
 ---
 
 ## Column Mapping

@@ -46,9 +46,9 @@ simplix:
 
 SimpliX MessageSource는 라이브러리와 애플리케이션 메시지를 계층적으로 통합합니다:
 
-```
-애플리케이션 메시지 (높은 우선순위)
-    └── SimpliX 라이브러리 메시지 (낮은 우선순위)
+```mermaid
+flowchart TB
+    A["애플리케이션 메시지<br/>(높은 우선순위)"] --> B["SimpliX 라이브러리 메시지<br/>(낮은 우선순위)"]
 ```
 
 Spring Boot 표준 메시지 설정과 통합:

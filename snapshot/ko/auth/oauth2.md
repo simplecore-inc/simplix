@@ -257,16 +257,22 @@ public class OAuth2AuthenticationServiceImpl implements OAuth2AuthenticationServ
 
 ### 기본 흐름
 
-```
-1. 사용자 -> 프론트엔드: 소셜 로그인 버튼 클릭
-2. 프론트엔드 -> 백엔드: /oauth2/authorize/{provider} 리다이렉트
-3. 백엔드 -> 소셜 제공자: OAuth2 인증 요청
-4. 소셜 제공자 -> 사용자: 로그인/동의 페이지
-5. 사용자 -> 소셜 제공자: 인증 완료
-6. 소셜 제공자 -> 백엔드: /oauth2/callback/{provider} (인증 코드)
-7. 백엔드: 토큰 교환 및 사용자 정보 조회
-8. 백엔드: OAuth2AuthenticationService.authenticateOAuth2User() 호출
-9. 백엔드 -> 프론트엔드: JWE 토큰 전달 (설정된 방식으로)
+```mermaid
+sequenceDiagram
+    participant 사용자
+    participant 프론트엔드
+    participant 백엔드
+    participant 소셜제공자 as 소셜 제공자
+
+    사용자->>프론트엔드: 1. 소셜 로그인 버튼 클릭
+    프론트엔드->>백엔드: 2. /oauth2/authorize/{provider} 리다이렉트
+    백엔드->>소셜제공자: 3. OAuth2 인증 요청
+    소셜제공자->>사용자: 4. 로그인/동의 페이지
+    사용자->>소셜제공자: 5. 인증 완료
+    소셜제공자->>백엔드: 6. /oauth2/callback/{provider} (인증 코드)
+    백엔드->>백엔드: 7. 토큰 교환 및 사용자 정보 조회
+    백엔드->>백엔드: 8. OAuth2AuthenticationService.authenticateOAuth2User()
+    백엔드->>프론트엔드: 9. JWE 토큰 전달 (설정된 방식)
 ```
 
 ### 엔드포인트
@@ -544,6 +550,150 @@ public class CustomKakaoUserInfoExtractor implements OAuth2UserInfoExtractor {
     }
 }
 ```
+
+## 세션 기반 대기 등록 (PendingSocialRegistration)
+
+소셜 로그인 시 신규 사용자인 경우, 소셜 정보를 세션에 임시 저장하여 회원가입 프로세스를 지원합니다.
+
+### 동작 원리
+
+```mermaid
+flowchart TD
+    A[소셜 로그인 시도] --> B{기존 연동된 계정?}
+    B --> |있음| C[로그인 완료]
+    B --> |없음| D[신규 사용자]
+    D --> E[PendingSocialRegistration 세션 저장]
+    E --> F[회원가입 페이지로 리다이렉트]
+    F --> G[사용자가 추가 정보 입력]
+    G --> H[가입 완료]
+    H --> I[세션에서 소셜 정보 조회]
+    I --> J[계정 연동]
+```
+
+### 설정
+
+```yaml
+simplix:
+  auth:
+    oauth2:
+      pending-registration-ttl-seconds: 600  # 기본값: 10분
+```
+
+### 저장되는 정보
+
+| 필드 | 설명 |
+|------|------|
+| `provider` | 소셜 제공자 (GOOGLE, KAKAO 등) |
+| `providerId` | 소셜 고유 ID |
+| `email` | 이메일 |
+| `name` | 표시 이름 |
+| `profileImageUrl` | 프로필 이미지 URL |
+| `emailVerified` | 이메일 인증 여부 |
+| `createdAt` | 생성 시간 |
+| `ttlSeconds` | 만료 시간 (초) |
+
+### 세션에서 조회
+
+```java
+@PostMapping("/signup")
+public ResponseEntity<?> completeSignup(
+        @RequestBody SignupRequest request,
+        HttpSession session) {
+
+    PendingSocialRegistration pending = (PendingSocialRegistration)
+        session.getAttribute(PendingSocialRegistration.SESSION_ATTR);
+
+    if (pending == null || pending.isExpired()) {
+        return ResponseEntity.badRequest()
+            .body("Social registration expired. Please try again.");
+    }
+
+    // 회원가입 진행
+    User user = userService.createUser(request, pending);
+
+    // 세션에서 제거
+    session.removeAttribute(PendingSocialRegistration.SESSION_ATTR);
+
+    return ResponseEntity.ok(user);
+}
+```
+
+---
+
+## SimpliXUserDetailsService 유틸리티 메서드
+
+`SimpliXUserDetailsService`는 `UserDetailsService`를 확장하며, 사용자 상태 확인을 위한 유틸리티 메서드를 제공합니다.
+
+### 구현 예제
+
+```java
+@Service
+@RequiredArgsConstructor
+public class UserDetailsServiceImpl implements SimpliXUserDetailsService {
+
+    private final UserRepository userRepository;
+    private final MessageSource messageSource;
+
+    @Override
+    public MessageSource getMessageSource() {
+        return messageSource;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+}
+```
+
+### 제공 메서드
+
+| 메서드 | 설명 | 반환 |
+|--------|------|------|
+| `exists(String username)` | 사용자 존재 여부 | `boolean` |
+| `loadCurrentUser(Authentication auth)` | 현재 인증된 사용자 조회 | `UserDetails` |
+| `isAccountLocked(String username)` | 계정 잠금 여부 | `boolean` |
+| `isAccountExpired(String username)` | 계정 만료 여부 | `boolean` |
+| `isCredentialsExpired(String username)` | 자격 증명 만료 여부 | `boolean` |
+| `isActive(String username)` | 계정 활성 상태 (모든 검사 통과) | `boolean` |
+| `getUserAuthorities(String username)` | 권한 목록 조회 | `Collection<String>` |
+| `hasAuthority(String username, String authority)` | 특정 권한 보유 여부 | `boolean` |
+| `hasRole(String username, String role)` | 특정 역할 보유 여부 | `boolean` |
+
+### 사용 예제
+
+```java
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final SimpliXUserDetailsService userDetailsService;
+
+    public void validateUserAccess(String username) {
+        // 사용자 존재 확인
+        if (!userDetailsService.exists(username)) {
+            throw new UserNotFoundException("User not found");
+        }
+
+        // 계정 상태 확인
+        if (userDetailsService.isAccountLocked(username)) {
+            throw new AccountLockedException("Account is locked");
+        }
+
+        // 활성 상태 확인 (모든 검사 통과)
+        if (!userDetailsService.isActive(username)) {
+            throw new AccountDisabledException("Account is not active");
+        }
+    }
+
+    public boolean canAccessAdminPanel(String username) {
+        return userDetailsService.hasRole(username, "ADMIN");
+    }
+}
+```
+
+---
 
 ## 관련 문서
 

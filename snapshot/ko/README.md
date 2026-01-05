@@ -140,23 +140,43 @@ public class UserController extends SimpliXBaseController<User, Long> {
 
 ## 모듈 아키텍처
 
-```
-SimpliX Framework
-|
-+-- simplix-core ----------------- Base Library (no auto-config)
-|   |
-|   +-- spring-boot-starter-simplix - Umbrella Starter
-|       |
-|       +-- simplix-auth ------------ Authentication
-|       +-- simplix-cache ----------- Caching
-|       +-- simplix-encryption ------ Encryption
-|       +-- simplix-event ----------- Event
-|       +-- simplix-excel ----------- Excel/CSV
-|       +-- simplix-file ------------ File Storage
-|       +-- simplix-email ----------- Email
-|       +-- simplix-hibernate ------- L2 Cache
-|       +-- simplix-mybatis --------- MyBatis
-|       +-- simplix-scheduler ------- Scheduler Logging
+```mermaid
+flowchart TB
+    subgraph core["simplix-core"]
+        direction TB
+        C[기본 라이브러리]
+    end
+
+    subgraph starter["spring-boot-starter-simplix"]
+        direction TB
+        S[통합 스타터]
+    end
+
+    subgraph modules["기능 모듈"]
+        direction TB
+        AUTH[simplix-auth<br/>인증]
+        CACHE[simplix-cache<br/>캐싱]
+        ENC[simplix-encryption<br/>암호화]
+        EVENT[simplix-event<br/>이벤트]
+        EXCEL[simplix-excel<br/>Excel/CSV]
+        FILE[simplix-file<br/>파일 스토리지]
+        EMAIL[simplix-email<br/>이메일]
+        HIB[simplix-hibernate<br/>L2 캐시]
+        MYBATIS[simplix-mybatis<br/>MyBatis]
+        SCHED[simplix-scheduler<br/>스케줄러 로깅]
+    end
+
+    core --> starter
+    starter --> AUTH
+    starter --> CACHE
+    starter --> ENC
+    starter --> EVENT
+    starter --> EXCEL
+    starter --> FILE
+    starter --> EMAIL
+    starter --> HIB
+    starter --> MYBATIS
+    starter --> SCHED
 ```
 
 ## 튜토리얼

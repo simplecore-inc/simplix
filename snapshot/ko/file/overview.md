@@ -1,50 +1,52 @@
 # SimpliX File Module Overview
 
+## 목차
+
+- [Architecture](#architecture)
+- [Core Components](#core-components)
+  - [FileProcessingService](#fileprocessingservice)
+  - [FileStorageService](#filestorageservice)
+  - [ImageProcessingService](#imageprocessingservice)
+  - [FileValidator](#filevalidator)
+- [Data Models](#data-models)
+  - [StoredFileInfo](#storedfileinfo-record)
+  - [FileProcessingRequest](#fileprocessingrequest-record)
+  - [ProcessedFileResult](#processedfileresult-record)
+- [FileCategory](#filecategory)
+- [Configuration Properties](#configuration-properties)
+- [Exception Hierarchy](#exception-hierarchy)
+- [Auto-Configuration](#auto-configuration)
+- [Related Documents](#related-documents)
+
+---
+
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                      Application Layer                              |
-|  +---------------------------------------------------------------+  |
-|  |  FileUploadService (application-specific)                     |  |
-|  |  - Domain entity creation                                     |  |
-|  |  - Repository operations                                      |  |
-|  +-----------------------------+---------------------------------+  |
-+--------------------------------|------------------------------------+
-                                 |
-                                 v
-+-------------------------------------------------------------------+
-|                   FileProcessingService                             |
-|                   (Orchestration Layer)                             |
-|  - File validation                                                  |
-|  - Category detection                                               |
-|  - Image optimization (WebP)                                        |
-|  - Storage coordination                                             |
-+------------------+------------------------+-------------------------+
-                   |                        |
-                   v                        v
-+------------------------+    +--------------------------------------+
-|     FileValidator      |    |     ImageProcessingService           |
-|  - Size validation     |    |  - Resize                            |
-|  - MIME type check     |    |  - Thumbnail generation              |
-|  - Extension matching  |    |  - WebP conversion                   |
-+------------------------+    |  - Metadata extraction               |
-                              +--------------------------------------+
-                                                |
-                                                v
-+-------------------------------------------------------------------+
-|                     FileStorageService                              |
-|                     (Storage Abstraction)                           |
-+---------------------------+-------------------+--------------------+
-                            |                   |
-                +-----------+                   +-----------+
-                v                                           v
-+-----------------------------+         +-----------------------------+
-|  LocalFileStorageService    |         |    S3FileStorageService     |
-|  - Local filesystem         |         |  - AWS S3                   |
-|  - Date-based directories   |         |  - MinIO / RustFS           |
-|  - Thumbnail caching        |         |  - Presigned URLs           |
-+-----------------------------+         +-----------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션_레이어["애플리케이션 레이어"]
+        APP["FileUploadService<br/>- 도메인 엔티티 생성<br/>- 리포지토리 작업"]
+    end
+
+    subgraph PROCESSING["FileProcessingService (오케스트레이션)"]
+        PROC["- 파일 검증<br/>- 카테고리 감지<br/>- 이미지 최적화 (WebP)<br/>- 저장소 조정"]
+    end
+
+    subgraph SERVICES["서비스"]
+        VALIDATOR["FileValidator<br/>- 크기 검증<br/>- MIME 타입 확인<br/>- 확장자 매칭"]
+        IMAGE["ImageProcessingService<br/>- 리사이징<br/>- 썸네일 생성<br/>- WebP 변환<br/>- 메타데이터 추출"]
+    end
+
+    subgraph STORAGE["FileStorageService (저장소 추상화)"]
+        LOCAL["LocalFileStorageService<br/>- 로컬 파일시스템<br/>- 날짜 기반 디렉토리<br/>- 썸네일 캐싱"]
+        S3["S3FileStorageService<br/>- AWS S3<br/>- MinIO / RustFS<br/>- Presigned URLs"]
+    end
+
+    APP --> PROCESSING
+    PROCESSING --> VALIDATOR
+    PROCESSING --> IMAGE
+    IMAGE --> STORAGE
+    VALIDATOR --> STORAGE
 ```
 
 ---

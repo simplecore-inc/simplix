@@ -509,3 +509,4 @@ public class UserDto {
 - [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹
 - [Exception & API Guide (예외/API)](ko/core/exception-api.md) - 에러 코드, API 응답
 - [Cache Guide (캐시)](ko/core/cache.md) - CacheManager, CacheProvider
+- [I18n Translation Guide (다국어 번역)](ko/core/i18n-translation.md) - @I18nTrans, 자동 번역

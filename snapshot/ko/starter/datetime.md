@@ -8,11 +8,11 @@ SimpliX는 타임존을 중앙에서 관리하여 일관된 날짜/시간 처리
 
 SimpliX는 다음 순서로 애플리케이션 타임존을 결정합니다:
 
-```
-1. simplix.date-time.default-timezone  (최우선)
-2. spring.jackson.time-zone
-3. user.timezone 시스템 속성
-4. 시스템 기본 타임존              (최후순위)
+```mermaid
+flowchart TB
+    A["1. simplix.date-time.default-timezone<br/>(최우선)"] --> B["2. spring.jackson.time-zone"]
+    B --> C["3. user.timezone 시스템 속성"]
+    C --> D["4. 시스템 기본 타임존<br/>(최후순위)"]
 ```
 
 ## Configuration

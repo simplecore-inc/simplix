@@ -225,24 +225,15 @@ public class UserService {
 
 ### getOrCompute 동작 흐름
 
-```
-getOrCompute("users", "user-123", loader, User.class)
-        |
-        v
-    Cache Lookup
-        |
-        +-- HIT --> Return cached value
-        |
-        +-- MISS --> Execute valueLoader
-                          |
-                          v
-                     Query from DB
-                          |
-                          v
-                     Store in cache
-                          |
-                          v
-                     Return value
+```mermaid
+flowchart TD
+    A["getOrCompute 호출"] --> B["캐시 조회"]
+    B --> C{"캐시 결과"}
+    C -->|히트| D["캐시된 값 반환"]
+    C -->|미스| E["valueLoader 실행"]
+    E --> F["DB에서 조회"]
+    F --> G["캐시에 저장"]
+    G --> H["값 반환"]
 ```
 
 ---

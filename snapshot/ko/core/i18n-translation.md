@@ -2,6 +2,22 @@
 
 JSON 직렬화 시 다국어 번역을 자동으로 적용하는 `@I18nTrans` 어노테이션 사용 가이드입니다.
 
+## 목차
+
+- [개요](#개요)
+- [Architecture](#architecture)
+- [Simple Mode](#simple-mode)
+- [Nested Mode](#nested-mode)
+- [Repeatable @I18nTrans](#repeatable-i18ntrans-복수-번역)
+- [@JsonIncludeProperties와 함께 사용](#jsonincludeproperties와-함께-사용)
+- [깊은 중첩 경로](#깊은-중첩-경로)
+- [Fallback 체인](#fallback-체인)
+- [설정](#설정)
+- [주의사항](#주의사항)
+- [API Reference](#api-reference)
+- [예제: 완전한 DTO 구성](#예제-완전한-dto-구성)
+- [Related Documents](#related-documents)
+
 ---
 
 ## 개요
@@ -13,41 +29,36 @@ JSON 직렬화 시 다국어 번역을 자동으로 적용하는 `@I18nTrans` �
 - **자동 번역**: `LocaleContextHolder`의 현재 로케일에 맞는 번역 자동 적용
 - **Fallback 체인**: 정확한 로케일 -> 언어 코드 -> 기본 로케일 순으로 폴백
 - **두 가지 모드**: Simple mode와 Nested mode 지원
+- **Repeatable 지원**: 하나의 필드에 여러 `@I18nTrans` 어노테이션 적용 가능
 - **리플렉션 기반**: `@JsonIgnore`, `@JsonIncludeProperties`와 무관하게 동작
 
 ---
 
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                    JSON Serialization Flow                        |
-|                                                                   |
-|   DTO Object                                                      |
-|   +-----------------------+                                       |
-|   | name: "Default"       |                                       |
-|   | nameI18n: {           |                                       |
-|   |   "en": "English",    |                                       |
-|   |   "ko": "Korean"      |                                       |
-|   | }                     |                                       |
-|   +-----------+-----------+                                       |
-|               |                                                   |
-|               v                                                   |
-|   +---------------------------+                                   |
-|   | @I18nTrans(source="...")  |                                   |
-|   | SimpliXI18nTransSerializer|                                   |
-|   +---------------------------+                                   |
-|               |                                                   |
-|   +-----------+-----------+                                       |
-|   |  Locale: ko           |                                       |
-|   +-----------+-----------+                                       |
-|               |                                                   |
-|               v                                                   |
-|   JSON Output                                                     |
-|   +-----------------------+                                       |
-|   | { "name": "Korean" }  |                                       |
-|   +-----------------------+                                       |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph DTO["DTO 객체"]
+        A["name: Default<br/>nameI18n: en=English, ko=Korean"]
+    end
+
+    subgraph Serializer["직렬화 처리"]
+        B["@I18nTrans 어노테이션"]
+        C["SimpliXI18nTransSerializer"]
+    end
+
+    subgraph Locale["현재 로케일"]
+        D["Locale: ko"]
+    end
+
+    subgraph Output["JSON 출력"]
+        E["name: Korean"]
+    end
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
 ```
 
 ---
@@ -154,6 +165,100 @@ dto.setTagGroup(tagGroup);
 LocaleContextHolder.setLocale(Locale.KOREAN);
 objectMapper.writeValueAsString(dto);
 // {"tagGroup":{"id":1,"code":"CATEGORY","name":"카테고리"}}
+```
+
+---
+
+## Repeatable @I18nTrans (복수 번역)
+
+중첩 객체에 여러 개의 i18n 필드가 있을 때, 하나의 필드에 여러 `@I18nTrans` 어노테이션을 적용할 수 있습니다.
+
+### 사용 시나리오
+
+```java
+// ProductTranslations에 name, description, category 3개의 i18n 필드가 있는 경우
+public class ProductTranslations {
+    private String name;
+    private Map<String, String> nameI18n;
+
+    private String description;
+    private Map<String, String> descriptionI18n;
+
+    private String category;
+    private Map<String, String> categoryI18n;
+}
+```
+
+### 사용법
+
+```java
+public class ProductDto {
+    @I18nTrans(source = "translations.nameI18n", target = "translations.name")
+    @I18nTrans(source = "translations.descriptionI18n", target = "translations.description")
+    @I18nTrans(source = "translations.categoryI18n", target = "translations.category")
+    private ProductTranslations translations;
+
+    // getters, setters
+}
+```
+
+### 데이터 구조
+
+```java
+ProductTranslations translations = new ProductTranslations();
+translations.setName("Default Name");
+translations.setNameI18n(Map.of("en", "Product Name", "ko", "상품명"));
+translations.setDescription("Default Description");
+translations.setDescriptionI18n(Map.of("en", "Product Description", "ko", "상품 설명"));
+translations.setCategory("Default Category");
+translations.setCategoryI18n(Map.of("en", "Electronics", "ko", "전자제품"));
+
+ProductDto dto = new ProductDto();
+dto.setTranslations(translations);
+```
+
+### 직렬화 결과
+
+```java
+// Locale: ko
+LocaleContextHolder.setLocale(Locale.KOREAN);
+objectMapper.writeValueAsString(dto);
+// {
+//   "translations": {
+//     "name": "상품명",
+//     "description": "상품 설명",
+//     "category": "전자제품"
+//   }
+// }
+```
+
+### 부분 번역 처리
+
+일부 i18n Map이 `null`이거나 비어있는 경우, 해당 필드만 원본 값을 유지합니다:
+
+```java
+translations.setNameI18n(Map.of("en", "Product Name", "ko", "상품명"));
+translations.setDescriptionI18n(null);  // null인 경우
+translations.setCategoryI18n(Map.of());  // 빈 Map인 경우
+
+// 결과
+// {
+//   "translations": {
+//     "name": "상품명",
+//     "description": "Default Description",  // 원본 유지
+//     "category": "Default Category"         // 원본 유지
+//   }
+// }
+```
+
+### 하위 호환성
+
+기존에 단일 `@I18nTrans`를 사용하던 코드는 변경 없이 그대로 동작합니다:
+
+```java
+// 기존 코드 - 그대로 동작
+@I18nTrans(source = "tagGroup.nameI18n", target = "tagGroup.name")
+private CmsTagGroup tagGroup;
 ```
 
 ---
@@ -308,6 +413,16 @@ dto.setNameI18n(null);
 | `target` | String | `""` | 번역 값 설정 경로 (비어있으면 Simple mode) |
 | `defaultLocale` | String | `"en"` | 폴백 기본 로케일 |
 
+### @I18nTransList
+
+`@I18nTrans`의 Container 어노테이션입니다. 여러 `@I18nTrans`를 동일 필드에 적용할 때 컴파일러가 자동으로 이 어노테이션으로 감쌉니다.
+
+| 속성 | 타입 | 설명 |
+|------|------|------|
+| `value` | I18nTrans[] | @I18nTrans 어노테이션 배열 |
+
+**참고**: 직접 사용할 필요 없이 `@I18nTrans`를 여러 번 선언하면 자동 적용됩니다.
+
 ### SimpliXI18nConfigHolder
 
 | 메서드 | 반환 타입 | 설명 |
@@ -319,6 +434,8 @@ dto.setNameI18n(null);
 ---
 
 ## 예제: 완전한 DTO 구성
+
+### 단일 번역
 
 ```java
 @Schema(description = "Tag entry with translated tag group")
@@ -334,6 +451,29 @@ public class CmsTagEntryDTO {
     @JsonIncludeProperties({"tagGroupId", "code", "name"})
     @I18nTrans(source = "tagGroup.nameI18n", target = "tagGroup.name")
     private CmsTagGroup tagGroup;
+
+    // getters, setters
+}
+```
+
+### 복수 번역 (Repeatable)
+
+```java
+@Schema(description = "Product with multiple translated fields")
+public class ProductDTO {
+
+    @Schema(description = "Product ID")
+    private Long id;
+
+    @Schema(description = "Product code")
+    private String code;
+
+    @Schema(description = "Product translations")
+    @JsonIncludeProperties({"name", "description", "category"})
+    @I18nTrans(source = "info.nameI18n", target = "info.name")
+    @I18nTrans(source = "info.descriptionI18n", target = "info.description")
+    @I18nTrans(source = "info.categoryI18n", target = "info.category")
+    private ProductInfo info;
 
     // getters, setters
 }

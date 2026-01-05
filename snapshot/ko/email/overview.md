@@ -2,35 +2,35 @@
 
 ## Architecture
 
-```
-+---------------------------------------------------------------------+
-|                          Application                                |
-|                              |                                      |
-|                    @Autowired EmailService                          |
-|                              |                                      |
-+------------------------------+--------------------------------------+
-                               |
-+------------------------------v--------------------------------------+
-|                       SimpliX Email Module                          |
-|                                                                     |
-|  +--------------------+    +------------------------------------+   |
-|  |  EmailTemplate     |    |        EmailService                |   |
-|  |  Service           |--->|        (Main Entry Point)          |   |
-|  +--------------------+    +----------------+-------------------+   |
-|                                             |                       |
-|                            +----------------v-------------------+   |
-|                            |      DefaultEmailService           |   |
-|                            |      (Failover Coordinator)        |   |
-|                            +----------------+-------------------+   |
-|                                             |                       |
-|               +-----------------------------+----------------------+|
-|               |              |              |           |          ||
-|    +----------v---+  +-------v------+  +----v----+  +---v---+  +---v-----+
-|    | AwsSes       |  | Resend       |  | SendGrid|  | SMTP  |  | Console |
-|    | Provider     |  | Provider     |  | Provider|  |Provider|  | Provider|
-|    | (Priority:100)|  | (Priority:55)|  |(Prio:50)|  |(Prio:10)| |(Prio:-100)|
-|    +--------------+  +--------------+  +---------+  +--------+  +---------+
-+---------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션["애플리케이션"]
+        APP["@Autowired EmailService"]
+    end
+
+    subgraph EMAIL_MODULE["SimpliX Email Module"]
+        TEMPLATE[EmailTemplateService]
+        SERVICE[EmailService<br/>메인 진입점]
+        DEFAULT[DefaultEmailService<br/>Failover Coordinator]
+
+        subgraph PROVIDERS["Provider (Priority 순)"]
+            AWS[AwsSesProvider<br/>Priority: 100]
+            RESEND[ResendProvider<br/>Priority: 55]
+            SENDGRID[SendGridProvider<br/>Priority: 50]
+            SMTP[SmtpProvider<br/>Priority: 10]
+            CONSOLE[ConsoleProvider<br/>Priority: -100]
+        end
+
+        TEMPLATE --> SERVICE
+        SERVICE --> DEFAULT
+        DEFAULT --> AWS
+        DEFAULT --> RESEND
+        DEFAULT --> SENDGRID
+        DEFAULT --> SMTP
+        DEFAULT --> CONSOLE
+    end
+
+    APP --> EMAIL_MODULE
 ```
 
 ---

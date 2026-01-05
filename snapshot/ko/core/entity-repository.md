@@ -221,6 +221,130 @@ public class OrderItem extends SimpliXBaseEntity<OrderItemId> {
 
 ---
 
+## JPA Converters
+
+### JsonListConverter
+
+`List<String>`을 JSON 문자열로 자동 변환하는 JPA AttributeConverter입니다.
+
+```java
+@Entity
+public class Article {
+    @Id
+    private Long id;
+
+    @Convert(converter = JsonListConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<String> tags;
+}
+```
+
+**저장 예시:**
+```java
+Article article = new Article();
+article.setTags(List.of("spring", "java", "simplix"));
+// DB 저장값: ["spring","java","simplix"]
+```
+
+**특징:**
+- 변환 오류 시 빈 리스트 `[]` 반환 (예외 발생 안 함)
+- NULL 값 처리 지원
+- JSON 형식으로 직렬화되어 가독성 우수
+
+### JsonMapConverter
+
+`Map<String, Object>`을 JSON 문자열로 변환합니다.
+
+```java
+@Entity
+public class UserSettings {
+    @Id
+    private Long id;
+
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private Map<String, Object> preferences;
+}
+```
+
+---
+
+## Utility Classes
+
+### DtoUtils
+
+Entity와 DTO 간 변환을 위한 유틸리티 클래스입니다. 내부적으로 ModelMapper를 사용합니다.
+
+```java
+// 단일 엔티티 → DTO 변환
+UserDto dto = DtoUtils.toDto(user, UserDto.class);
+
+// 리스트 변환
+List<UserDto> dtos = DtoUtils.toDtoList(users, UserDto.class);
+
+// Page 변환 (페이징 정보 유지)
+Page<UserDto> dtoPage = DtoUtils.toDtoPage(userPage, UserDto.class);
+```
+
+**제공 메서드:**
+
+| 메서드 | 설명 |
+|--------|------|
+| `toDto(E entity, Class<D> dtoClass)` | 단일 엔티티를 DTO로 변환 |
+| `toDtoList(List<E> entities, Class<D> dtoClass)` | 리스트 변환 |
+| `toDtoPage(Page<E> entityPage, Class<D> dtoClass)` | Page 변환 (페이징 정보 유지) |
+
+**사용 예제:**
+
+```java
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
+
+    public Page<UserDto> getUsers(Pageable pageable) {
+        Page<User> users = userRepository.findAll(pageable);
+        return DtoUtils.toDtoPage(users, UserDto.class);
+    }
+
+    public List<UserDto> getAllActiveUsers() {
+        List<User> users = userRepository.findByActiveTrue();
+        return DtoUtils.toDtoList(users, UserDto.class);
+    }
+}
+```
+
+### EntityUtils
+
+엔티티 관련 리플렉션 기반 유틸리티입니다.
+
+```java
+// 제네릭 타입에서 엔티티 클래스 추출
+Class<User> entityClass = EntityUtils.getEntityClass(UserService.class);
+
+// DTO/다른 객체를 엔티티로 변환
+User entity = EntityUtils.convertToEntity(userDto, User.class);
+
+// 엔티티에서 @Id 필드 값 추출
+Long userId = EntityUtils.getEntityId(user);
+```
+
+**제공 메서드:**
+
+| 메서드 | 설명 |
+|--------|------|
+| `getEntityClass(Class<?> clazz)` | 제네릭 슈퍼클래스에서 엔티티 타입 추출 |
+| `convertToEntity(Object source, Class<E> entityClass)` | 객체를 엔티티로 변환 (STRICT 매칭) |
+| `getEntityId(E entity)` | `@Id` 어노테이션 필드 값 추출 |
+
+**convertToEntity 특징:**
+- `STRICT` 매칭 전략 사용
+- NULL 값은 변환에서 제외
+- Private 필드 접근 가능
+- 같은 클래스인 경우 그대로 반환
+
+---
+
 ## Related Documents
 
 - [Overview (아키텍처 개요)](ko/core/overview.md) - 모듈 구조

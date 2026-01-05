@@ -2,6 +2,21 @@
 
 이미지 처리 및 최적화 가이드입니다.
 
+## 목차
+
+- [ImageProcessingService](#imageprocessingservice)
+- [이미지 설정](#이미지-설정)
+- [리사이징](#리사이징)
+- [썸네일 생성](#썸네일-생성)
+- [WebP 변환](#webp-변환)
+- [메타데이터 추출](#메타데이터-추출)
+- [ProcessedImage](#processedimage)
+- [코드 예제](#코드-예제)
+- [성능 고려사항](#성능-고려사항)
+- [Related Documents](#related-documents)
+
+---
+
 ## ImageProcessingService
 
 Java AWT 기반의 이미지 처리 서비스입니다. 외부 이미지 라이브러리 없이 순수 Java로 구현되어 있습니다.
@@ -303,7 +318,26 @@ public record ProcessedImage(
     String mimeType,   // MIME 타입 (image/webp 등)
     int width,         // 너비
     int height         // 높이
-) {}
+) {
+    // 파일 크기 반환 (bytes)
+    public int getFileSize() {
+        return data != null ? data.length : 0;
+    }
+}
+```
+
+### 유틸리티 메서드
+
+```java
+ProcessedImage result = imageService.resize(input, 800, 600, true);
+
+// 파일 크기 확인 (bytes)
+int fileSize = result.getFileSize();
+log.info("Processed image size: {} bytes", fileSize);
+
+// KB/MB 단위 변환
+double sizeKB = result.getFileSize() / 1024.0;
+double sizeMB = result.getFileSize() / (1024.0 * 1024.0);
 ```
 
 ### 사용 예시

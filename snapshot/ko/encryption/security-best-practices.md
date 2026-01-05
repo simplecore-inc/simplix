@@ -219,20 +219,14 @@ public class UserService {
 
 ### 네트워크 격리
 
-```
-+------------------------------------------+
-|             Private Subnet               |
-|   +-------------+    +--------------+    |
-|   | Application |----| Vault        |    |
-|   +-------------+    +--------------+    |
-|          |                               |
-|          v                               |
-|   +-------------+                        |
-|   | Database    |  (Encrypted Data)      |
-|   +-------------+                        |
-+------------------------------------------+
-           |
-   No Public Subnet Access
+```mermaid
+flowchart TB
+    subgraph PrivateSubnet["Private Subnet"]
+        APP["Application"] <--> VAULT["Vault"]
+        APP --> DB["Database<br/>(암호화된 데이터)"]
+    end
+
+    PUBLIC["Public Subnet"] -.-x|"접근 불가"| PrivateSubnet
 ```
 
 ### TLS 통신

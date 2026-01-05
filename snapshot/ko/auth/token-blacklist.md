@@ -77,7 +77,7 @@ Caffeine 캐시 라이브러리를 사용하는 고성능 로컬 구현체입니
 
 ```groovy
 dependencies {
-    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 ```
 

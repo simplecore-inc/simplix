@@ -1,70 +1,54 @@
 # SimpliX Hibernate Cache Module Overview
 
+## 목차
+
+- [Architecture](#architecture)
+  - [Key Design: Transaction-Aware Eviction](#key-design-transaction-aware-eviction)
+- [Hibernate Native Cache Management](#hibernate-native-cache-management)
+- [Core Components](#core-components)
+  - [HibernateCacheManager](#hibernatecachemanager)
+  - [EntityCacheScanner](#entitycachescanner)
+  - [CacheEvictionStrategy](#cacheevictionstrategy)
+- [@Modifying 쿼리 캐시 무효화](#modifying-쿼리-캐시-무효화)
+- [Auto-Configuration](#auto-configuration)
+- [설정 속성](#설정-속성)
+- [Distributed Cache](#distributed-cache)
+- [Related Documents](#related-documents)
+
+---
+
 ## Architecture
 
-```
-+-------------------------------------------------------------------+
-|                      Application Layer                            |
-|  +-------------------------------------------------------------+  |
-|  |  @Entity + @Cache                                           |  |
-|  |  JpaRepository                                              |  |
-|  +--------------------------+----------------------------------+  |
-+-----------------------------+-------------------------------------+
-                              |
-                              |  @Modifying Query with @EvictCache
-                              v
-+-------------------------------------------------------------------+
-|  +-------------------------------------------------------------+  |
-|  |  ModifyingQueryCacheEvictionAspect (AOP)                    |  |
-|  |  - Process @EvictCache annotation                           |  |
-|  |  - Entity class based cache eviction                        |  |
-|  +--------------------------+----------------------------------+  |
-|                             |                                     |
-+-----------------------------+-------------------------------------+
-                              |
-+----------------------- Transaction Boundary ----------------------+
-|                             |                                     |
-|                             v                                     |
-|  +-------------------------------------------------------------+  |
-|  |  TransactionAwareCacheEvictionCollector                     |  |
-|  |  - Collect pending evictions via ThreadLocal                |  |
-|  |  - Register TransactionSynchronization                      |  |
-|  +--------------------------+----------------------------------+  |
-|                             |                                     |
-+-----------------------------+-------------------------------------+
-                              |
-                              | AFTER_COMMIT
-                              v
-+-------------------------------------------------------------------+
-|  +-------------------------------------------------------------+  |
-|  |  PostCommitCacheEvictionHandler                             |  |
-|  |  @EventListener(PendingEvictionCompletedEvent)              |  |
-|  +--------------------------+----------------------------------+  |
-|                             |                                     |
-|                             v                                     |
-|  +-------------------------------------------------------------+  |
-|  |                  CacheEvictionStrategy                      |  |
-|  |  - Evict local cache                                        |  |
-|  +--------------------------+----------------------------------+  |
-|                             |                                     |
-|                             v                                     |
-|  +-------------------------------------------------------------+  |
-|  |                  HibernateCacheManager                      |  |
-|  |  - evictEntity()        - evictQueryRegion()                |  |
-|  |  - evictEntityCache()   - evictAll()                        |  |
-|  |  - evictRegion()        - contains()                        |  |
-|  +--------------------------+----------------------------------+  |
-|                             |                                     |
-+-----------------------------+-------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                  Hibernate 2nd Level Cache                        |
-|  +-------------------------------------------------------------+  |
-|  |  EhCache / JCache                                           |  |
-|  |  Entity Cache Regions | Query Cache Regions                 |  |
-|  +-------------------------------------------------------------+  |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션_레이어["애플리케이션 레이어"]
+        APP["@Entity + @Cache<br/>JpaRepository"]
+    end
+
+    subgraph AOP["AOP 처리"]
+        ASPECT["ModifyingQueryCacheEvictionAspect<br/>- @EvictCache 어노테이션 처리<br/>- 엔티티 기반 캐시 제거"]
+    end
+
+    subgraph TX["트랜잭션 경계"]
+        COLLECTOR["TransactionAwareCacheEvictionCollector<br/>- ThreadLocal로 보류 수집<br/>- TransactionSynchronization 등록"]
+    end
+
+    subgraph POST_COMMIT["AFTER_COMMIT 처리"]
+        HANDLER["PostCommitCacheEvictionHandler<br/>@EventListener"]
+        STRATEGY["CacheEvictionStrategy<br/>- 로컬 캐시 제거"]
+        MANAGER["HibernateCacheManager<br/>- evictEntity()<br/>- evictEntityCache()<br/>- evictRegion()<br/>- evictQueryRegion()<br/>- evictAll()"]
+    end
+
+    subgraph L2_CACHE["Hibernate 2nd Level Cache"]
+        CACHE["EhCache / JCache<br/>Entity Cache Regions | Query Cache Regions"]
+    end
+
+    APP -->|"@Modifying + @EvictCache"| AOP
+    AOP --> TX
+    TX -->|AFTER_COMMIT| HANDLER
+    HANDLER --> STRATEGY
+    STRATEGY --> MANAGER
+    MANAGER --> L2_CACHE
 ```
 
 ### Key Design: Transaction-Aware Eviction
@@ -196,6 +180,41 @@ int updateStatusByRole(@Param("status") Status status, @Param("role") Role role)
 | EntityCacheScanner | @Cache 엔티티 스캔 |
 | CacheEvictionStrategy | 캐시 무효화 전략 |
 | HibernateCacheInitializer | 시작 시 엔티티 스캔 초기화 |
+
+---
+
+## 설정 속성
+
+```yaml
+simplix:
+  hibernate:
+    cache:
+      disabled: false              # 캐시 관리 비활성화 (기본: false)
+      scan-packages: com.example   # @Cache 엔티티 스캔 패키지 (선택)
+```
+
+| 속성 | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `simplix.hibernate.cache.disabled` | boolean | `false` | 캐시 관리 비활성화 |
+| `simplix.hibernate.cache.scan-packages` | String | - | @Cache 엔티티 스캔 패키지 |
+| `simplix.hibernate.cache.query-cache-auto-eviction` | boolean | `true` | @EvictCache 시 쿼리 캐시 자동 무효화 |
+
+### query-cache-auto-eviction 속성
+
+전역적으로 쿼리 캐시 자동 무효화를 제어합니다:
+
+```yaml
+simplix:
+  hibernate:
+    cache:
+      query-cache-auto-eviction: false  # 전역 비활성화
+```
+
+**우선순위:**
+1. `@EvictCache(evictQueryCache = false)` - 개별 메서드 설정 (최우선)
+2. `query-cache-auto-eviction` - 전역 기본값
+
+상세 설정: [Configuration Guide](ko/hibernate/configuration.md)
 
 ---
 

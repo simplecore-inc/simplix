@@ -152,6 +152,29 @@ String masked = addr.toMaskedString();
 // Result: j***@example.com
 ```
 
+### 개인정보 보호 (Privacy Masking)
+
+이메일 주소는 개인정보이므로 로그에 출력할 때 마스킹 처리를 권장합니다:
+
+```java
+// Single address masking
+EmailAddress addr = EmailAddress.of("user@example.com");
+log.info("Sending email to: {}", addr.toMaskedString());
+// Output: Sending email to: u***@example.com
+
+// Name included
+EmailAddress namedAddr = EmailAddress.of("John Doe", "john.doe@example.com");
+log.info("Recipient: {}", namedAddr.toMaskedString());
+// Output: Recipient: j***@example.com
+```
+
+**마스킹 규칙:**
+- 이메일 로컬 파트의 첫 글자만 표시
+- 나머지는 `***`로 대체
+- 도메인은 그대로 유지
+
+> Provider 내부에서는 `AbstractEmailProvider.maskRecipients()` 메서드가 자동으로 수신자 목록을 마스킹하여 로그에 출력합니다.
+
 ---
 
 ## EmailResult

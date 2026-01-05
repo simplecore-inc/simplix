@@ -4,41 +4,32 @@
 
 SimpliX Core는 웹 애플리케이션 보안을 위한 다층 방어 시스템을 제공합니다:
 
-```
-+-------------------------------------------------------------------+
-|                        Input Layer                                |
-|  +--------------+ +-----------------+ +------------------------+  |
-|  | @SafeHtml    | | SqlInjection    | | @ValidateWith          |  |
-|  | - XSS check  | | Validator       | | - Custom service valid |  |
-|  +--------------+ +-----------------+ +------------------------+  |
-+-------------------------------------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                      Sanitization Layer                           |
-|  +---------------+ +---------------+                              |
-|  | HtmlSanitizer | | InputSanitizer|                              |
-|  | - OWASP based | | - General inp |                              |
-|  +---------------+ +---------------+                              |
-+-------------------------------------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                       Storage Layer                               |
-|  +--------------+ +--------------------+ +-------------------+    |
-|  | HashingUtils | | HashingAttribute   | | MaskingConverter  |    |
-|  | - SHA-256/512| | Converter (PBKDF2) | | - JPA auto mask   |    |
-|  +--------------+ +--------------------+ +-------------------+    |
-+-------------------------------------------------------------------+
-                              |
-                              v
-+-------------------------------------------------------------------+
-|                        Output Layer                               |
-|  +----------------+ +-----------------+ +--------------------+    |
-|  |DataMaskingUtils| |IpAddressMasking | | LogMasker          |    |
-|  | - Various mask | |Utils - GDPR     | | - Log sensitive    |    |
-|  +----------------+ +-----------------+ +--------------------+    |
-+-------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph INPUT["Input Layer"]
+        SH["@SafeHtml<br/>XSS check"]
+        SQ["SqlInjectionValidator"]
+        VW["@ValidateWith<br/>Custom service validation"]
+    end
+
+    subgraph SANITIZE["Sanitization Layer"]
+        HS["HtmlSanitizer<br/>OWASP based"]
+        IS["InputSanitizer<br/>General input"]
+    end
+
+    subgraph STORAGE["Storage Layer"]
+        HU["HashingUtils<br/>SHA-256/512"]
+        HAC["HashingAttributeConverter<br/>PBKDF2"]
+        MC["MaskingConverter<br/>JPA auto mask"]
+    end
+
+    subgraph OUTPUT["Output Layer"]
+        DM["DataMaskingUtils<br/>Various masking"]
+        IP["IpAddressMaskingUtils<br/>GDPR compliance"]
+        LM["LogMasker<br/>Log sensitive data"]
+    end
+
+    INPUT --> SANITIZE --> STORAGE --> OUTPUT
 ```
 
 ---
@@ -576,3 +567,4 @@ public class Payment {
 - [Type Converters Guide (타입 변환)](ko/core/type-converters.md) - Boolean, Enum, DateTime 변환
 - [Exception & API Guide (예외/API)](ko/core/exception-api.md) - 에러 코드, API 응답
 - [Cache Guide (캐시)](ko/core/cache.md) - CacheManager, CacheProvider
+- [I18n Translation Guide (다국어 번역)](ko/core/i18n-translation.md) - @I18nTrans, 자동 번역

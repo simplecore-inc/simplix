@@ -38,20 +38,19 @@ public class User {
 
 ### 2. 동작 원리
 
-```
-저장 시 (Entity → DB):
-  user.setEmail("user@example.com")
-        ↓
-  AesEncryptionConverter.convertToDatabaseColumn()
-        ↓
-  DB: "v1:iv:ciphertext" 저장
+```mermaid
+flowchart TB
+    subgraph 저장["저장 시 (Entity → DB)"]
+        direction TB
+        A1["user.setEmail('user@example.com')"] --> A2["AesEncryptionConverter.convertToDatabaseColumn()"]
+        A2 --> A3["DB: 'v1:iv:ciphertext' 저장"]
+    end
 
-조회 시 (DB → Entity):
-  DB: "v1:iv:ciphertext"
-        ↓
-  AesEncryptionConverter.convertToEntityAttribute()
-        ↓
-  user.getEmail() → "user@example.com"
+    subgraph 조회["조회 시 (DB → Entity)"]
+        direction TB
+        B1["DB: 'v1:iv:ciphertext'"] --> B2["AesEncryptionConverter.convertToEntityAttribute()"]
+        B2 --> B3["user.getEmail() → 'user@example.com'"]
+    end
 ```
 
 ## 컬럼 길이 설정
@@ -371,4 +370,3 @@ public class EncryptionMigrationService {
 - [KeyProvider 가이드](ko/encryption/key-providers.md) - 환경별 KeyProvider 상세 설정
 - [키 로테이션 가이드](ko/encryption/key-rotation.md) - 키 교체 및 데이터 마이그레이션
 - [보안 모범 사례](ko/encryption/security-best-practices.md) - 운영 환경 보안 권장사항
-```

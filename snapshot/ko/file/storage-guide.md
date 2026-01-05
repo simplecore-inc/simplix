@@ -2,6 +2,18 @@
 
 파일 저장소 설정 및 사용 가이드입니다.
 
+## 목차
+
+- [Storage Provider 비교](#storage-provider-비교)
+- [LocalFileStorageService](#localfilestorageservice)
+- [S3FileStorageService](#s3filestorageservice)
+- [FileStorageService API](#filestorageservice-api)
+- [StoredFileInfo 상세](#storedfileinfo-상세)
+- [환경별 권장 설정](#환경별-권장-설정)
+- [Related Documents](#related-documents)
+
+---
+
 ## Storage Provider 비교
 
 | 특성 | Local | S3 |
@@ -80,7 +92,7 @@ uploads/
 
 ```gradle
 dependencies {
-    implementation 'software.amazon.awssdk:s3:2.29.26'
+    implementation 'software.amazon.awssdk:s3'
 }
 ```
 
@@ -279,7 +291,24 @@ public record StoredFileInfo(
     Long fileSize,         // 파일 크기: 102400 (bytes)
     String extension,      // 확장자: "jpg"
     String checksum        // SHA-256: "abc123..."
-) {}
+) {
+    // 파일명에서 확장자 추출 (점 제외, 소문자)
+    public static String extractExtension(String filename) {
+        // "image.jpg" -> "jpg"
+        // "FILE.PNG" -> "png"
+        // "noext" -> ""
+    }
+}
+```
+
+### 유틸리티 메서드
+
+```java
+// 파일명에서 확장자 추출
+String ext1 = StoredFileInfo.extractExtension("profile.jpg");      // "jpg"
+String ext2 = StoredFileInfo.extractExtension("DOCUMENT.PDF");     // "pdf"
+String ext3 = StoredFileInfo.extractExtension("archive.tar.gz");   // "gz"
+String ext4 = StoredFileInfo.extractExtension("noextension");      // ""
 ```
 
 ### 체크섬 활용

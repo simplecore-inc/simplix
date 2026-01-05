@@ -4,26 +4,24 @@
 
 SimpliX Email은 Thymeleaf 기반의 강력한 템플릿 시스템을 제공합니다.
 
-```
-+---------------------+     +------------------------+     +-------------------+
-|  TemplateEmail      | --> |  EmailTemplate         | --> | EmailTemplate     |
-|  Request            |     |  Service               |     | Engine            |
-+---------------------+     +------------------------+     +-------------------+
-                                      |                           |
-                                      v                           v
-                            +-------------------+        +-----------------+
-                            | Template Resolver |        | Thymeleaf       |
-                            +-------------------+        | (TEXT / HTML)   |
-                            | - Classpath (10)  |        +-----------------+
-                            | - Database (100)  |
-                            +-------------------+
+```mermaid
+flowchart LR
+    REQ["TemplateEmailRequest"]
+    SVC["EmailTemplateService"]
+    ENG["EmailTemplateEngine"]
+    RESOLVER["Template Resolver<br/>- Classpath (10)<br/>- Database (100)"]
+    TL["Thymeleaf<br/>(TEXT / HTML)"]
+
+    REQ --> SVC --> ENG
+    SVC --> RESOLVER
+    ENG --> TL
 ```
 
 ### Components
 
 | Component | Description |
 |-----------|-------------|
-| `EmailTemplateService` | 템플릿 처리 총괄 서비스 |
+| `EmailTemplateService` | 템플릿 처리 총괄 서비스 (`render()`, `templateExists()` 포함) |
 | `EmailTemplateEngine` | Thymeleaf 엔진 래퍼 (TEXT/HTML 모드) |
 | `ClasspathEmailTemplateResolver` | 클래스패스에서 템플릿 로딩 (Priority: 10) |
 | `DatabaseEmailTemplateResolver` | DB에서 템플릿 로딩 (Priority: 100) |
@@ -637,6 +635,109 @@ class EmailTemplateTest {
         assertThat(processed.getHtmlBody()).contains("Welcome");
         assertThat(processed.getHtmlBody()).contains("TestApp");
     }
+}
+```
+
+---
+
+## EmailTemplateService 유틸리티 메서드
+
+### render() - 독립 템플릿 렌더링
+
+템플릿 파일 없이 TEXT 모드 템플릿 문자열을 직접 렌더링합니다:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class SmsNotificationService {
+
+    private final EmailTemplateService templateService;
+
+    public String formatWelcomeMessage(String userName) {
+        String template = "[(${userName})]님, 가입을 환영합니다!";
+
+        return templateService.render(
+            template,
+            Map.of("userName", userName),
+            Locale.KOREAN
+        );
+        // Result: "홍길동님, 가입을 환영합니다!"
+    }
+
+    public String formatOrderSummary(Order order) {
+        String template = """
+            주문번호: [(${orderId})]
+            상품: [(${productName})]
+            수량: [(${quantity})]개
+            합계: [(${#numbers.formatDecimal(total, 0, 'COMMA', 0, 'POINT')})]원
+            """;
+
+        return templateService.render(
+            template,
+            Map.of(
+                "orderId", order.getId(),
+                "productName", order.getProductName(),
+                "quantity", order.getQuantity(),
+                "total", order.getTotal()
+            ),
+            Locale.KOREAN
+        );
+    }
+}
+```
+
+**사용 사례:**
+- SMS 메시지 템플릿 렌더링
+- 푸시 알림 내용 생성
+- 동적 문자열 생성
+
+### templateExists() - 템플릿 존재 확인
+
+템플릿 발송 전에 템플릿이 존재하는지 미리 확인합니다:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class NotificationService {
+
+    private final EmailTemplateService templateService;
+    private final EmailService emailService;
+
+    public void sendNotification(String templateCode, User user, Map<String, Object> variables) {
+        // Check template exists before processing
+        if (!templateService.templateExists(templateCode)) {
+            log.warn("Template not found: {}, falling back to default", templateCode);
+            templateCode = "default-notification";
+        }
+
+        TemplateEmailRequest request = TemplateEmailRequest.builder()
+            .templateCode(templateCode)
+            .to(List.of(EmailAddress.of(user.getEmail())))
+            .variables(variables)
+            .build();
+
+        emailService.sendTemplate(request);
+    }
+
+    public List<String> validateTemplates(List<String> templateCodes) {
+        return templateCodes.stream()
+            .filter(code -> !templateService.templateExists(code))
+            .toList();  // Returns missing templates
+    }
+}
+```
+
+### TemplateNotFoundException
+
+템플릿을 찾을 수 없을 때 발생하는 예외입니다:
+
+```java
+try {
+    EmailRequest processed = templateService.processTemplate(request);
+    emailService.send(processed);
+} catch (EmailTemplateService.TemplateNotFoundException e) {
+    log.error("Template not found: {}", e.getMessage());
+    // Handle missing template - send default email or notify admin
 }
 ```
 

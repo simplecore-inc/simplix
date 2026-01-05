@@ -1,35 +1,40 @@
 # SimpliX Cache Module Overview
 
+## Table of Contents
+
+- [Architecture](#architecture)
+- [Core Components](#core-components)
+- [Auto-Configuration](#auto-configuration)
+- [Configuration Properties](#configuration-properties)
+- [Cache Strategies](#cache-strategies)
+- [Monitoring](#monitoring)
+- [Environment Variables](#environment-variables)
+- [Related Documents](#related-documents)
+
+---
+
 ## Architecture
 
-```
-+---------------------------------------------------------------------+
-|                          Application                                  |
-|                              |                                        |
-|     @Cacheable / CacheService / CacheProvider / CacheManager         |
-|                              |                                        |
-+------------------------------+----------------------------------------+
-                               |
-+------------------------------v----------------------------------------+
-|                      SimpliX Cache Module                             |
-|                                                                       |
-|  +--------------------+    +--------------------------------+         |
-|  | CoreCacheProvider  |--->| CacheService                   |         |
-|  | Impl (SPI Bridge)  |    | (Main Entry Point)             |         |
-|  +--------------------+    +---------------+----------------+         |
-|                                            |                          |
-|                            +---------------v----------------+         |
-|                            |       CacheStrategy            |         |
-|                            |       (Interface)              |         |
-|                            +---------------+----------------+         |
-|                                            |                          |
-|               +----------------------------+-------------------+      |
-|               |                                                |      |
-|    +----------v----------+                      +--------------v---+  |
-|    | LocalCacheStrategy  |                      | RedisCacheStrategy| |
-|    | (Caffeine)          |                      | (Redis)           | |
-|    +---------------------+                      +-------------------+  |
-+-----------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션["애플리케이션"]
+        APP["@Cacheable / CacheService / CacheProvider"]
+    end
+
+    subgraph CACHE_MODULE["SimpliX Cache Module"]
+        SPI[CoreCacheProviderImpl<br/>SPI Bridge]
+        SERVICE[CacheService<br/>메인 진입점]
+        STRATEGY[CacheStrategy<br/>Interface]
+        LOCAL[LocalCacheStrategy<br/>Caffeine]
+        REDIS[RedisCacheStrategy<br/>Redis]
+
+        SPI --> SERVICE
+        SERVICE --> STRATEGY
+        STRATEGY --> LOCAL
+        STRATEGY --> REDIS
+    end
+
+    APP --> CACHE_MODULE
 ```
 
 ---
@@ -86,6 +91,22 @@ record CacheStatistics(
 ) {}
 ```
 
+**통계 필드 제한사항:**
+
+| 필드 | Local (Caffeine) | Redis | 비고 |
+|------|------------------|-------|------|
+| `hits` | O | O (전역) | Redis는 서버 전체 통계 |
+| `misses` | O | O (전역) | Redis는 서버 전체 통계 |
+| `evictions` | O | O (전역) | Redis는 `evicted_keys` |
+| `puts` | O | O | - |
+| `removals` | X (항상 0) | X (항상 0) | 미구현 |
+| `hitRate` | O | O | - |
+| `size` | O | O | - |
+| `memoryUsage` | X (항상 0) | X (항상 0) | 추가 Redis 명령 필요 |
+
+**Redis 통계 주의:**
+Redis의 `keyspace_hits`, `keyspace_misses`는 **전역 통계**로, 캐시명별 통계가 아닙니다.
+
 ### LocalCacheStrategy
 
 Caffeine 라이브러리 기반의 로컬 캐시 구현체:
@@ -97,6 +118,30 @@ Caffeine 라이브러리 기반의 로컬 캐시 구현체:
   - TTL 기반 자동 만료
   - 캐시별 고정 TTL (중요: 캐시 이름당 TTL 고정)
 
+**하드코딩 제한:**
+
+| 항목 | 값 | 설명 |
+|------|-----|------|
+| 최대 캐시 크기 | 10,000 엔트리 | 캐시명당 최대 항목 수 |
+| 기본 TTL | 1시간 (3600초) | `defaultTtlSeconds` 미설정 시 |
+| TTL 불변성 | 캐시명 기준 | 한번 생성된 캐시는 TTL 변경 불가 |
+
+**TTL 불변성 예시:**
+```java
+// 첫 호출: 30분 TTL로 캐시 생성
+cacheService.put("users", "user1", user1, Duration.ofMinutes(30));
+
+// 이후 호출: TTL 무시, 기존 30분 TTL 적용 (경고 로그 출력)
+cacheService.put("users", "user2", user2, Duration.ofHours(1));
+// WARN: Different TTL requested for existing cache 'users': ...
+```
+
+다른 TTL이 필요하면 별도 캐시명 사용:
+```java
+cacheService.put("usersShort", key, value, Duration.ofMinutes(5));
+cacheService.put("usersLong", key, value, Duration.ofHours(1));
+```
+
 ### RedisCacheStrategy
 
 Redis 기반의 분산 캐시 구현체:
@@ -107,6 +152,27 @@ Redis 기반의 분산 캐시 구현체:
   - JSON 직렬화 (Jackson + JavaTimeModule)
   - 키 접두사 지원
   - 키별 개별 TTL 설정 가능
+
+**Redis 키 생성 패턴:**
+
+```
+{keyPrefix}{cacheName}{KEY_SEPARATOR}{key}
+```
+
+| 요소 | 기본값 | 설명 |
+|------|--------|------|
+| `keyPrefix` | `cache:` | `redis.keyPrefix` 설정 |
+| `KEY_SEPARATOR` | `::` | 하드코딩 (변경 불가) |
+
+**예시:**
+```
+cache:users::user-123
+cache:orders::order-456
+```
+
+**주의사항:**
+- `KEYS` 명령 사용으로 대량 키 조회 시 성능 영향 가능
+- null 값 자동 무시 (debug 로그 출력 후 반환)
 
 ### CacheService
 
@@ -215,8 +281,54 @@ simplix:
 | `cacheNullValues` | boolean | false | null 값 캐싱 여부 |
 | `cacheConfigs` | Map | {} | 캐시별 설정 |
 | `metrics.enabled` | boolean | true | 메트릭 수집 활성화 |
+| `metrics.collectionIntervalSeconds` | long | 60 | 메트릭 수집 간격 (초) |
 | `redis.keyPrefix` | String | "cache:" | Redis 키 접두사 |
 | `redis.useKeyPrefix` | boolean | true | 키 접두사 사용 여부 |
+
+### CacheMetricsCollector
+
+주기적으로 캐시 통계를 수집하는 스케줄러:
+
+```java
+@Component
+@ConditionalOnProperty(name = "simplix.cache.metrics.enabled", havingValue = "true", matchIfMissing = true)
+public class CacheMetricsCollector {
+
+    @Scheduled(fixedDelayString = "${simplix.cache.metrics.collectionIntervalSeconds:60}000")
+    public void collectMetrics() {
+        // 각 캐시의 통계 수집 및 로깅
+    }
+}
+```
+
+**설정:**
+```yaml
+simplix:
+  cache:
+    metrics:
+      enabled: true
+      collectionIntervalSeconds: 30  # 30초마다 수집 (기본: 60초)
+```
+
+### CoreCacheProviderImpl
+
+simplix-core의 `CacheProvider` SPI를 구현하는 브릿지:
+
+```java
+@Component
+public class CoreCacheProviderImpl implements CacheProvider {
+    // ...
+
+    @Override
+    public int getPriority() {
+        return 100;  // 높은 우선순위
+    }
+}
+```
+
+**우선순위 시스템:**
+- 여러 `CacheProvider` 구현체가 있을 때 `getPriority()` 값이 높은 것이 선택됨
+- `CoreCacheProviderImpl`은 100을 반환 (높은 우선순위)
 
 ---
 

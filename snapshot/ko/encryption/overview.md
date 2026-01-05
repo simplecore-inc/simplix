@@ -2,33 +2,27 @@
 
 ## Architecture
 
-```
-+-------------------------------------------------------------+
-|                      Application Layer                       |
-|  +-----------------+  +---------------------------------+   |
-|  |   Entity        |  |   Service                       |   |
-|  |   @Convert      |  |   encryptionService.encrypt()   |   |
-|  +--------+--------+  +----------------+----------------+   |
-+-----------+----------------------------+--------------------+
-            |                            |
-            v                            v
-+-------------------------------------------------------------+
-|                    Encryption Service                        |
-|  +-------------------------------------------------------+  |
-|  |  AES/GCM/NoPadding (256-bit)                          |  |
-|  |  - encrypt(plainText) -> version:iv:ciphertext        |  |
-|  |  - decrypt(encryptedData) -> plainText                |  |
-|  +-------------------------+-----------------------------+  |
-+----------------------------+---------------------------------+
-                             |
-                             v
-+-------------------------------------------------------------+
-|                      KeyProvider                             |
-|  +----------+ +--------------+ +---------+ +-------------+  |
-|  | Simple   | | Configurable | | Managed | |    Vault    |  |
-|  | (dev)    | | (config)     | | (file)  | |   (prod)    |  |
-|  +----------+ +--------------+ +---------+ +-------------+  |
-+-------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph 애플리케이션_레이어["애플리케이션 레이어"]
+        ENTITY["Entity<br/>@Convert"]
+        SERVICE_CALL["Service<br/>encryptionService.encrypt()"]
+    end
+
+    subgraph ENCRYPTION["Encryption Service"]
+        ENC_SVC["AES/GCM/NoPadding (256-bit)<br/>encrypt/decrypt"]
+    end
+
+    subgraph KEY_PROVIDERS["KeyProvider"]
+        SIMPLE[SimpleKeyProvider<br/>개발용]
+        CONFIG[ConfigurableKeyProvider<br/>설정 기반]
+        MANAGED[ManagedKeyProvider<br/>파일 기반]
+        VAULT[VaultKeyProvider<br/>운영 환경]
+    end
+
+    ENTITY --> ENCRYPTION
+    SERVICE_CALL --> ENCRYPTION
+    ENCRYPTION --> KEY_PROVIDERS
 ```
 
 ---
@@ -59,6 +53,21 @@ public class EncryptionService {
 
     // 설정 검증
     boolean isConfigured();
+
+    // === Inner Classes ===
+
+    // 암호화 결과 컨테이너
+    @Data
+    public static class EncryptedData {
+        private String data;       // 암호화된 데이터 (version:iv:ciphertext)
+        private String keyVersion; // 사용된 키 버전
+    }
+
+    // 암호화 예외
+    public static class EncryptionException extends RuntimeException { }
+
+    // 복호화 예외
+    public static class DecryptionException extends RuntimeException { }
 }
 ```
 
@@ -311,16 +320,17 @@ spring:
 
 ### Decision Tree
 
-```
-Is this a production environment?
-+-- Yes --> Is Vault available?
-|           +-- Yes --> VaultKeyProvider
-|           +-- No  --> Is key rotation needed?
-|                       +-- Yes --> ManagedKeyProvider
-|                       +-- No  --> ConfigurableKeyProvider
-|
-+-- No --> Development/Test environment
-           +-- SimpleKeyProvider
+```mermaid
+flowchart TB
+    Q1{"운영 환경인가?"} -->|예| Q2{"Vault 사용 가능?"}
+    Q1 -->|아니오| DEV["개발/테스트 환경"]
+    DEV --> SIMPLE["SimpleKeyProvider"]
+
+    Q2 -->|예| VAULT["VaultKeyProvider"]
+    Q2 -->|아니오| Q3{"키 로테이션 필요?"}
+
+    Q3 -->|예| MANAGED["ManagedKeyProvider"]
+    Q3 -->|아니오| CONFIG["ConfigurableKeyProvider"]
 ```
 
 ### 환경별 권장 KeyProvider
