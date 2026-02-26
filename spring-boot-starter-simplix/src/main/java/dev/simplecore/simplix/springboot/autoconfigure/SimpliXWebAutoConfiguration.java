@@ -4,12 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
 import dev.simplecore.simplix.web.advice.SimpliXExceptionHandler;
-import dev.simplecore.simplix.web.config.SwaggerSchemaEnhancer;
+import dev.simplecore.simplix.web.config.openapi.SwaggerSchemaEnhancer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
@@ -19,6 +20,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.List;
 
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnWebApplication
@@ -55,9 +58,10 @@ public class SimpliXWebAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean(SwaggerSchemaEnhancer.class)
-        public SwaggerSchemaEnhancer swaggerSchemaEnhancer() {
+        public SwaggerSchemaEnhancer swaggerSchemaEnhancer(
+                @Value("${simplix.swagger.i18n-packages:}") List<String> additionalPackages) {
             log.info("Initializing SimpliX Swagger Schema Enhancer as OpenApiCustomiser...");
-            return new SwaggerSchemaEnhancer();
+            return new SwaggerSchemaEnhancer(additionalPackages);
         }
     }
 } 

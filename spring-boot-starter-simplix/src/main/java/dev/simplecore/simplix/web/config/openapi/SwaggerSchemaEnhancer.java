@@ -1,4 +1,4 @@
-package dev.simplecore.simplix.web.config;
+package dev.simplecore.simplix.web.config.openapi;
 
 import dev.simplecore.searchable.core.annotation.SearchableField;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -28,25 +27,46 @@ import java.util.stream.Collectors;
 /**
  * Swagger customizer to add internationalized validation messages, SearchableField information, and ID field metadata as extension fields
  */
-@Component
 public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
 
     private static final Logger log = LoggerFactory.getLogger(SwaggerSchemaEnhancer.class);
 
     @Autowired
     private MessageSource messageSource;
-    
 
-    
+    private final List<String> packagesToScan;
+
     // Cache for schema name to class mapping
     private final Map<String, Class<?>> schemaClassCache = new ConcurrentHashMap<>();
-    
+
+    public SwaggerSchemaEnhancer() {
+        this(List.of(
+                "dev.simplecore.simplix.core.model",
+                "dev.simplecore.simplix.web.model"
+        ));
+    }
+
+    public SwaggerSchemaEnhancer(List<String> additionalPackages) {
+        List<String> packages = new ArrayList<>(List.of(
+                "dev.simplecore.simplix.core.model",
+                "dev.simplecore.simplix.web.model"
+        ));
+        if (additionalPackages != null) {
+            for (String pkg : additionalPackages) {
+                if (pkg != null && !pkg.isBlank() && !packages.contains(pkg)) {
+                    packages.add(pkg);
+                }
+            }
+        }
+        this.packagesToScan = packages;
+    }
+
     @PostConstruct
     public void init() {
         log.info("Initializing SwaggerSchemaEnhancer with SearchableField and ID field support");
         try {
             cacheSchemaClasses();
-            
+
             // Test SearchableField detection
             testSearchableFieldDetection();
         } catch (Exception e) {
@@ -61,12 +81,12 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.info("Found {} schemas to process", openApi.getComponents().getSchemas().size());
             openApi.getComponents().getSchemas().forEach((schemaName, schema) -> {
                 log.info("Processing schema: {}", schemaName);
-                
+
                 // Special handling for SearchCondition schemas
                 if (schemaName.startsWith("SearchCondition") && schemaName.endsWith("SearchDTO")) {
                     handleSearchConditionSchema(schemaName, schema);
                 }
-                
+
                 // Regular schema processing
                 Class<?> clazz = findClassForSchema(schemaName);
                 if (clazz != null) {
@@ -81,26 +101,20 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
         }
         log.info("Completed OpenAPI customization");
     }
-    
+
     private void cacheSchemaClasses() {
         try {
-            List<String> packageNames = Arrays.asList(
-                "dev.simplecore.simplix.demo",
-                "dev.simplecore.simplix.core.model",
-                "dev.simplecore.simplix.web.model"
-            );
-            
-            for (String packageName : packageNames) {
+            for (String packageName : packagesToScan) {
                 log.info("Searching for classes in package: {}", packageName);
                 Set<Class<?>> classes = findClassesInPackage(packageName);
                 log.info("Found {} classes in package {}", classes.size(), packageName);
-                
+
                 for (Class<?> clazz : classes) {
                     // Cache the outer class
                     String simpleName = clazz.getSimpleName();
                     schemaClassCache.put(simpleName, clazz);
                     log.info("Cached class: {} -> {}", simpleName, clazz.getName());
-                    
+
                     // Also cache inner static classes
                     Class<?>[] innerClasses = clazz.getDeclaredClasses();
                     for (Class<?> innerClass : innerClasses) {
@@ -112,14 +126,14 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                     }
                 }
             }
-            
+
             log.info("Cached {} classes total", schemaClassCache.size());
             log.info("Cached class names: {}", schemaClassCache.keySet());
         } catch (Exception e) {
             log.error("Failed to cache schema classes", e);
         }
     }
-    
+
     private Class<?> findClassForSchema(String schemaName) {
         log.trace("Finding class for schema: {}", schemaName);
 
@@ -145,7 +159,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
         log.trace("No class found for schema: {}", schemaName);
         return null;
     }
-    
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void addI18nExtensionsToSchema(Schema schema, Class<?> clazz) {
         log.info("Processing schema for class: {}", clazz.getName());
@@ -155,14 +169,14 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 String fieldName = (String) propertyName;
                 try {
                     Schema schemaProperty = (Schema) propertySchema;
-                    log.info("Processing property: {} in class: {} (schema type: {}, $ref: {})", 
-                        fieldName, clazz.getSimpleName(), 
-                        schemaProperty.getType(), 
+                    log.info("Processing property: {} in class: {} (schema type: {}, $ref: {})",
+                        fieldName, clazz.getSimpleName(),
+                        schemaProperty.getType(),
                         schemaProperty.get$ref());
                     Field field = findField(clazz, fieldName);
                     if (field != null) {
                         log.info("Found field {} in class {}", fieldName, clazz.getSimpleName());
-                        
+
                         // Process all extensions for this field
                         addI18nExtensions(field, schemaProperty, fieldName);
                         addSearchableFieldExtensions(field, schemaProperty, fieldName);
@@ -170,7 +184,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
 
                         // Log final extensions after all processing
                         if (schemaProperty.getExtensions() != null) {
-                            log.info("Final extensions for field {}: {}", fieldName, 
+                            log.info("Final extensions for field {}: {}", fieldName,
                                 schemaProperty.getExtensions().keySet());
                         }
                     } else {
@@ -184,7 +198,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.warn("Schema has no properties for class: {}", clazz.getName());
         }
     }
-    
+
     private Field findField(Class<?> clazz, String fieldName) {
         log.trace("Looking for field '{}' in class '{}'", fieldName, clazz.getName());
         try {
@@ -200,14 +214,14 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             return null;
         }
     }
-    
+
     @SuppressWarnings("rawtypes")
     private void addI18nExtensions(Field field, Schema propertySchema, String fieldName) {
         log.info("Processing field: {} with schema type: {}, $ref: {}",
             fieldName, propertySchema.getType(), propertySchema.get$ref());
 
-        // Get validation messages
-        Map<String, String> validationMessages = getValidationMessages(field, fieldName);
+        // Get validation messages keyed by annotation type
+        Map<String, Map<String, String>> validationMessages = getValidationMessages(field, fieldName);
 
         // Add validation messages
         if (!validationMessages.isEmpty()) {
@@ -215,7 +229,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.info("Added validation messages for field {}: {}", fieldName, validationMessages);
         }
     }
-    
+
     @SuppressWarnings("rawtypes")
     private void addSearchableFieldExtensions(Field field, Schema propertySchema, String fieldName) {
         log.trace("Checking SearchableField annotation for field: {}", fieldName);
@@ -226,10 +240,10 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
         for (Annotation annotation : annotations) {
             log.trace("Found annotation: {} on field {}", annotation.annotationType().getName(), fieldName);
         }
-        
+
         // Try different ways to get the SearchableField annotation
         SearchableField searchableField = null;
-        
+
         // Method 1: Direct annotation lookup
         try {
             searchableField = field.getAnnotation(SearchableField.class);
@@ -239,7 +253,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
         } catch (Exception e) {
             log.trace("Direct annotation lookup failed for field {}: {}", fieldName, e.getMessage());
         }
-        
+
         // Method 2: Check if any annotation is SearchableField by class name
         if (searchableField == null) {
             for (Annotation annotation : annotations) {
@@ -251,7 +265,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                         Object operatorsValue = annotationType.getMethod("operators").invoke(annotation);
                         Object sortableValue = annotationType.getMethod("sortable").invoke(annotation);
                         Object entityFieldValue = annotationType.getMethod("entityField").invoke(annotation);
-                        
+
                         Map<String, Object> searchableInfo = new HashMap<>();
 
                         // Add operators information
@@ -275,24 +289,24 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                             searchableInfo.put("entityField", entityFieldValue);
                             log.trace("Added entityField for field {}: {}", fieldName, entityFieldValue);
                         }
-                        
+
                         propertySchema.addExtension("x-searchable-field", searchableInfo);
                         log.info("Successfully added SearchableField extensions for field {} using reflection: {}", fieldName, searchableInfo);
-                        
+
                         // Verify the extension was added
-                        Object addedExtension = propertySchema.getExtensions() != null ? 
+                        Object addedExtension = propertySchema.getExtensions() != null ?
                             propertySchema.getExtensions().get("x-searchable-field") : null;
                         if (addedExtension != null) {
                             log.info("VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
                         } else {
                             log.error("ERROR: Extension was NOT added for field {}", fieldName);
                         }
-                        
+
                         // Also log all extensions for this field
                         if (propertySchema.getExtensions() != null) {
                             log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
                         }
-                        
+
                         return; // Successfully processed
                     } catch (Exception e) {
                         log.error("Failed to process SearchableField annotation using reflection for field {}: {}", fieldName, e.getMessage());
@@ -300,11 +314,11 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 }
             }
         }
-        
+
         if (searchableField != null) {
             log.info("Found SearchableField annotation on field: {}", fieldName);
             Map<String, Object> searchableInfo = new HashMap<>();
-            
+
             // Add operators information
             if (searchableField.operators() != null && searchableField.operators().length > 0) {
                 List<String> operators = Arrays.stream(searchableField.operators())
@@ -313,39 +327,39 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                 searchableInfo.put("operators", operators);
                 log.info("Added operators for field {}: {}", fieldName, operators);
             }
-            
+
             // Add sortable information
             searchableInfo.put("sortable", searchableField.sortable());
             log.info("Added sortable for field {}: {}", fieldName, searchableField.sortable());
-            
+
             // Add entityField information if present
             if (searchableField.entityField() != null && !searchableField.entityField().isEmpty()) {
                 searchableInfo.put("entityField", searchableField.entityField());
                 log.info("Added entityField for field {}: {}", fieldName, searchableField.entityField());
             }
-            
+
             // Log before adding extension
             log.info("About to add extension x-searchable-field for field {}: {}", fieldName, searchableInfo);
-            
+
             // Check if extensions map exists
             if (propertySchema.getExtensions() == null) {
                 log.info("Extensions map is null for field {}, will be created", fieldName);
             } else {
                 log.info("Extensions map exists for field {}, current size: {}", fieldName, propertySchema.getExtensions().size());
             }
-            
+
             propertySchema.addExtension("x-searchable-field", searchableInfo);
             log.info("Successfully added SearchableField extensions for field {}: {}", fieldName, searchableInfo);
-            
+
             // Verify the extension was added
-            Object addedExtension = propertySchema.getExtensions() != null ? 
+            Object addedExtension = propertySchema.getExtensions() != null ?
                 propertySchema.getExtensions().get("x-searchable-field") : null;
             if (addedExtension != null) {
                 log.info("VERIFIED: Extension was added for field {}: {}", fieldName, addedExtension);
             } else {
                 log.error("ERROR: Extension was NOT added for field {}", fieldName);
             }
-            
+
             // Also log all extensions for this field
             if (propertySchema.getExtensions() != null) {
                 log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
@@ -354,15 +368,15 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.trace("No SearchableField annotation found on field: {}", fieldName);
         }
     }
-    
+
     @SuppressWarnings("rawtypes")
     private void addIdFieldExtensions(Field field, Schema propertySchema, String fieldName) {
-        log.info("Processing ID field: {} with schema type: {}, $ref: {}", 
+        log.info("Processing ID field: {} with schema type: {}, $ref: {}",
             fieldName, propertySchema.getType(), propertySchema.get$ref());
-        
+
         boolean isIdField = false;
         String idType = null;
-        
+
         // Check for @Id annotation
         Id idAnnotation = field.getAnnotation(Id.class);
         if (idAnnotation != null) {
@@ -370,7 +384,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             idType = "simple";
             log.info("Found @Id annotation on field: {}", fieldName);
         }
-        
+
         // Check for @EmbeddedId annotation
         EmbeddedId embeddedIdAnnotation = field.getAnnotation(EmbeddedId.class);
         if (embeddedIdAnnotation != null) {
@@ -378,35 +392,35 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             idType = "embedded";
             log.info("Found @EmbeddedId annotation on field: {}", fieldName);
         }
-        
+
         if (isIdField) {
             Map<String, Object> idInfo = new HashMap<>();
             idInfo.put("type", idType);
             idInfo.put("isPrimaryKey", true);
-            
+
             // Add field type information
             Class<?> fieldType = field.getType();
             idInfo.put("fieldType", fieldType.getSimpleName());
-            
+
             // For embedded IDs, add additional information
             if ("embedded".equals(idType)) {
                 idInfo.put("compositeKey", true);
                 idInfo.put("embeddedClass", fieldType.getName());
             }
-            
+
             // Handle both $ref and regular properties
             propertySchema.addExtension("x-id-field", idInfo);
             log.info("Successfully added ID field extensions for field {}: {}", fieldName, idInfo);
-            
+
             // Verify the extension was added
-            Object addedExtension = propertySchema.getExtensions() != null ? 
+            Object addedExtension = propertySchema.getExtensions() != null ?
                 propertySchema.getExtensions().get("x-id-field") : null;
             if (addedExtension != null) {
                 log.info("VERIFIED: ID field extension was added for field {}: {}", fieldName, addedExtension);
             } else {
                 log.error("ERROR: ID field extension was NOT added for field {}", fieldName);
             }
-            
+
             // Also log all extensions for this field
             if (propertySchema.getExtensions() != null) {
                 log.info("All extensions for field {}: {}", fieldName, propertySchema.getExtensions().keySet());
@@ -415,15 +429,15 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
             log.trace("No ID field annotation found on field: {}", fieldName);
         }
     }
-private Map<String, String> getValidationMessages(Field field, String fieldName) {
-        Map<String, String> messages = new HashMap<>();
-        
+private Map<String, Map<String, String>> getValidationMessages(Field field, String fieldName) {
+        Map<String, Map<String, String>> messages = new HashMap<>();
+
         // Check for validation annotations and get corresponding messages
         Annotation[] annotations = field.getAnnotations();
         for (Annotation annotation : annotations) {
             String messageKey = null;
             String defaultMessage = null;
-            
+
             if (annotation instanceof NotNull notNull) {
 				messageKey = "validation.notnull";
                 defaultMessage = notNull.message();
@@ -452,46 +466,46 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
 				messageKey = "validation.length";
                 defaultMessage = length.message();
             }
-            
+
             if (messageKey != null) {
+                Map<String, String> localeMessages = new HashMap<>();
+
                 try {
-                    // Try to get Korean message
                     String koMessage = messageSource.getMessage(messageKey, null, Locale.KOREAN);
-                    messages.put("ko", koMessage);
+                    localeMessages.put("ko", koMessage);
                 } catch (Exception e) {
-                    // Use default message if no Korean message found
-                    messages.put("ko", defaultMessage);
+                    localeMessages.put("ko", defaultMessage);
                 }
-                
+
                 try {
-                    // Try to get English message
                     String enMessage = messageSource.getMessage(messageKey, null, Locale.ENGLISH);
-                    messages.put("en", enMessage);
+                    localeMessages.put("en", enMessage);
                 } catch (Exception e) {
-                    // Use default message if no English message found
-                    messages.put("en", defaultMessage);
+                    localeMessages.put("en", defaultMessage);
                 }
+
+                messages.put(messageKey, localeMessages);
             }
         }
-        
+
         return messages;
     }
-    
+
     private void testSearchableFieldDetection() {
         try {
             // Test with a known class that has SearchableField annotations
             Class<?> testClass = schemaClassCache.get("UserAccountSearchDTO");
             if (testClass != null) {
                 log.info("Testing SearchableField detection with class: {}", testClass.getName());
-                
+
                 Field[] fields = testClass.getDeclaredFields();
                 log.info("Class {} has {} fields", testClass.getSimpleName(), fields.length);
-                
+
                 for (Field field : fields) {
                     SearchableField searchableField = field.getAnnotation(SearchableField.class);
                     if (searchableField != null) {
-                        log.info("Found SearchableField on field {}: operators={}, sortable={}", 
-                            field.getName(), 
+                        log.info("Found SearchableField on field {}: operators={}, sortable={}",
+                            field.getName(),
                             Arrays.toString(searchableField.operators()),
                             searchableField.sortable());
                     } else {
@@ -509,7 +523,7 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
             log.error("Failed to test SearchableField detection", e);
         }
     }
-    
+
     private void testIdDetection() {
         try {
             // Test with UserAccount class
@@ -547,11 +561,11 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
             String path = packageName.replace('.', '/');
             log.info("Looking for resources in path: {}", path);
             Enumeration<URL> resources = classLoader.getResources(path);
-            
+
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
                 log.info("Found resource: {} with protocol: {}", resource, resource.getProtocol());
-                
+
                 if (resource.getProtocol().equals("file")) {
                     // Handle file system
                     File directory = new File(resource.getFile());
@@ -572,12 +586,12 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
         log.info("Found {} classes in package {}", classes.size(), packageName);
         return classes;
     }
-    
+
     private void findClassesInDirectory(File directory, String packageName, Set<Class<?>> classes) {
         if (!directory.exists()) {
             return;
         }
-        
+
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
@@ -623,24 +637,24 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
     @SuppressWarnings("rawtypes")
     private void handleSearchConditionSchema(String schemaName, Schema schema) {
         log.info("Special handling for SearchCondition schema: {}", schemaName);
-        
+
         // Extract the SearchDTO class name
         String searchDtoName = schemaName.substring("SearchCondition".length());
         log.info("Looking for SearchDTO class: {}", searchDtoName);
-        
+
         Class<?> searchDtoClass = schemaClassCache.get(searchDtoName);
         if (searchDtoClass != null) {
             log.info("Found SearchDTO class: {}", searchDtoClass.getName());
-            
+
             // Extract SearchableField information
             Map<String, Object> searchableFields = new HashMap<>();
             Field[] fields = searchDtoClass.getDeclaredFields();
-            
+
             for (Field field : fields) {
                 SearchableField searchableField = field.getAnnotation(SearchableField.class);
                 if (searchableField != null) {
                     Map<String, Object> fieldInfo = new HashMap<>();
-                    
+
                     // Add operators
                     if (searchableField.operators() != null && searchableField.operators().length > 0) {
                         List<String> operators = Arrays.stream(searchableField.operators())
@@ -648,27 +662,27 @@ private Map<String, String> getValidationMessages(Field field, String fieldName)
                             .collect(Collectors.toList());
                         fieldInfo.put("operators", operators);
                     }
-                    
+
                     // Add sortable
                     fieldInfo.put("sortable", searchableField.sortable());
-                    
+
                     // Add entityField if specified
                     if (!searchableField.entityField().isEmpty()) {
                         fieldInfo.put("entityField", searchableField.entityField());
                     }
-                    
+
                     searchableFields.put(field.getName(), fieldInfo);
                     log.trace("Added searchable field info for {}: {}", field.getName(), fieldInfo);
                 }
             }
-            
+
             if (!searchableFields.isEmpty()) {
                 schema.addExtension("x-searchable-fields", searchableFields);
-                log.info("Added x-searchable-fields extension to {} with {} fields", 
+                log.info("Added x-searchable-fields extension to {} with {} fields",
                     schemaName, searchableFields.size());
             }
         } else {
             log.warn("SearchDTO class not found for: {}", searchDtoName);
         }
     }
-} 
+}

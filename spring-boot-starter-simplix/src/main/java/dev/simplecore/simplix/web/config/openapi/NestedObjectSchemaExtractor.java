@@ -1,4 +1,4 @@
-package dev.simplecore.simplix.web.config;
+package dev.simplecore.simplix.web.config.openapi;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +20,6 @@ import java.util.Map;
  * simplix.swagger.customizers.nested-object-extractor.enabled=false
  * </pre>
  */
-@Component
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
 
@@ -401,12 +399,6 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
             String[] parts = contextPath.split("\\.");
             String lastPart = parts[parts.length - 1];
 
-//            // Special handling for I18n properties
-//            if (lastPart.endsWith("I18n")) {
-//                // e.g., tenantNameI18n -> I18nValue
-//                return "I18nValue";
-//            }
-
             // Other special cases
             if (lastPart.equals("metadata")) {
                 return "MetadataValue";
@@ -488,7 +480,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
 
     @Override
     public int getOrder() {
-        // Run after EnumSchemaExtractor (which has default order)
+        // Run after EnumSchemaExtractor (LOWEST_PRECEDENCE - 200)
         return Ordered.LOWEST_PRECEDENCE - 100;
     }
 }

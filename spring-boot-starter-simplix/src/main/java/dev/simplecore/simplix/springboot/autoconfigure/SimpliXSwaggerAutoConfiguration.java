@@ -1,18 +1,23 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
-import dev.simplecore.simplix.web.config.EnumSchemaExtractor;
-import dev.simplecore.simplix.web.config.NestedObjectSchemaExtractor;
+import dev.simplecore.simplix.web.config.openapi.DtoSchemaAutoRegistrar;
+import dev.simplecore.simplix.web.config.openapi.EnumSchemaExtractor;
+import dev.simplecore.simplix.web.config.openapi.GenericResponseSchemaCustomizer;
+import dev.simplecore.simplix.web.config.openapi.NestedObjectSchemaExtractor;
+import dev.simplecore.simplix.web.config.openapi.OperationIdCustomizer;
+import dev.simplecore.simplix.web.config.openapi.SchemaOrganizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.properties.SpringDocConfigProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Auto-configuration for Swagger/OpenAPI documentation with Scalar UI support.
@@ -59,7 +64,6 @@ import org.springframework.context.annotation.Primary;
  */
 @AutoConfiguration
 @ConditionalOnClass(name = "io.swagger.v3.oas.models.OpenAPI")
-@EnableConfigurationProperties(SpringDocConfigProperties.class)
 @ConditionalOnProperty(prefix = "springdoc.api-docs", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXSwaggerAutoConfiguration {
 
@@ -113,8 +117,60 @@ public class SimpliXSwaggerAutoConfiguration {
         return new NestedObjectSchemaExtractor();
     }
 
-    private String getMainPath(String name) {
-        String path = name.replaceAll("([a-z])([A-Z])", "$1/$2").toLowerCase();
-        return path.split("/")[0];
+    /**
+     * Generic response schema customizer that resolves type erasure issues
+     * for nested generic return types like {@code SimpliXApiResponse<Page<UserDto>>}.
+     *
+     * <p>Uses {@link org.springframework.core.ResolvableType} to recover erased
+     * generic type information and build accurate OpenAPI schemas.
+     *
+     * <p>When {@code auto-wrap} is enabled, non-SimpliXApiResponse return types
+     * are automatically wrapped with SimpliXApiResponse schema structure,
+     * matching the runtime behavior of SimpliXResponseBodyAdvice.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "simplix.swagger.customizers.generic-response", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public GenericResponseSchemaCustomizer genericResponseSchemaCustomizer(
+            @Value("${simplix.swagger.customizers.generic-response.auto-wrap:true}") boolean autoWrap) {
+        log.info("Enabling SimpliX GenericResponseSchemaCustomizer (auto-wrap: {})", autoWrap);
+        log.info("  To disable: simplix.swagger.customizers.generic-response.enabled=false");
+        return new GenericResponseSchemaCustomizer(autoWrap);
     }
+
+    /**
+     * Operation ID customizer that generates unique operationId values
+     * by combining controller class name with method name.
+     * Prevents SpringDoc's default _N suffix numbering for duplicate method names.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public OperationIdCustomizer operationIdCustomizer() {
+        return new OperationIdCustomizer();
+    }
+
+    /**
+     * Schema organizer that sorts schemas alphabetically and marks enums
+     * with {@code x-schema-type: "enum"} extension.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SchemaOrganizer schemaOrganizer() {
+        return new SchemaOrganizer();
+    }
+
+    /**
+     * DTO schema auto-registrar that ensures all DTO classes referenced
+     * by {@link GenericResponseSchemaCustomizer}'s {@code $ref} pointers
+     * are registered in OpenAPI components.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "simplix.swagger.customizers.generic-response", name = "enabled", havingValue = "true", matchIfMissing = true)
+    public DtoSchemaAutoRegistrar dtoSchemaAutoRegistrar(
+            @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
+        log.info("Enabling SimpliX DtoSchemaAutoRegistrar");
+        return new DtoSchemaAutoRegistrar(handlerMapping);
+    }
+
 }

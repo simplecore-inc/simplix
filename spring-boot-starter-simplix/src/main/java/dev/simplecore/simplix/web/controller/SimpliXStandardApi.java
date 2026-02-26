@@ -17,16 +17,14 @@ import java.lang.annotation.*;
         @ApiResponse(
                 responseCode = "200",
                 description = "Successfully processed",
-                useReturnTypeSchema = true,
                 content = @Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         examples = @ExampleObject(
                                 value = "{" +
                                         "\"type\":\"SUCCESS\"," +
-                                        "\"message\":\"Request processed successfully\"," +
+                                        "\"message\":null," +
                                         "\"body\": {}," +
-                                        "\"error\":null," +
-                                        "\"timestamp\":\"2024-02-06T10:30:00\"" +
+                                        "\"timestamp\":\"2024-02-06T10:30:00+09:00\"" +
                                         "}"
                         )
                 )
@@ -34,7 +32,6 @@ import java.lang.annotation.*;
         @ApiResponse(
                 responseCode = "400",
                 description = "Invalid request",
-                useReturnTypeSchema = true,
                 content = @Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = @Schema(implementation = SimpliXApiResponse.class),
@@ -43,7 +40,8 @@ import java.lang.annotation.*;
                                         "\"type\":\"FAILURE\"," +
                                         "\"message\":\"Invalid request parameters\"," +
                                         "\"body\":null," +
-                                        "\"error\":\"name field is required\"," +
+                                        "\"errorCode\":\"INVALID_REQUEST\"," +
+                                        "\"errorDetail\":null," +
                                         "\"timestamp\":\"2024-02-06T10:30:00\"" +
                                         "}"
                         )
@@ -52,7 +50,6 @@ import java.lang.annotation.*;
         @ApiResponse(
                 responseCode = "500",
                 description = "Server error",
-                useReturnTypeSchema = true,
                 content = @Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = @Schema(implementation = SimpliXApiResponse.class),
@@ -61,7 +58,8 @@ import java.lang.annotation.*;
                                         "\"type\":\"ERROR\"," +
                                         "\"message\":\"Internal server error\"," +
                                         "\"body\":null," +
-                                        "\"error\":\"Unexpected error occurred\"," +
+                                        "\"errorCode\":\"INTERNAL_ERROR\"," +
+                                        "\"errorDetail\":null," +
                                         "\"timestamp\":\"2024-02-06T10:30:00\"" +
                                         "}"
                         )
