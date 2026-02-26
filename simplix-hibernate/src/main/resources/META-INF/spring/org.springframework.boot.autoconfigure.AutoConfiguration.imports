@@ -1,1 +1,2 @@
 dev.simplecore.simplix.hibernate.cache.config.SimpliXHibernateCacheAutoConfiguration
+dev.simplecore.simplix.hibernate.event.config.EntityEventAutoConfiguration
