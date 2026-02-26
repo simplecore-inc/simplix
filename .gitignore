@@ -98,3 +98,6 @@ spring-boot-starter-simplix-excel/templates/default-template.xlsx
 
 # Documentation build output
 build-docs/
+.mcp.json
+.scip/
+*.scip
