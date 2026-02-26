@@ -5,7 +5,7 @@ package dev.simplecore.simplix.stream.core.enums;
  * <p>
  * State transitions:
  * <pre>
- * CREATED -> RUNNING <-> ERROR
+ * CREATED → RUNNING ↔ ERROR
  *     |         |          |
  *     |_________|__________|
  *               v
