@@ -20,6 +20,7 @@ include 'simplix-encryption'
 include 'simplix-file'
 include 'simplix-email'
 include 'simplix-scheduler'
+include 'simplix-stream'
 include 'spring-boot-starter-simplix'
 
 def props = new Properties()

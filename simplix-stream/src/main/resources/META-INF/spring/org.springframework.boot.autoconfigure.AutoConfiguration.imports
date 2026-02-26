@@ -1,0 +1,9 @@
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamAutoConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamPersistenceConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamCoreConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamSecurityConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamSseConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamWebSocketConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamDistributedConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamAdminConfiguration
+dev.simplecore.simplix.stream.autoconfigure.SimpliXStreamEventSourceConfiguration

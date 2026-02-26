@@ -211,6 +211,10 @@ subprojects {
                         'simplix-scheduler': [
                             name: 'SimpliX Scheduler',
                             description: 'Scheduler execution logging with support for @Scheduled methods, ShedLock integration, and multiple storage strategies'
+                        ],
+                        'simplix-stream': [
+                            name: 'SimpliX Stream',
+                            description: 'Real-time subscription system with SSE and WebSocket transports, supporting local and distributed modes'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {
