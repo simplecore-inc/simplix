@@ -7,10 +7,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import dev.simplecore.simplix.core.jackson.*;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
@@ -24,8 +23,18 @@ import java.time.*;
 import java.util.List;
 import java.util.TimeZone;
 
-@Configuration
-@AutoConfigureBefore(JacksonAutoConfiguration.class)
+/**
+ * Auto-configuration for Jackson ObjectMapper with SimpliX customizations.
+ *
+ * <p>Runs before {@link JacksonAutoConfiguration} so that this {@code @Primary ObjectMapper}
+ * is registered first, causing Spring Boot's {@code @ConditionalOnMissingBean(ObjectMapper.class)}
+ * check to skip the default {@code jacksonObjectMapper} bean.
+ *
+ * <p>Uses {@code @AutoConfiguration} (not {@code @Configuration}) to ensure
+ * the {@code before} ordering is respected by Spring Boot 3.x's auto-configuration
+ * processing pipeline.
+ */
+@AutoConfiguration(before = JacksonAutoConfiguration.class)
 public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
     
     private static final String datetimeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";

@@ -38,8 +38,9 @@ import java.util.UUID;
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty(name = "simplix.stream.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "simplix.stream.persistence.enabled", havingValue = "true", matchIfMissing = false)
 @ConditionalOnClass(name = "org.springframework.data.jpa.repository.JpaRepository")
+@ConditionalOnBean(name = "entityManagerFactory")
 @EnableJpaRepositories(basePackages = "dev.simplecore.simplix.stream.persistence.repository")
 public class SimpliXStreamPersistenceConfiguration {
 
