@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.broadcast.MessageSender;
+import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.model.StreamMessage;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,19 +32,34 @@ public class RedisBroadcaster implements BroadcastService {
     private final ObjectMapper objectMapper;
     private final String channelPrefix;
     private final String instanceId;
+    private final List<SubscriberLookup> subscriberLookups;
 
     private final Map<String, MessageSender> localSenders = new ConcurrentHashMap<>();
     private volatile boolean available = false;
 
+    /**
+     * @deprecated Use constructor with subscriberLookups parameter for distributed mode.
+     */
+    @Deprecated
     public RedisBroadcaster(
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
             StreamProperties properties,
             String instanceId) {
+        this(redisTemplate, objectMapper, properties, instanceId, List.of());
+    }
+
+    public RedisBroadcaster(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            StreamProperties properties,
+            String instanceId,
+            List<SubscriberLookup> subscriberLookups) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.channelPrefix = properties.getDistributed().getPubsub().getChannelPrefix();
         this.instanceId = instanceId;
+        this.subscriberLookups = subscriberLookups != null ? subscriberLookups : List.of();
     }
 
     /**
@@ -67,8 +85,19 @@ public class RedisBroadcaster implements BroadcastService {
 
     @Override
     public void broadcast(SubscriptionKey key, StreamMessage message, Set<String> sessionIds) {
+        // 1. Deliver to local subscribers first (immediate, no Redis round-trip)
+        int localDelivered = 0;
+        for (String sessionId : sessionIds) {
+            MessageSender sender = localSenders.get(sessionId);
+            if (sender != null && sender.isActive()) {
+                if (sender.send(message)) {
+                    localDelivered++;
+                }
+            }
+        }
+
+        // 2. Publish to Redis Pub/Sub for other instances
         try {
-            // Create broadcast message wrapper
             BroadcastMessage broadcastMessage = new BroadcastMessage(
                     instanceId,
                     key.toKeyString(),
@@ -79,13 +108,13 @@ public class RedisBroadcaster implements BroadcastService {
             String channel = channelPrefix + key.toKeyString();
             String messageJson = objectMapper.writeValueAsString(broadcastMessage);
 
-            // Publish to Redis
             redisTemplate.convertAndSend(channel, messageJson);
 
-            log.trace("Broadcast message published to Redis: channel={}, sessions={}",
-                    channel, sessionIds.size());
+            log.trace("Broadcast message: channel={}, localDelivered={}, sessions={}",
+                    channel, localDelivered, sessionIds.size());
         } catch (Exception e) {
-            log.error("Failed to broadcast message via Redis: {}", key.toKeyString(), e);
+            log.error("Failed to publish broadcast to Redis (local delivery already done: {}): {}",
+                    localDelivered, key.toKeyString(), e);
         }
     }
 
@@ -118,11 +147,16 @@ public class RedisBroadcaster implements BroadcastService {
 
     /**
      * Handle a broadcast message received from Redis.
+     * <p>
+     * When subscriber lookups are configured (distributed mode), this method resolves
+     * the receiving instance's own local subscribers for the subscription key, instead
+     * of relying on the originating instance's session IDs. This ensures that all
+     * instances deliver messages to their locally connected SSE/WebSocket clients.
      *
      * @param broadcastMessage the broadcast message
      */
     public void handleBroadcastMessage(BroadcastMessage broadcastMessage) {
-        // Skip messages from this instance (already delivered locally)
+        // Skip messages from this instance (already delivered locally in broadcast())
         if (instanceId.equals(broadcastMessage.sourceInstance())) {
             return;
         }
@@ -130,7 +164,10 @@ public class RedisBroadcaster implements BroadcastService {
         StreamMessage message = broadcastMessage.message();
         int delivered = 0;
 
-        for (String sessionId : broadcastMessage.sessionIds()) {
+        // Resolve local subscribers via SubscriberLookup (event + scheduler registries)
+        Set<String> targetSessionIds = resolveLocalSubscribers(broadcastMessage);
+
+        for (String sessionId : targetSessionIds) {
             MessageSender sender = localSenders.get(sessionId);
             if (sender != null && sender.isActive()) {
                 if (sender.send(message)) {
@@ -143,6 +180,29 @@ public class RedisBroadcaster implements BroadcastService {
             log.trace("Delivered broadcast message to {} local sessions for key: {}",
                     delivered, broadcastMessage.subscriptionKey());
         }
+    }
+
+    /**
+     * Resolve the target session IDs for a received broadcast message.
+     * <p>
+     * If subscriber lookups are available, queries this instance's own registries
+     * to find local subscribers for the subscription key. Falls back to the
+     * originating instance's session IDs when no lookups are configured.
+     */
+    private Set<String> resolveLocalSubscribers(BroadcastMessage broadcastMessage) {
+        if (subscriberLookups.isEmpty()) {
+            // Fallback: use session IDs from the originating instance
+            return broadcastMessage.sessionIds();
+        }
+
+        SubscriptionKey key = SubscriptionKey.fromString(broadcastMessage.subscriptionKey());
+        Set<String> resolved = new HashSet<>();
+
+        for (SubscriberLookup lookup : subscriberLookups) {
+            resolved.addAll(lookup.getSubscribers(key));
+        }
+
+        return resolved;
     }
 
     /**

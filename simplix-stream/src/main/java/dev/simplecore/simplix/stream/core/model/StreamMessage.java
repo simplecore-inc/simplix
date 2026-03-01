@@ -3,6 +3,7 @@ package dev.simplecore.simplix.stream.core.model;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.jackson.Jacksonized;
 
 import java.time.Instant;
 
@@ -11,6 +12,7 @@ import java.time.Instant;
  */
 @Getter
 @Builder
+@Jacksonized
 @ToString
 public class StreamMessage {
 

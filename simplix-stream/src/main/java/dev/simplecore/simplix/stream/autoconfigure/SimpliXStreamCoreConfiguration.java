@@ -3,6 +3,7 @@ package dev.simplecore.simplix.stream.autoconfigure;
 import dev.simplecore.simplix.stream.collector.SimpliXStreamDataCollectorRegistry;
 import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
+import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.scheduler.SchedulerManager;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.session.SessionRegistry;
@@ -116,6 +117,18 @@ public class SimpliXStreamCoreConfiguration {
             @Autowired(required = false) RedisLeaderElection leaderElection) {
         return new SchedulerManager(
                 collectorRegistry, broadcastService, properties, streamScheduledExecutor, leaderElection);
+    }
+
+    /**
+     * SubscriberLookup bean backed by SchedulerManager's local subscribers.
+     * <p>
+     * Used by RedisBroadcaster in distributed mode to resolve polling-based
+     * subscribers on the receiving instance during cross-instance broadcast.
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "schedulerSubscriberLookup")
+    public SubscriberLookup schedulerSubscriberLookup(SchedulerManager schedulerManager) {
+        return schedulerManager.asSubscriberLookup();
     }
 
     /**

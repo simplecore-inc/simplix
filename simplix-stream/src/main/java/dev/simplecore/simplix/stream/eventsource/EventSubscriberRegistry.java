@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.stream.eventsource;
 
+import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,9 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * Unlike the scheduler-based approach which tracks subscribers per scheduler,
  * this registry provides a simple mapping from SubscriptionKey to subscriber session IDs.
  * This is used by EventStreamHandler to find subscribers when an event is received.
+ * <p>
+ * Implements {@link SubscriberLookup} so that RedisBroadcaster can query local
+ * event-based subscribers when handling cross-instance broadcast messages.
  */
 @Slf4j
-public class EventSubscriberRegistry {
+public class EventSubscriberRegistry implements SubscriberLookup {
 
     // SubscriptionKey -> Set of subscriber session IDs
     private final Map<SubscriptionKey, Set<String>> subscribers = new ConcurrentHashMap<>();

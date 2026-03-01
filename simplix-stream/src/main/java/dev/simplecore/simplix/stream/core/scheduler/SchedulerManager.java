@@ -4,6 +4,7 @@ import dev.simplecore.simplix.stream.collector.SimpliXStreamDataCollector;
 import dev.simplecore.simplix.stream.collector.SimpliXStreamDataCollectorRegistry;
 import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
+import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.model.StreamMessage;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -324,6 +326,29 @@ public class SchedulerManager {
     public int getLocalSubscriberCount(SubscriptionKey key) {
         Set<String> subscribers = localSubscribers.get(key);
         return subscribers != null ? subscribers.size() : 0;
+    }
+
+    /**
+     * Get all local subscriber session IDs for a given key.
+     * <p>
+     * Used by RedisBroadcaster (via SubscriberLookup) to find local subscribers
+     * when handling cross-instance broadcast messages in distributed mode.
+     *
+     * @param key the subscription key
+     * @return unmodifiable set of session IDs (empty if none)
+     */
+    public Set<String> getLocalSubscribers(SubscriptionKey key) {
+        Set<String> subscribers = localSubscribers.get(key);
+        return subscribers != null ? Collections.unmodifiableSet(subscribers) : Collections.emptySet();
+    }
+
+    /**
+     * Create a SubscriberLookup that delegates to this manager's local subscribers.
+     *
+     * @return a SubscriberLookup backed by this manager
+     */
+    public SubscriberLookup asSubscriberLookup() {
+        return this::getLocalSubscribers;
     }
 
     /**

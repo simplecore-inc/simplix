@@ -3,10 +3,12 @@ package dev.simplecore.simplix.stream.autoconfigure;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
+import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisBroadcaster;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -21,6 +23,7 @@ import org.springframework.data.redis.listener.PatternTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -84,6 +87,8 @@ public class SimpliXStreamDistributedConfiguration {
          * Redis broadcaster bean.
          * <p>
          * Broadcasts data to all server instances via Redis Pub/Sub.
+         * Injects all available SubscriberLookup beans so that the receiving
+         * instance can resolve its own local subscribers for cross-instance delivery.
          */
         @Bean
         @Primary
@@ -92,12 +97,15 @@ public class SimpliXStreamDistributedConfiguration {
                 StringRedisTemplate redisTemplate,
                 ObjectMapper objectMapper,
                 StreamProperties properties,
-                String streamInstanceId) {
+                String streamInstanceId,
+                @Autowired(required = false) List<SubscriberLookup> subscriberLookups) {
 
+            List<SubscriberLookup> lookups = subscriberLookups != null ? subscriberLookups : List.of();
             RedisBroadcaster broadcaster = new RedisBroadcaster(
-                    redisTemplate, objectMapper, properties, streamInstanceId);
+                    redisTemplate, objectMapper, properties, streamInstanceId, lookups);
             broadcaster.initialize();
-            log.info("Created Redis broadcaster for cross-server messaging");
+            log.info("Created Redis broadcaster for cross-server messaging (subscriberLookups={})",
+                    lookups.size());
             return broadcaster;
         }
 
