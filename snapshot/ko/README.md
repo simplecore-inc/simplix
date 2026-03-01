@@ -199,7 +199,7 @@ SimpliX를 시작하기 위한 단계별 가이드:
 - [simplix-auth](ko/auth/readme.md) - 인증 및 권한 부여
 - [simplix-cache](ko/cache/readme.md) - 캐싱 추상화
 - [simplix-encryption](ko/encryption/readme.md) - 데이터 암호화
-- [simplix-event](ko/event/readme.md) - 이벤트 시스템
+- [simplix-event](../../simplix-event/README.md) - 이벤트 시스템
 - [simplix-excel](ko/excel/readme.md) - Excel/CSV 처리
 - [simplix-file](ko/file/readme.md) - 파일 스토리지
 - [simplix-email](ko/email/readme.md) - 이메일 서비스
