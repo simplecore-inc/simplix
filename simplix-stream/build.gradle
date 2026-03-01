@@ -58,8 +58,8 @@ dependencies {
     // Optional: Metrics
     compileOnly 'io.micrometer:micrometer-core'
 
-    // Optional: Event publishing integration
-    compileOnly project(':simplix-event')
+    // Optional: Messaging integration
+    compileOnly project(':simplix-messaging')
 
     // Logging
     implementation 'org.slf4j:slf4j-api'

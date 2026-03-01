@@ -34,7 +34,7 @@ dependencies {
     api project(':simplix-auth')
     api project(':simplix-cache')
     api project(':simplix-encryption')
-    api project(':simplix-event')
+    api project(':simplix-messaging')
     api project(':simplix-excel')
     api project(':simplix-hibernate')
     api project(':simplix-mybatis')

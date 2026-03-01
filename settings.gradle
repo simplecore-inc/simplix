@@ -11,7 +11,7 @@ pluginManagement {
 rootProject.name = 'simplix'
 include 'simplix-core'
 include 'simplix-auth'
-include 'simplix-event'
+include 'simplix-messaging'
 include 'simplix-mybatis'
 include 'simplix-hibernate'
 include 'simplix-cache'

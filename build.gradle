@@ -176,9 +176,9 @@ subprojects {
                             name: 'SimpliX Auth',
                             description: 'Authentication and authorization with JWT/JWE token support and Spring Security integration'
                         ],
-                        'simplix-event': [
-                            name: 'SimpliX Event',
-                            description: 'Event-driven architecture with strategy pattern supporting Local, Redis Pub/Sub, Kafka, and RabbitMQ'
+                        'simplix-messaging': [
+                            name: 'SimpliX Messaging',
+                            description: 'General-purpose distributed messaging with broker SPI supporting Redis Streams, Kafka, and RabbitMQ'
                         ],
                         'simplix-hibernate': [
                             name: 'SimpliX Hibernate Cache',
