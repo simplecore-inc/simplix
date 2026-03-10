@@ -60,11 +60,12 @@ public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
             String parentIdColumn,
             String sortOrderColumn,
             SortDirection sortDirection,
-            LookupColumn[] lookupColumns) {
+            LookupColumn[] lookupColumns,
+            String softDeleteColumn) {
         super(entityInformation, entityManager);
         this.entityManager = entityManager;
         this.jdbcTemplate = jdbcTemplate;
-        this.queries = new TreeQueries(tableName, idColumn, parentIdColumn, sortOrderColumn, sortDirection, lookupColumns);
+        this.queries = new TreeQueries(tableName, idColumn, parentIdColumn, sortOrderColumn, sortDirection, lookupColumns, softDeleteColumn);
     }
 
     /**

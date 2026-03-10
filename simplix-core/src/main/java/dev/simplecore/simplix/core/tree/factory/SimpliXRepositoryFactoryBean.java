@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.core.tree.factory;
 
+import dev.simplecore.simplix.core.entity.SoftDeletable;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.SortDirection;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
@@ -8,6 +9,7 @@ import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Filter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
@@ -206,6 +208,9 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
                 lookupColumns = new LookupColumn[0];
             }
 
+            // Auto-detect soft-delete column from @Filter annotation
+            String softDeleteColumn = extractSoftDeleteColumn(typedDomainClass);
+
             return new SimpliXTreeRepositoryImpl<>(
                 typedEntityInformation,
                 entityManager,
@@ -215,7 +220,8 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
                 parentIdColumn,
                 sortOrderColumn,
                 sortDirection,
-                lookupColumns
+                lookupColumns,
+                softDeleteColumn
             );
         }
 
@@ -227,6 +233,33 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
             boolean isTreeEntity = TreeEntity.class.isAssignableFrom(metadata.getDomainType());
 
             return (isTreeRepository || isTreeEntity) ? SimpliXTreeRepositoryImpl.class : SimpleJpaRepository.class;
+        }
+
+        /**
+         * Extracts the soft-delete column name from Hibernate @Filter annotation.
+         * <p>
+         * Only applies when the entity implements SoftDeletable. Parses the
+         * filter condition (e.g., "deleted = :isDeleted") to extract the column name.
+         *
+         * @param domainClass the entity class
+         * @return column name (e.g., "deleted") or null if not applicable
+         */
+        private String extractSoftDeleteColumn(Class<?> domainClass) {
+            if (!SoftDeletable.class.isAssignableFrom(domainClass)) {
+                return null;
+            }
+
+            Filter[] filters = domainClass.getAnnotationsByType(Filter.class);
+            for (Filter filter : filters) {
+                String condition = filter.condition();
+                if (condition != null && condition.contains(":")) {
+                    int eqIndex = condition.indexOf('=');
+                    if (eqIndex > 0) {
+                        return condition.substring(0, eqIndex).trim();
+                    }
+                }
+            }
+            return null;
         }
 
         /**

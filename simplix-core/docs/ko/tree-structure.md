@@ -8,10 +8,13 @@ SimpliX Core는 계층 구조(트리) 데이터를 위한 포괄적인 지원을
 flowchart LR
     TE["TreeEntity&lt;T,ID&gt;<br/>- getId()<br/>- getParentId()<br/>- getChildren()<br/>- getSortKey()"]
     TEA["@TreeEntityAttributes<br/>- tableName<br/>- lookupColumns<br/>- cascadeDelete"]
+    SD["SoftDeletable<br/>- isDeleted()<br/>+ @Filter 자동 감지"]
     STS["SimpliXTreeService<br/>- 40+ methods<br/>- 8 categories"]
 
     TE --- TEA
+    TE --- SD
     TEA --- STS
+    SD --- STS
 ```
 
 ---
@@ -661,6 +664,141 @@ Electronics (id=1, parentId=null)
     ├── Headphones (id=9, parentId=8)
     └── Speakers (id=10, parentId=8)
 ```
+
+---
+
+## Soft-Delete 통합
+
+트리 구조는 `SoftDeletable` 인터페이스와 Hibernate `@Filter` 어노테이션을 기반으로 soft-delete 필터링을 자동 지원합니다.
+모든 네이티브 SQL 쿼리(계층 조회, 자식 조회, 루트 조회, 카운트 등)에서 soft-delete된 레코드가 자동으로 제외됩니다.
+
+### 동작 원리
+
+```mermaid
+flowchart TD
+    A["엔티티 클래스"] --> B{"SoftDeletable<br/>구현 여부?"}
+    B -->|아니오| C["일반 쿼리 생성<br/>(soft-delete 조건 없음)"]
+    B -->|예| D["@Filter 어노테이션<br/>파싱"]
+    D --> E["soft-delete 컬럼명<br/>자동 추출"]
+    E --> F["모든 네이티브 쿼리에<br/>AND deleted = false 삽입"]
+```
+
+### 설정 방법
+
+엔티티에 다음 3가지를 설정하면 자동으로 soft-delete 필터링이 적용됩니다:
+
+1. `SoftDeletable` 인터페이스 구현
+2. Hibernate `@FilterDef` / `@Filter` 어노테이션 선언
+3. `deleted` 컬럼 정의
+
+```java
+@Entity
+@Table(name = "departments")
+@FilterDef(
+    name = "softDeleteFilter",
+    parameters = @ParamDef(name = "isDeleted", type = Boolean.class)
+)
+@Filter(name = "softDeleteFilter", condition = "deleted = :isDeleted")
+@TreeEntityAttributes(
+    tableName = "departments",
+    idColumn = "id",
+    parentIdColumn = "parent_id",
+    sortOrderColumn = "sort_order"
+)
+@Getter
+@Setter
+public class Department implements TreeEntity<Department, Long>, SoftDeletable {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "parent_id")
+    private Long parentId;
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
+
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
+
+    @Transient
+    private List<Department> children = new ArrayList<>();
+
+    @Override
+    public Comparable<?> getSortKey() {
+        return sortOrder;
+    }
+
+    @Override
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(deleted);
+    }
+}
+```
+
+### 자동 감지 메커니즘
+
+`SimpliXRepositoryFactoryBean`이 리포지토리 생성 시 다음 단계를 자동 수행합니다:
+
+1. 엔티티가 `SoftDeletable` 인터페이스를 구현하는지 확인
+2. `@Filter` 어노테이션의 `condition` 속성에서 컬럼명 추출 (예: `"deleted = :isDeleted"` -> `"deleted"`)
+3. 추출된 컬럼명을 `TreeQueries`에 전달하여 모든 네이티브 쿼리에 조건 자동 삽입
+
+> ℹ **Note**: 별도의 어노테이션 속성 추가 없이 기존 `@Filter` 설정을 그대로 활용합니다.
+
+### 쿼리별 soft-delete 조건 적용
+
+| 쿼리 메서드 | 적용 위치 |
+|-------------|-----------|
+| `findDirectChildren()` | WHERE 절 |
+| `findRootItems()` | WHERE 절 |
+| `findCompleteHierarchy()` | CTE anchor + recursive member |
+| `findItemWithAllDescendants()` | CTE anchor + recursive member |
+| `findAncestors()` | CTE recursive member (anchor 제외) |
+| `findSiblings()` | WHERE 절 |
+| `findLeafNodes()` | 외부 쿼리 + 서브쿼리 |
+| `countChildrenByParentId()` | WHERE 절 |
+| `findRootItemsWithChildCount()` | 외부 쿼리 + 서브쿼리 |
+| `findDirectChildrenWithChildCount()` | 외부 쿼리 + 서브쿼리 |
+| `findByLookup()` | WHERE 절 |
+
+### CTE 재귀 쿼리에서의 적용
+
+CTE(Common Table Expression) 기반 재귀 쿼리는 anchor member와 recursive member 모두에 soft-delete 조건이 적용됩니다:
+
+```sql
+-- PostgreSQL/MySQL 예시 (findCompleteHierarchy)
+WITH RECURSIVE hierarchy AS (
+    -- Anchor: 루트 노드 (soft-delete 필터링)
+    SELECT *, 1 as level
+    FROM departments WHERE (parent_id IS NULL OR TRIM(parent_id) = '')
+      AND deleted = false
+    UNION ALL
+    -- Recursive: 자식 노드 (soft-delete 필터링)
+    SELECT c.*, h.level + 1
+    FROM departments c
+    JOIN hierarchy h ON c.parent_id = h.id
+      AND c.deleted = false
+)
+SELECT hierarchy.* FROM hierarchy ORDER BY ...
+```
+
+> ℹ **Note**: `findAncestors()` 쿼리는 anchor member(시작 노드)에는 soft-delete 조건을 적용하지 않습니다.
+> 시작 노드는 이미 알려진 노드이므로, 재귀 탐색(부모 방향)에서만 soft-delete된 조상을 제외합니다.
+
+### 하위 호환성
+
+`SoftDeletable`을 구현하지 않는 기존 엔티티는 이전과 동일하게 동작합니다.
+soft-delete 조건이 null인 경우 쿼리에 추가 조건이 삽입되지 않습니다.
+
+### 알려진 제한사항
+
+| 제한사항 | 설명 |
+|----------|------|
+| CTE fallback | CTE를 지원하지 않는 DB에서는 `findAll()` fallback이 실행되며, 이 경우 soft-delete 필터링이 적용되지 않음 |
+| JPA 메서드 | `findAll()`, `findById()` 등 Spring Data JPA 기본 메서드는 네이티브 쿼리가 아니므로 이 기능의 영향을 받지 않음. JPA 레벨 필터링은 Hibernate `@Filter` 활성화 또는 `@SQLRestriction` 사용 필요 |
+| 컬럼명 규칙 | `@Filter` condition이 `컬럼명 = :파라미터` 형식을 따라야 함 |
 
 ---
 

@@ -21,6 +21,7 @@ flowchart TB
             T1[TreeEntity]
             T2[SimpliXTreeRepository]
             T3[SimpliXTreeService]
+            T4["SoftDeletable 통합"]
         end
 
         subgraph CONVERT["타입 변환"]
@@ -99,6 +100,8 @@ simplix-core/
     ├── tree/                       # 트리 구조 지원
     │   ├── entity/
     │   │   └── TreeEntity.java
+    │   ├── base/
+    │   │   └── TreeQueries.java    # DB별 네이티브 쿼리 생성 (soft-delete 자동 포함)
     │   ├── repository/
     │   │   ├── SimpliXTreeRepository.java
     │   │   └── SimpliXTreeRepositoryImpl.java
@@ -198,6 +201,7 @@ simplix-core/
 | **SimpliXTreeRepository<T, ID>** | tree.repository | 트리 전용 리포지토리 |
 | **SimpliXTreeService<T, ID>** | tree.service | 트리 CRUD, 탐색, 조작, 분석 서비스 |
 | **@TreeEntityAttributes** | tree.annotation | 트리 엔티티 메타데이터 설정 |
+| **SoftDeletable** | entity | Soft-delete 마커 인터페이스 (트리 네이티브 쿼리 자동 필터링) |
 | **BooleanConverter** | convert.bool | Boolean ↔ String 변환 |
 | **EnumConverter** | convert.enumeration | Enum ↔ String/Map 변환 |
 | **DateTimeConverter** | convert.datetime | 날짜/시간 타입 변환 |

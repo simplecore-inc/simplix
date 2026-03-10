@@ -13,6 +13,8 @@ import java.util.Map;
  * Database-specific query generator for tree-structured entities.
  * <p>
  * Supports configurable sort direction (ASC/DESC) for ordering query results.
+ * When {@code softDeleteColumn} is provided, all generated queries automatically
+ * exclude soft-deleted records.
  */
 @Slf4j
 public class TreeQueries {
@@ -22,22 +24,28 @@ public class TreeQueries {
     private final String sortOrderColumn;
     private final SortDirection sortDirection;
     private final Map<String, ColumnType> lookupColumns;
+    private final String softDeleteColumn;
 
     public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn) {
-        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, new LookupColumn[0]);
+        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, new LookupColumn[0], null);
     }
 
     public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn, LookupColumn[] lookupColumns) {
-        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, lookupColumns);
+        this(tableName, idColumn, parentIdColumn, sortOrderColumn, SortDirection.ASC, lookupColumns, null);
     }
 
     public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn, SortDirection sortDirection, LookupColumn[] lookupColumns) {
+        this(tableName, idColumn, parentIdColumn, sortOrderColumn, sortDirection, lookupColumns, null);
+    }
+
+    public TreeQueries(String tableName, String idColumn, String parentIdColumn, String sortOrderColumn, SortDirection sortDirection, LookupColumn[] lookupColumns, String softDeleteColumn) {
         this.tableName = tableName;
         this.idColumn = idColumn;
         this.parentIdColumn = parentIdColumn;
         this.sortOrderColumn = sortOrderColumn;
         this.sortDirection = sortDirection != null ? sortDirection : SortDirection.ASC;
         this.lookupColumns = parseLookupColumns(lookupColumns);
+        this.softDeleteColumn = softDeleteColumn;
     }
 
     private Map<String, ColumnType> parseLookupColumns(LookupColumn[] columns) {
@@ -49,6 +57,39 @@ public class TreeQueries {
         }
         return result;
     }
+
+    // =================================================================================
+    // SOFT-DELETE CONDITION HELPERS
+    // =================================================================================
+
+    /**
+     * Returns " AND deleted = false" or empty string if soft-delete is not configured.
+     * Used for queries that already have a WHERE clause.
+     */
+    private String andSoftDelete() {
+        return softDeleteColumn != null ? " AND " + softDeleteColumn + " = false" : "";
+    }
+
+    /**
+     * Returns " AND alias.deleted = false" or empty string if soft-delete is not configured.
+     * Used for queries with table aliases (e.g., CTE recursive members).
+     */
+    private String andSoftDelete(String alias) {
+        return softDeleteColumn != null ? " AND " + alias + "." + softDeleteColumn + " = false" : "";
+    }
+
+    /**
+     * Returns " WHERE deleted = false" or empty string if soft-delete is not configured.
+     * Used for queries that have no existing WHERE clause.
+     */
+    private String whereSoftDelete() {
+        return softDeleteColumn != null ? " WHERE " + softDeleteColumn + " = false" : "";
+    }
+
+    // =================================================================================
+    // PARAMETER AND CONDITION HELPERS
+    // =================================================================================
+
     private String getParameterPlaceholder(ColumnType columnType, String parameterValue, String dbType) {
         if (columnType == ColumnType.STRING) {
             return String.format("'%s'", parameterValue);
@@ -73,7 +114,7 @@ public class TreeQueries {
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             String columnName = entry.getKey();
             ColumnType columnType = lookupColumns.get(columnName);
-            
+
             if (columnType == null) {
                 log.warn("Undefined lookup column: {}", columnName);
                 continue;
@@ -82,7 +123,7 @@ public class TreeQueries {
             if (i > 0) {
                 condition.append(" AND ");
             }
-            
+
             String paramValue = entry.getValue();
             condition.append(columnName)
                     .append(" = ")
@@ -116,13 +157,17 @@ public class TreeQueries {
         }
     }
 
+    // =================================================================================
+    // QUERY GENERATION METHODS
+    // =================================================================================
+
     /**
      * Generates a query to retrieve items with additional search conditions
      */
     public String getLookupQuery(Map<String, String> parameters, String dbType) {
         String condition = buildLookupCondition(parameters, dbType);
-        return String.format("SELECT * FROM %s WHERE 1=1%s %s",
-            tableName, condition, getOrderByClauseWithNullsLast(dbType));
+        return String.format("SELECT * FROM %s WHERE 1=1%s%s %s",
+            tableName, andSoftDelete(), condition, getOrderByClauseWithNullsLast(dbType));
     }
 
     /**
@@ -134,68 +179,66 @@ public class TreeQueries {
                 return String.format(
                     "WITH RECURSIVE hierarchy AS ( " +
                     "    SELECT *, 1 as level " +
-                    "    FROM %s WHERE %s IS NULL OR TRIM(%s) = '' " +
+                    "    FROM %s WHERE (%s IS NULL OR TRIM(%s) = '')%s " +
                     "    UNION ALL " +
                     "    SELECT c.*, h.level + 1 " +
                     "    FROM %s c " +
-                    "    JOIN hierarchy h ON c.%s = h.%s " +
+                    "    JOIN hierarchy h ON c.%s = h.%s%s " +
                     ") " +
                     "SELECT hierarchy.* FROM hierarchy %s",
-                    tableName, parentIdColumn, parentIdColumn,
-                    tableName, parentIdColumn, idColumn,
+                    tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+                    tableName, parentIdColumn, idColumn, andSoftDelete("c"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("oracle".equals(dbType)) {
                 return String.format(
                     "SELECT t.*, LEVEL as tree_level " +
                     "FROM %s t " +
-                    "START WITH t.%s IS NULL OR TRIM(t.%s) = '' " +
-                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s " +
+                    "START WITH (t.%s IS NULL OR TRIM(t.%s) = '')%s " +
+                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s%s " +
                     "%s",
                     tableName,
-                    parentIdColumn, parentIdColumn,
-                    idColumn, parentIdColumn,
+                    parentIdColumn, parentIdColumn, andSoftDelete("t"),
+                    idColumn, parentIdColumn, andSoftDelete("t"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("mssql".equals(dbType)) {
                 return String.format(
                     "WITH RECURSIVE hierarchy AS ( " +
                     "    SELECT *, 1 as level " +
-                    "    FROM %s WHERE %s IS NULL OR LTRIM(RTRIM(%s)) = '' " +
+                    "    FROM %s WHERE (%s IS NULL OR LTRIM(RTRIM(%s)) = '')%s " +
                     "    UNION ALL " +
                     "    SELECT c.*, h.level + 1 " +
                     "    FROM %s c " +
-                    "    JOIN hierarchy h ON c.%s = h.%s " +
+                    "    JOIN hierarchy h ON c.%s = h.%s%s " +
                     ") " +
                     "SELECT hierarchy.* FROM hierarchy %s",
-                    tableName, parentIdColumn, parentIdColumn,
-                    tableName, parentIdColumn, idColumn,
+                    tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+                    tableName, parentIdColumn, idColumn, andSoftDelete("c"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("h2".equals(dbType)) {
-                // H2 Recursive Queries
-                // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries
                 return String.format(
                     "WITH RECURSIVE hierarchy(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
-                    "    FROM %s WHERE %s IS NULL OR %s = '' " +
+                    "    FROM %s WHERE (%s IS NULL OR %s = '')%s " +
                     "    UNION ALL " +
                     "    SELECT c.%s, c.%s, h.tree_level + 1 " +
                     "    FROM %s c " +
-                    "    INNER JOIN hierarchy h ON c.%s = h.%s " +
+                    "    INNER JOIN hierarchy h ON c.%s = h.%s%s " +
                     ") " +
                     "SELECT t.* FROM %s t " +
                     "INNER JOIN hierarchy h ON t.%s = h.%s %s",
                     idColumn, parentIdColumn,
-                    idColumn, parentIdColumn, tableName, parentIdColumn, parentIdColumn,
-                    idColumn, parentIdColumn, tableName, parentIdColumn, idColumn,
+                    idColumn, parentIdColumn, tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+                    idColumn, parentIdColumn, tableName, parentIdColumn, idColumn, andSoftDelete("c"),
                     tableName, idColumn, idColumn, getOrderByClauseWithNullsLast(dbType));
             } else {
                 return String.format(
-                    "SELECT *, 1 as level FROM %s %s",
-                    tableName,
+                    "SELECT *, 1 as level FROM %s%s %s",
+                    tableName, whereSoftDelete(),
                     getOrderByClauseWithNullsLast(dbType));
             }
         } catch (Exception e) {
             log.error("Error generating hierarchy query for database type: {}", dbType, e);
-            return String.format("SELECT * FROM %s %s", tableName, getOrderByClauseWithNullsLast(dbType));
+            return String.format("SELECT * FROM %s%s %s", tableName, whereSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         }
     }
 
@@ -207,73 +250,71 @@ public class TreeQueries {
             if ("postgresql".equals(dbType) || "mysql".equals(dbType) || "mariadb".equals(dbType)) {
                 return String.format(
                     "WITH RECURSIVE sub_items AS ( " +
-                    "    SELECT *, 1 as level " + 
-                    "    FROM %s WHERE %s = ?1 " +
+                    "    SELECT *, 1 as level " +
+                    "    FROM %s WHERE %s = ?1%s " +
                     "    UNION ALL " +
                     "    SELECT c.*, s.level + 1 " +
                     "    FROM %s c " +
-                    "    JOIN sub_items s ON c.%s = s.%s " +
+                    "    JOIN sub_items s ON c.%s = s.%s%s " +
                     ") " +
                     "SELECT sub_items.* FROM sub_items %s",
-                    tableName, idColumn,
-                    tableName, parentIdColumn, idColumn, 
+                    tableName, idColumn, andSoftDelete(),
+                    tableName, parentIdColumn, idColumn, andSoftDelete("c"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("oracle".equals(dbType)) {
                 return String.format(
                     "SELECT t.*, LEVEL as tree_level " +
                     "FROM %s t " +
-                    "START WITH t.%s = ?1 " +
-                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s " +
+                    "START WITH t.%s = ?1%s " +
+                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s%s " +
                     "%s",
                     tableName,
-                    idColumn,
-                    idColumn, parentIdColumn,
+                    idColumn, andSoftDelete("t"),
+                    idColumn, parentIdColumn, andSoftDelete("t"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("mssql".equals(dbType)) {
                 return String.format(
                     "WITH RECURSIVE sub_items AS ( " +
                     "    SELECT *, 1 as level " +
                     "    FROM %s " +
-                    "    WHERE %s = ?1 " +
+                    "    WHERE %s = ?1%s " +
                     "    UNION ALL " +
                     "    SELECT t.*, s.level + 1 " +
                     "    FROM %s t " +
-                    "    INNER JOIN sub_items s ON t.%s = s.%s " +
+                    "    INNER JOIN sub_items s ON t.%s = s.%s%s " +
                     ") " +
                     "SELECT * FROM sub_items %s",
                     tableName,
-                    idColumn,
+                    idColumn, andSoftDelete(),
                     tableName,
-                    parentIdColumn, idColumn,
+                    parentIdColumn, idColumn, andSoftDelete("t"),
                     getOrderByClauseWithNullsLast(dbType));
             } else if ("h2".equals(dbType)) {
-                // H2 Recursive Queries
-                // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries
                 return String.format(
                     "WITH RECURSIVE sub_items(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
-                    "    FROM %s WHERE %s = ?1 " +
+                    "    FROM %s WHERE %s = ?1%s " +
                     "    UNION ALL " +
                     "    SELECT c.%s, c.%s, s.tree_level + 1 " +
                     "    FROM %s c " +
-                    "    INNER JOIN sub_items s ON c.%s = s.%s " +
+                    "    INNER JOIN sub_items s ON c.%s = s.%s%s " +
                     ") " +
                     "SELECT t.* FROM %s t " +
                     "INNER JOIN sub_items s ON t.%s = s.%s %s",
                     idColumn, parentIdColumn,
-                    idColumn, parentIdColumn, tableName, idColumn,
-                    idColumn, parentIdColumn, tableName, parentIdColumn, idColumn,
+                    idColumn, parentIdColumn, tableName, idColumn, andSoftDelete(),
+                    idColumn, parentIdColumn, tableName, parentIdColumn, idColumn, andSoftDelete("c"),
                     tableName, idColumn, idColumn, getOrderByClauseWithNullsLast(dbType));
             } else {
                 return String.format(
-                    "SELECT *, 1 as level FROM %s WHERE %s = ?1 %s",
-                    tableName, idColumn,
+                    "SELECT *, 1 as level FROM %s WHERE %s = ?1%s %s",
+                    tableName, idColumn, andSoftDelete(),
                     getOrderByClauseWithNullsLast(dbType));
             }
         } catch (Exception e) {
             log.error("Error generating descendants query for database type: {}", dbType, e);
-            return String.format("SELECT * FROM %s WHERE %s = ?1 %s",
-                tableName, idColumn, getOrderByClauseWithNullsLast(dbType));
+            return String.format("SELECT * FROM %s WHERE %s = ?1%s %s",
+                tableName, idColumn, andSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         }
     }
 
@@ -281,8 +322,8 @@ public class TreeQueries {
      * Generates a query to retrieve root items
      */
     public String getRootItemsQuery() {
-        return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
-            tableName, parentIdColumn, getOrderByClauseWithNullsLast(null));
+        return String.format("SELECT * FROM %s WHERE %s IS NULL%s %s",
+            tableName, parentIdColumn, andSoftDelete(), getOrderByClauseWithNullsLast(null));
     }
 
     /**
@@ -290,11 +331,11 @@ public class TreeQueries {
      */
     public String getRootItemsQuery(String dbType) {
         if ("h2".equals(dbType)) {
-            return String.format("SELECT * FROM %s WHERE %s IS NULL %s",
-                tableName, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
+            return String.format("SELECT * FROM %s WHERE %s IS NULL%s %s",
+                tableName, parentIdColumn, andSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         } else {
-            return String.format("SELECT * FROM %s WHERE %s IS NULL OR TRIM(%s) = '' %s",
-                tableName, parentIdColumn, parentIdColumn, getOrderByClauseWithNullsLast(dbType));
+            return String.format("SELECT * FROM %s WHERE (%s IS NULL OR TRIM(%s) = '')%s %s",
+                tableName, parentIdColumn, parentIdColumn, andSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         }
     }
 
@@ -302,8 +343,8 @@ public class TreeQueries {
      * Generates a query to retrieve direct children of a specific item
      */
     public String getDirectChildrenQuery() {
-        return String.format("SELECT * FROM %s WHERE %s = ?1 %s",
-            tableName, parentIdColumn, getOrderByClauseWithNullsLast(null));
+        return String.format("SELECT * FROM %s WHERE %s = ?1%s %s",
+            tableName, parentIdColumn, andSoftDelete(), getOrderByClauseWithNullsLast(null));
     }
 
     /**
@@ -320,23 +361,21 @@ public class TreeQueries {
                     "    UNION ALL " +
                     "    SELECT p.*, a.level + 1 " +
                     "    FROM %s p " +
-                    "    JOIN ancestors a ON p.%s = a.%s " +
+                    "    JOIN ancestors a ON p.%s = a.%s%s " +
                     ") " +
                     "SELECT ancestors.* FROM ancestors ORDER BY level DESC",
                     tableName, idColumn,
-                    tableName, idColumn, parentIdColumn);
+                    tableName, idColumn, parentIdColumn, andSoftDelete("p"));
             } else if ("oracle".equals(dbType)) {
                 query = String.format(
                     "SELECT t.*, LEVEL as tree_level " +
                     "FROM %s t " +
                     "START WITH t.%s = ?1 " +
-                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s " +
+                    "CONNECT BY NOCYCLE PRIOR t.%s = t.%s%s " +
                     "ORDER BY tree_level DESC",
                     tableName, idColumn,
-                    parentIdColumn, idColumn);
+                    parentIdColumn, idColumn, andSoftDelete("t"));
             } else if ("h2".equals(dbType)) {
-                // H2 Recursive Queries
-                // https://www.h2database.com/html/advanced.html?highlight=recursive&search=re#recursive_queries
                 query = String.format(
                     "WITH RECURSIVE ancestors(%s, %s, tree_level) AS ( " +
                     "    SELECT %s, %s, 0 " +
@@ -344,13 +383,13 @@ public class TreeQueries {
                     "    UNION ALL " +
                     "    SELECT p.%s, p.%s, a.tree_level + 1 " +
                     "    FROM %s p " +
-                    "    INNER JOIN ancestors a ON p.%s = a.%s " +
+                    "    INNER JOIN ancestors a ON p.%s = a.%s%s " +
                     ") " +
                     "SELECT t.* FROM %s t " +
                     "INNER JOIN ancestors a ON t.%s = a.%s ORDER BY a.tree_level DESC",
                     idColumn, parentIdColumn,
                     idColumn, parentIdColumn, tableName, idColumn,
-                    idColumn, parentIdColumn, tableName, idColumn, parentIdColumn,
+                    idColumn, parentIdColumn, tableName, idColumn, parentIdColumn, andSoftDelete("p"),
                     tableName, idColumn, idColumn);
             } else {
                 query = String.format(
@@ -371,10 +410,10 @@ public class TreeQueries {
         return String.format(
             "SELECT * FROM %s WHERE %s = (" +
             "    SELECT %s FROM %s WHERE %s = ?1" +
-            ") AND %s != ?1 %s",
+            ") AND %s != ?1%s %s",
             tableName, parentIdColumn,
             parentIdColumn, tableName, idColumn,
-            idColumn, getOrderByClauseWithNullsLast(null));
+            idColumn, andSoftDelete(), getOrderByClauseWithNullsLast(null));
     }
 
     /**
@@ -383,11 +422,11 @@ public class TreeQueries {
     public String getLeafNodesQuery() {
         return String.format(
             "SELECT * FROM %s WHERE %s NOT IN (" +
-            "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''" +
-            ") %s",
+            "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''%s" +
+            ")%s %s",
             tableName, idColumn,
-            parentIdColumn, tableName, parentIdColumn, parentIdColumn,
-            getOrderByClauseWithNullsLast(null));
+            parentIdColumn, tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+            andSoftDelete(), getOrderByClauseWithNullsLast(null));
     }
 
     /**
@@ -397,19 +436,19 @@ public class TreeQueries {
         if ("h2".equals(dbType)) {
             return String.format(
                 "SELECT * FROM %s WHERE %s NOT IN (" +
-                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''" +
-                ") %s",
+                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND %s != ''%s" +
+                ")%s %s",
                 tableName, idColumn,
-                parentIdColumn, tableName, parentIdColumn, parentIdColumn,
-                getOrderByClauseWithNullsLast(dbType));
+                parentIdColumn, tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+                andSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         } else {
             return String.format(
                 "SELECT * FROM %s WHERE %s NOT IN (" +
-                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND TRIM(%s) != ''" +
-                ") %s",
+                "    SELECT DISTINCT %s FROM %s WHERE %s IS NOT NULL AND TRIM(%s) != ''%s" +
+                ")%s %s",
                 tableName, idColumn,
-                parentIdColumn, tableName, parentIdColumn, parentIdColumn,
-                getOrderByClauseWithNullsLast(dbType));
+                parentIdColumn, tableName, parentIdColumn, parentIdColumn, andSoftDelete(),
+                andSoftDelete(), getOrderByClauseWithNullsLast(dbType));
         }
     }
 
@@ -426,13 +465,12 @@ public class TreeQueries {
      * @return SQL query string
      */
     public String getChildCountQuery(String dbType) {
-        // Only check for NOT NULL to support both numeric and string ID types
         return String.format(
             "SELECT %s, COUNT(*) FROM %s " +
-            "WHERE %s IS NOT NULL " +
+            "WHERE %s IS NOT NULL%s " +
             "GROUP BY %s",
             parentIdColumn, tableName,
-            parentIdColumn,
+            parentIdColumn, andSoftDelete(),
             parentIdColumn);
     }
 
@@ -445,8 +483,8 @@ public class TreeQueries {
      */
     private String getChildCountSubquery() {
         return String.format(
-            "(SELECT COUNT(*) FROM %s child WHERE child.%s = t.%s)",
-            tableName, parentIdColumn, idColumn);
+            "(SELECT COUNT(*) FROM %s child WHERE child.%s = t.%s%s)",
+            tableName, parentIdColumn, idColumn, andSoftDelete("child"));
     }
 
     /**
@@ -464,15 +502,15 @@ public class TreeQueries {
         if ("h2".equals(dbType)) {
             return String.format(
                 "SELECT t.*, %s as child_count FROM %s t " +
-                "WHERE t.%s IS NULL %s",
+                "WHERE t.%s IS NULL%s %s",
                 countSubquery, tableName, parentIdColumn,
-                getOrderByClauseWithAlias(dbType));
+                andSoftDelete("t"), getOrderByClauseWithAlias(dbType));
         } else {
             return String.format(
                 "SELECT t.*, %s as child_count FROM %s t " +
-                "WHERE t.%s IS NULL OR TRIM(t.%s) = '' %s",
+                "WHERE (t.%s IS NULL OR TRIM(t.%s) = '')%s %s",
                 countSubquery, tableName, parentIdColumn, parentIdColumn,
-                getOrderByClauseWithAlias(dbType));
+                andSoftDelete("t"), getOrderByClauseWithAlias(dbType));
         }
     }
 
@@ -490,9 +528,9 @@ public class TreeQueries {
 
         return String.format(
             "SELECT t.*, %s as child_count FROM %s t " +
-            "WHERE t.%s = ?1 %s",
+            "WHERE t.%s = ?1%s %s",
             countSubquery, tableName, parentIdColumn,
-            getOrderByClauseWithAlias(dbType));
+            andSoftDelete("t"), getOrderByClauseWithAlias(dbType));
     }
 
     /**
@@ -515,4 +553,4 @@ public class TreeQueries {
                 String.format("ORDER BY t.%s %s", idColumn, dir);
         }
     }
-} 
+}
