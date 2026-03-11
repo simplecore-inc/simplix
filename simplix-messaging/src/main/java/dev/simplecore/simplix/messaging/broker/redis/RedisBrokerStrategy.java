@@ -9,7 +9,12 @@ import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -37,11 +42,43 @@ public class RedisBrokerStrategy implements BrokerStrategy {
     private final RedisConsumerGroupManager consumerGroupManager;
     private final RedisStreamPublisher publisher;
     private final RedisStreamSubscriber subscriber;
+    private final Duration pendingCheckInterval;
+    private final Duration claimMinIdleTime;
     private final ConcurrentHashMap<String, Subscription> activeSubscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, SubscribeRequest> subscriptionRequests = new ConcurrentHashMap<>();
     private final AtomicBoolean ready = new AtomicBoolean(false);
+    private ScheduledExecutorService pelRecoveryScheduler;
 
     /**
-     * Create a Redis broker strategy.
+     * Create a Redis broker strategy with periodic PEL recovery.
+     *
+     * @param redisTemplate        the Redis template for direct operations
+     * @param keyPrefix            prefix for all stream keys
+     * @param consumerGroupManager the consumer group manager
+     * @param publisher            the stream publisher
+     * @param subscriber           the stream subscriber
+     * @param pendingCheckInterval interval for periodic PEL recovery checks
+     * @param claimMinIdleTime     minimum idle time before claiming stuck messages
+     */
+    public RedisBrokerStrategy(
+            StringRedisTemplate redisTemplate,
+            String keyPrefix,
+            RedisConsumerGroupManager consumerGroupManager,
+            RedisStreamPublisher publisher,
+            RedisStreamSubscriber subscriber,
+            Duration pendingCheckInterval,
+            Duration claimMinIdleTime) {
+        this.redisTemplate = redisTemplate;
+        this.keyPrefix = keyPrefix;
+        this.consumerGroupManager = consumerGroupManager;
+        this.publisher = publisher;
+        this.subscriber = subscriber;
+        this.pendingCheckInterval = pendingCheckInterval;
+        this.claimMinIdleTime = claimMinIdleTime;
+    }
+
+    /**
+     * Create a Redis broker strategy without periodic PEL recovery.
      *
      * @param redisTemplate        the Redis template for direct operations
      * @param keyPrefix            prefix for all stream keys
@@ -55,11 +92,7 @@ public class RedisBrokerStrategy implements BrokerStrategy {
             RedisConsumerGroupManager consumerGroupManager,
             RedisStreamPublisher publisher,
             RedisStreamSubscriber subscriber) {
-        this.redisTemplate = redisTemplate;
-        this.keyPrefix = keyPrefix;
-        this.consumerGroupManager = consumerGroupManager;
-        this.publisher = publisher;
-        this.subscriber = subscriber;
+        this(redisTemplate, keyPrefix, consumerGroupManager, publisher, subscriber, null, null);
     }
 
     @Override
@@ -74,9 +107,8 @@ public class RedisBrokerStrategy implements BrokerStrategy {
 
         Subscription subscription = subscriber.subscribe(request);
         String subscriptionKey = request.channel() + ":" + request.groupName() + ":" + request.consumerName();
-        activeSubscriptions.put(subscriptionKey, subscription);
+        subscriptionRequests.put(subscriptionKey, request);
 
-        // Wrap subscription to auto-remove from activeSubscriptions on cancel
         Subscription trackedSubscription = new TrackedSubscription(subscription, subscriptionKey);
         activeSubscriptions.put(subscriptionKey, trackedSubscription);
 
@@ -105,6 +137,18 @@ public class RedisBrokerStrategy implements BrokerStrategy {
     @Override
     public void initialize() {
         ready.set(true);
+
+        if (pendingCheckInterval != null && !pendingCheckInterval.isZero() && !pendingCheckInterval.isNegative()) {
+            pelRecoveryScheduler = Executors.newSingleThreadScheduledExecutor(
+                    r -> new Thread(r, "simplix-pel-recovery"));
+            pelRecoveryScheduler.scheduleAtFixedRate(
+                    this::recoverAllPendingMessages,
+                    pendingCheckInterval.toMillis(),
+                    pendingCheckInterval.toMillis(),
+                    TimeUnit.MILLISECONDS);
+            log.info("PEL recovery scheduler started [interval={}]", pendingCheckInterval);
+        }
+
         log.info("Redis broker strategy initialized [keyPrefix={}]", keyPrefix);
     }
 
@@ -112,6 +156,18 @@ public class RedisBrokerStrategy implements BrokerStrategy {
     public void shutdown() {
         log.info("Shutting down Redis broker strategy, cancelling {} active subscription(s)",
                 activeSubscriptions.size());
+
+        if (pelRecoveryScheduler != null) {
+            pelRecoveryScheduler.shutdown();
+            try {
+                if (!pelRecoveryScheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    pelRecoveryScheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                pelRecoveryScheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
 
         activeSubscriptions.forEach((key, subscription) -> {
             try {
@@ -125,6 +181,7 @@ public class RedisBrokerStrategy implements BrokerStrategy {
         });
 
         activeSubscriptions.clear();
+        subscriptionRequests.clear();
         ready.set(false);
         log.info("Redis broker strategy shut down");
     }
@@ -137,6 +194,19 @@ public class RedisBrokerStrategy implements BrokerStrategy {
     @Override
     public String name() {
         return "redis";
+    }
+
+    private void recoverAllPendingMessages() {
+        for (Map.Entry<String, SubscribeRequest> entry : subscriptionRequests.entrySet()) {
+            try {
+                subscriber.recoverPendingMessages(entry.getValue());
+                if (claimMinIdleTime != null && !claimMinIdleTime.isZero()) {
+                    subscriber.autoClaimStuckMessages(entry.getValue(), claimMinIdleTime);
+                }
+            } catch (Exception e) {
+                log.warn("Periodic PEL recovery failed for [key={}]: {}", entry.getKey(), e.getMessage());
+            }
+        }
     }
 
     /**

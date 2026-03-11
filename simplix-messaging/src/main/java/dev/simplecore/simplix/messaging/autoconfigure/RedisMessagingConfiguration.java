@@ -66,7 +66,9 @@ public class RedisMessagingConfiguration {
                 properties.getRedis().getKeyPrefix(),
                 consumerGroupManager,
                 streamPublisher,
-                streamSubscriber
+                streamSubscriber,
+                properties.getRedis().getPendingCheckInterval(),
+                properties.getRedis().getClaimMinIdleTime()
         );
         strategy.initialize();
         return strategy;

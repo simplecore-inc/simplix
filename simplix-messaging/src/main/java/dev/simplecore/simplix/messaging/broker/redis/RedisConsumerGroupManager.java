@@ -27,7 +27,9 @@ public class RedisConsumerGroupManager {
 
     /**
      * Ensure the consumer group exists for the given channel.
-     * Uses XGROUP CREATE with MKSTREAM flag. Idempotent: BUSYGROUP errors are ignored.
+     * Uses XGROUP CREATE with MKSTREAM flag and offset "0" so that
+     * all existing messages in the stream are available for processing.
+     * Idempotent: BUSYGROUP errors are ignored.
      *
      * @param channel   the logical channel name
      * @param groupName the consumer group name
@@ -35,7 +37,7 @@ public class RedisConsumerGroupManager {
     public void ensureConsumerGroup(String channel, String groupName) {
         String streamKey = resolveKey(channel);
         try {
-            redisTemplate.opsForStream().createGroup(streamKey, ReadOffset.latest(), groupName);
+            redisTemplate.opsForStream().createGroup(streamKey, ReadOffset.from("0"), groupName);
             log.info("Created consumer group '{}' on stream '{}'", groupName, streamKey);
         } catch (RedisSystemException e) {
             if (isBusyGroupError(e)) {

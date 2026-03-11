@@ -202,9 +202,12 @@ public class RedisStreamSubscriber {
                         }
                     }
 
+                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
                     dispatchMessageWithAck(payload, headerMap, record.getId().getValue(),
-                            request, MessageAcknowledgment.NOOP);
-                    redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                            request, tracking);
+                    if (tracking.shouldAcknowledge()) {
+                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to recover pending message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -264,9 +267,12 @@ public class RedisStreamSubscriber {
                         }
                     }
 
+                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
                     dispatchMessageWithAck(payload, headerMap, record.getId().getValue(),
-                            request, MessageAcknowledgment.NOOP);
-                    redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                            request, tracking);
+                    if (tracking.shouldAcknowledge()) {
+                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to process auto-claimed message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -359,8 +365,11 @@ public class RedisStreamSubscriber {
 
             for (ByteRecord record : pending) {
                 try {
-                    extractAndDispatchByteRecord(record, request);
-                    redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
+                    extractAndDispatchByteRecord(record, request, tracking);
+                    if (tracking.shouldAcknowledge()) {
+                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to recover pending message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -412,8 +421,11 @@ public class RedisStreamSubscriber {
 
             for (ByteRecord record : claimed) {
                 try {
-                    extractAndDispatchByteRecord(record, request);
-                    redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
+                    extractAndDispatchByteRecord(record, request, tracking);
+                    if (tracking.shouldAcknowledge()) {
+                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to process auto-claimed message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -425,7 +437,8 @@ public class RedisStreamSubscriber {
         }
     }
 
-    private void extractAndDispatchByteRecord(ByteRecord record, SubscribeRequest request) {
+    private void extractAndDispatchByteRecord(ByteRecord record, SubscribeRequest request,
+                                               MessageAcknowledgment ack) {
         Map<byte[], byte[]> rawFields = record.getValue();
         byte[] payloadKey = PAYLOAD_FIELD.getBytes(StandardCharsets.UTF_8);
 
@@ -442,7 +455,7 @@ public class RedisStreamSubscriber {
         }
 
         dispatchMessageWithAck(payload, headerMap, record.getId().getValue(),
-                request, MessageAcknowledgment.NOOP);
+                request, ack);
     }
 
     // ---------------------------------------------------------------
@@ -482,6 +495,36 @@ public class RedisStreamSubscriber {
     // ---------------------------------------------------------------
 
     /**
+     * {@link MessageAcknowledgment} that tracks the listener's ack/nack/reject decision
+     * without performing any Redis operations. Used during PEL recovery and auto-claim
+     * to determine whether the caller should XACK the message.
+     */
+    private static class TrackingAcknowledgment implements MessageAcknowledgment {
+
+        private boolean acknowledged = false;
+        private boolean rejected = false;
+
+        @Override
+        public void ack() {
+            acknowledged = true;
+        }
+
+        @Override
+        public void nack(boolean requeue) {
+            // intentionally empty: message stays in PEL for retry
+        }
+
+        @Override
+        public void reject(String reason) {
+            rejected = true;
+        }
+
+        boolean shouldAcknowledge() {
+            return acknowledged || rejected;
+        }
+    }
+
+    /**
      * {@link MessageAcknowledgment} implementation backed by Redis XACK.
      */
     private record RedisMessageAcknowledgment(
@@ -498,7 +541,8 @@ public class RedisStreamSubscriber {
 
         @Override
         public void nack(boolean requeue) {
-            log.debug("NACK for record '{}' on stream '{}' [group={}, requeue={}]",
+            log.warn("NACK for record '{}' on stream '{}' [group={}, requeue={}]. "
+                    + "Message remains in PEL for retry.",
                     recordId, streamKey, groupName, requeue);
         }
 
