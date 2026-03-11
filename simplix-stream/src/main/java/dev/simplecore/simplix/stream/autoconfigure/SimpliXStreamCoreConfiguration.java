@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -140,11 +141,12 @@ public class SimpliXStreamCoreConfiguration {
             SchedulerManager schedulerManager,
             SessionManager sessionManager,
             StreamProperties properties,
+            SimpliXStreamDataCollectorRegistry collectorRegistry,
             @Autowired(required = false) EventStreamHandler eventStreamHandler,
             @Autowired(required = false) SimpliXStreamEventSourceRegistry eventSourceRegistry) {
         return new StreamComponentWiring(
                 subscriptionManager, schedulerManager, sessionManager, properties,
-                eventStreamHandler, eventSourceRegistry);
+                collectorRegistry, eventStreamHandler, eventSourceRegistry);
     }
 
     /**
@@ -161,10 +163,13 @@ public class SimpliXStreamCoreConfiguration {
                 SchedulerManager schedulerManager,
                 SessionManager sessionManager,
                 StreamProperties properties,
+                SimpliXStreamDataCollectorRegistry collectorRegistry,
                 EventStreamHandler eventStreamHandler,
                 SimpliXStreamEventSourceRegistry eventSourceRegistry) {
 
             boolean eventSourceEnabled = eventStreamHandler != null && eventSourceRegistry != null;
+            Duration globalDefault = properties.getScheduler().getDefaultInterval();
+            Duration globalMin = properties.getScheduler().getMinInterval();
 
             // Wire subscription events - route based on resource type
             subscriptionManager.setOnSubscriptionAdded((key, sessionId) -> {
@@ -177,10 +182,19 @@ public class SimpliXStreamCoreConfiguration {
                     log.debug("Subscription routed to event handler: {} -> {}",
                             sessionId, key.toKeyString());
                 } else {
+                    // Resolve per-collector interval, falling back to global default
+                    Duration interval = collectorRegistry.findCollector(resource)
+                            .map(collector -> {
+                                long collectorInterval = collector.getDefaultIntervalMs();
+                                long effectiveMin = Math.max(collector.getMinIntervalMs(), globalMin.toMillis());
+                                return Duration.ofMillis(Math.max(collectorInterval, effectiveMin));
+                            })
+                            .orElse(globalDefault);
+
                     // Route to scheduler manager (polling-based)
-                    schedulerManager.addSubscriber(key, sessionId, properties.getScheduler().getDefaultInterval());
-                    log.debug("Subscription routed to scheduler: {} -> {}",
-                            sessionId, key.toKeyString());
+                    schedulerManager.addSubscriber(key, sessionId, interval);
+                    log.debug("Subscription routed to scheduler: {} -> {} (interval={}ms)",
+                            sessionId, key.toKeyString(), interval.toMillis());
                 }
             });
 
