@@ -254,9 +254,17 @@ public class SimpliXAuthSecurityConfiguration {
         
         configuration.applyPermitDefaultValues();
         
-        String[] allowedOrigins = properties.getCors().getAllowedOrigins();
-        if (allowedOrigins != null && allowedOrigins.length > 0) {
-            configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+        // Origin patterns take precedence over exact origins
+        // Patterns support wildcards (e.g., "https://*.example.com", "*")
+        // and work with allowCredentials=true (unlike allowedOrigins=["*"])
+        String[] allowedOriginPatterns = properties.getCors().getAllowedOriginPatterns();
+        if (allowedOriginPatterns != null && allowedOriginPatterns.length > 0) {
+            configuration.setAllowedOriginPatterns(Arrays.asList(allowedOriginPatterns));
+        } else {
+            String[] allowedOrigins = properties.getCors().getAllowedOrigins();
+            if (allowedOrigins != null && allowedOrigins.length > 0) {
+                configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
+            }
         }
         
         String[] allowedMethods = properties.getCors().getAllowedMethods();

@@ -37,6 +37,12 @@ public class SimpliXAuthProperties {
     @Setter
     public static class CorsProperties {
         private String[] allowedOrigins;
+        /**
+         * Origin patterns for CORS (e.g., "https://*.example.com", "*").
+         * Unlike {@code allowedOrigins}, patterns work with {@code allowCredentials=true}.
+         * When set, takes precedence over {@code allowedOrigins}.
+         */
+        private String[] allowedOriginPatterns;
         private String[] allowedMethods;
         private String[] allowedHeaders;
         private String[] exposedHeaders;
