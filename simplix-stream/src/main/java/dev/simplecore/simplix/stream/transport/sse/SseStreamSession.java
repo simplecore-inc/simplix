@@ -25,6 +25,7 @@ public class SseStreamSession implements MessageSender {
     private final SseEmitter emitter;
     private final ObjectMapper objectMapper;
     private final AtomicBoolean active = new AtomicBoolean(true);
+    private final Object sendLock = new Object();
 
     /**
      * Creates a new SSE stream session.
@@ -64,24 +65,30 @@ public class SseStreamSession implements MessageSender {
             return false;
         }
 
-        try {
-            String jsonData = objectMapper.writeValueAsString(message);
-            String messageId = message.getSubscriptionKey() != null
-                    ? message.getSubscriptionKey() + "-" + message.getTimestamp().toEpochMilli()
-                    : String.valueOf(message.getTimestamp().toEpochMilli());
+        synchronized (sendLock) {
+            if (!active.get()) {
+                return false;
+            }
 
-            SseEmitter.SseEventBuilder event = SseEmitter.event()
-                    .id(messageId)
-                    .name(message.getType().name().toLowerCase())
-                    .data(jsonData);
+            try {
+                String jsonData = objectMapper.writeValueAsString(message);
+                String messageId = message.getSubscriptionKey() != null
+                        ? message.getSubscriptionKey() + "-" + message.getTimestamp().toEpochMilli()
+                        : String.valueOf(message.getTimestamp().toEpochMilli());
 
-            emitter.send(event);
-            log.trace("Sent message {} to session {}", messageId, session.getId());
-            return true;
-        } catch (IOException e) {
-            log.debug("Failed to send message to session {}: {}", session.getId(), e.getMessage());
-            active.set(false);
-            return false;
+                SseEmitter.SseEventBuilder event = SseEmitter.event()
+                        .id(messageId)
+                        .name(message.getType().name().toLowerCase())
+                        .data(jsonData);
+
+                emitter.send(event);
+                log.trace("Sent message {} to session {}", messageId, session.getId());
+                return true;
+            } catch (IOException e) {
+                log.debug("Failed to send message to session {}: {}", session.getId(), e.getMessage());
+                active.set(false);
+                return false;
+            }
         }
     }
 
