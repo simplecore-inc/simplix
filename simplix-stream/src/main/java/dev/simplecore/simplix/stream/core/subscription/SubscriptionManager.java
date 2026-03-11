@@ -91,7 +91,7 @@ public class SubscriptionManager {
 
             // Process additions
             Map<SubscriptionKey, Subscription> subscriptionMap = subscriptions.stream()
-                    .collect(Collectors.toMap(Subscription::getKey, s -> s));
+                    .collect(Collectors.toMap(Subscription::getKey, s -> s, (existing, duplicate) -> existing));
 
             for (SubscriptionKey key : diff.added()) {
                 Subscription subscription = subscriptionMap.get(key);
