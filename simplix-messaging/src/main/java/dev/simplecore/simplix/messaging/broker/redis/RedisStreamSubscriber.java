@@ -511,7 +511,9 @@ public class RedisStreamSubscriber {
 
         @Override
         public void nack(boolean requeue) {
-            // intentionally empty: message stays in PEL for retry
+            if (!requeue) {
+                rejected = true;
+            }
         }
 
         @Override

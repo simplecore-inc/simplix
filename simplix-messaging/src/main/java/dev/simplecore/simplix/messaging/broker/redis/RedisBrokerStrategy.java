@@ -241,6 +241,7 @@ public class RedisBrokerStrategy implements BrokerStrategy {
         public void cancel() {
             delegate.cancel();
             activeSubscriptions.remove(subscriptionKey);
+            subscriptionRequests.remove(subscriptionKey);
         }
     }
 }
