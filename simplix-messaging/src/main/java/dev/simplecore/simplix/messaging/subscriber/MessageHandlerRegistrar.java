@@ -293,7 +293,6 @@ public class MessageHandlerRegistrar
             // Deserialize payload
             Message<?> deserializedMessage = deserializeMessage(rawMessage, payloadType);
 
-            // Invoke handler
             try {
                 if (acceptsAck) {
                     method.invoke(bean, deserializedMessage, ack);
@@ -306,8 +305,9 @@ public class MessageHandlerRegistrar
                     ack.ack();
                 }
             } catch (InvocationTargetException e) {
-                log.error("Handler {}.{}() threw exception for message on channel='{}'",
-                        bean.getClass().getSimpleName(), method.getName(), channel, e.getCause());
+                log.error("Handler {}.{}() threw: {}",
+                        bean.getClass().getSimpleName(), method.getName(),
+                        e.getCause() != null ? e.getCause().toString() : e.toString(), e.getCause());
                 throw new RuntimeException("Handler invocation failed", e.getCause());
             } catch (IllegalAccessException e) {
                 log.error("Cannot access handler {}.{}()",

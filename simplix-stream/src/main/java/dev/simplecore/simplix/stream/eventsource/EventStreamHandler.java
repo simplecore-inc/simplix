@@ -110,8 +110,8 @@ public class EventStreamHandler {
         StreamMessage message = StreamMessage.data(key, data);
         broadcastService.broadcast(key, message, subscribers);
 
-        log.debug("Event broadcast: eventType={}, resource={}, subscribers={}",
-                event.getEventType(), source.getResource(), subscribers.size());
+//        log.debug("Event broadcast: eventType={}, resource={}, subscribers={}",
+//                event.getEventType(), source.getResource(), subscribers.size());
     }
 
     /**

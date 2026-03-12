@@ -102,6 +102,16 @@ public class RedisBrokerStrategy implements BrokerStrategy {
 
     @Override
     public Subscription subscribe(SubscribeRequest request) {
+        // Diagnostic: check stream state before subscription
+        String streamKey = keyPrefix + request.channel();
+        try {
+            Long streamLen = redisTemplate.opsForStream().size(streamKey);
+            log.info("Pre-subscribe diagnostic [stream={}, group={}, consumer={}, streamLen={}]",
+                    streamKey, request.groupName(), request.consumerName(), streamLen);
+        } catch (Exception e) {
+            log.debug("Pre-subscribe diagnostic failed for stream '{}': {}", streamKey, e.getMessage());
+        }
+
         // Recover pending messages before starting the live subscription
         subscriber.recoverPendingMessages(request);
 

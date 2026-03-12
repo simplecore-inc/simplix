@@ -4,8 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.stream.PendingMessagesSummary;
 import org.springframework.data.redis.connection.stream.ReadOffset;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -28,7 +30,8 @@ public class RedisConsumerGroupManager {
     /**
      * Ensure the consumer group exists for the given channel.
      * Uses XGROUP CREATE with MKSTREAM flag and offset "0" so that
-     * all existing messages in the stream are available for processing.
+     * the stream is auto-created if it does not exist, and all existing
+     * messages are available for processing.
      * Idempotent: BUSYGROUP errors are ignored.
      *
      * @param channel   the logical channel name
@@ -37,7 +40,13 @@ public class RedisConsumerGroupManager {
     public void ensureConsumerGroup(String channel, String groupName) {
         String streamKey = resolveKey(channel);
         try {
-            redisTemplate.opsForStream().createGroup(streamKey, ReadOffset.from("0"), groupName);
+            redisTemplate.execute((RedisCallback<String>) connection ->
+                    connection.streamCommands().xGroupCreate(
+                            streamKey.getBytes(StandardCharsets.UTF_8),
+                            groupName,
+                            ReadOffset.from("0"),
+                            true
+                    ));
             log.info("Created consumer group '{}' on stream '{}'", groupName, streamKey);
         } catch (RedisSystemException e) {
             if (isBusyGroupError(e)) {

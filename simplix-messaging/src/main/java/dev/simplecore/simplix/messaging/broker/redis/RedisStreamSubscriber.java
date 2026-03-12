@@ -140,9 +140,13 @@ public class RedisStreamSubscriber {
                 record -> processBase64Record(record, request);
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
-        org.springframework.data.redis.stream.Subscription springSubscription = container.receive(
-                consumer,
-                StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
+        org.springframework.data.redis.stream.Subscription springSubscription = container.register(
+                StreamMessageListenerContainer.StreamReadRequest
+                        .builder(StreamOffset.create(streamKey, ReadOffset.lastConsumed()))
+                        .consumer(consumer)
+                        .autoAcknowledge(false)
+                        .cancelOnError(t -> false)
+                        .build(),
                 streamListener);
 
         container.start();
@@ -153,21 +157,30 @@ public class RedisStreamSubscriber {
     }
 
     private void processBase64Record(MapRecord<String, String, String> record, SubscribeRequest request) {
-        Map<String, String> fields = record.getValue();
+        try {
+            Map<String, String> fields = record.getValue();
 
-        String encodedPayload = fields.get(PAYLOAD_FIELD);
-        byte[] payload = encodedPayload != null
-                ? Base64.getDecoder().decode(encodedPayload)
-                : new byte[0];
+            String encodedPayload = fields.get(PAYLOAD_FIELD);
+            byte[] payload = encodedPayload != null
+                    ? Base64.getDecoder().decode(encodedPayload)
+                    : new byte[0];
 
-        Map<String, String> headerMap = new LinkedHashMap<>();
-        for (Map.Entry<String, String> entry : fields.entrySet()) {
-            if (!PAYLOAD_FIELD.equals(entry.getKey())) {
-                headerMap.put(entry.getKey(), entry.getValue());
+            Map<String, String> headerMap = new LinkedHashMap<>();
+            for (Map.Entry<String, String> entry : fields.entrySet()) {
+                if (!PAYLOAD_FIELD.equals(entry.getKey())) {
+                    headerMap.put(entry.getKey(), entry.getValue());
+                }
             }
-        }
 
-        dispatchMessage(payload, headerMap, record.getId().getValue(), request);
+            dispatchMessage(payload, headerMap, record.getId().getValue(), request);
+        } catch (Exception e) {
+            log.error("Failed to process record [id={}, channel={}]: {}",
+                    record.getId(), request.channel(), e.getMessage(), e);
+            // XACK unrecoverable messages to prevent infinite PEL retry
+            String streamKey = resolveKey(request.channel());
+            redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(),
+                    record.getId().getValue());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -205,12 +218,11 @@ public class RedisStreamSubscriber {
                         }
                     }
 
-                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
+                    MessageAcknowledgment ack = new RedisMessageAcknowledgment(
+                            redisTemplate, streamKey, request.groupName(),
+                            record.getId().getValue());
                     dispatchMessageWithAck(payload, headerMap, record.getId().getValue(),
-                            request, tracking);
-                    if (tracking.shouldAcknowledge()) {
-                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
-                    }
+                            request, ack);
                 } catch (Exception e) {
                     log.warn("Failed to recover pending message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -270,12 +282,11 @@ public class RedisStreamSubscriber {
                         }
                     }
 
-                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
+                    MessageAcknowledgment ack = new RedisMessageAcknowledgment(
+                            redisTemplate, streamKey, request.groupName(),
+                            record.getId().getValue());
                     dispatchMessageWithAck(payload, headerMap, record.getId().getValue(),
-                            request, tracking);
-                    if (tracking.shouldAcknowledge()) {
-                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
-                    }
+                            request, ack);
                 } catch (Exception e) {
                     log.warn("Failed to process auto-claimed message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -320,9 +331,13 @@ public class RedisStreamSubscriber {
                 record -> processRawRecord(record, request);
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
-        org.springframework.data.redis.stream.Subscription springSubscription = container.receive(
-                consumer,
-                StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
+        org.springframework.data.redis.stream.Subscription springSubscription = container.register(
+                StreamMessageListenerContainer.StreamReadRequest
+                        .builder(StreamOffset.create(streamKey, ReadOffset.lastConsumed()))
+                        .consumer(consumer)
+                        .autoAcknowledge(false)
+                        .cancelOnError(t -> false)
+                        .build(),
                 streamListener);
 
         container.start();
@@ -333,18 +348,26 @@ public class RedisStreamSubscriber {
     }
 
     private void processRawRecord(MapRecord<String, String, byte[]> record, SubscribeRequest request) {
-        Map<String, byte[]> fields = record.getValue();
+        try {
+            Map<String, byte[]> fields = record.getValue();
 
-        byte[] payload = fields.getOrDefault(PAYLOAD_FIELD, new byte[0]);
+            byte[] payload = fields.getOrDefault(PAYLOAD_FIELD, new byte[0]);
 
-        Map<String, String> headerMap = new LinkedHashMap<>();
-        for (Map.Entry<String, byte[]> entry : fields.entrySet()) {
-            if (!PAYLOAD_FIELD.equals(entry.getKey())) {
-                headerMap.put(entry.getKey(), new String(entry.getValue(), StandardCharsets.UTF_8));
+            Map<String, String> headerMap = new LinkedHashMap<>();
+            for (Map.Entry<String, byte[]> entry : fields.entrySet()) {
+                if (!PAYLOAD_FIELD.equals(entry.getKey())) {
+                    headerMap.put(entry.getKey(), new String(entry.getValue(), StandardCharsets.UTF_8));
+                }
             }
-        }
 
-        dispatchMessage(payload, headerMap, record.getId().getValue(), request);
+            dispatchMessage(payload, headerMap, record.getId().getValue(), request);
+        } catch (Exception e) {
+            log.error("Failed to process record [id={}, channel={}]: {}",
+                    record.getId(), request.channel(), e.getMessage(), e);
+            String streamKey = resolveKey(request.channel());
+            redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(),
+                    record.getId().getValue());
+        }
     }
 
     private void recoverPendingMessagesRaw(SubscribeRequest request) {
@@ -371,11 +394,10 @@ public class RedisStreamSubscriber {
 
             for (ByteRecord record : pending) {
                 try {
-                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
-                    extractAndDispatchByteRecord(record, request, tracking);
-                    if (tracking.shouldAcknowledge()) {
-                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
-                    }
+                    MessageAcknowledgment ack = new RedisMessageAcknowledgment(
+                            redisTemplate, streamKey, request.groupName(),
+                            record.getId().getValue());
+                    extractAndDispatchByteRecord(record, request, ack);
                 } catch (Exception e) {
                     log.warn("Failed to recover pending message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
@@ -427,11 +449,10 @@ public class RedisStreamSubscriber {
 
             for (ByteRecord record : claimed) {
                 try {
-                    TrackingAcknowledgment tracking = new TrackingAcknowledgment();
-                    extractAndDispatchByteRecord(record, request, tracking);
-                    if (tracking.shouldAcknowledge()) {
-                        redisTemplate.opsForStream().acknowledge(streamKey, request.groupName(), record.getId());
-                    }
+                    MessageAcknowledgment ack = new RedisMessageAcknowledgment(
+                            redisTemplate, streamKey, request.groupName(),
+                            record.getId().getValue());
+                    extractAndDispatchByteRecord(record, request, ack);
                 } catch (Exception e) {
                     log.warn("Failed to process auto-claimed message '{}' from stream '{}': {}",
                             record.getId(), streamKey, e.getMessage());
