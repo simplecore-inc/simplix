@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -225,16 +226,31 @@ public class RedisBrokerStrategy implements BrokerStrategy {
             }
         }
 
-        // Resubscribe dead subscriptions
-        for (Map.Entry<String, Subscription> entry : activeSubscriptions.entrySet()) {
-            if (entry.getValue().isActive()) continue;
+        // Resubscribe dead or unhealthy subscriptions
+        List<String> deadKeys = activeSubscriptions.entrySet().stream()
+                .filter(e -> !e.getValue().isActive())
+                .map(Map.Entry::getKey)
+                .toList();
 
-            String key = entry.getKey();
+        for (String key : deadKeys) {
             SubscribeRequest request = subscriptionRequests.get(key);
             if (request == null) continue;
 
             log.info("Detected dead subscription [key={}], attempting resubscribe", key);
             try {
+                // Cancel old subscription to stop error loop and release resources
+                Subscription oldSub = activeSubscriptions.remove(key);
+                if (oldSub != null) {
+                    try {
+                        oldSub.cancel();
+                    } catch (Exception e) {
+                        log.debug("Error stopping old subscription [key={}]: {}", key, e.getMessage());
+                    }
+                }
+
+                // Re-register request (cancel() removes it from maps)
+                subscriptionRequests.put(key, request);
+
                 consumerGroupManager.ensureConsumerGroup(request.channel(), request.groupName());
                 subscriber.recoverPendingMessages(request);
                 Subscription newSub = subscriber.subscribe(request);
@@ -243,6 +259,8 @@ public class RedisBrokerStrategy implements BrokerStrategy {
                 log.info("Successfully resubscribed [key={}]", key);
             } catch (Exception e) {
                 log.warn("Resubscribe failed for [key={}]: {}", key, e.getMessage());
+                // Preserve request for next recovery cycle
+                subscriptionRequests.put(key, request);
             }
         }
     }

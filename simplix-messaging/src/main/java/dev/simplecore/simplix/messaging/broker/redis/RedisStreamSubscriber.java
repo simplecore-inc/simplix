@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Consumes messages from Redis Streams using {@link StreamMessageListenerContainer}.
@@ -123,13 +124,14 @@ public class RedisStreamSubscriber {
         Duration pollTimeout = request.pollTimeout() != null ? request.pollTimeout() : defaultPollTimeout;
         int batchSize = request.batchSize() > 0 ? request.batchSize() : defaultBatchSize;
 
+        SubscriptionHealthTracker healthTracker = new SubscriptionHealthTracker(streamKey, "BASE64");
+
         StreamMessageListenerContainerOptions<String, MapRecord<String, String, String>> options =
                 StreamMessageListenerContainerOptions.builder()
                         .pollTimeout(pollTimeout)
                         .batchSize(batchSize)
                         .serializer(redisTemplate.getStringSerializer())
-                        .errorHandler(e -> log.warn("Stream polling error [stream={}, encoding=BASE64]: {}",
-                                streamKey, e.getMessage()))
+                        .errorHandler(healthTracker::onError)
                         .build();
 
         StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
@@ -137,7 +139,10 @@ public class RedisStreamSubscriber {
                         redisTemplate.getConnectionFactory(), options);
 
         StreamListener<String, MapRecord<String, String, String>> streamListener =
-                record -> processBase64Record(record, request);
+                record -> {
+                    processBase64Record(record, request);
+                    healthTracker.recordSuccess();
+                };
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
         org.springframework.data.redis.stream.Subscription springSubscription = container.register(
@@ -153,7 +158,7 @@ public class RedisStreamSubscriber {
         log.info("Started subscription on stream '{}' [group={}, consumer={}, encoding=BASE64]",
                 streamKey, request.groupName(), request.consumerName());
 
-        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription);
+        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription, healthTracker);
     }
 
     private void processBase64Record(MapRecord<String, String, String> record, SubscribeRequest request) {
@@ -308,6 +313,8 @@ public class RedisStreamSubscriber {
         Duration pollTimeout = request.pollTimeout() != null ? request.pollTimeout() : defaultPollTimeout;
         int batchSize = request.batchSize() > 0 ? request.batchSize() : defaultBatchSize;
 
+        SubscriptionHealthTracker healthTracker = new SubscriptionHealthTracker(streamKey, "RAW");
+
         // hashKeySerializer(string()) guarantees hash keys are String at runtime,
         // but the builder infers HK as Object. The cast is safe.
         StreamMessageListenerContainerOptions<String, MapRecord<String, String, byte[]>> options =
@@ -319,8 +326,7 @@ public class RedisStreamSubscriber {
                         .hashValueSerializer(RedisSerializer.byteArray())
                         .pollTimeout(pollTimeout)
                         .batchSize(batchSize)
-                        .errorHandler(e -> log.warn("Stream polling error [stream={}, encoding=RAW]: {}",
-                                streamKey, e.getMessage()))
+                        .errorHandler(healthTracker::onError)
                         .build();
 
         StreamMessageListenerContainer<String, MapRecord<String, String, byte[]>> container =
@@ -328,7 +334,10 @@ public class RedisStreamSubscriber {
                         redisTemplate.getConnectionFactory(), options);
 
         StreamListener<String, MapRecord<String, String, byte[]>> streamListener =
-                record -> processRawRecord(record, request);
+                record -> {
+                    processRawRecord(record, request);
+                    healthTracker.recordSuccess();
+                };
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
         org.springframework.data.redis.stream.Subscription springSubscription = container.register(
@@ -344,7 +353,7 @@ public class RedisStreamSubscriber {
         log.info("Started subscription on stream '{}' [group={}, consumer={}, encoding=RAW]",
                 streamKey, request.groupName(), request.consumerName());
 
-        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription);
+        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription, healthTracker);
     }
 
     private void processRawRecord(MapRecord<String, String, byte[]> record, SubscribeRequest request) {
@@ -597,15 +606,18 @@ public class RedisStreamSubscriber {
         @SuppressWarnings("rawtypes")
         private final StreamMessageListenerContainer container;
         private final org.springframework.data.redis.stream.Subscription springSubscription;
+        private final SubscriptionHealthTracker healthTracker;
         private final AtomicBoolean active = new AtomicBoolean(true);
 
         RedisSubscription(String channel, String groupName,
                           StreamMessageListenerContainer<?, ?> container,
-                          org.springframework.data.redis.stream.Subscription springSubscription) {
+                          org.springframework.data.redis.stream.Subscription springSubscription,
+                          SubscriptionHealthTracker healthTracker) {
             this.channel = channel;
             this.groupName = groupName;
             this.container = container;
             this.springSubscription = springSubscription;
+            this.healthTracker = healthTracker;
         }
 
         @Override
@@ -619,14 +631,16 @@ public class RedisStreamSubscriber {
         }
 
         /**
-         * Returns {@code true} only when both the container is running AND
-         * the internal subscription task is still alive. When Redis connection
-         * errors trigger cancelOnError, the Spring subscription becomes inactive
-         * while the container may still report as running.
+         * Returns {@code true} only when the container is running, the internal
+         * subscription task is alive, AND the polling loop is healthy (not in
+         * a consecutive error state). This ensures that subscriptions stuck in
+         * error loops (e.g., stream deleted, Redis unreachable) are detected
+         * as dead and resubscribed by the PEL recovery scheduler.
          */
         @Override
         public boolean isActive() {
-            return active.get() && container.isRunning() && springSubscription.isActive();
+            return active.get() && container.isRunning() && springSubscription.isActive()
+                    && healthTracker.isHealthy();
         }
 
         @Override
@@ -639,5 +653,63 @@ public class RedisStreamSubscriber {
 
         private static final org.slf4j.Logger log =
                 org.slf4j.LoggerFactory.getLogger(RedisSubscription.class);
+    }
+
+    /**
+     * Tracks polling health for a single subscription. Counts consecutive
+     * errors and applies exponential backoff (500ms to 30s) during error
+     * storms to prevent tight polling loops that flood logs and waste CPU.
+     *
+     * <p>After {@link #UNHEALTHY_THRESHOLD} consecutive errors, {@link #isHealthy()}
+     * returns {@code false}, causing the subscription's {@code isActive()} to
+     * return {@code false}. The PEL recovery scheduler in {@link RedisBrokerStrategy}
+     * then detects the dead subscription and triggers a full resubscribe
+     * (ensureConsumerGroup + PEL recovery + new subscription).
+     */
+    private static class SubscriptionHealthTracker {
+
+        private static final int UNHEALTHY_THRESHOLD = 5;
+        private static final long INITIAL_BACKOFF_MS = 500;
+        private static final long MAX_BACKOFF_MS = 30_000;
+
+        private final String streamKey;
+        private final String encoding;
+        private final AtomicInteger consecutiveErrors = new AtomicInteger(0);
+
+        SubscriptionHealthTracker(String streamKey, String encoding) {
+            this.streamKey = streamKey;
+            this.encoding = encoding;
+        }
+
+        void onError(Throwable t) {
+            int errorCount = consecutiveErrors.incrementAndGet();
+            long backoffMs = Math.min(
+                    INITIAL_BACKOFF_MS * (1L << Math.min(errorCount - 1, 16)),
+                    MAX_BACKOFF_MS);
+
+            log.warn("Stream polling error [stream={}, encoding={}, consecutiveErrors={}, backoffMs={}]: {}",
+                    streamKey, encoding, errorCount, backoffMs, t.getMessage());
+
+            try {
+                Thread.sleep(backoffMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        void recordSuccess() {
+            if (consecutiveErrors.get() > 0) {
+                int prev = consecutiveErrors.getAndSet(0);
+                log.info("Stream polling recovered [stream={}, encoding={}, previousErrors={}]",
+                        streamKey, encoding, prev);
+            }
+        }
+
+        boolean isHealthy() {
+            return consecutiveErrors.get() < UNHEALTHY_THRESHOLD;
+        }
+
+        private static final org.slf4j.Logger log =
+                org.slf4j.LoggerFactory.getLogger(SubscriptionHealthTracker.class);
     }
 }
