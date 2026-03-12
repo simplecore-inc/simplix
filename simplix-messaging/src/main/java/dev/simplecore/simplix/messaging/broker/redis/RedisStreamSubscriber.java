@@ -128,6 +128,8 @@ public class RedisStreamSubscriber {
                         .pollTimeout(pollTimeout)
                         .batchSize(batchSize)
                         .serializer(redisTemplate.getStringSerializer())
+                        .errorHandler(e -> log.warn("Stream polling error [stream={}, encoding=BASE64]: {}",
+                                streamKey, e.getMessage()))
                         .build();
 
         StreamMessageListenerContainer<String, MapRecord<String, String, String>> container =
@@ -138,7 +140,8 @@ public class RedisStreamSubscriber {
                 record -> processBase64Record(record, request);
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
-        container.receive(consumer,
+        org.springframework.data.redis.stream.Subscription springSubscription = container.receive(
+                consumer,
                 StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
                 streamListener);
 
@@ -146,7 +149,7 @@ public class RedisStreamSubscriber {
         log.info("Started subscription on stream '{}' [group={}, consumer={}, encoding=BASE64]",
                 streamKey, request.groupName(), request.consumerName());
 
-        return new RedisSubscription(request.channel(), request.groupName(), container);
+        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription);
     }
 
     private void processBase64Record(MapRecord<String, String, String> record, SubscribeRequest request) {
@@ -305,6 +308,8 @@ public class RedisStreamSubscriber {
                         .hashValueSerializer(RedisSerializer.byteArray())
                         .pollTimeout(pollTimeout)
                         .batchSize(batchSize)
+                        .errorHandler(e -> log.warn("Stream polling error [stream={}, encoding=RAW]: {}",
+                                streamKey, e.getMessage()))
                         .build();
 
         StreamMessageListenerContainer<String, MapRecord<String, String, byte[]>> container =
@@ -315,7 +320,8 @@ public class RedisStreamSubscriber {
                 record -> processRawRecord(record, request);
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
-        container.receive(consumer,
+        org.springframework.data.redis.stream.Subscription springSubscription = container.receive(
+                consumer,
                 StreamOffset.create(streamKey, ReadOffset.lastConsumed()),
                 streamListener);
 
@@ -323,7 +329,7 @@ public class RedisStreamSubscriber {
         log.info("Started subscription on stream '{}' [group={}, consumer={}, encoding=RAW]",
                 streamKey, request.groupName(), request.consumerName());
 
-        return new RedisSubscription(request.channel(), request.groupName(), container);
+        return new RedisSubscription(request.channel(), request.groupName(), container, springSubscription);
     }
 
     private void processRawRecord(MapRecord<String, String, byte[]> record, SubscribeRequest request) {
@@ -569,13 +575,16 @@ public class RedisStreamSubscriber {
         private final String groupName;
         @SuppressWarnings("rawtypes")
         private final StreamMessageListenerContainer container;
+        private final org.springframework.data.redis.stream.Subscription springSubscription;
         private final AtomicBoolean active = new AtomicBoolean(true);
 
         RedisSubscription(String channel, String groupName,
-                          StreamMessageListenerContainer<?, ?> container) {
+                          StreamMessageListenerContainer<?, ?> container,
+                          org.springframework.data.redis.stream.Subscription springSubscription) {
             this.channel = channel;
             this.groupName = groupName;
             this.container = container;
+            this.springSubscription = springSubscription;
         }
 
         @Override
@@ -588,9 +597,15 @@ public class RedisStreamSubscriber {
             return groupName;
         }
 
+        /**
+         * Returns {@code true} only when both the container is running AND
+         * the internal subscription task is still alive. When Redis connection
+         * errors trigger cancelOnError, the Spring subscription becomes inactive
+         * while the container may still report as running.
+         */
         @Override
         public boolean isActive() {
-            return active.get() && container.isRunning();
+            return active.get() && container.isRunning() && springSubscription.isActive();
         }
 
         @Override

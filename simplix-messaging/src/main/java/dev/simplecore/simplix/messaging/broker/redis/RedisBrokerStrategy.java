@@ -198,13 +198,41 @@ public class RedisBrokerStrategy implements BrokerStrategy {
 
     private void recoverAllPendingMessages() {
         for (Map.Entry<String, SubscribeRequest> entry : subscriptionRequests.entrySet()) {
+            SubscribeRequest request = entry.getValue();
             try {
-                subscriber.recoverPendingMessages(entry.getValue());
+                // Re-ensure consumer group exists (handles stream deletion/recreation)
+                consumerGroupManager.ensureConsumerGroup(request.channel(), request.groupName());
+            } catch (Exception e) {
+                log.debug("Consumer group ensure failed for [key={}]: {}", entry.getKey(), e.getMessage());
+            }
+            try {
+                subscriber.recoverPendingMessages(request);
                 if (claimMinIdleTime != null && !claimMinIdleTime.isZero()) {
-                    subscriber.autoClaimStuckMessages(entry.getValue(), claimMinIdleTime);
+                    subscriber.autoClaimStuckMessages(request, claimMinIdleTime);
                 }
             } catch (Exception e) {
                 log.warn("Periodic PEL recovery failed for [key={}]: {}", entry.getKey(), e.getMessage());
+            }
+        }
+
+        // Resubscribe dead subscriptions
+        for (Map.Entry<String, Subscription> entry : activeSubscriptions.entrySet()) {
+            if (entry.getValue().isActive()) continue;
+
+            String key = entry.getKey();
+            SubscribeRequest request = subscriptionRequests.get(key);
+            if (request == null) continue;
+
+            log.info("Detected dead subscription [key={}], attempting resubscribe", key);
+            try {
+                consumerGroupManager.ensureConsumerGroup(request.channel(), request.groupName());
+                subscriber.recoverPendingMessages(request);
+                Subscription newSub = subscriber.subscribe(request);
+                Subscription tracked = new TrackedSubscription(newSub, key);
+                activeSubscriptions.put(key, tracked);
+                log.info("Successfully resubscribed [key={}]", key);
+            } catch (Exception e) {
+                log.warn("Resubscribe failed for [key={}]: {}", key, e.getMessage());
             }
         }
     }

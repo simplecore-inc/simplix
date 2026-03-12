@@ -137,9 +137,15 @@ public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitiali
         String channel = resolvePlaceholder(annotation.channel());
         String group = resolvePlaceholder(annotation.group());
 
-        // Ensure consumer group exists if specified
+        // Ensure consumer group exists if specified (non-blocking on failure)
         if (!group.isEmpty()) {
-            brokerStrategy.ensureConsumerGroup(channel, group);
+            try {
+                brokerStrategy.ensureConsumerGroup(channel, group);
+            } catch (Exception e) {
+                log.warn("Failed to ensure consumer group for channel='{}' group='{}': {}. "
+                        + "Subscription will proceed and retry via periodic recovery.",
+                        channel, group, e.getMessage());
+            }
         }
 
         // Create the message listener with deserialization and auto-ack
@@ -157,13 +163,19 @@ public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitiali
                     .listener(listener)
                     .build();
 
-            Subscription subscription = brokerStrategy.subscribe(request);
-            activeSubscriptions.add(subscription);
+            try {
+                Subscription subscription = brokerStrategy.subscribe(request);
+                activeSubscriptions.add(subscription);
 
-            log.info("Subscribed to channel='{}' group='{}' consumer='{}' handler={}.{}()",
-                    channel, group, consumerName,
-                    registration.bean().getClass().getSimpleName(),
-                    registration.method().getName());
+                log.info("Subscribed to channel='{}' group='{}' consumer='{}' handler={}.{}()",
+                        channel, group, consumerName,
+                        registration.bean().getClass().getSimpleName(),
+                        registration.method().getName());
+            } catch (Exception e) {
+                log.warn("Failed to subscribe to channel='{}' group='{}' consumer='{}': {}. "
+                        + "Will be retried via periodic recovery.",
+                        channel, group, consumerName, e.getMessage());
+            }
         }
     }
 
