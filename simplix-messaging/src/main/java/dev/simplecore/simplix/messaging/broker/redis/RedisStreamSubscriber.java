@@ -162,6 +162,7 @@ public class RedisStreamSubscriber {
     }
 
     private void processBase64Record(MapRecord<String, String, String> record, SubscribeRequest request) {
+        log.debug("Subscriber received record [id={}, channel={}]", record.getId(), request.channel());
         try {
             Map<String, String> fields = record.getValue();
 

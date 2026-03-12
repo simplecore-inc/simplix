@@ -7,8 +7,10 @@ import dev.simplecore.simplix.messaging.broker.Subscription;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.connection.stream.StreamInfo;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.net.InetAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +126,7 @@ public class RedisBrokerStrategy implements BrokerStrategy {
         activeSubscriptions.put(subscriptionKey, trackedSubscription);
 
         log.info("Registered subscription [key={}]", subscriptionKey);
+        logConsumerDiagnostic(streamKey, request.groupName(), request.consumerName());
         return trackedSubscription;
     }
 
@@ -217,6 +220,20 @@ public class RedisBrokerStrategy implements BrokerStrategy {
                 log.debug("Consumer group ensure failed for [key={}]: {}", entry.getKey(), e.getMessage());
             }
             try {
+                // Diagnostic: log stream and consumer group state
+                String streamKey = keyPrefix + request.channel();
+                Long streamLen = redisTemplate.opsForStream().size(streamKey);
+                var pendingSummary = redisTemplate.opsForStream()
+                        .pending(streamKey, request.groupName());
+                log.debug("PEL diagnostic [stream={}, len={}, totalPending={}, consumers={}]",
+                        streamKey, streamLen,
+                        pendingSummary != null ? pendingSummary.getTotalPendingMessages() : 0,
+                        pendingSummary != null ? pendingSummary.getIdRange() : "N/A");
+                logConsumerDiagnostic(streamKey, request.groupName(), null);
+            } catch (Exception e) {
+                log.trace("PEL diagnostic failed for [key={}]: {}", entry.getKey(), e.getMessage());
+            }
+            try {
                 subscriber.recoverPendingMessages(request);
                 if (claimMinIdleTime != null && !claimMinIdleTime.isZero()) {
                     subscriber.autoClaimStuckMessages(request, claimMinIdleTime);
@@ -262,6 +279,48 @@ public class RedisBrokerStrategy implements BrokerStrategy {
                 // Preserve request for next recovery cycle
                 subscriptionRequests.put(key, request);
             }
+        }
+    }
+
+    /**
+     * Log consumer group membership diagnostic.
+     * Warns if multiple consumers are detected in the same group, which may indicate
+     * duplicate instances competing for messages.
+     *
+     * @param streamKey    the full Redis stream key
+     * @param groupName    the consumer group name
+     * @param ownConsumer  this instance's consumer name (null during periodic checks)
+     */
+    private void logConsumerDiagnostic(String streamKey, String groupName, String ownConsumer) {
+        try {
+            StreamInfo.XInfoConsumers consumerInfos = redisTemplate.opsForStream()
+                    .consumers(streamKey, groupName);
+            if (consumerInfos == null) {
+                return;
+            }
+
+            String localAddress;
+            try {
+                localAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (Exception e) {
+                localAddress = "unknown";
+            }
+
+            int count = consumerInfos.size();
+            if (count > 1) {
+                log.warn("Multiple consumers in group '{}' [stream={}, count={}, localIp={}]",
+                        groupName, streamKey, count, localAddress);
+                for (StreamInfo.XInfoConsumer c : consumerInfos) {
+                    log.warn("  consumer='{}' pending={} idle={}{}",
+                            c.consumerName(), c.pendingCount(), c.idleTime(),
+                            c.consumerName().equals(ownConsumer) ? " (this instance)" : "");
+                }
+            } else {
+                log.info("Consumer group '{}' [stream={}, consumers={}, localIp={}]",
+                        groupName, streamKey, count, localAddress);
+            }
+        } catch (Exception e) {
+            log.debug("Consumer diagnostic failed for stream '{}': {}", streamKey, e.getMessage());
         }
     }
 
