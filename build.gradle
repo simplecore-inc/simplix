@@ -215,6 +215,10 @@ subprojects {
                         'simplix-stream': [
                             name: 'SimpliX Stream',
                             description: 'Real-time subscription system with SSE and WebSocket transports, supporting local and distributed modes'
+                        ],
+                        'simplix-sync': [
+                            name: 'SimpliX Sync',
+                            description: 'Cross-instance state synchronization with pub/sub broadcasting, typed channels, state store, and reconciliation support'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {
