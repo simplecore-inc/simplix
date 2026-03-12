@@ -71,6 +71,15 @@ public class MessagingProperties {
      */
     private ErrorProperties error = new ErrorProperties();
 
+    /**
+     * Delay before starting message subscribers after the application is ready.
+     *
+     * <p>Allows SSE clients and other downstream consumers to establish connections
+     * before the broker begins delivering backlogged messages. Set to {@code 0s}
+     * for immediate start (default for local broker).
+     */
+    private Duration subscriberStartupDelay = Duration.ZERO;
+
     // ---------------------------------------------------------------
     // Nested property classes
     // ---------------------------------------------------------------

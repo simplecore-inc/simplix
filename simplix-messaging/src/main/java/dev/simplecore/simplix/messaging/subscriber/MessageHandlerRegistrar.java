@@ -10,9 +10,9 @@ import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.MessageListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.core.env.Environment;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,20 +20,32 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Scans Spring beans for methods annotated with {@link MessageHandler} and
  * registers them as subscribers with the active {@link BrokerStrategy}.
  *
- * <p>This processor operates in two phases:
+ * <p>This processor operates in three phases:
  * <ol>
  *   <li>{@link #postProcessAfterInitialization} - discovers annotated methods and stores registration info</li>
- *   <li>{@link #afterSingletonsInstantiated} - creates subscriptions via the broker for all discovered handlers</li>
+ *   <li>{@link #afterSingletonsInstantiated} - logs discovered handlers (no subscriptions yet)</li>
+ *   <li>{@link #start} - creates subscriptions via the broker, optionally after a startup delay
+ *       to allow SSE clients and downstream consumers to connect first</li>
  * </ol>
+ *
+ * <p>The startup delay is configurable via {@code simplix.messaging.subscriber-startup-delay}.
+ * When set to a positive duration, the subscriber waits after the application is ready before
+ * starting to consume messages from the broker. This prevents message loss when push-based
+ * consumers (e.g., SSE clients) need time to reconnect after a server restart.
  *
  * <p>Auto-deserialization is performed based on the type parameter {@code T} of the handler method's
  * first {@code Message<T>} parameter:
@@ -45,9 +57,15 @@ import java.util.UUID;
  * </ul>
  */
 @Slf4j
-public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitializingSingleton, DisposableBean {
+public class MessageHandlerRegistrar
+        implements BeanPostProcessor, SmartInitializingSingleton, SmartLifecycle {
 
     private static final String WIRE_MESSAGE_CLASS = "com.squareup.wire.Message";
+
+    /**
+     * Start in a late phase so SSE infrastructure and HTTP server are ready first.
+     */
+    private static final int LIFECYCLE_PHASE = Integer.MAX_VALUE - 100;
 
     private final BrokerStrategy brokerStrategy;
     private final Environment environment;
@@ -55,6 +73,9 @@ public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitiali
     private final MessagingProperties properties;
     private final List<HandlerRegistration> registrations = new ArrayList<>();
     private final List<Subscription> activeSubscriptions = new ArrayList<>();
+
+    private volatile boolean running = false;
+    private ScheduledExecutorService startupScheduler;
 
     /**
      * Create a new registrar.
@@ -93,26 +114,52 @@ public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitiali
     public void afterSingletonsInstantiated() {
         if (registrations.isEmpty()) {
             log.info("No @MessageHandler methods found");
+        } else {
+            log.info("Discovered {} @MessageHandler method(s), will start during lifecycle phase",
+                    registrations.size());
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // SmartLifecycle
+    // ---------------------------------------------------------------
+
+    @Override
+    public void start() {
+        if (running || registrations.isEmpty()) {
+            running = true;
             return;
         }
 
-        log.info("Registering {} message handler(s) with broker '{}'",
-                registrations.size(), brokerStrategy.name());
+        running = true;
 
-        for (HandlerRegistration registration : registrations) {
-            createSubscription(registration);
+        Duration delay = properties != null ? properties.getSubscriberStartupDelay() : Duration.ZERO;
+
+        if (!delay.isZero() && !delay.isNegative()) {
+            log.info("Deferring subscriber startup by {} to allow downstream consumers to connect",
+                    delay);
+
+            startupScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "msg-handler-startup");
+                t.setDaemon(true);
+                return t;
+            });
+            startupScheduler.schedule(this::startSubscriptions, delay.toMillis(), TimeUnit.MILLISECONDS);
+        } else {
+            startSubscriptions();
         }
     }
 
-    /**
-     * Return the list of active subscriptions (for lifecycle management and testing).
-     */
-    public List<Subscription> getActiveSubscriptions() {
-        return List.copyOf(activeSubscriptions);
-    }
-
     @Override
-    public void destroy() {
+    public void stop() {
+        if (!running) return;
+        running = false;
+
+        if (startupScheduler != null) {
+            startupScheduler.shutdownNow();
+            startupScheduler = null;
+        }
+
         log.info("Shutting down MessageHandlerRegistrar, cancelling {} active subscription(s)",
                 activeSubscriptions.size());
         for (Subscription subscription : activeSubscriptions) {
@@ -126,6 +173,36 @@ public class MessageHandlerRegistrar implements BeanPostProcessor, SmartInitiali
             }
         }
         activeSubscriptions.clear();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
+    }
+
+    @Override
+    public int getPhase() {
+        return LIFECYCLE_PHASE;
+    }
+
+    /**
+     * Return the list of active subscriptions (for lifecycle management and testing).
+     */
+    public List<Subscription> getActiveSubscriptions() {
+        return List.copyOf(activeSubscriptions);
+    }
+
+    // ---------------------------------------------------------------
+    // Subscription startup
+    // ---------------------------------------------------------------
+
+    private void startSubscriptions() {
+        log.info("Registering {} message handler(s) with broker '{}'",
+                registrations.size(), brokerStrategy.name());
+
+        for (HandlerRegistration registration : registrations) {
+            createSubscription(registration);
+        }
     }
 
     // ---------------------------------------------------------------
