@@ -5,6 +5,7 @@ import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,16 +95,48 @@ public class EventSubscriberRegistry implements SubscriberLookup {
 
     /**
      * Get all subscribers for a subscription key.
+     * <p>
+     * When the key has empty params (paramsHash = "empty"), falls back to
+     * resource-level lookup — returning ALL subscribers for that resource
+     * regardless of their specific subscription parameters. This supports
+     * broadcast event sources that push to every subscriber of a resource.
      *
      * @param key the subscription key
      * @return unmodifiable set of session IDs (empty if none)
      */
     public Set<String> getSubscribers(SubscriptionKey key) {
+        // Exact key match first
         Set<String> sessionIds = subscribers.get(key);
-        if (sessionIds == null || sessionIds.isEmpty()) {
-            return Collections.emptySet();
+        if (sessionIds != null && !sessionIds.isEmpty()) {
+            return Collections.unmodifiableSet(sessionIds);
         }
-        return Collections.unmodifiableSet(sessionIds);
+
+        // Empty params = broadcast to ALL subscribers of this resource
+        if ("empty".equals(key.getParamsHash())) {
+            return getSubscribersByResource(key.getResource());
+        }
+
+        return Collections.emptySet();
+    }
+
+    /**
+     * Get all subscribers for a resource, across all parameter variations.
+     * <p>
+     * Used for broadcast event sources where the event applies to every
+     * subscriber regardless of their individual subscription parameters
+     * (e.g., timezone is a display preference, not a routing criterion).
+     *
+     * @param resource the resource name
+     * @return unmodifiable set of session IDs (empty if none)
+     */
+    public Set<String> getSubscribersByResource(String resource) {
+        Set<String> result = new HashSet<>();
+        subscribers.forEach((subKey, sessionIds) -> {
+            if (subKey.getResource().equals(resource)) {
+                result.addAll(sessionIds);
+            }
+        });
+        return result.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(result);
     }
 
     /**

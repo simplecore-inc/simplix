@@ -63,7 +63,7 @@ public class SseStreamController {
      * @return SSE emitter for the connection
      */
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter connect() {
+    public SseEmitter connect(@RequestParam(required = false) Map<String, String> connectParams) {
         String userId = extractUserId();
 
         // Create SSE emitter with configured timeout
@@ -73,6 +73,11 @@ public class SseStreamController {
         // Create stream session via manager
         StreamSession streamSession = sessionManager.createSession(userId, TransportType.SSE);
         String sessionId = streamSession.getId();
+
+        // Store connect query params as session metadata
+        if (connectParams != null) {
+            connectParams.forEach(streamSession::addMetadata);
+        }
 
         // Create SSE session wrapper
         SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper);
@@ -90,7 +95,8 @@ public class SseStreamController {
         // Send initial connection message
         sendConnectionMessage(sseSession, sessionId);
 
-        log.info("SSE connection established: sessionId={}, userId={}", sessionId, userId);
+        log.info("SSE connection established: sessionId={}, userId={}, connectParams={}",
+                sessionId, userId, connectParams);
         return emitter;
     }
 
@@ -117,8 +123,8 @@ public class SseStreamController {
         // Validate user authorization
         validateSessionOwnership(sseSession);
 
-        // Convert request to subscriptions
-        List<Subscription> newSubscriptions = convertToSubscriptions(request);
+        // Convert request to subscriptions (merge session metadata into params)
+        List<Subscription> newSubscriptions = convertToSubscriptions(request, sseSession.getSession());
 
         // Validate resources exist and check authorization
         String userId = sseSession.getUserId();
@@ -354,9 +360,10 @@ public class SseStreamController {
         log.info("Session cleaned up: {}", sessionId);
     }
 
-    private List<Subscription> convertToSubscriptions(SubscriptionRequest request) {
+    private List<Subscription> convertToSubscriptions(SubscriptionRequest request, StreamSession session) {
         Duration defaultInterval = properties.getScheduler().getDefaultInterval();
         Duration minInterval = properties.getScheduler().getMinInterval();
+        Map<String, Object> sessionMetadata = session.getMetadata();
 
         return request.getSubscriptions().stream()
                 .map(item -> {
@@ -371,7 +378,14 @@ public class SseStreamController {
                             })
                             .orElse(defaultInterval);
 
-                    SubscriptionKey key = SubscriptionKey.of(item.getResource(), item.getParams());
+                    // Merge session metadata (connect params) with subscription params.
+                    // Subscription-level params take precedence over session metadata.
+                    Map<String, Object> mergedParams = new LinkedHashMap<>(sessionMetadata);
+                    if (item.getParams() != null) {
+                        mergedParams.putAll(item.getParams());
+                    }
+
+                    SubscriptionKey key = SubscriptionKey.of(item.getResource(), mergedParams);
                     return Subscription.of(key, interval);
                 })
                 .toList();

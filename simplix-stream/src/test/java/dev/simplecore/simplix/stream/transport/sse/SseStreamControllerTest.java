@@ -107,7 +107,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            SseEmitter emitter = controller.connect();
+            SseEmitter emitter = controller.connect(null);
 
             assertNotNull(emitter);
             verify(sessionManager).createSession("user123", TransportType.SSE);
@@ -123,7 +123,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect();
+            controller.connect(null);
 
             verify(scheduledExecutor).scheduleAtFixedRate(
                     any(Runnable.class),
@@ -144,7 +144,7 @@ class SseStreamControllerTest {
 
             assertEquals(0, controller.getActiveSessionCount());
 
-            controller.connect();
+            controller.connect(null);
 
             assertEquals(1, controller.getActiveSessionCount());
         }
