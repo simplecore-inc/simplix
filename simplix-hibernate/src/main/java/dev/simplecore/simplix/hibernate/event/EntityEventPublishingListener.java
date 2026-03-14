@@ -264,9 +264,9 @@ public class EntityEventPublishingListener {
             if (securityContext != null) {
                 Object authentication = securityContext.getClass().getMethod("getAuthentication").invoke(securityContext);
                 if (authentication != null) {
-                    Object name = authentication.getClass().getMethod("getName").invoke(authentication);
-                    if (name != null) {
-                        metadata.put("actorId", name.toString());
+                    String actorId = resolveActorId(authentication);
+                    if (actorId != null) {
+                        metadata.put("actorId", actorId);
                     }
                 }
             }
@@ -286,6 +286,31 @@ public class EntityEventPublishingListener {
         }
 
         return metadata;
+    }
+
+    /**
+     * Resolves the actor identifier from the authentication principal.
+     * <p>
+     * Tries {@code getUserId()} first (for principals implementing a user-id-provider pattern),
+     * then falls back to {@code authentication.getName()}.
+     */
+    private String resolveActorId(Object authentication) throws Exception {
+        Object principal = authentication.getClass().getMethod("getPrincipal").invoke(authentication);
+        if (principal != null) {
+            // Try getUserId() — preferred: returns stable UUID rather than mutable username
+            try {
+                Object userId = principal.getClass().getMethod("getUserId").invoke(principal);
+                if (userId != null) {
+                    return userId.toString();
+                }
+            } catch (NoSuchMethodException ignored) {
+                // Principal does not implement getUserId()
+            }
+        }
+
+        // Fallback to authentication.getName()
+        Object name = authentication.getClass().getMethod("getName").invoke(authentication);
+        return name != null ? name.toString() : null;
     }
 
     private Map<String, Object> buildPayload(Object entity) {
