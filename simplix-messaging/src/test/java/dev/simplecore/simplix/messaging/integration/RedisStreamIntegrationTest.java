@@ -427,39 +427,76 @@ class RedisStreamIntegrationTest {
     class IdempotentGuardTests {
 
         @Test
-        @DisplayName("should prevent duplicate message processing")
+        @DisplayName("should prevent duplicate message processing within same group")
         void shouldPreventDuplicates() {
             IdempotentGuard guard = new IdempotentGuard(redisTemplate, Duration.ofSeconds(10));
             String channel = "idempotent-channel";
+            String group = "test-group";
             String messageId = "dedup-msg-001";
 
             // First attempt should succeed
-            boolean first = guard.tryAcquire(channel, messageId);
+            boolean first = guard.tryAcquire(channel, group, messageId);
             assertThat(first).isTrue();
 
             // Second attempt with same ID should fail
-            boolean second = guard.tryAcquire(channel, messageId);
+            boolean second = guard.tryAcquire(channel, group, messageId);
             assertThat(second).isFalse();
 
             // Clean up
-            redisTemplate.delete("simplix:idempotent:" + channel + ":" + messageId);
+            redisTemplate.delete("messaging:idempotent:" + group + ":" + channel + ":" + messageId);
         }
 
         @Test
         @DisplayName("should allow same message ID on different channels")
         void shouldAllowSameIdOnDifferentChannels() {
             IdempotentGuard guard = new IdempotentGuard(redisTemplate, Duration.ofSeconds(10));
+            String group = "test-group";
             String messageId = "cross-channel-msg-001";
 
-            boolean ch1 = guard.tryAcquire("channel-1", messageId);
-            boolean ch2 = guard.tryAcquire("channel-2", messageId);
+            boolean ch1 = guard.tryAcquire("channel-1", group, messageId);
+            boolean ch2 = guard.tryAcquire("channel-2", group, messageId);
 
             assertThat(ch1).isTrue();
             assertThat(ch2).isTrue();
 
             // Clean up
-            redisTemplate.delete("simplix:idempotent:channel-1:" + messageId);
-            redisTemplate.delete("simplix:idempotent:channel-2:" + messageId);
+            redisTemplate.delete("messaging:idempotent:" + group + ":channel-1:" + messageId);
+            redisTemplate.delete("messaging:idempotent:" + group + ":channel-2:" + messageId);
+        }
+
+        @Test
+        @DisplayName("should allow same message ID on different consumer groups")
+        void shouldAllowSameIdOnDifferentGroups() {
+            IdempotentGuard guard = new IdempotentGuard(redisTemplate, Duration.ofSeconds(10));
+            String channel = "shared-channel";
+            String messageId = "cross-group-msg-001";
+
+            boolean group1 = guard.tryAcquire(channel, "group-A", messageId);
+            boolean group2 = guard.tryAcquire(channel, "group-B", messageId);
+
+            assertThat(group1).isTrue();
+            assertThat(group2).isTrue();
+
+            // Clean up
+            redisTemplate.delete("messaging:idempotent:group-A:" + channel + ":" + messageId);
+            redisTemplate.delete("messaging:idempotent:group-B:" + channel + ":" + messageId);
+        }
+
+        @Test
+        @DisplayName("should work without group (empty string)")
+        void shouldWorkWithoutGroup() {
+            IdempotentGuard guard = new IdempotentGuard(redisTemplate, Duration.ofSeconds(10));
+            String channel = "no-group-channel";
+            String messageId = "no-group-msg-001";
+
+            boolean first = guard.tryAcquire(channel, "", messageId);
+            assertThat(first).isTrue();
+
+            boolean second = guard.tryAcquire(channel, "", messageId);
+            assertThat(second).isFalse();
+
+            // Clean up
+            redisTemplate.delete("messaging:idempotent:" + channel + ":" + messageId);
         }
     }
 

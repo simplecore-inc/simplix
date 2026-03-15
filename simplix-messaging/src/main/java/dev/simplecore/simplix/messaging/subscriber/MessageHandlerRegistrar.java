@@ -226,7 +226,7 @@ public class MessageHandlerRegistrar
         }
 
         // Create the message listener with deserialization and auto-ack
-        MessageListener<byte[]> listener = createListener(registration, channel);
+        MessageListener<byte[]> listener = createListener(registration, channel, group);
 
         for (int i = 0; i < annotation.concurrency(); i++) {
             String consumerName = group.isEmpty()
@@ -260,7 +260,7 @@ public class MessageHandlerRegistrar
     // Listener creation with deserialization
     // ---------------------------------------------------------------
 
-    private MessageListener<byte[]> createListener(HandlerRegistration registration, String channel) {
+    private MessageListener<byte[]> createListener(HandlerRegistration registration, String channel, String group) {
         Method method = registration.method();
         Object bean = registration.bean();
         MessageHandler annotation = registration.annotation();
@@ -281,7 +281,7 @@ public class MessageHandlerRegistrar
                 } else {
                     String messageId = rawMessage.getHeaders().get(MessageHeaders.MESSAGE_ID)
                             .orElse(rawMessage.getMessageId());
-                    if (!idempotentGuard.tryAcquire(channel, messageId)) {
+                    if (!idempotentGuard.tryAcquire(channel, group, messageId)) {
                         log.debug("Duplicate message detected, skipping: channel={} messageId={}",
                                 channel, messageId);
                         ack.ack();

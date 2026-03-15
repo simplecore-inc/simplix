@@ -41,17 +41,26 @@ public class IdempotentGuard {
      * Returns {@code true} on the first processing attempt and {@code false}
      * for any subsequent duplicate.
      *
+     * <p>The key includes the consumer group name to prevent cross-group collisions.
+     * When multiple consumer groups subscribe to the same channel (e.g., per-instance
+     * groups in local development), each group independently processes every message.
+     * Without the group in the key, the first group to process a message would block
+     * all other groups via the shared idempotent key.
+     *
      * @param channel   the channel name
+     * @param group     the consumer group name (empty string if no group)
      * @param messageId the unique message identifier
      * @return {@code true} if this is the first processing attempt; {@code false} if duplicate
      */
-    public boolean tryAcquire(String channel, String messageId) {
+    public boolean tryAcquire(String channel, String group, String messageId) {
         if (redisTemplate == null) {
             // No-op mode for local broker or environments without Redis
             return true;
         }
 
-        String key = KEY_PREFIX + channel + ":" + messageId;
+        String key = group.isEmpty()
+                ? KEY_PREFIX + channel + ":" + messageId
+                : KEY_PREFIX + group + ":" + channel + ":" + messageId;
         try {
             Boolean acquired = redisTemplate.opsForValue().setIfAbsent(key, "1", ttl);
             if (Boolean.TRUE.equals(acquired)) {
