@@ -44,7 +44,7 @@ public class SimpliXWebAutoConfiguration {
         }
 
         @RestControllerAdvice
-        private static class DefaultSimpliXExceptionHandler extends SimpliXExceptionHandler<SimpliXApiResponse<Object>> {
+        static class DefaultSimpliXExceptionHandler extends SimpliXExceptionHandler<SimpliXApiResponse<Object>> {
             DefaultSimpliXExceptionHandler(MessageSource messageSource, ObjectMapper objectMapper) {
                 super(messageSource, objectMapper);
             }
