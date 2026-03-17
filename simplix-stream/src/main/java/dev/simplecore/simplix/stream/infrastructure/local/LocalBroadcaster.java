@@ -59,7 +59,7 @@ public class LocalBroadcaster implements BroadcastService {
         }
 
         if (failCount > 0) {
-            log.debug("Broadcast complete for {}: success={}, failed={}",
+            log.trace("Broadcast complete for {}: success={}, failed={}",
                     key.toKeyString(), successCount, failCount);
         }
     }
@@ -74,15 +74,19 @@ public class LocalBroadcaster implements BroadcastService {
         }
 
         if (!sender.isActive()) {
-            log.debug("Sender not active for session: {}", sessionId);
+            log.trace("Sender not active for session: {}, removing sender", sessionId);
             senders.remove(sessionId);
             return false;
         }
 
         try {
-            return sender.send(message);
+            boolean sent = sender.send(message);
+            if (!sent) {
+                log.trace("Sender returned false for session: {}", sessionId);
+            }
+            return sent;
         } catch (Exception e) {
-            log.warn("Failed to send message to session {}: {}", sessionId, e.getMessage());
+            log.warn("Failed to send message to session {}: {}", sessionId, e.getMessage(), e);
             return false;
         }
     }

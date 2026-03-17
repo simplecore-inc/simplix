@@ -69,7 +69,7 @@ public class SimpliXJpaAuditingAutoConfiguration {
         log.info("Initializing SimpliX JPA Auditing DateTimeProvider...");
         return () -> {
             OffsetDateTime now = OffsetDateTime.now();
-            log.debug("DateTimeProvider returning: {}", now);
+            log.trace("DateTimeProvider returning: {}", now);
             return Optional.of(now);
         };
     }

@@ -160,10 +160,18 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
     
     @Override
     public UnifiedCsvExporter<T> encoding(String encoding) {
+        // Try matching by charset display name first (e.g., "UTF-8", "ISO-8859-1")
+        for (Encoding enc : Encoding.values()) {
+            if (enc.getName().equalsIgnoreCase(encoding)) {
+                this.encoding = enc;
+                return this;
+            }
+        }
+        // Try matching by enum name (e.g., "UTF8", "UTF8_BOM", "ISO_8859_1")
         try {
             this.encoding = Encoding.valueOf(encoding.toUpperCase());
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid encoding: {}. Using UTF8.", encoding);
+            log.warn("Unsupported encoding: {}. Using UTF8.", encoding);
             this.encoding = Encoding.UTF8;
         }
         return this;

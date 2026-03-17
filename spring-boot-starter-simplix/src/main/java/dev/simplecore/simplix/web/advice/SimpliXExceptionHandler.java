@@ -17,10 +17,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.PrintWriter;
@@ -444,6 +449,77 @@ public class SimpliXExceptionHandler<T> {
 
         // Add trace ID to response header and MDC for logging
         addTraceIdToResponse(errorResponse, request);
+
+        return errorResponse;
+    }
+
+    /**
+     * Handle common Spring MVC client request exceptions that should return 4xx responses.
+     *
+     * <p>Without this handler, these exceptions fall through to the generic {@code Exception}
+     * handler and are incorrectly treated as 500 Internal Server Error.
+     */
+    @ExceptionHandler({
+        HttpRequestMethodNotSupportedException.class,
+        HttpMediaTypeNotSupportedException.class,
+        HttpMediaTypeNotAcceptableException.class,
+        MissingServletRequestParameterException.class,
+        MethodArgumentTypeMismatchException.class
+    })
+    @Order(11)
+    public T handleSpringMvcClientException(Exception ex, HttpServletRequest request) {
+        ErrorCode errorCode;
+        HttpStatus status;
+
+        if (ex instanceof HttpRequestMethodNotSupportedException) {
+            errorCode = ErrorCode.GEN_METHOD_NOT_ALLOWED;
+            status = HttpStatus.METHOD_NOT_ALLOWED;
+        } else if (ex instanceof HttpMediaTypeNotSupportedException) {
+            errorCode = ErrorCode.GEN_BAD_REQUEST;
+            status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+        } else if (ex instanceof HttpMediaTypeNotAcceptableException) {
+            errorCode = ErrorCode.GEN_BAD_REQUEST;
+            status = HttpStatus.NOT_ACCEPTABLE;
+        } else if (ex instanceof MissingServletRequestParameterException) {
+            errorCode = ErrorCode.VAL_MISSING_PARAMETER;
+            status = HttpStatus.BAD_REQUEST;
+        } else {
+            errorCode = ErrorCode.VAL_INVALID_PARAMETER;
+            status = HttpStatus.BAD_REQUEST;
+        }
+
+        log.warn("Client request error: {} - {} {}",
+            ex.getClass().getSimpleName(), request.getMethod(), request.getRequestURI());
+
+        String message = messageSource.getMessage(
+            "error." + errorCode.getCode().toLowerCase().replace("_", "."),
+            null,
+            errorCode.getDefaultMessage(),
+            LocaleContextHolder.getLocale()
+        );
+
+        T errorResponse = responseFactory.createErrorResponse(
+            status,
+            errorCode.getCode(),
+            message,
+            ex.getMessage(),
+            request.getRequestURI()
+        );
+
+        // Set HTTP status and trace ID
+        try {
+            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes)
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            if (response != null) {
+                response.setStatus(status.value());
+                String traceId = MDC.get("traceId");
+                if (traceId != null && !traceId.isEmpty()) {
+                    response.setHeader("X-Trace-Id", traceId);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to set HTTP status: {}", e.getMessage());
+        }
 
         return errorResponse;
     }

@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -78,17 +79,23 @@ public class MessagingAutoConfiguration {
      * Registrar that scans for {@code @MessageHandler} annotated methods
      * and binds them to the broker's subscription mechanism.
      *
-     * @param brokerStrategy  the active broker strategy
+     * <p>Dependencies are injected via {@link ObjectProvider} for lazy resolution.
+     * Since this bean implements {@link org.springframework.beans.factory.config.BeanPostProcessor},
+     * eager injection would force all transitive dependencies (Redis, Metrics, SSL, etc.)
+     * to be initialized before other BeanPostProcessors, triggering excessive
+     * {@code BeanPostProcessorChecker} warnings.
+     *
+     * @param brokerStrategy  lazy provider for the active broker strategy
      * @param environment     the Spring environment for property placeholder resolution
-     * @param idempotentGuard optional idempotent guard (present only when Redis broker is active)
-     * @param properties      the messaging properties
+     * @param idempotentGuard lazy provider for the optional idempotent guard
+     * @param properties      lazy provider for the messaging properties
      * @return the message handler registrar
      */
     @Bean
-    public MessageHandlerRegistrar messageHandlerRegistrar(BrokerStrategy brokerStrategy,
-                                                           Environment environment,
-                                                           Optional<IdempotentGuard> idempotentGuard,
-                                                           MessagingProperties properties) {
+    public static MessageHandlerRegistrar messageHandlerRegistrar(ObjectProvider<BrokerStrategy> brokerStrategy,
+                                                                  Environment environment,
+                                                                  ObjectProvider<IdempotentGuard> idempotentGuard,
+                                                                  ObjectProvider<MessagingProperties> properties) {
         return new MessageHandlerRegistrar(brokerStrategy, environment, idempotentGuard, properties);
     }
 

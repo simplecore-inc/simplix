@@ -513,8 +513,7 @@ private Map<String, Map<String, String>> getValidationMessages(Field field, Stri
                     }
                 }
             } else {
-                log.warn("UserAccountSearchDTO not found in cache");
-                log.info("Available classes in cache: {}", schemaClassCache.keySet());
+                log.debug("UserAccountSearchDTO not found in cache — skipping SearchableField test");
             }
 
             // Test ID field detection

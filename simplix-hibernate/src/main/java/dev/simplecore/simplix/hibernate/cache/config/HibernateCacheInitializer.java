@@ -62,11 +62,11 @@ public class HibernateCacheInitializer {
             );
 
             if (!secondLevelCacheEnabled) {
-                log.warn("⚠ Second-level cache is disabled in Hibernate configuration");
+                log.info("Second-level cache is disabled in Hibernate configuration");
             }
 
             if (!queryCacheEnabled && this.properties.isQueryCacheAutoEviction()) {
-                log.warn("⚠ Query cache is disabled but auto-eviction is enabled");
+                log.info("Query cache is disabled but auto-eviction is enabled — auto-eviction will be inactive");
             }
 
             String cacheProvider = String.valueOf(properties.get(AvailableSettings.CACHE_REGION_FACTORY));

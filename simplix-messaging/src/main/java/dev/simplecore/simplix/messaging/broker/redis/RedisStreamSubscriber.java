@@ -6,6 +6,8 @@ import dev.simplecore.simplix.messaging.core.Message;
 import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Range;
 import org.springframework.data.redis.connection.stream.ByteRecord;
 import org.springframework.data.redis.connection.stream.Consumer;
@@ -25,6 +27,8 @@ import org.springframework.data.redis.stream.StreamMessageListenerContainer.Stre
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class RedisStreamSubscriber {
 
+    private static final Logger MESSAGE_TRACE = LoggerFactory.getLogger("MESSAGE_TRACE");
     private static final String PAYLOAD_FIELD = "payload";
 
     private final StringRedisTemplate redisTemplate;
@@ -520,7 +525,43 @@ public class RedisStreamSubscriber {
                 .headers(headers)
                 .build();
 
+        traceMessage("IN", request.channel(), recordId, messageId, payload, headers);
+
         request.listener().onMessage(message, ack);
+    }
+
+    private void traceMessage(String direction, String channel, String recordId,
+                               String messageId, byte[] payload, MessageHeaders headers) {
+        if (!MESSAGE_TRACE.isInfoEnabled()) {
+            return;
+        }
+        try {
+            StringBuilder sb = new StringBuilder(256);
+            sb.append("{\"ts\":\"").append(DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+            sb.append("\",\"dir\":\"").append(direction);
+            sb.append("\",\"ch\":\"").append(escapeJson(channel));
+            sb.append("\",\"recordId\":\"").append(escapeJson(recordId));
+            sb.append("\",\"msgId\":\"").append(escapeJson(messageId));
+            sb.append("\",\"size\":").append(payload.length);
+            sb.append(",\"headers\":{");
+            boolean first = true;
+            for (Map.Entry<String, String> entry : headers.toMap().entrySet()) {
+                if (!first) sb.append(',');
+                sb.append('"').append(escapeJson(entry.getKey())).append("\":\"")
+                        .append(escapeJson(entry.getValue())).append('"');
+                first = false;
+            }
+            sb.append("},\"payload\":\"").append(Base64.getEncoder().encodeToString(payload));
+            sb.append("\"}");
+            MESSAGE_TRACE.info(sb.toString());
+        } catch (Exception e) {
+            log.debug("Failed to trace message: {}", e.getMessage());
+        }
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String resolveKey(String channel) {

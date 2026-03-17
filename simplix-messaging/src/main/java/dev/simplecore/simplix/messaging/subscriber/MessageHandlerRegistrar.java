@@ -10,6 +10,7 @@ import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.MessageListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.SmartLifecycle;
@@ -67,32 +68,44 @@ public class MessageHandlerRegistrar
      */
     private static final int LIFECYCLE_PHASE = Integer.MAX_VALUE - 100;
 
-    private final BrokerStrategy brokerStrategy;
+    // Lazy providers — resolved after all singletons are instantiated to avoid
+    // pulling the entire Redis/Metrics dependency chain during BeanPostProcessor creation.
+    private final ObjectProvider<BrokerStrategy> brokerStrategyProvider;
+    private final ObjectProvider<IdempotentGuard> idempotentGuardProvider;
+    private final ObjectProvider<MessagingProperties> propertiesProvider;
+
     private final Environment environment;
-    private final IdempotentGuard idempotentGuard;
-    private final MessagingProperties properties;
     private final List<HandlerRegistration> registrations = new ArrayList<>();
     private final List<Subscription> activeSubscriptions = new ArrayList<>();
+
+    // Eagerly resolved from providers in afterSingletonsInstantiated()
+    private BrokerStrategy brokerStrategy;
+    private IdempotentGuard idempotentGuard;
+    private MessagingProperties properties;
 
     private volatile boolean running = false;
     private ScheduledExecutorService startupScheduler;
 
     /**
-     * Create a new registrar.
+     * Create a new registrar with lazy dependency resolution.
      *
-     * @param brokerStrategy  the active broker strategy
-     * @param environment     the Spring environment for placeholder resolution
-     * @param idempotentGuard optional idempotent guard for deduplication
-     * @param properties      the messaging properties (can be {@code null} for testing)
+     * <p>Dependencies are accepted as {@link ObjectProvider} to avoid early bean initialization
+     * during the {@link BeanPostProcessor} creation phase. They are resolved in
+     * {@link #afterSingletonsInstantiated()} when all beans are available.
+     *
+     * @param brokerStrategyProvider  lazy provider for the active broker strategy
+     * @param environment             the Spring environment for placeholder resolution
+     * @param idempotentGuardProvider lazy provider for the optional idempotent guard
+     * @param propertiesProvider      lazy provider for messaging properties
      */
-    public MessageHandlerRegistrar(BrokerStrategy brokerStrategy,
+    public MessageHandlerRegistrar(ObjectProvider<BrokerStrategy> brokerStrategyProvider,
                                    Environment environment,
-                                   Optional<IdempotentGuard> idempotentGuard,
-                                   MessagingProperties properties) {
-        this.brokerStrategy = brokerStrategy;
+                                   ObjectProvider<IdempotentGuard> idempotentGuardProvider,
+                                   ObjectProvider<MessagingProperties> propertiesProvider) {
+        this.brokerStrategyProvider = brokerStrategyProvider;
         this.environment = environment;
-        this.idempotentGuard = idempotentGuard.orElse(null);
-        this.properties = properties;
+        this.idempotentGuardProvider = idempotentGuardProvider;
+        this.propertiesProvider = propertiesProvider;
     }
 
     @Override
@@ -112,6 +125,11 @@ public class MessageHandlerRegistrar
 
     @Override
     public void afterSingletonsInstantiated() {
+        // Resolve lazy dependencies now that all singletons are available
+        this.brokerStrategy = brokerStrategyProvider.getObject();
+        this.idempotentGuard = idempotentGuardProvider.getIfAvailable();
+        this.properties = propertiesProvider.getIfAvailable();
+
         if (registrations.isEmpty()) {
             log.info("No @MessageHandler methods found");
         } else {

@@ -3,6 +3,8 @@ package dev.simplecore.simplix.messaging.broker.redis;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.connection.stream.ByteRecord;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.RecordId;
@@ -12,6 +14,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,6 +34,7 @@ import java.util.Map;
 @Slf4j
 public class RedisStreamPublisher {
 
+    private static final Logger MESSAGE_TRACE = LoggerFactory.getLogger("MESSAGE_TRACE");
     private static final String PAYLOAD_FIELD = "payload";
 
     private final StringRedisTemplate redisTemplate;
@@ -85,6 +89,11 @@ public class RedisStreamPublisher {
         String recordIdStr = recordId != null ? recordId.getValue() : "unknown";
         log.debug("Published message to stream '{}' with record ID '{}' [encoding=BASE64]",
                 streamKey, recordIdStr);
+
+        traceMessage("OUT", channel, recordIdStr,
+                headers.get(MessageHeaders.MESSAGE_ID).orElse(recordIdStr),
+                payload, headers);
+
         return new PublishResult(recordIdStr, channel, Instant.now());
     }
 
@@ -111,6 +120,11 @@ public class RedisStreamPublisher {
         String recordIdStr = recordId != null ? recordId.getValue() : "unknown";
         log.debug("Published message to stream '{}' with record ID '{}' [encoding=RAW]",
                 streamKey, recordIdStr);
+
+        traceMessage("OUT", channel, recordIdStr,
+                headers.get(MessageHeaders.MESSAGE_ID).orElse(recordIdStr),
+                payload, headers);
+
         return new PublishResult(recordIdStr, channel, Instant.now());
     }
 
@@ -120,6 +134,40 @@ public class RedisStreamPublisher {
         } catch (Exception e) {
             log.warn("Failed to trim stream '{}': {}", streamKey, e.getMessage());
         }
+    }
+
+    private void traceMessage(String direction, String channel, String recordId,
+                               String messageId, byte[] payload, MessageHeaders headers) {
+        if (!MESSAGE_TRACE.isInfoEnabled()) {
+            return;
+        }
+        try {
+            StringBuilder sb = new StringBuilder(256);
+            sb.append("{\"ts\":\"").append(DateTimeFormatter.ISO_INSTANT.format(Instant.now()));
+            sb.append("\",\"dir\":\"").append(direction);
+            sb.append("\",\"ch\":\"").append(escapeJson(channel));
+            sb.append("\",\"recordId\":\"").append(escapeJson(recordId));
+            sb.append("\",\"msgId\":\"").append(escapeJson(messageId));
+            sb.append("\",\"size\":").append(payload.length);
+            sb.append(",\"headers\":{");
+            boolean first = true;
+            for (Map.Entry<String, String> entry : headers.toMap().entrySet()) {
+                if (!first) sb.append(',');
+                sb.append('"').append(escapeJson(entry.getKey())).append("\":\"")
+                        .append(escapeJson(entry.getValue())).append('"');
+                first = false;
+            }
+            sb.append("},\"payload\":\"").append(Base64.getEncoder().encodeToString(payload));
+            sb.append("\"}");
+            MESSAGE_TRACE.info(sb.toString());
+        } catch (Exception e) {
+            log.debug("Failed to trace message: {}", e.getMessage());
+        }
+    }
+
+    private static String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private String resolveKey(String channel) {
