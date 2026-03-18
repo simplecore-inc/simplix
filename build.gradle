@@ -91,6 +91,20 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'maven-publish'
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = '0.8.12'
+    }
+
+    jacocoTestReport {
+        dependsOn test
+        reports {
+            xml.required = true
+            html.required = true
+            csv.required = false
+        }
+    }
 
     dependencyManagement {
         imports {
@@ -284,6 +298,7 @@ subprojects {
 
     test {
         useJUnitPlatform()
+        // Suppress JVM CDS warning from Mockito byte-buddy agent
         jvmArgs '-Xshare:off'
     }
 }

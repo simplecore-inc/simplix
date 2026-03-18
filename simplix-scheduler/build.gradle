@@ -58,6 +58,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'com.h2database:h2'
+    testImplementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
 
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'

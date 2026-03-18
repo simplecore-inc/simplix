@@ -51,6 +51,8 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
+    testImplementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
 }
 
 bootJar {
