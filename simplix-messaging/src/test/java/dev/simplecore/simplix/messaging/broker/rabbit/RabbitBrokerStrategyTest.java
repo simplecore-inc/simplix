@@ -187,4 +187,41 @@ class RabbitBrokerStrategyTest {
             // No exception means success
         }
     }
+
+    @Nested
+    @DisplayName("acknowledge()")
+    class AcknowledgeTests {
+
+        @Test
+        @DisplayName("should not throw for per-consumer ack")
+        void shouldNotThrow() {
+            org.junit.jupiter.api.Assertions.assertDoesNotThrow(
+                    () -> strategy.acknowledge("queue", "group", "msg-1"));
+        }
+    }
+
+    @Nested
+    @DisplayName("initialize()")
+    class InitializeTests {
+
+        @Test
+        @DisplayName("should declare exchanges and set ready")
+        void shouldDeclareExchangesAndSetReady() {
+            strategy.initialize();
+            assertThat(strategy.isReady()).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("shutdown without active containers")
+    class ShutdownTests {
+
+        @Test
+        @DisplayName("should set not ready after shutdown")
+        void shouldSetNotReadyAfterShutdown() {
+            strategy.initialize();
+            strategy.shutdown();
+            assertThat(strategy.isReady()).isFalse();
+        }
+    }
 }

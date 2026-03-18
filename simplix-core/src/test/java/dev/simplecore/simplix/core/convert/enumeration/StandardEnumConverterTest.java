@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@SuppressWarnings("unchecked")
 @DisplayName("StandardEnumConverter Tests")
 class StandardEnumConverterTest {
 

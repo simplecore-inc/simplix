@@ -1,0 +1,5 @@
+ Profile: %s
+ Application URLs:
+  - Local     : http://localhost:%s
+  - Swagger UI: http://localhost:%s/swagger-ui.html
+  - API Docs  : http://localhost:%s/v3/api-docs

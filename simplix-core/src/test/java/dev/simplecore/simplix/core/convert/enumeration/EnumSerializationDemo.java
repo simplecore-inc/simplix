@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+@SuppressWarnings("unchecked")
 public class EnumSerializationDemo {
 
     enum UserRole implements SimpliXLabeledEnum {

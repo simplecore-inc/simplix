@@ -506,6 +506,67 @@ class RedisBroadcasterTest {
     }
 
     // ============================================================
+    // Additional coverage: deprecated constructor, unregister, error paths
+    // ============================================================
+
+    @Nested
+    @DisplayName("deprecated constructor and utility methods")
+    class DeprecatedAndUtility {
+
+        @SuppressWarnings("deprecation")
+        @Test
+        @DisplayName("should create broadcaster using deprecated constructor")
+        void shouldCreateUsingDeprecatedConstructor() {
+            RedisBroadcaster broadcaster = new RedisBroadcaster(
+                    redisTemplate, objectMapper, properties, INSTANCE_A);
+
+            assertNotNull(broadcaster);
+        }
+
+        @Test
+        @DisplayName("should unregister sender")
+        void shouldUnregisterSender() {
+            RedisBroadcaster broadcaster = createBroadcaster(INSTANCE_A, List.of());
+            broadcaster.registerSender("session-1", senderA1);
+
+            assertEquals(1, broadcaster.getLocalSenderCount());
+
+            broadcaster.unregisterSender("session-1");
+
+            assertEquals(0, broadcaster.getLocalSenderCount());
+        }
+
+        @Test
+        @DisplayName("should handle sender close exception during shutdown")
+        void shouldHandleSenderCloseExceptionDuringShutdown() {
+            doThrow(new RuntimeException("close error")).when(senderA1).close();
+
+            RedisBroadcaster broadcaster = createBroadcaster(INSTANCE_A, List.of());
+            broadcaster.registerSender("s1", senderA1);
+
+            // Should not throw
+            assertDoesNotThrow(broadcaster::shutdown);
+            assertEquals(0, broadcaster.getLocalSenderCount());
+        }
+
+        @Test
+        @DisplayName("should return false when sendToSession Redis fallback fails")
+        void shouldReturnFalseWhenSendToSessionRedisFails() {
+            doThrow(new RuntimeException("Redis down")).when(redisTemplate)
+                    .convertAndSend(anyString(), anyString());
+
+            RedisBroadcaster broadcaster = createBroadcaster(INSTANCE_A, List.of());
+
+            StreamMessage message = StreamMessage.data(
+                    SubscriptionKey.of("res", Map.of()), "data");
+
+            boolean result = broadcaster.sendToSession("remote-session", message);
+
+            assertFalse(result);
+        }
+    }
+
+    // ============================================================
     // Cross-Instance Scenario (End-to-End Simulation)
     // ============================================================
 

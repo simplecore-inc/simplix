@@ -41,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * All test keys are cleaned up after each test.
  */
 @Tag("integration")
+@SuppressWarnings("unchecked")
 @ExtendWith(RedisAvailableCondition.class)
 @DisplayName("Redis Stream Integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

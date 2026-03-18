@@ -93,4 +93,91 @@ class RequestReplyTemplateTest {
         assertThatThrownBy(future::get)
                 .hasCauseInstanceOf(TimeoutException.class);
     }
+
+    @Test
+    @DisplayName("should handle String payload")
+    void shouldHandleStringPayload() {
+        Message<String> request = Message.<String>builder()
+                .channel("request-channel")
+                .payload("text-payload")
+                .build();
+
+        template.sendAndReceive(request, Duration.ofSeconds(5));
+
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(brokerStrategy).send(eq("request-channel"), payloadCaptor.capture(), any(MessageHeaders.class));
+        assertThat(new String(payloadCaptor.getValue())).isEqualTo("text-payload");
+    }
+
+    @Test
+    @DisplayName("should handle null payload")
+    void shouldHandleNullPayload() {
+        Message<byte[]> request = Message.<byte[]>builder()
+                .channel("request-channel")
+                .payload(null)
+                .build();
+
+        template.sendAndReceive(request, Duration.ofSeconds(5));
+
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(brokerStrategy).send(eq("request-channel"), payloadCaptor.capture(), any(MessageHeaders.class));
+        assertThat(payloadCaptor.getValue()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("should throw for unsupported payload type")
+    void shouldThrowForUnsupportedPayload() {
+        Message<Integer> request = Message.<Integer>builder()
+                .channel("request-channel")
+                .payload(42)
+                .build();
+
+        assertThatThrownBy(() -> template.sendAndReceive(request, Duration.ofSeconds(5)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Unsupported payload type");
+    }
+
+    @Test
+    @DisplayName("should reuse existing reply subscription")
+    void shouldReuseExistingSubscription() {
+        Message<byte[]> request1 = Message.ofBytes("ch1", new byte[]{1});
+        Message<byte[]> request2 = Message.ofBytes("ch2", new byte[]{2});
+
+        template.sendAndReceive(request1, Duration.ofSeconds(5));
+        template.sendAndReceive(request2, Duration.ofSeconds(5));
+
+        // Should only subscribe once (subscription is reused)
+        verify(brokerStrategy).subscribe(any(SubscribeRequest.class));
+    }
+
+    @Test
+    @DisplayName("should handle shutdown without active requests")
+    void shouldHandleShutdownWithoutRequests() {
+        // Shutdown without any sendAndReceive calls
+        template.shutdown();
+        // No exception means success
+    }
+
+    @Test
+    @DisplayName("should shutdown and cancel reply subscription")
+    void shouldShutdownAndCancelSubscription() {
+        Message<byte[]> request = Message.ofBytes("ch", new byte[]{1});
+        template.sendAndReceive(request, Duration.ofSeconds(30));
+
+        template.shutdown();
+
+        verify(replySubscription).cancel();
+    }
+
+    @Test
+    @DisplayName("should send request with byte[] payload")
+    void shouldSendWithBytePayload() {
+        Message<byte[]> request = Message.ofBytes("request-channel", new byte[]{10, 20, 30});
+
+        template.sendAndReceive(request, Duration.ofSeconds(5));
+
+        ArgumentCaptor<byte[]> payloadCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(brokerStrategy).send(eq("request-channel"), payloadCaptor.capture(), any(MessageHeaders.class));
+        assertThat(payloadCaptor.getValue()).isEqualTo(new byte[]{10, 20, 30});
+    }
 }

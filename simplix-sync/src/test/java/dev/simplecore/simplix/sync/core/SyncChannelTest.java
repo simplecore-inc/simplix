@@ -66,6 +66,21 @@ class SyncChannelTest {
     }
 
     @Test
+    @DisplayName("should handle broadcast encoding error gracefully")
+    void shouldHandleBroadcastEncodingError() {
+        PayloadCodec<String> failingCodec = PayloadCodec.of(
+                msg -> { throw new RuntimeException("encode failed"); },
+                bytes -> new String(bytes, StandardCharsets.UTF_8)
+        );
+        SyncChannel<String> failingChannel = new SyncChannel<>("fail-ch", failingCodec, broadcaster);
+
+        // Should not throw, just log the error
+        failingChannel.broadcast("test-message");
+        // Verify no payload was actually broadcast
+        assertThat(broadcaster.publishedPayloads).isEmpty();
+    }
+
+    @Test
     @DisplayName("should return channel name")
     void shouldReturnChannelName() {
         assertThat(channel.getChannelName()).isEqualTo("test-channel");

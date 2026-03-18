@@ -117,4 +117,27 @@ class MessageHeadersTest {
         assertThat(a).isEqualTo(b);
         assertThat(a.hashCode()).isEqualTo(b.hashCode());
     }
+
+    @Test
+    @DisplayName("equals should return true for same instance")
+    void equalsShouldReturnTrueForSameInstance() {
+        MessageHeaders a = MessageHeaders.of(Map.of("k1", "v1"));
+        assertThat(a).isEqualTo(a);
+    }
+
+    @Test
+    @DisplayName("equals should return false for non-MessageHeaders object")
+    void equalsShouldReturnFalseForDifferentType() {
+        MessageHeaders a = MessageHeaders.of(Map.of("k1", "v1"));
+        assertThat(a).isNotEqualTo("not-headers");
+        assertThat(a).isNotEqualTo(null);
+    }
+
+    @Test
+    @DisplayName("toString should include entries")
+    void toStringShouldIncludeEntries() {
+        MessageHeaders headers = MessageHeaders.of(Map.of("k1", "v1"));
+        assertThat(headers.toString()).contains("MessageHeaders");
+        assertThat(headers.toString()).contains("k1");
+    }
 }

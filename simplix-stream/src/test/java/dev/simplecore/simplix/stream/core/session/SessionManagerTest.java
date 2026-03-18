@@ -7,6 +7,7 @@ import dev.simplecore.simplix.stream.core.model.StreamSession;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import dev.simplecore.simplix.stream.exception.SessionExpiredException;
 import dev.simplecore.simplix.stream.exception.SessionNotFoundException;
+import dev.simplecore.simplix.stream.persistence.service.DbSessionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -49,6 +50,9 @@ class SessionManagerTest {
     @Mock
     private ScheduledFuture<?> scheduledFuture;
 
+    @Mock
+    private DbSessionRegistry dbSessionRegistry;
+
     private StreamProperties properties;
     private SessionManager sessionManager;
 
@@ -61,6 +65,35 @@ class SessionManagerTest {
         properties.getSession().setTimeout(Duration.ofMinutes(5));
 
         sessionManager = new SessionManager(sessionRegistry, properties, scheduledExecutor);
+    }
+
+    @Nested
+    @DisplayName("constructor")
+    class Constructor {
+
+        @Test
+        @DisplayName("should initialize without DbSessionRegistry")
+        void shouldInitializeWithoutDbSessionRegistry() {
+            SessionManager manager = new SessionManager(sessionRegistry, properties, scheduledExecutor);
+            assertNotNull(manager);
+            assertFalse(manager.isRestorationSupported());
+        }
+
+        @Test
+        @DisplayName("should initialize with DbSessionRegistry")
+        void shouldInitializeWithDbSessionRegistry() {
+            SessionManager manager = new SessionManager(sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+            assertNotNull(manager);
+            assertTrue(manager.isRestorationSupported());
+        }
+
+        @Test
+        @DisplayName("should initialize with null DbSessionRegistry")
+        void shouldInitializeWithNullDbSessionRegistry() {
+            SessionManager manager = new SessionManager(sessionRegistry, properties, scheduledExecutor, null);
+            assertNotNull(manager);
+            assertFalse(manager.isRestorationSupported());
+        }
     }
 
     @Nested
@@ -129,6 +162,17 @@ class SessionManagerTest {
             // No stubbing needed - maxPerUser is 0 so countByUserId won't be called
 
             assertDoesNotThrow(() -> sessionManager.createSession("user123", TransportType.SSE));
+        }
+
+        @Test
+        @DisplayName("should not terminate when under limit")
+        void shouldNotTerminateWhenUnderLimit() {
+            properties.getSession().setMaxPerUser(5);
+            when(sessionRegistry.countByUserId("user123")).thenReturn(2L);
+
+            sessionManager.createSession("user123", TransportType.SSE);
+
+            verify(sessionRegistry, never()).findByUserId(anyString());
         }
     }
 
@@ -275,6 +319,31 @@ class SessionManagerTest {
 
             verify(scheduledExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
         }
+
+        @Test
+        @DisplayName("should do nothing for nonexistent session")
+        void shouldDoNothingForNonexistentSession() {
+            when(sessionRegistry.findById("nonexistent")).thenReturn(Optional.empty());
+
+            assertDoesNotThrow(() -> sessionManager.markDisconnected("nonexistent"));
+            verify(scheduledExecutor, never()).schedule(any(Runnable.class), anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("should update DB when dbSessionRegistry is available")
+        void shouldUpdateDbWhenDbSessionRegistryIsAvailable() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+
+            managerWithDb.markDisconnected(session.getId());
+
+            verify(dbSessionRegistry).update(session);
+        }
     }
 
     @Nested
@@ -313,6 +382,163 @@ class SessionManagerTest {
             boolean result = sessionManager.reconnect(session.getId());
 
             assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("should return false for terminated session")
+        void shouldReturnFalseForTerminatedSession() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            session.markTerminated();
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            boolean result = sessionManager.reconnect(session.getId());
+
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("should cancel grace period timer on reconnect")
+        void shouldCancelGracePeriodTimerOnReconnect() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+
+            // First disconnect to start grace period
+            sessionManager.markDisconnected(session.getId());
+
+            // Then reconnect
+            boolean result = sessionManager.reconnect(session.getId());
+
+            assertTrue(result);
+            assertEquals(SessionState.CONNECTED, session.getState());
+            verify(scheduledFuture).cancel(false);
+        }
+
+        @Test
+        @DisplayName("should update DB when dbSessionRegistry is available on reconnect")
+        void shouldUpdateDbOnReconnect() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            session.markDisconnected();
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            boolean result = managerWithDb.reconnect(session.getId());
+
+            assertTrue(result);
+            verify(dbSessionRegistry).update(session);
+        }
+    }
+
+    @Nested
+    @DisplayName("restoreSession()")
+    class RestoreSessionMethod {
+
+        @Test
+        @DisplayName("should return empty when dbSessionRegistry is null")
+        void shouldReturnEmptyWhenDbSessionRegistryIsNull() {
+            // sessionManager was created without dbSessionRegistry
+            Optional<StreamSession> result = sessionManager.restoreSession("sess-1", "user-1");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should return local session when already present and owned")
+        void shouldReturnLocalSessionWhenAlreadyPresent() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession session = StreamSession.create("user-1", TransportType.SSE);
+            session.markDisconnected();
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            Optional<StreamSession> result = managerWithDb.restoreSession(session.getId(), "user-1");
+
+            assertTrue(result.isPresent());
+            assertEquals(session, result.get());
+        }
+
+        @Test
+        @DisplayName("should return empty when local session has ownership mismatch")
+        void shouldReturnEmptyWhenOwnershipMismatch() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession session = StreamSession.create("owner-1", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            Optional<StreamSession> result = managerWithDb.restoreSession(session.getId(), "intruder");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should restore from database when not local")
+        void shouldRestoreFromDatabaseWhenNotLocal() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession restoredSession = StreamSession.create("user-1", TransportType.SSE);
+            when(sessionRegistry.findById("sess-1")).thenReturn(Optional.empty());
+            when(dbSessionRegistry.restoreSession("sess-1", "user-1"))
+                    .thenReturn(Optional.of(restoredSession));
+
+            Optional<StreamSession> result = managerWithDb.restoreSession("sess-1", "user-1");
+
+            assertTrue(result.isPresent());
+            assertEquals(restoredSession, result.get());
+        }
+
+        @Test
+        @DisplayName("should return empty when not found in database")
+        void shouldReturnEmptyWhenNotFoundInDatabase() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            when(sessionRegistry.findById("sess-1")).thenReturn(Optional.empty());
+            when(dbSessionRegistry.restoreSession("sess-1", "user-1"))
+                    .thenReturn(Optional.empty());
+
+            Optional<StreamSession> result = managerWithDb.restoreSession("sess-1", "user-1");
+
+            assertTrue(result.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should return empty when local session cannot reconnect")
+        void shouldReturnEmptyWhenLocalSessionCannotReconnect() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+
+            StreamSession session = StreamSession.create("user-1", TransportType.SSE);
+            session.markTerminated();
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            Optional<StreamSession> result = managerWithDb.restoreSession(session.getId(), "user-1");
+
+            assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    @DisplayName("isRestorationSupported()")
+    class IsRestorationSupportedMethod {
+
+        @Test
+        @DisplayName("should return false when no dbSessionRegistry")
+        void shouldReturnFalseWhenNoDbSessionRegistry() {
+            assertFalse(sessionManager.isRestorationSupported());
+        }
+
+        @Test
+        @DisplayName("should return true when dbSessionRegistry is provided")
+        void shouldReturnTrueWhenDbSessionRegistryProvided() {
+            SessionManager managerWithDb = new SessionManager(
+                    sessionRegistry, properties, scheduledExecutor, dbSessionRegistry);
+            assertTrue(managerWithDb.isRestorationSupported());
         }
     }
 
@@ -378,6 +604,123 @@ class SessionManagerTest {
             Set<SubscriptionKey> cleared = sessionManager.terminateSession("nonexistent");
 
             assertTrue(cleared.isEmpty());
+        }
+
+        @Test
+        @DisplayName("should cancel grace period timer before terminating")
+        void shouldCancelGracePeriodTimerBeforeTerminating() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+
+            // Disconnect to start grace period
+            sessionManager.markDisconnected(session.getId());
+
+            // Now terminate
+            sessionManager.terminateSession(session.getId());
+
+            verify(scheduledFuture).cancel(false);
+            assertEquals(SessionState.TERMINATED, session.getState());
+        }
+
+        @Test
+        @DisplayName("should not invoke callback when no callback is set")
+        void shouldNotInvokeCallbackWhenNotSet() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            // No callback set
+            assertDoesNotThrow(() -> sessionManager.terminateSession(session.getId()));
+        }
+    }
+
+    @Nested
+    @DisplayName("grace period expiration")
+    class GracePeriodExpiration {
+
+        @Test
+        @DisplayName("should terminate session when grace period expires while still disconnected")
+        void shouldTerminateSessionWhenGracePeriodExpires() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class));
+
+            // Disconnect to start grace period
+            sessionManager.markDisconnected(session.getId());
+
+            // Execute the grace period callback
+            runnableCaptor.getValue().run();
+
+            // Session should be terminated
+            assertEquals(SessionState.TERMINATED, session.getState());
+            verify(sessionRegistry).unregister(session.getId());
+        }
+
+        @Test
+        @DisplayName("should not terminate session if reconnected before grace period expires")
+        void shouldNotTerminateIfReconnectedBeforeExpiry() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class));
+
+            // Disconnect
+            sessionManager.markDisconnected(session.getId());
+
+            // Reconnect
+            sessionManager.reconnect(session.getId());
+
+            // Grace period timer fires (but session is already reconnected)
+            runnableCaptor.getValue().run();
+
+            // Session should still be connected
+            assertEquals(SessionState.CONNECTED, session.getState());
+        }
+
+        @Test
+        @DisplayName("should invoke onSessionTerminated callback on grace period expiry")
+        void shouldInvokeCallbackOnGracePeriodExpiry() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            AtomicReference<StreamSession> terminatedRef = new AtomicReference<>();
+            sessionManager.setOnSessionTerminated(terminatedRef::set);
+
+            ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class));
+
+            sessionManager.markDisconnected(session.getId());
+            runnableCaptor.getValue().run();
+
+            assertEquals(session, terminatedRef.get());
+        }
+
+        @Test
+        @DisplayName("should handle grace period expiry for already unregistered session")
+        void shouldHandleGracePeriodExpiryForUnregisteredSession() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId()))
+                    .thenReturn(Optional.of(session))
+                    .thenReturn(Optional.empty());
+
+            ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class));
+
+            sessionManager.markDisconnected(session.getId());
+
+            // Session no longer in registry
+            runnableCaptor.getValue().run();
+
+            // Should not throw
+            verify(sessionRegistry, never()).unregister(session.getId());
         }
     }
 
@@ -481,6 +824,39 @@ class SessionManagerTest {
             sessionManager.cleanupInactiveSessions();
 
             verify(sessionRegistry, never()).findAll();
+        }
+
+        @Test
+        @DisplayName("should skip already disconnected sessions during cleanup")
+        void shouldSkipAlreadyDisconnectedSessions() {
+            StreamSession disconnected = StreamSession.create("user123", TransportType.SSE);
+            disconnected.markDisconnected();
+            when(sessionRegistry.findAll()).thenReturn(List.of(disconnected));
+
+            sessionManager.cleanupInactiveSessions();
+
+            // Should not try to mark already disconnected session
+            assertEquals(SessionState.DISCONNECTED, disconnected.getState());
+        }
+    }
+
+    @Nested
+    @DisplayName("setOnSessionTerminated()")
+    class SetOnSessionTerminatedMethod {
+
+        @Test
+        @DisplayName("should set callback for session termination")
+        void shouldSetCallbackForSessionTermination() {
+            AtomicReference<StreamSession> ref = new AtomicReference<>();
+            sessionManager.setOnSessionTerminated(ref::set);
+
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            sessionManager.terminateSession(session.getId());
+
+            assertNotNull(ref.get());
+            assertEquals(session, ref.get());
         }
     }
 }

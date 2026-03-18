@@ -137,5 +137,109 @@ class MessageTest {
 
             assertThat(a).isNotEqualTo(b);
         }
+
+        @Test
+        @DisplayName("should be equal to itself")
+        void shouldBeEqualToItself() {
+            Message<byte[]> a = Message.<byte[]>builder()
+                    .messageId("id-1")
+                    .channel("ch")
+                    .build();
+
+            assertThat(a).isEqualTo(a);
+        }
+
+        @Test
+        @DisplayName("should not be equal to non-Message object")
+        void shouldNotEqualNonMessage() {
+            Message<byte[]> a = Message.<byte[]>builder()
+                    .messageId("id-1")
+                    .channel("ch")
+                    .build();
+
+            assertThat(a).isNotEqualTo("not-a-message");
+            assertThat(a).isNotEqualTo(null);
+        }
+    }
+
+    @Nested
+    @DisplayName("toString")
+    class ToStringTests {
+
+        @Test
+        @DisplayName("should include messageId and channel")
+        void shouldIncludeFields() {
+            Message<byte[]> message = Message.<byte[]>builder()
+                    .messageId("msg-123")
+                    .channel("my-channel")
+                    .payload(new byte[0])
+                    .build();
+
+            String str = message.toString();
+            assertThat(str).contains("msg-123");
+            assertThat(str).contains("my-channel");
+        }
+    }
+
+    @Nested
+    @DisplayName("ofProtobuf factory")
+    class OfProtobufTests {
+
+        @Test
+        @DisplayName("should throw for null protoMessage")
+        void shouldThrowForNullProto() {
+            assertThatThrownBy(() -> Message.ofProtobuf("ch", null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessageContaining("protoMessage");
+        }
+
+        @Test
+        @DisplayName("should throw for non-protobuf class without ADAPTER field")
+        void shouldThrowForNonProtobufClass() {
+            assertThatThrownBy(() -> Message.ofProtobuf("ch", "not-a-protobuf"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("No ADAPTER field found");
+        }
+
+        @Test
+        @DisplayName("should encode protobuf message using ADAPTER field")
+        void shouldEncodeViaAdapter() {
+            FakeProtobufMessage proto = new FakeProtobufMessage();
+            Message<byte[]> message = Message.ofProtobuf("proto-channel", proto);
+
+            assertThat(message.getChannel()).isEqualTo("proto-channel");
+            assertThat(message.getPayload()).isEqualTo(new byte[]{1, 2, 3});
+            assertThat(message.getHeaders().contentType()).isEqualTo("application/protobuf");
+        }
+    }
+
+    /**
+     * Fake protobuf message class with a static ADAPTER field for testing.
+     */
+    static class FakeProtobufMessage {
+        public static final FakeAdapter ADAPTER = new FakeAdapter();
+    }
+
+    static class FakeAdapter {
+        public byte[] encode(Object message) {
+            return new byte[]{1, 2, 3};
+        }
+    }
+
+    @Nested
+    @DisplayName("MessageAcknowledgment.NOOP")
+    class NoopAckTests {
+
+        @Test
+        @DisplayName("should not throw on any operation")
+        void shouldBeNoOp() {
+            MessageAcknowledgment noop = MessageAcknowledgment.NOOP;
+
+            // None of these should throw
+            noop.ack();
+            noop.nack(true);
+            noop.nack(false);
+            noop.reject("reason");
+        }
     }
 }

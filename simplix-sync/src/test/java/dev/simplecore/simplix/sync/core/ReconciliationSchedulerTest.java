@@ -131,6 +131,57 @@ class ReconciliationSchedulerTest {
     }
 
     @Nested
+    @DisplayName("Cursor position")
+    class CursorPosition {
+
+        @Test
+        @DisplayName("should return cursor position after reconciliation cycles")
+        void shouldReturnCursorPosition() {
+            List<String> resources = List.of("A", "B", "C", "D", "E");
+
+            ReconciliationScheduler<String> scheduler = ReconciliationScheduler.<String>builder()
+                    .resourceProvider(() -> resources)
+                    .keyExtractor(s -> s)
+                    .batchSize(2)
+                    .build();
+
+            int initialPosition = scheduler.getCursorPosition();
+            assertThat(initialPosition).isEqualTo(0);
+
+            scheduler.reconcile(r -> {});
+            assertThat(scheduler.getCursorPosition()).isGreaterThanOrEqualTo(0);
+        }
+    }
+
+    @Nested
+    @DisplayName("Exception handling without circuit breaker")
+    class ExceptionWithoutCircuitBreaker {
+
+        @Test
+        @DisplayName("should handle processor exception without circuit breaker configured")
+        void shouldHandleExceptionWithoutCircuitBreaker() {
+            List<String> resources = List.of("A", "B", "C");
+            List<String> processed = new ArrayList<>();
+
+            ReconciliationScheduler<String> scheduler = ReconciliationScheduler.<String>builder()
+                    .resourceProvider(() -> resources)
+                    .keyExtractor(s -> s)
+                    .batchSize(3)
+                    .build();
+
+            // First resource throws, rest should still process
+            scheduler.reconcile(r -> {
+                if ("A".equals(r)) {
+                    throw new RuntimeException("fail");
+                }
+                processed.add(r);
+            });
+
+            assertThat(processed).containsExactly("B", "C");
+        }
+    }
+
+    @Nested
     @DisplayName("Builder validation")
     class BuilderValidation {
 

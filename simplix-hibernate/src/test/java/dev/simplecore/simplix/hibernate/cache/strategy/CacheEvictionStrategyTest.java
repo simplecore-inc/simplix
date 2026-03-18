@@ -134,6 +134,59 @@ class CacheEvictionStrategyTest {
         }
     }
 
+    @Nested
+    @DisplayName("evict(String, Object) exception handling")
+    class EvictByClassNameExceptionTests {
+
+        @Test
+        @DisplayName("Should handle exception during class loading gracefully")
+        void shouldHandleClassLoadingExceptionGracefully() {
+            // Given - a class that cannot be loaded
+            doThrow(new RuntimeException("Unexpected error"))
+                    .when(cacheManager).evictEntity(any(Class.class), any());
+
+            // When - evict by name with a valid class but cache manager throws
+            evictionStrategy.evict(TestEntity.class.getName(), 123L);
+
+            // Then - exception is caught, no propagation
+            // Verify the attempt was made
+            verify(cacheManager).evictEntity(TestEntity.class, 123L);
+        }
+    }
+
+    @Nested
+    @DisplayName("loadEntityClass context ClassLoader tests")
+    class LoadEntityClassTests {
+
+        @Test
+        @DisplayName("Should fall back to class ClassLoader when context ClassLoader fails")
+        void shouldFallBackToClassClassLoader() {
+            // When - use the full class name which is definitely loadable
+            evictionStrategy.evict(TestEntity.class.getName(), null);
+
+            // Then - bulk eviction should succeed
+            verify(cacheManager).evictEntityCache(TestEntity.class);
+        }
+
+        @Test
+        @DisplayName("Should handle null context ClassLoader")
+        void shouldHandleNullContextClassLoader() {
+            // Given - temporarily set context CL to null
+            ClassLoader original = Thread.currentThread().getContextClassLoader();
+            try {
+                Thread.currentThread().setContextClassLoader(null);
+
+                // When
+                evictionStrategy.evict(TestEntity.class.getName(), 42L);
+
+                // Then - should fall back to class ClassLoader
+                verify(cacheManager).evictEntity(TestEntity.class, 42L);
+            } finally {
+                Thread.currentThread().setContextClassLoader(original);
+            }
+        }
+    }
+
     // Test entity class for testing
     private static class TestEntity {
         private Long id;

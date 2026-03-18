@@ -102,6 +102,18 @@ class JsonCodecTest {
         }
 
         @Test
+        @DisplayName("should throw JsonCodecException on static serialize failure")
+        void shouldThrowOnStaticSerializeFailure() {
+            Object problematic = new Object() {
+                @SuppressWarnings("unused")
+                public Object getSelf() { return this; }
+            };
+            assertThatThrownBy(() -> JsonCodec.serialize(problematic))
+                    .isInstanceOf(JsonCodec.JsonCodecException.class)
+                    .hasMessageContaining("Failed to serialize");
+        }
+
+        @Test
         @DisplayName("should throw JsonCodecException on invalid JSON for deserialization")
         void shouldThrowOnInvalidJson() {
             byte[] invalidJson = "not-valid-json{".getBytes();
@@ -136,6 +148,17 @@ class JsonCodecTest {
             JsonCodec codec = new JsonCodec(customMapper);
 
             assertThat(codec.getObjectMapper()).isSameAs(customMapper);
+        }
+
+        @Test
+        @DisplayName("should throw JsonCodecException on decode failure")
+        void shouldThrowOnDecodeFailure() {
+            JsonCodec codec = new JsonCodec();
+            byte[] invalidJson = "not-json{".getBytes();
+
+            assertThatThrownBy(() -> codec.decode(invalidJson, SampleDto.class))
+                    .isInstanceOf(JsonCodec.JsonCodecException.class)
+                    .hasMessageContaining("Failed to deserialize");
         }
 
         @Test

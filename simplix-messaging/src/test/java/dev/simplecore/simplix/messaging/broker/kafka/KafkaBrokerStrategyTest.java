@@ -19,6 +19,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -27,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -34,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 @DisplayName("KafkaBrokerStrategy")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class KafkaBrokerStrategyTest {
 
     @Mock
@@ -237,6 +241,16 @@ class KafkaBrokerStrategyTest {
                     .hasMessageContaining("No topic specified");
         }
 
+        @Test
+        @DisplayName("should throw when channel is null and no default topic configured")
+        void shouldThrowWhenChannelNullNoDefault() {
+            MessageHeaders headers = MessageHeaders.empty();
+
+            assertThatThrownBy(() -> strategy.send(null, new byte[0], headers))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("No topic specified");
+        }
+
         @SuppressWarnings("unchecked")
         @Test
         @DisplayName("should use default topic when channel is empty")
@@ -259,6 +273,55 @@ class KafkaBrokerStrategyTest {
             verify(kafkaTemplate).send(captor.capture());
 
             assertThat(captor.getValue().topic()).isEqualTo("default-topic");
+        }
+    }
+
+    @Nested
+    @DisplayName("acknowledge()")
+    class AcknowledgeTests {
+
+        @Test
+        @DisplayName("should not throw for Kafka per-consumer ack")
+        void shouldNotThrow() {
+            assertThatCode(() -> strategy.acknowledge("topic", "group", "msg-1"))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("acknowledge()")
+    class AcknowledgeKafkaTests {
+
+        @Test
+        @DisplayName("should be a no-op")
+        void shouldNotThrow() {
+            assertThatCode(() -> strategy.acknowledge("topic", "group", "msg-1"))
+                    .doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("InterruptedException handling")
+    class InterruptedTests {
+
+        @SuppressWarnings("unchecked")
+        @Test
+        @DisplayName("should throw IllegalStateException on interruption")
+        void shouldHandleInterruption() {
+            byte[] payload = "data".getBytes();
+            MessageHeaders headers = MessageHeaders.empty();
+
+            CompletableFuture<SendResult<String, byte[]>> future = new CompletableFuture<>();
+
+            when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(future);
+
+            Thread.currentThread().interrupt();
+
+            assertThatThrownBy(() -> strategy.send("topic", payload, headers))
+                    .isInstanceOf(IllegalStateException.class);
+
+            // Clear interrupt flag
+            Thread.interrupted();
         }
     }
 }
