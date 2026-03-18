@@ -105,6 +105,12 @@ public class SimpliXExceptionHandler<T> {
     @ExceptionHandler(SimpliXGeneralException.class)
     @Order(0)
     public T handleSimpliXGeneralException(SimpliXGeneralException ex, HttpServletRequest request) {
+        // Skip response writing if already committed (e.g., SSE text/event-stream connections)
+        if (isResponseCommitted()) {
+            log.debug("Response already committed, skipping error response for: {}", ex.getMessage());
+            return null;
+        }
+
         T errorResponse = responseFactory.createErrorResponse(
                 ex.getStatusCode(),
                 ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
@@ -130,14 +136,22 @@ public class SimpliXExceptionHandler<T> {
             log.warn("Failed to set HTTP status: {}", e.getMessage());
         }
         
-        // Log exception with trace ID
+        // Log exception with trace ID - use appropriate level based on HTTP status
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
-            log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
-                traceId,
-                ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
-                request.getRequestURI(),
-                ex);
+            String errorCodeStr = ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode();
+            int status = ex.getStatusCode().value();
+
+            if (status >= 500) {
+                log.error("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
+                    traceId, errorCodeStr, request.getRequestURI(), ex);
+            } else if (status == 404) {
+                log.debug("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
+                    traceId, errorCodeStr, request.getRequestURI());
+            } else {
+                log.warn("SimpliXGeneralException - TraceId: {}, ErrorCode: {}, Path: {}",
+                    traceId, errorCodeStr, request.getRequestURI());
+            }
         }
         
         return errorResponse;
@@ -528,8 +542,21 @@ public class SimpliXExceptionHandler<T> {
     @ExceptionHandler(Exception.class)
     @Order(Integer.MAX_VALUE)
     public T handleException(Exception ex, HttpServletRequest request) {
+        // Skip response writing if already committed (e.g., SSE text/event-stream connections)
+        if (isResponseCommitted()) {
+            log.debug("Response already committed, skipping error response for: {}", ex.getMessage());
+            return null;
+        }
+
+        // I/O exceptions (SocketTimeoutException, broken pipe, etc.) from long-lived
+        // connections like SSE are expected and should not be logged at ERROR level
+        if (isConnectionException(ex)) {
+            log.debug("Connection I/O exception on {}: {}", request.getRequestURI(), ex.getMessage());
+            return null;
+        }
+
         log.error("Exception occurred: ", ex);
-        
+
         // Check for nested Searchable exceptions first
         Throwable rootCause = getRootCause(ex);
         
@@ -667,6 +694,50 @@ public class SimpliXExceptionHandler<T> {
         
         // Default to invalid search parameter
         return ErrorCode.SEARCH_INVALID_PARAMETER;
+    }
+
+    /**
+     * Check if the HTTP response has already been committed.
+     * When a response is committed (e.g., SSE text/event-stream connections),
+     * writing a new response body is not possible and will cause errors.
+     */
+    private boolean isResponseCommitted() {
+        try {
+            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes)
+                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            return response != null && response.isCommitted();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Check if the exception is a connection-level I/O exception (e.g., SocketTimeoutException,
+     * broken pipe, connection reset) that typically occurs when a long-lived connection
+     * (SSE, WebSocket) is interrupted by the client disconnecting.
+     */
+    private boolean isConnectionException(Exception ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof java.net.SocketTimeoutException
+                    || current instanceof java.io.IOException) {
+                String message = current.getMessage();
+                if (message != null) {
+                    String lower = message.toLowerCase();
+                    if (lower.contains("broken pipe")
+                            || lower.contains("connection reset")
+                            || lower.contains("socket timeout")
+                            || lower.contains("stream closed")) {
+                        return true;
+                    }
+                }
+                if (current instanceof java.net.SocketTimeoutException) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     /**

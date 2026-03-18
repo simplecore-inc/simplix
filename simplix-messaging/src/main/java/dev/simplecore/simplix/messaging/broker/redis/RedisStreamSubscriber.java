@@ -385,6 +385,7 @@ public class RedisStreamSubscriber {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void recoverPendingMessagesRaw(SubscribeRequest request) {
         String streamKey = resolveKey(request.channel());
         byte[] streamKeyBytes = streamKey.getBytes(StandardCharsets.UTF_8);

@@ -8,6 +8,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.core.Ordered;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -189,13 +190,14 @@ public class EnumSchemaExtractor implements OpenApiCustomizer, Ordered {
         }
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private boolean hasSameEnumValues(Schema schema, List<Object> values) {
         if (schema.getEnum() == null) {
             return false;
         }
-        return schema.getEnum().size() == values.size()
-                && schema.getEnum().containsAll(values);
+        List<Object> schemaEnums = schema.getEnum();
+        return schemaEnums.size() == values.size()
+                && new HashSet<>(schemaEnums).containsAll(values);
     }
 
     /**
