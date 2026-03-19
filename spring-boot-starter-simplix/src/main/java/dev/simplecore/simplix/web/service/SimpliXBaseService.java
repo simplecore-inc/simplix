@@ -1,7 +1,8 @@
 package dev.simplecore.simplix.web.service;
 
 import dev.simplecore.searchable.core.condition.SearchCondition;
-import dev.simplecore.searchable.core.service.DefaultSearchableService;
+import dev.simplecore.searchable.core.service.SearchableServiceDelegate;
+import dev.simplecore.searchable.core.service.SearchableServiceSupport;
 import dev.simplecore.simplix.core.repository.SimpliXBaseRepository;
 import jakarta.persistence.EntityManager;
 import org.modelmapper.ModelMapper;
@@ -16,18 +17,27 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Transactional(readOnly = true)
-public abstract class SimpliXBaseService<E, ID> extends DefaultSearchableService<E, ID> implements SimpliXService<E, ID> {
+public abstract class SimpliXBaseService<E, ID> implements SimpliXService<E, ID>, SearchableServiceSupport<E, ID> {
     protected final SimpliXBaseRepository<E, ID> repository;
     protected final EntityManager entityManager;
+    private final SearchableServiceDelegate<E, ID> searchableDelegate;
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 	@Autowired
     protected ModelMapper modelMapper;
 
+    @SuppressWarnings("unchecked")
     protected SimpliXBaseService(SimpliXBaseRepository<E, ID> repository, EntityManager entityManager) {
-        super(repository, entityManager);
         this.repository = repository;
         this.entityManager = entityManager;
+        Class<E> entityClass = (Class<E>) ((ParameterizedType) getClass()
+            .getGenericSuperclass()).getActualTypeArguments()[0];
+        this.searchableDelegate = new SearchableServiceDelegate<>(repository, entityManager, entityClass);
+    }
+
+    @Override
+    public SearchableServiceDelegate<E, ID> getSearchableDelegate() {
+        return searchableDelegate;
     }
 
     @Override
@@ -99,12 +109,6 @@ public abstract class SimpliXBaseService<E, ID> extends DefaultSearchableService
         repository.deleteAll(entities);
     }
 
-    // @Override
-    // @Transactional
-    // public void deleteAll() {
-    //     repository.deleteAll();
-    // }
-
     @Override
     @Transactional
     public List<? extends E> saveAll(Iterable<? extends E> entities) {
@@ -116,20 +120,10 @@ public abstract class SimpliXBaseService<E, ID> extends DefaultSearchableService
     public E saveAndFlush(E entity) {
         return repository.saveAndFlush(entity);
     }
-    
-    public Page<E> findAllWithSearch(SearchCondition<?> searchCondition) {
-        return super.findAllWithSearch(searchCondition);
-    }
-    
+
+    @Override
     public <D> Page<D> findAllWithSearch(SearchCondition<?> searchCondition, Class<D> dtoClass) {
         return findAllWithSearch(searchCondition)
                 .map(entity -> modelMapper.map(entity, dtoClass));
     }
-
-    @SuppressWarnings({ "unchecked", "unused" })
-    private Class<E> getEntityClass() {
-        return (Class<E>) ((ParameterizedType) getClass()
-            .getGenericSuperclass()).getActualTypeArguments()[0];
-    }
-
-} 
+}
