@@ -401,7 +401,8 @@ public class GenericResponseSchemaCustomizer implements OperationCustomizer, Ord
     private boolean isStreamingType(Class<?> rawClass) {
         String name = rawClass.getName();
         return "org.springframework.web.servlet.mvc.method.annotation.SseEmitter".equals(name)
-                || "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody".equals(name);
+                || "org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody".equals(name)
+                || "org.springframework.core.io.Resource".equals(name);
     }
 
     private void setResponseSchema(Operation operation, Schema<?> schema) {
