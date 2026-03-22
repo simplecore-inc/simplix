@@ -92,10 +92,15 @@ public class EventStreamHandler {
         // Create subscription key
         SubscriptionKey key = SubscriptionKey.of(source.getResource(), params);
 
-        // Get subscribers for this key
+        // Get subscribers: try exact key match first, then fall back to resource-level broadcast.
+        // Event params (e.g., controllerId, severity) are routing criteria,
+        // while subscriber params (e.g., timezone) are metadata — they use different key spaces.
         Set<String> subscribers = subscriberRegistry.getSubscribers(key);
         if (subscribers.isEmpty()) {
-            log.trace("No subscribers for key: {}", key.toKeyString());
+            subscribers = subscriberRegistry.getSubscribersByResource(source.getResource());
+        }
+        if (subscribers.isEmpty()) {
+            log.trace("No subscribers for resource: {}", source.getResource());
             return;
         }
 

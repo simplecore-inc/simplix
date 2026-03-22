@@ -3,6 +3,7 @@ package dev.simplecore.simplix.stream.transport.sse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.stream.collector.SimpliXStreamDataCollectorRegistry;
 import dev.simplecore.simplix.stream.config.StreamProperties;
+import dev.simplecore.simplix.stream.eventsource.EventStreamHandler;
 import dev.simplecore.simplix.stream.core.enums.TransportType;
 import dev.simplecore.simplix.stream.core.model.StreamMessage;
 import dev.simplecore.simplix.stream.core.model.StreamSession;
@@ -12,12 +13,15 @@ import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.exception.SessionNotFoundException;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,10 +31,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * REST controller for SSE streaming connections.
@@ -51,6 +52,12 @@ public class SseStreamController {
     private final StreamProperties properties;
     private final ObjectMapper objectMapper;
     private final ScheduledExecutorService streamScheduledExecutor;
+    private final SessionValidator sessionValidator;
+    private final ExecutorService sessionValidationExecutor;
+
+    /** Optional — only present when simplix.stream.event-source.enabled=true. */
+    @Autowired(required = false)
+    private EventStreamHandler eventStreamHandler;
 
     private final Map<String, SseStreamSession> activeSessions = new ConcurrentHashMap<>();
     private final Map<String, ScheduledFuture<?>> heartbeatTasks = new ConcurrentHashMap<>();
@@ -63,7 +70,9 @@ public class SseStreamController {
      * @return SSE emitter for the connection
      */
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter connect(@RequestParam(required = false) Map<String, String> connectParams) {
+    public SseEmitter connect(
+            @RequestParam(required = false) Map<String, String> connectParams,
+            HttpServletRequest request) {
         String userId = extractUserId();
 
         // Create SSE emitter with configured timeout
@@ -78,6 +87,9 @@ public class SseStreamController {
         if (connectParams != null) {
             connectParams.forEach(streamSession::addMetadata);
         }
+
+        // Store bearer token as transient metadata (not persisted)
+        extractAndStoreBearerToken(request, streamSession);
 
         // Create SSE session wrapper
         SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper);
@@ -96,7 +108,7 @@ public class SseStreamController {
         sendConnectionMessage(sseSession, sessionId);
 
         log.info("SSE connection established: sessionId={}, userId={}, connectParams={}",
-                sessionId, userId, connectParams);
+                sessionId, userId, connectParams != null ? connectParams.keySet() : Set.of());
         return emitter;
     }
 
@@ -134,8 +146,10 @@ public class SseStreamController {
         for (Subscription sub : newSubscriptions) {
             SubscriptionKey key = sub.getKey();
 
-            // Check if resource exists
-            if (!collectorRegistry.hasCollector(key.getResource())) {
+            // Check if resource exists (data collector or event source)
+            boolean resourceExists = collectorRegistry.hasCollector(key.getResource())
+                    || (eventStreamHandler != null && eventStreamHandler.isEventBasedResource(key.getResource()));
+            if (!resourceExists) {
                 failed.add(SubscriptionResponse.FailedSubscription.builder()
                         .resource(key.getResource())
                         .params(key.getParams())
@@ -160,8 +174,17 @@ public class SseStreamController {
             validSubscriptions.add(sub);
         }
 
-        // Update subscriptions via manager
+        // Update subscriptions via manager (handles data collector scheduling)
         subscriptionManager.updateSubscriptions(sessionId, validSubscriptions);
+
+        // Register event-source subscribers for push-based resources
+        if (eventStreamHandler != null) {
+            for (Subscription sub : validSubscriptions) {
+                if (eventStreamHandler.isEventBasedResource(sub.getKey().getResource())) {
+                    eventStreamHandler.addSubscriber(sub.getKey(), sessionId);
+                }
+            }
+        }
 
         // Build response
         List<SubscriptionResponse.SubscribedResource> subscribed = validSubscriptions.stream()
@@ -244,7 +267,7 @@ public class SseStreamController {
      * @return SSE emitter for the reconnected session
      */
     @GetMapping(value = "/reconnect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter reconnect(@RequestParam String sessionId) {
+    public SseEmitter reconnect(@RequestParam String sessionId, HttpServletRequest request) {
         String userId = extractUserId();
 
         // Try to restore/reconnect the session
@@ -262,6 +285,9 @@ public class SseStreamController {
         }
 
         StreamSession streamSession = restoredSession.get();
+
+        // Store bearer token as transient metadata (not persisted)
+        extractAndStoreBearerToken(request, streamSession);
 
         // Create SSE emitter
         long timeoutMs = properties.getSession().getTimeout().toMillis();
@@ -321,13 +347,32 @@ public class SseStreamController {
                 return;
             }
 
-            StreamMessage heartbeat = StreamMessage.heartbeat();
-            boolean sent = sseSession.send(heartbeat);
-
-            if (!sent) {
-                log.debug("Heartbeat failed for session: {}", sessionId);
+            var streamSession = sessionManager.findSession(sessionId);
+            if (streamSession.isEmpty()) {
                 cancelHeartbeat(sessionId);
+                return;
             }
+
+            CompletableFuture.supplyAsync(
+                            () -> sessionValidator.validate(streamSession.get()), sessionValidationExecutor)
+                    .orTimeout(2, TimeUnit.SECONDS)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            sseSession.send(StreamMessage.sessionTerminated("Session validation timeout"));
+                            cleanupSession(sessionId);
+                            return;
+                        }
+                        if (!result.valid()) {
+                            sseSession.send(StreamMessage.sessionTerminated(result.reason()));
+                            cleanupSession(sessionId);
+                            return;
+                        }
+                        StreamMessage heartbeat = StreamMessage.heartbeat();
+                        boolean sent = sseSession.send(heartbeat);
+                        if (!sent) {
+                            cancelHeartbeat(sessionId);
+                        }
+                    });
         }, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
 
         heartbeatTasks.put(sessionId, heartbeatTask);
@@ -346,16 +391,20 @@ public class SseStreamController {
     }
 
     private void cleanupSession(String sessionId) {
-        cancelHeartbeat(sessionId);
-
         SseStreamSession sseSession = activeSessions.remove(sessionId);
-        if (sseSession != null) {
-            sseSession.close();
+        if (sseSession == null) {
+            return; // Already cleaned up — idempotent guard
         }
+
+        cancelHeartbeat(sessionId);
+        sseSession.close();
 
         broadcaster.unregisterSender(sessionId);
         subscriptionManager.clearSubscriptions(sessionId);
         sessionManager.terminateSession(sessionId);
+        if (eventStreamHandler != null) {
+            eventStreamHandler.removeSubscriberFromAll(sessionId);
+        }
 
         log.info("Session cleaned up: {}", sessionId);
     }
@@ -389,6 +438,13 @@ public class SseStreamController {
                     return Subscription.of(key, interval);
                 })
                 .toList();
+    }
+
+    private void extractAndStoreBearerToken(HttpServletRequest request, StreamSession streamSession) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            streamSession.addTransientMetadata("bearerToken", authHeader.substring(7));
+        }
     }
 
     private String extractUserId() {

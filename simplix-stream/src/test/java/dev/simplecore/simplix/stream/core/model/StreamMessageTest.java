@@ -25,14 +25,15 @@ class StreamMessageTest {
         void shouldHaveAllExpectedMessageTypes() {
             StreamMessage.MessageType[] values = StreamMessage.MessageType.values();
 
-            assertThat(values).hasSize(6);
+            assertThat(values).hasSize(7);
             assertThat(values).containsExactly(
                     StreamMessage.MessageType.DATA,
                     StreamMessage.MessageType.HEARTBEAT,
                     StreamMessage.MessageType.ERROR,
                     StreamMessage.MessageType.SUBSCRIPTION_REMOVED,
                     StreamMessage.MessageType.CONNECTED,
-                    StreamMessage.MessageType.RECONNECTED
+                    StreamMessage.MessageType.RECONNECTED,
+                    StreamMessage.MessageType.SESSION_TERMINATED
             );
         }
     }

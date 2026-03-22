@@ -10,6 +10,7 @@ import dev.simplecore.simplix.stream.core.model.StreamSession;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionResponse;
@@ -34,10 +35,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -65,6 +69,18 @@ class WebSocketStreamHandlerTest {
     @Mock
     private SimpMessagingTemplate messagingTemplate;
 
+    @Mock
+    private SessionValidator sessionValidator;
+
+    @Mock
+    private ExecutorService sessionValidationExecutor;
+
+    @Mock
+    private ScheduledExecutorService scheduledExecutor;
+
+    @Mock
+    private ScheduledFuture<?> scheduledFuture;
+
     private StreamProperties properties;
     private ObjectMapper objectMapper;
     private WebSocketStreamHandler handler;
@@ -72,6 +88,8 @@ class WebSocketStreamHandlerTest {
     @BeforeEach
     void setUp() {
         properties = new StreamProperties();
+        properties.setSession(new StreamProperties.SessionConfig());
+        properties.getSession().setHeartbeatInterval(Duration.ofSeconds(30));
         properties.setScheduler(new StreamProperties.SchedulerConfig());
         properties.getScheduler().setDefaultInterval(Duration.ofSeconds(1));
         properties.getScheduler().setMinInterval(Duration.ofMillis(100));
@@ -79,10 +97,15 @@ class WebSocketStreamHandlerTest {
         properties.getSubscription().setPartialSuccess(true);
 
         objectMapper = new ObjectMapper();
+
+        lenient().doReturn(scheduledFuture).when(scheduledExecutor)
+                .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+
         handler = new WebSocketStreamHandler(
                 sessionManager, subscriptionManager, collectorRegistry,
                 broadcastService, authorizationService, properties,
-                messagingTemplate, objectMapper
+                messagingTemplate, objectMapper,
+                sessionValidator, sessionValidationExecutor, scheduledExecutor
         );
     }
 

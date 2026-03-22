@@ -279,6 +279,9 @@ public class DbSessionRegistry implements SessionRegistry {
         return sessionRepository.findByInstanceId(instanceId);
     }
 
+    // Note: Only persistent metadata (getMetadata()) is serialized.
+    // Transient metadata (getTransientMetadata()) is intentionally excluded
+    // as it exists only for the lifetime of the in-memory session.
     private StreamSessionEntity toEntity(StreamSession session) {
         return StreamSessionEntity.builder()
                 .id(session.getId())

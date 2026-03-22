@@ -11,6 +11,7 @@ import dev.simplecore.simplix.stream.core.model.Subscription;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionResponse;
@@ -31,7 +32,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 /**
  * WebSocket STOMP message handler for stream operations.
@@ -51,9 +52,13 @@ public class WebSocketStreamHandler {
     private final StreamProperties properties;
     private final SimpMessagingTemplate messagingTemplate;
     private final ObjectMapper objectMapper;
+    private final SessionValidator sessionValidator;
+    private final ExecutorService sessionValidationExecutor;
+    private final ScheduledExecutorService streamScheduledExecutor;
 
     private final Map<String, WebSocketStreamSession> activeSessions = new ConcurrentHashMap<>();
     private final Map<String, String> simpSessionToStreamSession = new ConcurrentHashMap<>();
+    private final Map<String, ScheduledFuture<?>> heartbeatTasks = new ConcurrentHashMap<>();
 
     /**
      * Handle WebSocket connection events.
@@ -69,6 +74,18 @@ public class WebSocketStreamHandler {
         StreamSession streamSession = sessionManager.createSession(userId, TransportType.WEBSOCKET);
         String streamSessionId = streamSession.getId();
 
+        // Extract bearer token from handshake headers
+        Map<String, List<String>> nativeHeaders = headers.toNativeHeaderMap();
+        if (nativeHeaders != null) {
+            List<String> authHeaders = nativeHeaders.get("Authorization");
+            if (authHeaders != null && !authHeaders.isEmpty()) {
+                String authHeader = authHeaders.get(0);
+                if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                    streamSession.addTransientMetadata("bearerToken", authHeader.substring(7));
+                }
+            }
+        }
+
         // Create WebSocket session wrapper
         WebSocketStreamSession wsSession = new WebSocketStreamSession(
                 streamSession, messagingTemplate, objectMapper);
@@ -79,6 +96,9 @@ public class WebSocketStreamHandler {
         if (broadcastService instanceof dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster localBroadcaster) {
             localBroadcaster.registerSender(streamSessionId, wsSession);
         }
+
+        // Start heartbeat with async validation
+        startHeartbeat(streamSessionId, wsSession);
 
         log.info("WebSocket session connected: simpSession={}, streamSession={}, user={}",
                 simpSessionId, streamSessionId, userId);
@@ -103,6 +123,9 @@ public class WebSocketStreamHandler {
 
         log.info("WebSocket session disconnected: simpSession={}, streamSession={}",
                 simpSessionId, streamSessionId);
+
+        // Cancel heartbeat
+        cancelHeartbeat(streamSessionId);
 
         // Start grace period (session might reconnect)
         sessionManager.markDisconnected(streamSessionId);
@@ -232,6 +255,71 @@ public class WebSocketStreamHandler {
             subscriptionManager.clearSubscriptions(streamSessionId);
             log.debug("Cleared all subscriptions for WebSocket session: {}", streamSessionId);
         }
+    }
+
+    private void startHeartbeat(String sessionId, WebSocketStreamSession wsSession) {
+        long intervalMs = properties.getSession().getHeartbeatInterval().toMillis();
+
+        ScheduledFuture<?> heartbeatTask = streamScheduledExecutor.scheduleAtFixedRate(() -> {
+            if (!wsSession.isActive()) {
+                cancelHeartbeat(sessionId);
+                return;
+            }
+
+            var streamSession = sessionManager.findSession(sessionId);
+            if (streamSession.isEmpty()) {
+                cancelHeartbeat(sessionId);
+                return;
+            }
+
+            CompletableFuture.supplyAsync(
+                            () -> sessionValidator.validate(streamSession.get()), sessionValidationExecutor)
+                    .orTimeout(2, TimeUnit.SECONDS)
+                    .whenComplete((result, ex) -> {
+                        if (ex != null) {
+                            wsSession.send(StreamMessage.sessionTerminated("Session validation timeout"));
+                            cleanupSession(sessionId);
+                            return;
+                        }
+                        if (!result.valid()) {
+                            wsSession.send(StreamMessage.sessionTerminated(result.reason()));
+                            cleanupSession(sessionId);
+                            return;
+                        }
+                        StreamMessage heartbeat = StreamMessage.heartbeat();
+                        boolean sent = wsSession.send(heartbeat);
+                        if (!sent) {
+                            cancelHeartbeat(sessionId);
+                        }
+                    });
+        }, intervalMs, intervalMs, TimeUnit.MILLISECONDS);
+
+        heartbeatTasks.put(sessionId, heartbeatTask);
+    }
+
+    private void cancelHeartbeat(String sessionId) {
+        ScheduledFuture<?> task = heartbeatTasks.remove(sessionId);
+        if (task != null) {
+            task.cancel(false);
+        }
+    }
+
+    private void cleanupSession(String sessionId) {
+        WebSocketStreamSession wsSession = activeSessions.remove(sessionId);
+        if (wsSession == null) {
+            return; // Already cleaned up — idempotent guard
+        }
+
+        cancelHeartbeat(sessionId);
+        wsSession.close();
+
+        if (broadcastService instanceof dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster localBroadcaster) {
+            localBroadcaster.unregisterSender(sessionId);
+        }
+        subscriptionManager.clearSubscriptions(sessionId);
+        sessionManager.terminateSession(sessionId);
+
+        log.info("Session cleaned up: {}", sessionId);
     }
 
     private List<Subscription> convertToSubscriptions(SubscriptionRequest request) {

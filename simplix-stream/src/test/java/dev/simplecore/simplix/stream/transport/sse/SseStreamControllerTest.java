@@ -11,9 +11,11 @@ import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.exception.SessionNotFoundException;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +68,16 @@ class SseStreamControllerTest {
     private ScheduledExecutorService scheduledExecutor;
 
     @Mock
+    private SessionValidator sessionValidator;
+
+    @Mock
+    private ExecutorService sessionValidationExecutor;
+
+    @Mock
     private ScheduledFuture<?> scheduledFuture;
+
+    @Mock
+    private HttpServletRequest mockRequest;
 
     private StreamProperties properties;
     private ObjectMapper objectMapper;
@@ -95,7 +107,9 @@ class SseStreamControllerTest {
                 authorizationService,
                 properties,
                 objectMapper,
-                scheduledExecutor
+                scheduledExecutor,
+                sessionValidator,
+                sessionValidationExecutor
         );
 
         // Set up authentication for tests
@@ -122,7 +136,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            SseEmitter emitter = controller.connect(null);
+            SseEmitter emitter = controller.connect(null, mockRequest);
 
             assertNotNull(emitter);
             verify(sessionManager).createSession("user123", TransportType.SSE);
@@ -138,7 +152,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             verify(scheduledExecutor).scheduleAtFixedRate(
                     any(Runnable.class),
@@ -159,7 +173,7 @@ class SseStreamControllerTest {
 
             assertEquals(0, controller.getActiveSessionCount());
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             assertEquals(1, controller.getActiveSessionCount());
         }
@@ -174,7 +188,7 @@ class SseStreamControllerTest {
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
             Map<String, String> connectParams = Map.of("timezone", "UTC", "locale", "en");
-            controller.connect(connectParams);
+            controller.connect(connectParams, mockRequest);
 
             assertEquals("UTC", session.getMetadata().get("timezone"));
             assertEquals("en", session.getMetadata().get("locale"));
@@ -191,7 +205,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            SseEmitter emitter = controller.connect(null);
+            SseEmitter emitter = controller.connect(null, mockRequest);
 
             assertNotNull(emitter);
             verify(sessionManager).createSession(null, TransportType.SSE);
@@ -222,7 +236,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             // Now update subscriptions
             SubscriptionRequest.SubscriptionItem item = new SubscriptionRequest.SubscriptionItem();
@@ -257,7 +271,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             SubscriptionRequest.SubscriptionItem item = new SubscriptionRequest.SubscriptionItem();
             item.setResource("nonexistent-resource");
@@ -284,7 +298,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             SubscriptionRequest.SubscriptionItem item = new SubscriptionRequest.SubscriptionItem();
             item.setResource("restricted");
@@ -313,7 +327,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             // Change authenticated user
             UsernamePasswordAuthenticationToken otherAuth =
@@ -349,7 +363,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             ResponseEntity<List<SubscriptionResponse.SubscribedResource>> response =
                     controller.getSubscriptions(session.getId());
@@ -380,7 +394,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            controller.connect(null);
+            controller.connect(null, mockRequest);
 
             ResponseEntity<Void> response = controller.disconnect(session.getId());
 
@@ -403,7 +417,7 @@ class SseStreamControllerTest {
             when(sessionManager.reconnect("sess-1")).thenReturn(false);
 
             assertThrows(SessionNotFoundException.class,
-                    () -> controller.reconnect("sess-1"));
+                    () -> controller.reconnect("sess-1", mockRequest));
         }
 
         @Test
@@ -417,7 +431,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            SseEmitter emitter = controller.reconnect("sess-1");
+            SseEmitter emitter = controller.reconnect("sess-1", mockRequest);
 
             assertNotNull(emitter);
             verify(broadcaster).registerSender(eq("sess-1"), any(SseStreamSession.class));
@@ -435,7 +449,7 @@ class SseStreamControllerTest {
             doReturn(scheduledFuture).when(scheduledExecutor)
                     .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
 
-            SseEmitter emitter = controller.reconnect("sess-1");
+            SseEmitter emitter = controller.reconnect("sess-1", mockRequest);
 
             assertNotNull(emitter);
         }

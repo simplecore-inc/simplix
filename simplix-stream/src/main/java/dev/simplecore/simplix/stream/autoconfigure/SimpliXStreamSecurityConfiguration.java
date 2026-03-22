@@ -1,6 +1,8 @@
 package dev.simplecore.simplix.stream.autoconfigure;
 
 import dev.simplecore.simplix.stream.config.StreamProperties;
+import dev.simplecore.simplix.stream.security.SessionValidationResult;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -29,5 +31,17 @@ public class SimpliXStreamSecurityConfiguration {
         boolean enforceAuth = properties.getSecurity().isEnforceAuthorization();
         log.info("Creating stream authorization service (enforceAuthorization={})", enforceAuth);
         return new StreamAuthorizationService(enforceAuth);
+    }
+
+    /**
+     * Default no-op session validator.
+     * <p>
+     * Always returns valid. Applications should provide their own
+     * implementation to enforce session validation (e.g., token expiration).
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public SessionValidator sessionValidator() {
+        return session -> SessionValidationResult.ok();
     }
 }

@@ -6,6 +6,7 @@ import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.sse.SseStreamController;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -58,7 +60,9 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
             StreamAuthorizationService authorizationService,
             StreamProperties properties,
             ObjectMapper objectMapper,
-            ScheduledExecutorService streamScheduledExecutor) {
+            ScheduledExecutorService streamScheduledExecutor,
+            SessionValidator sessionValidator,
+            ExecutorService sessionValidationExecutor) {
 
         log.info("Creating SSE stream controller");
         return new SseStreamController(
@@ -69,7 +73,9 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
                 authorizationService,
                 properties,
                 objectMapper,
-                streamScheduledExecutor
+                streamScheduledExecutor,
+                sessionValidator,
+                sessionValidationExecutor
         );
     }
 }

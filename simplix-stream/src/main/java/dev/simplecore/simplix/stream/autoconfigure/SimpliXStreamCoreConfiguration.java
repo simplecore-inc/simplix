@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -35,6 +36,21 @@ import java.util.concurrent.ScheduledExecutorService;
 @Configuration
 @ConditionalOnProperty(name = "simplix.stream.enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXStreamCoreConfiguration {
+
+    /**
+     * Executor for async session validation during heartbeat cycles.
+     * <p>
+     * Shared by both SSE and WebSocket transports.
+     */
+    @Bean(destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(name = "sessionValidationExecutor")
+    public ExecutorService sessionValidationExecutor() {
+        return Executors.newFixedThreadPool(4, r -> {
+            Thread t = new Thread(r, "session-validator");
+            t.setDaemon(true);
+            return t;
+        });
+    }
 
     /**
      * Scheduled executor service for schedulers and timers.

@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manages session lifecycle, subscriptions, and message delivery.
  */
 @Getter
-@ToString(exclude = {"subscriptions", "metadata"})
+@ToString(exclude = {"subscriptions", "metadata", "transientMetadata"})
 public class StreamSession {
 
     private final String id;
@@ -28,6 +28,7 @@ public class StreamSession {
     private final Instant connectedAt;
     private final Map<String, Object> metadata;
     private final Set<SubscriptionKey> subscriptions;
+    private final Map<String, Object> transientMetadata = new ConcurrentHashMap<>();
 
     private volatile SessionState state;
     private volatile Instant lastActiveAt;
@@ -152,7 +153,7 @@ public class StreamSession {
      * @return unmodifiable set of subscription keys
      */
     public Set<SubscriptionKey> getSubscriptions() {
-        return Collections.unmodifiableSet(subscriptions);
+        return Set.copyOf(subscriptions);
     }
 
     /**
@@ -193,5 +194,38 @@ public class StreamSession {
     @SuppressWarnings("unchecked")
     public <T> T getMetadata(String key) {
         return (T) metadata.get(key);
+    }
+
+    /**
+     * Add transient metadata to the session.
+     * <p>
+     * Transient metadata is NOT persisted to the database and is only
+     * available for the lifetime of this in-memory session object.
+     *
+     * @param key   the metadata key
+     * @param value the metadata value
+     */
+    public void addTransientMetadata(String key, Object value) {
+        transientMetadata.put(key, value);
+    }
+
+    /**
+     * Get transient metadata from the session.
+     *
+     * @param key the metadata key
+     * @return the metadata value or null
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getTransientMetadata(String key) {
+        return (T) transientMetadata.get(key);
+    }
+
+    /**
+     * Get all transient metadata as an unmodifiable view.
+     *
+     * @return unmodifiable map of transient metadata
+     */
+    public Map<String, Object> getTransientMetadata() {
+        return Collections.unmodifiableMap(transientMetadata);
     }
 }

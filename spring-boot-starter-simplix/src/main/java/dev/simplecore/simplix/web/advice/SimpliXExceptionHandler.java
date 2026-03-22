@@ -410,15 +410,23 @@ public class SimpliXExceptionHandler<T> {
     @Order(4)
     @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
     public T handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex, HttpServletRequest request) {
+        // SSE/long-lived connections have already committed a text/event-stream response.
+        // Attempting to write a JSON error body would cause HttpMessageNotWritableException.
+        if (isResponseCommitted()) {
+            log.debug("Async timeout on committed response (likely SSE), skipping error body: {}",
+                    request.getRequestURI());
+            return null;
+        }
+
         log.warn("Async request timeout for: {}", request.getRequestURI());
-        
+
         String message = messageSource.getMessage(
-            "error.gen.timeout", 
-            null, 
-            "Request timeout", 
+            "error.gen.timeout",
+            null,
+            "Request timeout",
             LocaleContextHolder.getLocale()
         );
-        
+
         T errorResponse = responseFactory.createErrorResponse(
             HttpStatus.REQUEST_TIMEOUT,
             ErrorCode.GEN_TIMEOUT.getCode(),
@@ -426,7 +434,7 @@ public class SimpliXExceptionHandler<T> {
             "The request took too long to process",
             request.getRequestURI()
         );
-        
+
         // Add trace ID to response header and MDC for logging
         addTraceIdToResponse(errorResponse, request);
 

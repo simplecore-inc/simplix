@@ -6,6 +6,7 @@ import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
+import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.websocket.WebSocketStreamHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,9 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Auto-configuration for WebSocket transport.
@@ -86,7 +90,10 @@ public class SimpliXStreamWebSocketConfiguration {
             StreamAuthorizationService authorizationService,
             StreamProperties properties,
             SimpMessagingTemplate messagingTemplate,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            SessionValidator sessionValidator,
+            ExecutorService sessionValidationExecutor,
+            ScheduledExecutorService streamScheduledExecutor) {
 
         log.info("Creating WebSocket stream handler");
         return new WebSocketStreamHandler(
@@ -97,7 +104,10 @@ public class SimpliXStreamWebSocketConfiguration {
                 authorizationService,
                 properties,
                 messagingTemplate,
-                objectMapper
+                objectMapper,
+                sessionValidator,
+                sessionValidationExecutor,
+                streamScheduledExecutor
         );
     }
 }

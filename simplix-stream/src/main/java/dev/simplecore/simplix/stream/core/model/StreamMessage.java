@@ -83,7 +83,12 @@ public class StreamMessage {
         /**
          * Reconnected acknowledgement (session restored)
          */
-        RECONNECTED
+        RECONNECTED,
+
+        /**
+         * Session terminated notification (validation failure)
+         */
+        SESSION_TERMINATED
     }
 
     /**
@@ -176,6 +181,20 @@ public class StreamMessage {
         return StreamMessage.builder()
                 .type(MessageType.RECONNECTED)
                 .payload(new ReconnectedPayload(sessionId, restoredSubscriptionKeys, Instant.now()))
+                .timestamp(Instant.now())
+                .build();
+    }
+
+    /**
+     * Create a session terminated message.
+     *
+     * @param reason the termination reason
+     * @return the message
+     */
+    public static StreamMessage sessionTerminated(String reason) {
+        return StreamMessage.builder()
+                .type(MessageType.SESSION_TERMINATED)
+                .message(reason)
                 .timestamp(Instant.now())
                 .build();
     }
