@@ -233,6 +233,10 @@ subprojects {
                         'simplix-sync': [
                             name: 'SimpliX Sync',
                             description: 'Cross-instance state synchronization with pub/sub broadcasting, typed channels, state store, and reconciliation support'
+                        ],
+                        'simplix-egov': [
+                            name: 'SimpliX eGov',
+                            description: 'eGovFrame standard framework compatibility module providing EgovAbstractServiceImpl bridge for SimpliX services'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {

@@ -5,6 +5,7 @@ import dev.simplecore.searchable.core.service.SearchableServiceDelegate;
 import dev.simplecore.searchable.core.service.SearchableServiceSupport;
 import dev.simplecore.simplix.core.repository.SimpliXBaseRepository;
 import jakarta.persistence.EntityManager;
+import org.egovframe.rte.fdl.cmmn.EgovAbstractServiceImpl;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,7 +18,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Transactional(readOnly = true)
-public abstract class SimpliXBaseService<E, ID> implements SimpliXService<E, ID>, SearchableServiceSupport<E, ID> {
+public abstract class SimpliXBaseService<E, ID>
+    extends EgovAbstractServiceImpl
+    implements SimpliXService<E, ID>, SearchableServiceSupport<E, ID> {
     protected final SimpliXBaseRepository<E, ID> repository;
     protected final EntityManager entityManager;
     private final SearchableServiceDelegate<E, ID> searchableDelegate;
