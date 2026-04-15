@@ -1,0 +1,80 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+ext {
+    set('egovframeVersion', '5.0.0')
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+configurations.all {
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
+    exclude group: 'org.apache.logging.log4j', module: 'log4j-core'
+}
+
+dependencies {
+    api project(':simplix-core')
+
+    // Spring Boot (for auto-configuration support)
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    // egovframe v5.0.0 required libraries
+    api "org.egovframe.rte:egovframe-rte-fdl-cmmn:${egovframeVersion}"
+    api("org.egovframe.rte:egovframe-rte-fdl-logging:${egovframeVersion}") {
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-api'
+    }
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+compileJava.inputs.files(processResources)
+compileJava.dependsOn(processResources)
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+test {
+    useJUnitPlatform()
+}

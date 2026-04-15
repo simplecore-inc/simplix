@@ -29,6 +29,7 @@ sourceSets {
 
 dependencies {
     api project(':simplix-core')
+    api project(':simplix-egov')
 
     // Include all SimpliX modules (umbrella starter)
     api project(':simplix-auth')

@@ -23,6 +23,7 @@ include 'simplix-scheduler'
 include 'simplix-stream'
 include 'simplix-sync'
 include 'spring-boot-starter-simplix'
+include 'simplix-egov'
 
 def props = new Properties()
 def propertiesFile = file("gradle.properties")
@@ -68,6 +69,13 @@ dependencyResolutionManagement {
             metadataSources {
                 gradleMetadata()
                 mavenPom()
+            }
+        }
+
+        maven {
+            url = "https://maven.egovframe.go.kr/maven/"
+            content {
+                includeGroup "org.egovframe.rte"
             }
         }
 
