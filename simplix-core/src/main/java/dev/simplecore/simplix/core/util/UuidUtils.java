@@ -38,11 +38,27 @@ public class UuidUtils {
     
     /**
      * Generate a short UUID (first 8 characters)
-     * 
+     *
      * @return Short UUID string (8 characters)
      */
     public static String generateShortUuid() {
         return generateUuidV7().substring(0, 8);
+    }
+
+    /**
+     * Generate a compact trace ID for log correlation.
+     *
+     * <p>Returns the first 13 hex characters of a UUID v7 with hyphens removed.
+     * This encodes the full 48-bit millisecond timestamp (12 hex chars) plus
+     * one additional character, providing millisecond-precision uniqueness
+     * that is sufficient for correlating logs within the same request or task.
+     *
+     * <p>Example: {@code 019d1d907e3a7}
+     *
+     * @return 13-character hex trace ID
+     */
+    public static String generateTraceId() {
+        return generateUuidV7().replace("-", "").substring(0, 13);
     }
     
     /**

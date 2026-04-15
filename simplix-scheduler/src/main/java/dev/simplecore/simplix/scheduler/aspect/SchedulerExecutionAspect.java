@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.scheduler.aspect;
 
+import dev.simplecore.simplix.core.util.UuidUtils;
 import dev.simplecore.simplix.scheduler.annotation.SchedulerName;
 import dev.simplecore.simplix.scheduler.config.SchedulerProperties;
 import dev.simplecore.simplix.scheduler.core.SchedulerLoggingService;
@@ -14,6 +15,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.MDC;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -53,6 +55,15 @@ public class SchedulerExecutionAspect {
      */
     @Around("@annotation(org.springframework.scheduling.annotation.Scheduled)")
     public Object logSchedulerExecution(ProceedingJoinPoint joinPoint) throws Throwable {
+        MDC.put("traceId", UuidUtils.generateTraceId());
+        try {
+            return doLogSchedulerExecution(joinPoint);
+        } finally {
+            MDC.remove("traceId");
+        }
+    }
+
+    private Object doLogSchedulerExecution(ProceedingJoinPoint joinPoint) throws Throwable {
         if (!loggingService.isEnabled()) {
             log.trace("Scheduler logging is disabled, skipping");
             return joinPoint.proceed();

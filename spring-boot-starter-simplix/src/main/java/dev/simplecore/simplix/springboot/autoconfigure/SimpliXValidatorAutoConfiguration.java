@@ -69,7 +69,7 @@ public class SimpliXValidatorAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(MethodValidationPostProcessor.class)
     @ConditionalOnClass(name = "org.springframework.validation.beanvalidation.LocalValidatorFactoryBean")
-    public MethodValidationPostProcessor methodValidationPostProcessor() {
+    public static MethodValidationPostProcessor methodValidationPostProcessor() {
         log.info("Configuring Method Validation Post Processor");
 
         MethodValidationPostProcessor processor = new MethodValidationPostProcessor();

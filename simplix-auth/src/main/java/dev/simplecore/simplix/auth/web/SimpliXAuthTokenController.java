@@ -96,7 +96,7 @@ public class SimpliXAuthTokenController {
                     content = @Content(schema = @Schema(implementation = SimpliXApiResponse.class))
             )
     })
-    @RequestMapping(value = "/issue", method = {RequestMethod.GET})
+    @RequestMapping(value = "/issue", method = {RequestMethod.POST})
     public ResponseEntity<SimpliXJweTokenProvider.TokenResponse> issueToken(HttpServletRequest request) throws Exception {
         try {
             // Extract credentials from Basic auth header
@@ -127,8 +127,12 @@ public class SimpliXAuthTokenController {
                     request.getHeader("User-Agent")
             );
 
-            // Create session if configured
+            // Create session if configured (with session fixation protection)
             if (properties.getToken().isCreateSessionOnTokenIssue()) {
+                HttpSession existing = request.getSession(false);
+                if (existing != null) {
+                    existing.invalidate();
+                }
                 HttpSession session = request.getSession(true);
 
                 // Set session timeout to match access token lifetime
@@ -189,7 +193,7 @@ public class SimpliXAuthTokenController {
                     content = @Content(schema = @Schema(implementation = SimpliXApiResponse.class))
             )
     })
-    @RequestMapping(value = "/refresh", method = {RequestMethod.GET})
+    @RequestMapping(value = "/refresh", method = {RequestMethod.POST})
     public ResponseEntity<SimpliXJweTokenProvider.TokenResponse> refreshToken(HttpServletRequest request) {
         try {
             String refreshToken = request.getHeader("X-Refresh-Token");
@@ -208,18 +212,25 @@ public class SimpliXAuthTokenController {
                 );
             }
 
-            // Parse refresh token to extract username for session renewal
-            var claims = tokenProvider.parseToken(refreshToken);
-            String username = claims.getSubject();
-
             SimpliXJweTokenProvider.TokenResponse tokens = tokenProvider.refreshTokens(
                     refreshToken,
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent")
             );
 
+            // Extract username from the authenticated SecurityContext (set by refreshTokens)
+            Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+            if (currentAuth == null) {
+                throw new TokenValidationException(
+                        messageSource.getMessage("token.refresh.failed", null,
+                                "Failed to refresh tokens",
+                                LocaleContextHolder.getLocale()),
+                        "Authentication context not available after token refresh"
+                );
+            }
+            String username = currentAuth.getName();
+
             // Update session with renewed authentication
-            // This ensures the session is updated when tokens are refreshed
             var userDetails = userDetailsService.loadUserByUsername(username);
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userDetails,
@@ -229,8 +240,12 @@ public class SimpliXAuthTokenController {
             SecurityContext context = SecurityContextHolder.getContext();
             context.setAuthentication(authentication);
 
-            // Renew session if configured (creates new session if expired)
+            // Renew session if configured (with session fixation protection)
             if (properties.getToken().isCreateSessionOnTokenIssue()) {
+                HttpSession existing = request.getSession(false);
+                if (existing != null) {
+                    existing.invalidate();
+                }
                 HttpSession session = request.getSession(true);
 
                 // Reset session timeout to match access token lifetime
@@ -242,14 +257,14 @@ public class SimpliXAuthTokenController {
             }
 
             return ResponseEntity.ok(tokens);
+        } catch (TokenValidationException e) {
+            throw e; // Preserve specific error code and audit trail
         } catch (Exception e) {
             throw new TokenValidationException(
-                    messageSource.getMessage("token.refresh.invalid", null,
-                            "Invalid refresh token",
+                    messageSource.getMessage("token.refresh.failed", null,
+                            "Failed to refresh tokens",
                             LocaleContextHolder.getLocale()),
-                    messageSource.getMessage("token.refresh.invalid.detail", null,
-                            "The refresh token is not valid or has expired",
-                            LocaleContextHolder.getLocale())
+                    e.getMessage()
             );
         }
     }

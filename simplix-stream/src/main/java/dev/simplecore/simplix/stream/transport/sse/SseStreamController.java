@@ -340,6 +340,7 @@ public class SseStreamController {
 
     private void startHeartbeat(String sessionId, SseStreamSession sseSession) {
         long intervalMs = properties.getSession().getHeartbeatInterval().toMillis();
+        long validationTimeoutMs = properties.getSession().getValidationTimeout().toMillis();
 
         ScheduledFuture<?> heartbeatTask = streamScheduledExecutor.scheduleAtFixedRate(() -> {
             if (!sseSession.isActive()) {
@@ -355,11 +356,13 @@ public class SseStreamController {
 
             CompletableFuture.supplyAsync(
                             () -> sessionValidator.validate(streamSession.get()), sessionValidationExecutor)
-                    .orTimeout(2, TimeUnit.SECONDS)
+                    .orTimeout(validationTimeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((result, ex) -> {
                         if (ex != null) {
-                            sseSession.send(StreamMessage.sessionTerminated("Session validation timeout"));
-                            cleanupSession(sessionId);
+                            // Validation pool saturated or validator slow — skip this heartbeat.
+                            // The session may still be perfectly healthy; killing it here would
+                            // cause unnecessary disconnections under transient thread contention.
+                            log.debug("Session validation timed out, skipping heartbeat: {}", sessionId);
                             return;
                         }
                         if (!result.valid()) {

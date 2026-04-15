@@ -122,6 +122,15 @@ public class StreamProperties {
          * Maximum sessions per user (0 for unlimited)
          */
         private int maxPerUser = 5;
+
+        /**
+         * Timeout for async session validation during heartbeat.
+         * <p>
+         * If the session validator does not complete within this duration,
+         * the heartbeat is skipped (NOT terminated). This prevents thread pool
+         * saturation from killing healthy sessions.
+         */
+        private Duration validationTimeout = Duration.ofSeconds(5);
     }
 
     /**

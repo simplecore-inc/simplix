@@ -91,6 +91,18 @@ public enum TokenFailureReason {
     ACCOUNT_DISABLED,
 
     /**
+     * Token type mismatch - access token used as refresh or vice versa.
+     * Indicates misuse of token types (e.g., presenting a refresh token as a bearer token).
+     */
+    TOKEN_TYPE_MISMATCH,
+
+    /**
+     * Blacklist service is unavailable (e.g., Redis connection failure).
+     * Token validation result depends on the configured failure mode (FAIL_CLOSED or FAIL_OPEN).
+     */
+    BLACKLIST_SERVICE_ERROR,
+
+    /**
      * Unknown or unspecified error.
      * Fallback for unexpected validation failures.
      */

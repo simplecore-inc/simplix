@@ -19,9 +19,9 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -88,7 +88,8 @@ public class SimpliXAuthSecurityConfiguration {
             // IF_REQUIRED policy: does not read session for authentication,
             // but stores authentication in session after successful token issuance
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation().changeSessionId())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable);
         return http.build();
@@ -155,7 +156,8 @@ public class SimpliXAuthSecurityConfiguration {
             "/css/**", "/js/**", "/images/**", "/webjars/**",
             "/favicon.ico", "/vendor/**",
             "/h2-console/**", "/h2-console",
-            "/actuator/**", "/actuator/health"
+            "/actuator/**", "/actuator/health",
+            "/.well-known/appspecific/**"
         };
 
         String[] permitAllPatterns = properties.getSecurity().getPermitAllPatterns() != null ?
@@ -198,18 +200,28 @@ public class SimpliXAuthSecurityConfiguration {
                     .permitAll();
             })
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .sessionFixation().changeSessionId())
             .userDetailsService(userDetailsService)
-            .headers(headers -> headers
-                .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src * 'unsafe-inline' 'unsafe-eval'; " +
-                                    "script-src * 'unsafe-inline' 'unsafe-eval'; " +
-                                    "img-src * data: blob: 'unsafe-inline'; " +
-                                    "font-src * data: 'unsafe-inline'; " +
-                                    "style-src * 'unsafe-inline'; " +
-                                    "frame-src *; " +
-                                    "connect-src *;")));
+            .headers(headers -> {
+                String frameOpt = properties.getSecurity().getFrameOptions();
+                if ("DENY".equalsIgnoreCase(frameOpt)) {
+                    headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny);
+                } else {
+                    headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin);
+                }
+                headers.contentSecurityPolicy(csp -> csp
+                    .policyDirectives(properties.getSecurity().getContentSecurityPolicy()));
+                String referrer = properties.getSecurity().getReferrerPolicy();
+                if (referrer != null && !referrer.isEmpty()) {
+                    headers.referrerPolicy(rp -> rp.policy(
+                        ReferrerPolicyHeaderWriter.ReferrerPolicy.valueOf(referrer)));
+                }
+                String permissions = properties.getSecurity().getPermissionsPolicy();
+                if (permissions != null && !permissions.isEmpty()) {
+                    headers.permissionsPolicy(pp -> pp.policy(permissions));
+                }
+            });
 
         // HTTP Basic authentication configuration
         if (properties.getSecurity() != null && properties.getSecurity().isEnableHttpBasic()) {
@@ -229,13 +241,6 @@ public class SimpliXAuthSecurityConfiguration {
         // CORS configuration
         if (properties.getSecurity() != null && properties.getSecurity().isEnableCors()) {
             http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-        }
-
-        // Security headers configuration
-        if (properties.getSecurity() != null) {
-            http.headers(headers -> {
-                headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin);
-            });
         }
 
         // HTTPS requirements
@@ -301,12 +306,6 @@ public class SimpliXAuthSecurityConfiguration {
     @ConditionalOnMissingBean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
-            .requestMatchers("/.well-known/appspecific/**");
     }
 
     private String[] combineArrays(String[] arr1, String[] arr2) {

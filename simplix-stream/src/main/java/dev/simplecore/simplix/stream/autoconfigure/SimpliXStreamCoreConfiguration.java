@@ -40,12 +40,15 @@ public class SimpliXStreamCoreConfiguration {
     /**
      * Executor for async session validation during heartbeat cycles.
      * <p>
-     * Shared by both SSE and WebSocket transports.
+     * Shared by both SSE and WebSocket transports. Uses a cached thread pool
+     * to prevent thread starvation when {@code SseEmitter.send()} blocks
+     * due to slow clients. The cached pool grows as needed and reclaims
+     * idle threads after 60 seconds.
      */
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean(name = "sessionValidationExecutor")
     public ExecutorService sessionValidationExecutor() {
-        return Executors.newFixedThreadPool(4, r -> {
+        return Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "session-validator");
             t.setDaemon(true);
             return t;

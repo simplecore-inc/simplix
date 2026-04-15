@@ -27,6 +27,8 @@ class TokenFailureReasonTest {
                 TokenFailureReason.USER_NOT_FOUND,
                 TokenFailureReason.ACCOUNT_LOCKED,
                 TokenFailureReason.ACCOUNT_DISABLED,
+                TokenFailureReason.TOKEN_TYPE_MISMATCH,
+                TokenFailureReason.BLACKLIST_SERVICE_ERROR,
                 TokenFailureReason.UNKNOWN
         );
     }

@@ -50,7 +50,7 @@ public class CaffeineTokenBlacklistService implements TokenBlacklistService {
                 .recordStats()  // Enable statistics
                 .build();
 
-        log.info("Caffeine token blacklist initialized (not suitable for multi-server deployments)");
+        log.warn("Caffeine token blacklist initialized — not suitable for multi-instance deployments");
     }
 
     @Override

@@ -135,18 +135,6 @@ class SimpliXAuthSecurityConfigurationTest {
     }
 
     @Nested
-    @DisplayName("webSecurityCustomizer")
-    class WebSecurityCustomizerTest {
-
-        @Test
-        @DisplayName("should create web security customizer")
-        void shouldCreateWebSecurityCustomizer() {
-            var customizer = configuration.webSecurityCustomizer();
-            assertThat(customizer).isNotNull();
-        }
-    }
-
-    @Nested
     @DisplayName("helper methods")
     class HelperMethods {
 

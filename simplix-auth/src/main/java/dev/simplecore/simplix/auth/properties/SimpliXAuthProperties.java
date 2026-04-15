@@ -31,6 +31,16 @@ public class SimpliXAuthProperties {
         private String loginProcessingUrl = "/login";
         private String logoutUrl = "/logout";
         private String[] permitAllPatterns;
+        private String contentSecurityPolicy = "default-src * 'unsafe-inline' 'unsafe-eval'; " +
+                "script-src * 'unsafe-inline' 'unsafe-eval'; " +
+                "img-src * data: blob: 'unsafe-inline'; " +
+                "font-src * data: 'unsafe-inline'; " +
+                "style-src * 'unsafe-inline'; " +
+                "frame-src *; " +
+                "connect-src *;";
+        private String frameOptions = "SAMEORIGIN";
+        private String referrerPolicy = "";
+        private String permissionsPolicy = "";
     }
     
     @Getter
@@ -128,7 +138,24 @@ public class SimpliXAuthProperties {
         // Blacklist (optional feature)
         private boolean enableBlacklist = false;
 
+        /**
+         * Failure mode when the blacklist service (e.g., Redis) is unavailable.
+         * FAIL_CLOSED: deny all tokens (more secure, may cause outage).
+         * FAIL_OPEN: allow tokens through with warning log (less secure, higher availability).
+         */
+        private BlacklistFailureMode blacklistFailureMode = BlacklistFailureMode.FAIL_CLOSED;
+
         // Session management
         private boolean createSessionOnTokenIssue = true;
+    }
+
+    /**
+     * Determines behavior when the token blacklist store is unavailable.
+     */
+    public enum BlacklistFailureMode {
+        /** Deny all tokens when blacklist is unavailable (secure but may cause outage). */
+        FAIL_CLOSED,
+        /** Allow tokens through when blacklist is unavailable (available but less secure). */
+        FAIL_OPEN
     }
 } 

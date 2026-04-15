@@ -1,8 +1,11 @@
 package dev.simplecore.simplix.auth.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
+import dev.simplecore.simplix.core.exception.ErrorCode;
+import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -10,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,22 +40,28 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
     private final SimpliXJweTokenProvider tokenProvider;
     private final SimpliXUserDetailsService userDetailsService;
     private final SimpliXAuthProperties properties;
+    private final ObjectMapper objectMapper;
     private static final Logger logger = LoggerFactory.getLogger(SimpliXTokenAuthenticationFilter.class);
 
-    public SimpliXTokenAuthenticationFilter(SimpliXJweTokenProvider tokenProvider, SimpliXUserDetailsService userDetailsService, SimpliXAuthProperties properties) {
+    public SimpliXTokenAuthenticationFilter(SimpliXJweTokenProvider tokenProvider,
+                                            SimpliXUserDetailsService userDetailsService,
+                                            SimpliXAuthProperties properties,
+                                            ObjectMapper objectMapper) {
         this.tokenProvider = tokenProvider;
         this.userDetailsService = userDetailsService;
         this.properties = properties;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
     @ConditionalOnMissingBean
     public static SimpliXTokenAuthenticationFilter tokenAuthenticationFilter(
-        SimpliXJweTokenProvider tokenProvider, 
+        SimpliXJweTokenProvider tokenProvider,
         SimpliXUserDetailsService userDetailsService,
-        SimpliXAuthProperties properties
+        SimpliXAuthProperties properties,
+        ObjectMapper objectMapper
     ) {
-        return new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService, properties);
+        return new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService, properties, objectMapper);
     }
 
     @Override
@@ -93,6 +103,11 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // If response was already committed (error written), do not continue the filter chain
+        if (response.isCommitted()) {
+            return;
+        }
+
         Authentication finalAuth = SecurityContextHolder.getContext().getAuthentication();
         logger.debug("Final auth state: " + (finalAuth != null ? finalAuth.getName() + ", authenticated=" + finalAuth.isAuthenticated() : "none"));
 
@@ -130,15 +145,30 @@ public class SimpliXTokenAuthenticationFilter extends OncePerRequestFilter {
                 logger.debug("Token validation failed");
             }
         } catch (TokenValidationException e) {
-            logger.error("Token validation failed: {}", e.getMessage());
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-
-            throw new TokenValidationException(e.getMessage(), e.getDetail() != null ? e.getDetail().toString() : null);
+            logger.warn("Token validation failed: {}", e.getMessage());
+            writeUnauthorizedResponse(response, e.getErrorCode().getCode(),
+                    e.getMessage(), e.getDetail() != null ? e.getDetail().toString() : null);
         } catch (Exception e) {
-            logger.error("Authentication failed", e);
-            SecurityContextHolder.clearContext();
+            logger.warn("Token authentication error: {}", e.getMessage());
+            writeUnauthorizedResponse(response, ErrorCode.AUTH_TOKEN_INVALID.getCode(),
+                    "Token authentication failed", e.getMessage());
         }
+    }
+
+    private void writeUnauthorizedResponse(HttpServletResponse response, String errorCode,
+                                            String message, String detail) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+
+        SimpliXApiResponse<Object> errorResponse = SimpliXApiResponse.error(message, errorCode, detail);
+
+        String requestId = MDC.get("requestId");
+        if (requestId != null && !requestId.isEmpty()) {
+            response.setHeader("X-Request-Id", requestId);
+        }
+
+        objectMapper.writeValue(response.getWriter(), errorResponse);
     }
 
     private String extractToken(HttpServletRequest request) {

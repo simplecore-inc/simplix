@@ -10,7 +10,6 @@ import dev.simplecore.simplix.stream.core.session.SessionRegistry;
 import dev.simplecore.simplix.stream.monitoring.StreamHealthIndicator;
 import dev.simplecore.simplix.stream.monitoring.StreamMetrics;
 import dev.simplecore.simplix.stream.persistence.service.StreamStatisticsService;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -93,11 +92,9 @@ public class SimpliXStreamAdminConfiguration {
     public StreamMetrics streamMetrics(
             SessionRegistry sessionRegistry,
             SchedulerManager schedulerManager,
-            StreamProperties properties,
-            MeterRegistry meterRegistry) {
+            StreamProperties properties) {
 
         StreamMetrics metrics = new StreamMetrics(sessionRegistry, schedulerManager, properties);
-        metrics.bindTo(meterRegistry);
         log.info("Created stream metrics");
         return metrics;
     }

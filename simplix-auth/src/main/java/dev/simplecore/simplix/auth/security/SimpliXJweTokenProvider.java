@@ -260,13 +260,13 @@ public class SimpliXJweTokenProvider {
         Date accessTokenExpiry = new Date(now.getTime() + accessLifetime * 1000L);
         Date refreshTokenExpiry = new Date(now.getTime() + refreshLifetime * 1000L);
 
-        String accessToken = createToken(username, accessTokenExpiry, clientIp, userAgent);
-        String refreshToken = createToken(username, refreshTokenExpiry, clientIp, userAgent);
+        String accessToken = createToken(username, accessTokenExpiry, clientIp, userAgent, "access");
+        String refreshToken = createToken(username, refreshTokenExpiry, clientIp, userAgent, "refresh");
 
         return new TokenResponse(accessToken, refreshToken, accessTokenExpiry, refreshTokenExpiry);
     }
 
-    private String createToken(String subject, Date expirationTime, String clientIp, String userAgent) throws JOSEException {
+    private String createToken(String subject, Date expirationTime, String clientIp, String userAgent, String tokenType) throws JOSEException {
         // Ensure encrypter is available (may be initialized lazily in key-rolling mode)
         if (encrypter == null && jweKeyProvider != null && jweKeyProvider.isConfigured()) {
             KeyPair keyPair = jweKeyProvider.getCurrentKeyPair();
@@ -285,6 +285,7 @@ public class SimpliXJweTokenProvider {
             .expirationTime(expirationTime)
             .claim("clientIp", clientIp)
             .claim("userAgent", userAgent)
+            .claim("type", tokenType)
             .build();
 
         // Build header with kid (Key ID) for multi-key support
@@ -319,8 +320,25 @@ public class SimpliXJweTokenProvider {
             username = claims.getSubject();
             oldJti = claims.getJWTID();
 
-            // Token validation
-            if (!validateToken(refreshToken, remoteAddr, userAgent)) {
+            // Verify token type is "refresh" (reject access tokens or tokens without type claim)
+            String type = claims.getStringClaim("type");
+            if (!"refresh".equals(type)) {
+                publishRefreshFailed(username, oldJti, TokenFailureReason.TOKEN_TYPE_MISMATCH,
+                    remoteAddr, userAgent, "Access token used as refresh token");
+
+                throw new TokenValidationException(
+                    ErrorCode.AUTH_TOKEN_INVALID,
+                    messageSource.getMessage("token.type.mismatch", null,
+                        "Token type mismatch",
+                        LocaleContextHolder.getLocale()),
+                    messageSource.getMessage("token.type.mismatch.refresh.detail", null,
+                        "Expected refresh token but received an access token",
+                        LocaleContextHolder.getLocale())
+                );
+            }
+
+            // Token validation (skip type check since we already validated above)
+            if (!validateRefreshToken(refreshToken, remoteAddr, userAgent)) {
                 throw new TokenValidationException(
                     messageSource.getMessage("token.refresh.invalid", null,
                         "Invalid refresh token", LocaleContextHolder.getLocale()),
@@ -487,23 +505,74 @@ public class SimpliXJweTokenProvider {
             jti = claims.getJWTID();
             username = claims.getSubject();
 
+            // Verify token type is "access" (reject refresh tokens or tokens without type claim)
+            String type = claims.getStringClaim("type");
+            if (!"access".equals(type)) {
+                publishValidationFailed(username, jti, TokenFailureReason.TOKEN_TYPE_MISMATCH,
+                    remoteAddr, userAgent, "access");
+
+                throw new TokenValidationException(
+                    ErrorCode.AUTH_TOKEN_INVALID,
+                    messageSource.getMessage("token.type.mismatch", null,
+                        "Token type mismatch",
+                        LocaleContextHolder.getLocale()),
+                    messageSource.getMessage("token.type.mismatch.detail", null,
+                        "Expected access token but received a different token type",
+                        LocaleContextHolder.getLocale())
+                );
+            }
+
             // Check blacklist (if enabled)
-            if (properties.getToken().isEnableBlacklist() && blacklistService != null) {
-                if (blacklistService.isBlacklisted(jti)) {
-                    // Audit: Blacklisted token used
-                    TokenAuditEventPublisher publisher = getAuditPublisher();
-                    if (publisher != null) {
-                        publisher.publishBlacklistedTokenUsed(jti, username, remoteAddr);
-                    }
-                    publishValidationFailed(username, jti, TokenFailureReason.TOKEN_REVOKED,
+            if (properties.getToken().isEnableBlacklist()) {
+                if (blacklistService == null) {
+                    // Blacklist enabled but service unavailable — fail closed
+                    log.error("Blacklist enabled but no blacklist service available — failing closed");
+                    publishValidationFailed(username, jti, TokenFailureReason.BLACKLIST_SERVICE_ERROR,
                         remoteAddr, userAgent, "access");
 
                     throw new TokenValidationException(
-                        messageSource.getMessage("token.revoked", null,
-                            "Token has been revoked",
+                        ErrorCode.AUTH_TOKEN_INVALID,
+                        messageSource.getMessage("token.blacklist.unavailable", null,
+                            "Blacklist service unavailable",
                             LocaleContextHolder.getLocale()),
-                        messageSource.getMessage("token.revoked.detail", null,
-                            "This token has been invalidated",
+                        messageSource.getMessage("token.blacklist.unavailable.detail", null,
+                            "Token blacklist service is not available",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+                try {
+                    if (blacklistService.isBlacklisted(jti)) {
+                        // Audit: Blacklisted token used
+                        TokenAuditEventPublisher publisher = getAuditPublisher();
+                        if (publisher != null) {
+                            publisher.publishBlacklistedTokenUsed(jti, username, remoteAddr);
+                        }
+                        publishValidationFailed(username, jti, TokenFailureReason.TOKEN_REVOKED,
+                            remoteAddr, userAgent, "access");
+
+                        throw new TokenValidationException(
+                            messageSource.getMessage("token.revoked", null,
+                                "Token has been revoked",
+                                LocaleContextHolder.getLocale()),
+                            messageSource.getMessage("token.revoked.detail", null,
+                                "This token has been invalidated",
+                                LocaleContextHolder.getLocale())
+                        );
+                    }
+                } catch (TokenValidationException e) {
+                    throw e;
+                } catch (Exception e) {
+                    // Blacklist service error (e.g., Redis down in FAIL_CLOSED mode)
+                    publishValidationFailed(username, jti, TokenFailureReason.BLACKLIST_SERVICE_ERROR,
+                        remoteAddr, userAgent, "access");
+
+                    throw new TokenValidationException(
+                        ErrorCode.AUTH_TOKEN_INVALID,
+                        messageSource.getMessage("token.blacklist.unavailable", null,
+                            "Blacklist service unavailable",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.blacklist.unavailable.detail", null,
+                            "Token blacklist service is not available",
                             LocaleContextHolder.getLocale())
                     );
                 }
@@ -574,6 +643,143 @@ public class SimpliXJweTokenProvider {
             // Audit: Malformed or unparseable token
             publishValidationFailed(username, jti, TokenFailureReason.MALFORMED_TOKEN,
                 remoteAddr, userAgent, "access");
+
+            throw new TokenValidationException(
+                messageSource.getMessage("token.validation.failed", null,
+                    "Token validation failed",
+                    LocaleContextHolder.getLocale()),
+                e.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Validates a refresh token. Same as {@link #validateToken} but skips the token type check
+     * (type is already verified by the caller in {@link #refreshTokens}).
+     */
+    private boolean validateRefreshToken(String token, String remoteAddr, String userAgent) {
+        String username = null;
+        String jti = null;
+
+        try {
+            JWTClaimsSet claims = parseToken(token);
+            jti = claims.getJWTID();
+            username = claims.getSubject();
+
+            // Check blacklist (if enabled)
+            if (properties.getToken().isEnableBlacklist()) {
+                if (blacklistService == null) {
+                    log.error("Blacklist enabled but no blacklist service available — failing closed");
+                    publishValidationFailed(username, jti, TokenFailureReason.BLACKLIST_SERVICE_ERROR,
+                        remoteAddr, userAgent, "refresh");
+
+                    throw new TokenValidationException(
+                        ErrorCode.AUTH_TOKEN_INVALID,
+                        messageSource.getMessage("token.blacklist.unavailable", null,
+                            "Blacklist service unavailable",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.blacklist.unavailable.detail", null,
+                            "Token blacklist service is not available",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+                try {
+                    if (blacklistService.isBlacklisted(jti)) {
+                        TokenAuditEventPublisher publisher = getAuditPublisher();
+                        if (publisher != null) {
+                            publisher.publishBlacklistedTokenUsed(jti, username, remoteAddr);
+                        }
+                        publishValidationFailed(username, jti, TokenFailureReason.TOKEN_REVOKED,
+                            remoteAddr, userAgent, "refresh");
+
+                        throw new TokenValidationException(
+                            messageSource.getMessage("token.revoked", null,
+                                "Token has been revoked",
+                                LocaleContextHolder.getLocale()),
+                            messageSource.getMessage("token.revoked.detail", null,
+                                "This token has been invalidated",
+                                LocaleContextHolder.getLocale())
+                        );
+                    }
+                } catch (TokenValidationException e) {
+                    throw e;
+                } catch (Exception e) {
+                    publishValidationFailed(username, jti, TokenFailureReason.BLACKLIST_SERVICE_ERROR,
+                        remoteAddr, userAgent, "refresh");
+
+                    throw new TokenValidationException(
+                        ErrorCode.AUTH_TOKEN_INVALID,
+                        messageSource.getMessage("token.blacklist.unavailable", null,
+                            "Blacklist service unavailable",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.blacklist.unavailable.detail", null,
+                            "Token blacklist service is not available",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+            }
+
+            // Check token expiration
+            Date expirationTime = claims.getExpirationTime();
+            if (expirationTime != null && expirationTime.before(new Date())) {
+                publishValidationFailed(username, jti, TokenFailureReason.TOKEN_EXPIRED,
+                    remoteAddr, userAgent, "refresh");
+
+                throw new TokenValidationException(
+                    ErrorCode.AUTH_TOKEN_EXPIRED,
+                    messageSource.getMessage("token.expired", null,
+                        "Token is expired",
+                        LocaleContextHolder.getLocale()),
+                    messageSource.getMessage("token.expired.detail", null,
+                        "The refresh token has expired",
+                        LocaleContextHolder.getLocale())
+                );
+            }
+
+            // Check IP address (optional)
+            if (properties.getToken().isEnableIpValidation()) {
+                String tokenIp = claims.getStringClaim("clientIp");
+                if (!Objects.equals(tokenIp, remoteAddr)) {
+                    publishValidationFailed(username, jti, TokenFailureReason.IP_MISMATCH,
+                        remoteAddr, userAgent, "refresh");
+
+                    throw new TokenValidationException(
+                        messageSource.getMessage("token.ip.mismatch", null,
+                            "IP address mismatch",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.ip.mismatch.detail",
+                            new Object[]{tokenIp, remoteAddr},
+                            "Expected IP: {0}, but got: {1}",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+            }
+
+            // Check User Agent (optional)
+            if (properties.getToken().isEnableUserAgentValidation()) {
+                String tokenUserAgent = claims.getStringClaim("userAgent");
+                if (!Objects.equals(tokenUserAgent, userAgent)) {
+                    publishValidationFailed(username, jti, TokenFailureReason.USER_AGENT_MISMATCH,
+                        remoteAddr, userAgent, "refresh");
+
+                    throw new TokenValidationException(
+                        messageSource.getMessage("token.useragent.mismatch", null,
+                            "User Agent mismatch",
+                            LocaleContextHolder.getLocale()),
+                        messageSource.getMessage("token.useragent.mismatch.detail",
+                            new Object[]{tokenUserAgent, userAgent},
+                            "Expected User Agent: {0}, but got: {1}",
+                            LocaleContextHolder.getLocale())
+                    );
+                }
+            }
+
+            return true;
+        } catch (TokenValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            publishValidationFailed(username, jti, TokenFailureReason.MALFORMED_TOKEN,
+                remoteAddr, userAgent, "refresh");
 
             throw new TokenValidationException(
                 messageSource.getMessage("token.validation.failed", null,

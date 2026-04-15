@@ -223,17 +223,18 @@ class SimpliXAuthTokenControllerTest {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("X-Refresh-Token", "valid-refresh-token");
 
-            JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .subject("testuser")
-                    .expirationTime(new Date(System.currentTimeMillis() + 3600000))
-                    .build();
-            when(tokenProvider.parseToken("valid-refresh-token")).thenReturn(claims);
-
             SimpliXJweTokenProvider.TokenResponse tokens = new SimpliXJweTokenProvider.TokenResponse(
                     "new-access", "new-refresh",
                     ZonedDateTime.now().plusMinutes(30), ZonedDateTime.now().plusDays(7));
             when(tokenProvider.refreshTokens(eq("valid-refresh-token"), anyString(), any()))
-                    .thenReturn(tokens);
+                    .thenAnswer(invocation -> {
+                        // refreshTokens() sets SecurityContext internally
+                        UserDetails ud = User.withUsername("testuser")
+                                .password("pass").authorities(Collections.emptyList()).build();
+                        SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities()));
+                        return tokens;
+                    });
 
             UserDetails userDetails = User.withUsername("testuser")
                     .password("pass")
@@ -257,17 +258,17 @@ class SimpliXAuthTokenControllerTest {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("X-Refresh-Token", "valid-refresh-token");
 
-            JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .subject("testuser")
-                    .expirationTime(new Date(System.currentTimeMillis() + 3600000))
-                    .build();
-            when(tokenProvider.parseToken("valid-refresh-token")).thenReturn(claims);
-
             SimpliXJweTokenProvider.TokenResponse tokens = new SimpliXJweTokenProvider.TokenResponse(
                     "new-access", "new-refresh",
                     ZonedDateTime.now().plusMinutes(30), ZonedDateTime.now().plusDays(7));
             when(tokenProvider.refreshTokens(eq("valid-refresh-token"), anyString(), any()))
-                    .thenReturn(tokens);
+                    .thenAnswer(invocation -> {
+                        UserDetails ud = User.withUsername("testuser")
+                                .password("pass").authorities(Collections.emptyList()).build();
+                        SecurityContextHolder.getContext().setAuthentication(
+                                new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities()));
+                        return tokens;
+                    });
 
             UserDetails userDetails = User.withUsername("testuser")
                     .password("pass")
@@ -315,8 +316,8 @@ class SimpliXAuthTokenControllerTest {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("X-Refresh-Token", "bad-token");
 
-            when(tokenProvider.parseToken("bad-token"))
-                    .thenThrow(new RuntimeException("parse error"));
+            when(tokenProvider.refreshTokens(eq("bad-token"), anyString(), any()))
+                    .thenThrow(new RuntimeException("refresh error"));
             when(messageSource.getMessage(anyString(), any(), anyString(), any()))
                     .thenReturn("Invalid token");
 

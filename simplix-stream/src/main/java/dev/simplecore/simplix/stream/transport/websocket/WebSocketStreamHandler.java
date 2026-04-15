@@ -259,6 +259,7 @@ public class WebSocketStreamHandler {
 
     private void startHeartbeat(String sessionId, WebSocketStreamSession wsSession) {
         long intervalMs = properties.getSession().getHeartbeatInterval().toMillis();
+        long validationTimeoutMs = properties.getSession().getValidationTimeout().toMillis();
 
         ScheduledFuture<?> heartbeatTask = streamScheduledExecutor.scheduleAtFixedRate(() -> {
             if (!wsSession.isActive()) {
@@ -274,11 +275,10 @@ public class WebSocketStreamHandler {
 
             CompletableFuture.supplyAsync(
                             () -> sessionValidator.validate(streamSession.get()), sessionValidationExecutor)
-                    .orTimeout(2, TimeUnit.SECONDS)
+                    .orTimeout(validationTimeoutMs, TimeUnit.MILLISECONDS)
                     .whenComplete((result, ex) -> {
                         if (ex != null) {
-                            wsSession.send(StreamMessage.sessionTerminated("Session validation timeout"));
-                            cleanupSession(sessionId);
+                            log.debug("Session validation timed out, skipping heartbeat: {}", sessionId);
                             return;
                         }
                         if (!result.valid()) {

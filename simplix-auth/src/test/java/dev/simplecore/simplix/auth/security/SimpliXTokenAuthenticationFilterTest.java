@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.auth.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import jakarta.servlet.FilterChain;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,6 +38,7 @@ class SimpliXTokenAuthenticationFilterTest {
     @Mock
     private FilterChain filterChain;
 
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private SimpliXAuthProperties properties;
     private SimpliXTokenAuthenticationFilter filter;
 
@@ -43,7 +46,7 @@ class SimpliXTokenAuthenticationFilterTest {
     void setUp() {
         SecurityContextHolder.clearContext();
         properties = new SimpliXAuthProperties();
-        filter = new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService, properties);
+        filter = new SimpliXTokenAuthenticationFilter(tokenProvider, userDetailsService, properties, objectMapper);
     }
 
     @Nested
@@ -117,8 +120,8 @@ class SimpliXTokenAuthenticationFilterTest {
     class TokenValidationFailure {
 
         @Test
-        @DisplayName("should clear context on generic exception")
-        void shouldClearContextOnException() throws Exception {
+        @DisplayName("should return 401 JSON response on generic exception when token present")
+        void shouldReturn401OnGenericExceptionWithToken() throws Exception {
             MockHttpServletRequest request = new MockHttpServletRequest();
             request.addHeader("Authorization", "Bearer bad-token");
             MockHttpServletResponse response = new MockHttpServletResponse();
@@ -128,13 +131,15 @@ class SimpliXTokenAuthenticationFilterTest {
 
             filter.doFilterInternal(request, response, filterChain);
 
-            assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
-            verify(filterChain).doFilter(request, response);
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
+            assertThat(response.getContentAsString()).contains("AUTH_TOKEN_INVALID");
+            verifyNoInteractions(filterChain);
         }
 
         @Test
-        @DisplayName("should set 403 and throw TokenValidationException on validation error")
-        void shouldThrowTokenValidationException() throws Exception {
+        @DisplayName("should return 401 with SimpliXApiResponse on TokenValidationException")
+        void shouldReturn401OnTokenValidationException() throws Exception {
             properties.getSecurity().setPreferTokenOverSession(true);
 
             MockHttpServletRequest request = new MockHttpServletRequest();
@@ -150,11 +155,13 @@ class SimpliXTokenAuthenticationFilterTest {
             when(tokenProvider.validateToken(eq("test-token"), anyString(), anyString()))
                     .thenThrow(new dev.simplecore.simplix.auth.exception.TokenValidationException("Token expired", "Details"));
 
-            org.junit.jupiter.api.Assertions.assertThrows(
-                    dev.simplecore.simplix.auth.exception.TokenValidationException.class,
-                    () -> filter.doFilterInternal(request, response, filterChain));
+            filter.doFilterInternal(request, response, filterChain);
 
-            assertThat(response.getStatus()).isEqualTo(403);
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(response.getContentType()).startsWith(MediaType.APPLICATION_JSON_VALUE);
+            assertThat(response.getContentAsString()).contains("AUTH_TOKEN_INVALID");
+            assertThat(response.getContentAsString()).contains("Token expired");
+            verifyNoInteractions(filterChain);
         }
     }
 
@@ -330,7 +337,7 @@ class SimpliXTokenAuthenticationFilterTest {
         void shouldCreateViaFactory() {
             SimpliXTokenAuthenticationFilter result =
                     SimpliXTokenAuthenticationFilter.tokenAuthenticationFilter(
-                            tokenProvider, userDetailsService, properties);
+                            tokenProvider, userDetailsService, properties, objectMapper);
             assertThat(result).isNotNull();
         }
     }
