@@ -18,6 +18,7 @@ public enum ErrorCode {
     GEN_NOT_FOUND("GEN_NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND, ErrorCategory.GENERAL),
     GEN_METHOD_NOT_ALLOWED("GEN_METHOD_NOT_ALLOWED", "Method not allowed", HttpStatus.METHOD_NOT_ALLOWED, ErrorCategory.GENERAL),
     GEN_CONFLICT("GEN_CONFLICT", "Conflict", HttpStatus.CONFLICT, ErrorCategory.GENERAL),
+    GEN_GONE("GEN_GONE", "Resource is gone", HttpStatus.GONE, ErrorCategory.GENERAL),
     GEN_SERVICE_UNAVAILABLE("GEN_SERVICE_UNAVAILABLE", "Service unavailable", HttpStatus.SERVICE_UNAVAILABLE, ErrorCategory.GENERAL),
     GEN_TIMEOUT("GEN_TIMEOUT", "Request timeout", HttpStatus.REQUEST_TIMEOUT, ErrorCategory.GENERAL),
     
