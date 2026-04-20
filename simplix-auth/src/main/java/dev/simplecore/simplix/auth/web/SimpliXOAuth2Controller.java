@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.core.Authentication;
@@ -44,9 +45,12 @@ import org.springframework.web.servlet.view.RedirectView;
 @RequiredArgsConstructor
 @ConditionalOnWebApplication
 @ConditionalOnProperty(prefix = "simplix.auth.oauth2", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(OAuth2AuthenticationService.class)
 public class SimpliXOAuth2Controller {
 
     private final SimpliXOAuth2Properties properties;
+
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     private final OAuth2AuthenticationService authService;
 
     @Operation(

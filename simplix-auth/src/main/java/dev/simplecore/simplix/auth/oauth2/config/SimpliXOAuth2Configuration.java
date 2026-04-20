@@ -12,11 +12,13 @@ import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.session.web.http.SessionRepositoryFilter;
@@ -47,9 +49,17 @@ import org.springframework.security.web.SecurityFilterChain;
         havingValue = "true",
         matchIfMissing = true
 )
+@ConditionalOnBean(OAuth2AuthenticationService.class)
 public class SimpliXOAuth2Configuration {
 
     private final SimpliXAuthProperties authProperties;
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingBean
+    public SimpliXOAuth2Properties simplixOAuth2Properties() {
+        return authProperties.getOauth2();
+    }
 
     @Bean
     @ConditionalOnMissingBean
