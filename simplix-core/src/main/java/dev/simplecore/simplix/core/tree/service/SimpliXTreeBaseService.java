@@ -1,7 +1,9 @@
 package dev.simplecore.simplix.core.tree.service;
 
+import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
+import jakarta.persistence.Column;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,12 +55,18 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements SimpliXTreeService<T, ID> {
 
+    private static final int SORT_ORDER_GAP = 100;
+
     private final SimpliXTreeRepository<T, ID> simpliXTreeRepository;
-    
+
     // Performance optimization caches
     private final Map<ID, List<T>> descendantsCache = new ConcurrentHashMap<>();
     private final Map<ID, List<T>> ancestorsCache = new ConcurrentHashMap<>();
     private final Map<ID, Integer> depthCache = new ConcurrentHashMap<>();
+
+    // Cached sortOrder field resolved from @TreeEntityAttributes metadata
+    private volatile Field sortOrderField;
+    private volatile boolean sortOrderResolved;
 
     public SimpliXTreeBaseService(SimpliXTreeRepository<T, ID> simpliXTreeRepository) {
         this.simpliXTreeRepository = simpliXTreeRepository;
@@ -73,6 +82,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         log.debug("Creating new tree entity: {}", entity);
         validateNewEntity(entity);
         validateParentExists(entity);
+        autoAssignSortOrder(entity);
         T saved = simpliXTreeRepository.saveAndFlush(entity);
         clearCaches(saved.getId());
         log.info("Successfully created tree entity with ID: {}", saved.getId());
@@ -85,6 +95,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
         log.debug("Updating tree entity: {}", entity);
         validateExistingEntity(entity);
         validateParentExists(entity);
+        preserveSortOrderIfNull(entity);
         T saved = simpliXTreeRepository.saveAndFlush(entity);
         clearCaches(saved.getId());
         log.info("Successfully updated tree entity with ID: {}", saved.getId());
@@ -870,6 +881,118 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
     @Override
     public List<T> getRootItems() {
         return simpliXTreeRepository.findRootItems();
+    }
+
+    // =================================================================================
+    // SORT ORDER AUTO-ASSIGNMENT
+    // =================================================================================
+
+    /**
+     * Auto-assigns sortOrder when it is null or 0.
+     * <p>
+     * Uses {@link TreeEntityAttributes} metadata to resolve the sortOrder field
+     * via reflection. Assigns {@code max(sortOrder) + 100} among siblings.
+     *
+     * @param entity The entity to assign sortOrder to
+     */
+    private void autoAssignSortOrder(T entity) {
+        Field field = resolveSortOrderField(entity.getClass());
+        if (field == null) return;
+
+        Integer current = (Integer) ReflectionUtils.getField(field, entity);
+        if (current != null && current != 0) return;
+
+        int maxSortOrder = findMaxSiblingsSortOrder(entity.getParentId(), field);
+        ReflectionUtils.setField(field, entity, maxSortOrder + SORT_ORDER_GAP);
+        log.debug("Auto-assigned sortOrder {} for new entity under parent: {}",
+                maxSortOrder + SORT_ORDER_GAP, entity.getParentId());
+    }
+
+    /**
+     * Preserves sortOrder during update when the value has been nullified
+     * (e.g., by ModelMapper overwriting with a null DTO field).
+     * <p>
+     * Reads the existing sortOrder from the database and restores it on the entity.
+     * Only acts when sortOrder is null; explicit values (including 0) are preserved as-is.
+     *
+     * @param entity The entity being updated
+     */
+    private void preserveSortOrderIfNull(T entity) {
+        Field field = resolveSortOrderField(entity.getClass());
+        if (field == null) return;
+
+        Integer current = (Integer) ReflectionUtils.getField(field, entity);
+        if (current != null) return;
+
+        simpliXTreeRepository.findById(entity.getId()).ifPresent(existing -> {
+            Integer existingValue = (Integer) ReflectionUtils.getField(field, existing);
+            ReflectionUtils.setField(field, entity, existingValue);
+            log.debug("Preserved sortOrder {} for entity: {}", existingValue, entity.getId());
+        });
+    }
+
+    /**
+     * Resolves the sortOrder field from entity class using {@link TreeEntityAttributes}
+     * and {@link Column} annotation metadata. Result is cached per service instance.
+     *
+     * @param entityClass The entity class to inspect
+     * @return The sortOrder field, or null if not found
+     */
+    private Field resolveSortOrderField(Class<?> entityClass) {
+        if (sortOrderResolved) return sortOrderField;
+        synchronized (this) {
+            if (sortOrderResolved) return sortOrderField;
+            TreeEntityAttributes attrs = entityClass.getAnnotation(TreeEntityAttributes.class);
+            if (attrs != null) {
+                sortOrderField = findFieldByColumnName(entityClass, attrs.sortOrderColumn());
+                if (sortOrderField != null) {
+                    ReflectionUtils.makeAccessible(sortOrderField);
+                }
+            }
+            sortOrderResolved = true;
+            return sortOrderField;
+        }
+    }
+
+    /**
+     * Finds a Java field by its {@link Column#name()} across the class hierarchy.
+     *
+     * @param clazz The class to search
+     * @param columnName The JPA column name to match
+     * @return The matching field, or null if not found
+     */
+    private Field findFieldByColumnName(Class<?> clazz, String columnName) {
+        Class<?> current = clazz;
+        while (current != null && current != Object.class) {
+            for (Field field : current.getDeclaredFields()) {
+                Column col = field.getAnnotation(Column.class);
+                if (col != null && col.name().equals(columnName)) {
+                    return field;
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return null;
+    }
+
+    /**
+     * Finds the maximum sortOrder value among siblings of the given parent.
+     *
+     * @param parentId The parent ID (null for root level siblings)
+     * @param sortOrderField The resolved sortOrder field
+     * @return The maximum sortOrder value, or 0 if no siblings exist
+     */
+    private int findMaxSiblingsSortOrder(ID parentId, Field sortOrderField) {
+        ID normalized = normalizeParentId(parentId);
+        List<T> siblings = normalized == null ? findRoots() : findDirectChildren(normalized);
+        int max = 0;
+        for (T sibling : siblings) {
+            Integer val = (Integer) ReflectionUtils.getField(sortOrderField, sibling);
+            if (val != null && val > max) {
+                max = val;
+            }
+        }
+        return max;
     }
 
     // =================================================================================
