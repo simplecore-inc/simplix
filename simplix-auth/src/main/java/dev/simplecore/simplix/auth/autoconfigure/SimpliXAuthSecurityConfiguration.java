@@ -219,7 +219,7 @@ public class SimpliXAuthSecurityConfiguration {
                 }
                 String permissions = properties.getSecurity().getPermissionsPolicy();
                 if (permissions != null && !permissions.isEmpty()) {
-                    headers.permissionsPolicy(pp -> pp.policy(permissions));
+                    headers.permissionsPolicyHeader(pp -> pp.policy(permissions));
                 }
             });
 
