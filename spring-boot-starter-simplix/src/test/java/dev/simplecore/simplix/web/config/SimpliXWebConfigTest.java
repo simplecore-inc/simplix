@@ -62,8 +62,8 @@ class SimpliXWebConfigTest {
         String traceId = headerCaptor.getValue();
         assertThat(traceId).isNotNull();
         assertThat(traceId).isNotEmpty();
-        // Format: YYYYMMDD-HHMMSS-UUID(8chars)
-        assertThat(traceId).matches("\\d{8}-\\d{6}-.+");
+        // Format: 13-character lowercase hex string derived from UUID v7
+        assertThat(traceId).matches("[0-9a-f]{13}");
     }
 
     @Test
