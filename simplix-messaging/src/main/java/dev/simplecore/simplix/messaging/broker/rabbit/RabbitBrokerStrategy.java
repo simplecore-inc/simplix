@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RabbitBrokerStrategy implements BrokerStrategy {
 
     private static final BrokerCapabilities CAPABILITIES =
-            new BrokerCapabilities(false, false, false, true);
+            new BrokerCapabilities(false, false, false, true, false, false, false);
 
     private static final String EXCHANGE_NAME = "simplix.messaging";
     private static final String DLX_EXCHANGE_NAME = "simplix.messaging.dlx";

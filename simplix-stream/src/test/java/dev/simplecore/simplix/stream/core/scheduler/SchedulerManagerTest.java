@@ -6,7 +6,7 @@ import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
-import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
+import dev.simplecore.simplix.stream.infrastructure.distributed.LeaderElection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,7 +51,7 @@ class SchedulerManagerTest {
     private ScheduledFuture<?> scheduledFuture;
 
     @Mock
-    private RedisLeaderElection leaderElection;
+    private LeaderElection leaderElection;
 
     private StreamProperties properties;
     private SchedulerManager schedulerManager;

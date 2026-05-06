@@ -34,6 +34,9 @@ dependencies {
     compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
     compileOnly 'org.springframework.kafka:spring-kafka'
     compileOnly 'org.springframework.boot:spring-boot-starter-amqp'
+    // NATS JetStream client (optional)
+    compileOnly 'io.nats:jnats:2.21.4'
+    testImplementation 'io.nats:jnats:2.21.4'
 
     // Wire protobuf (optional, for auto-deserialization)
     compileOnly 'com.squareup.wire:wire-runtime:5.4.0'
@@ -53,6 +56,9 @@ dependencies {
     // Logging
     implementation 'org.slf4j:slf4j-api'
 
+    // Local idempotency store (Caffeine in-process cache)
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.junit.platform:junit-platform-launcher'
@@ -68,6 +74,9 @@ dependencies {
     // Monitoring and metrics for tests
     testImplementation 'io.micrometer:micrometer-core'
     testImplementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Awaitility for async test assertions
+    testImplementation 'org.awaitility:awaitility:4.2.0'
 
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'

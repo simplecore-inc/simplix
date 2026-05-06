@@ -139,6 +139,36 @@ public class SimpliXAuthProperties {
         private boolean enableBlacklist = false;
 
         /**
+         * Explicit blacklist backing store selector.
+         *
+         * <p>When unset (default {@link BlacklistStore#AUTO}), the existing
+         * cascade is used: Redis ({@code redisTemplate} bean present) →
+         * Caffeine ({@code com.github.benmanes.caffeine.cache.Caffeine} on
+         * classpath, no Redis) → in-memory fallback. Setting this property
+         * forces the chosen backend; in particular {@link BlacklistStore#NATS}
+         * activates {@code NatsTokenBlacklistService} when an
+         * {@code io.nats.client.Connection} bean is available, and suppresses
+         * the Redis/Caffeine implementations so the application can run
+         * without those dependencies.
+         */
+        private BlacklistStore blacklistStore = BlacklistStore.AUTO;
+
+        /**
+         * NATS KV bucket name used by {@code NatsTokenBlacklistService} when
+         * {@link #getBlacklistStore() blacklistStore} is {@link BlacklistStore#NATS}.
+         * The bucket is created idempotently on first use.
+         */
+        private String blacklistNatsBucket = "simplix-auth-blacklist";
+
+        /**
+         * Maximum bucket retention applied to the blacklist KV bucket. Because
+         * NATS KV applies a single {@code maxAge} per bucket, this value should
+         * be greater than or equal to the longest token lifetime that may be
+         * blacklisted.
+         */
+        private java.time.Duration blacklistNatsMaxRetention = java.time.Duration.ofDays(7);
+
+        /**
          * Failure mode when the blacklist service (e.g., Redis) is unavailable.
          * FAIL_CLOSED: deny all tokens (more secure, may cause outage).
          * FAIL_OPEN: allow tokens through with warning log (less secure, higher availability).
@@ -147,6 +177,22 @@ public class SimpliXAuthProperties {
 
         // Session management
         private boolean createSessionOnTokenIssue = true;
+    }
+
+    /**
+     * Selects the backing store for the token blacklist when it is enabled.
+     */
+    public enum BlacklistStore {
+        /** Cascade Redis → Caffeine → in-memory based on classpath / beans. */
+        AUTO,
+        /** Force {@code RedisTokenBlacklistService}. */
+        REDIS,
+        /** Force {@code CaffeineTokenBlacklistService}. */
+        CAFFEINE,
+        /** Force {@code NatsTokenBlacklistService} (requires an {@code io.nats.client.Connection} bean). */
+        NATS,
+        /** Force {@code InMemoryTokenBlacklistService}. */
+        MEMORY
     }
 
     /**

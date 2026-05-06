@@ -39,7 +39,7 @@ class MessagingHealthIndicatorTest {
             when(brokerStrategy.isReady()).thenReturn(true);
             when(brokerStrategy.name()).thenReturn("redis");
             when(brokerStrategy.capabilities()).thenReturn(
-                    new BrokerCapabilities(true, true, true, false));
+                    new BrokerCapabilities(true, true, true, false, false, false, false));
 
             Health health = healthIndicator.health();
 
@@ -57,7 +57,7 @@ class MessagingHealthIndicatorTest {
             when(brokerStrategy.isReady()).thenReturn(false);
             when(brokerStrategy.name()).thenReturn("local");
             when(brokerStrategy.capabilities()).thenReturn(
-                    new BrokerCapabilities(true, false, true, false));
+                    new BrokerCapabilities(true, false, true, false, false, false, false));
 
             Health health = healthIndicator.health();
 
@@ -84,7 +84,7 @@ class MessagingHealthIndicatorTest {
             when(brokerStrategy.isReady()).thenReturn(true);
             when(brokerStrategy.name()).thenReturn("kafka");
             when(brokerStrategy.capabilities()).thenReturn(
-                    new BrokerCapabilities(true, true, true, true));
+                    new BrokerCapabilities(true, true, true, true, false, false, false));
 
             Health health = healthIndicator.health();
 

@@ -1,10 +1,13 @@
 package dev.simplecore.simplix.messaging.autoconfigure;
 
+import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import dev.simplecore.simplix.messaging.broker.redis.PayloadEncoding;
 import dev.simplecore.simplix.messaging.broker.redis.RedisConsumerGroupManager;
 import dev.simplecore.simplix.messaging.broker.redis.RedisStreamPublisher;
 import dev.simplecore.simplix.messaging.broker.redis.RedisStreamSubscriber;
-import dev.simplecore.simplix.messaging.subscriber.IdempotentGuard;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
+import dev.simplecore.simplix.messaging.replay.ReplayService;
+import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -87,10 +90,30 @@ class RedisMessagingConfigurationTest {
         }
 
         @Test
-        @DisplayName("should create IdempotentGuard")
-        void shouldCreateIdempotentGuard() {
-            IdempotentGuard guard = configuration.idempotentGuard(redisTemplate, properties);
-            assertThat(guard).isNotNull();
+        @DisplayName("should create IdempotencyStore")
+        void shouldCreateIdempotencyStore() {
+            IdempotencyStore store = configuration.idempotencyStore(redisTemplate, properties);
+            assertThat(store).isNotNull();
+        }
+
+        @Test
+        @DisplayName("should create ReplayService")
+        void shouldCreateReplayService() {
+            ReplayService replayService = configuration.replayService(redisTemplate, properties);
+            assertThat(replayService).isNotNull();
+        }
+
+        @Test
+        @DisplayName("should create MessageScheduler")
+        void shouldCreateMessageScheduler() {
+            BrokerStrategy brokerStrategy = configuration.redisBrokerStrategy(
+                    redisTemplate, properties,
+                    configuration.redisConsumerGroupManager(redisTemplate, properties),
+                    configuration.redisStreamPublisher(redisTemplate, properties),
+                    configuration.redisStreamSubscriber(redisTemplate, properties));
+            MessageScheduler scheduler = configuration.messageScheduler(brokerStrategy, redisTemplate, properties);
+            assertThat(scheduler).isNotNull();
+            brokerStrategy.shutdown();
         }
 
         @Test

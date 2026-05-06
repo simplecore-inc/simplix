@@ -7,7 +7,7 @@ import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
 import dev.simplecore.simplix.stream.core.model.StreamMessage;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
-import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
+import dev.simplecore.simplix.stream.infrastructure.distributed.LeaderElection;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.PreDestroy;
@@ -38,7 +38,7 @@ public class SchedulerManager {
     private final BroadcastService broadcastService;
     private final StreamProperties properties;
     private final ScheduledExecutorService scheduledExecutor;
-    private final RedisLeaderElection leaderElection;
+    private final LeaderElection leaderElection;
 
     private final Map<SubscriptionKey, SubscriptionScheduler> schedulers = new ConcurrentHashMap<>();
 
@@ -61,7 +61,7 @@ public class SchedulerManager {
             BroadcastService broadcastService,
             StreamProperties properties,
             ScheduledExecutorService scheduledExecutor,
-            RedisLeaderElection leaderElection) {
+            LeaderElection leaderElection) {
         this.collectorRegistry = collectorRegistry;
         this.broadcastService = broadcastService;
         this.properties = properties;
@@ -178,7 +178,7 @@ public class SchedulerManager {
     /**
      * Handle leadership status change for a subscription key.
      * <p>
-     * Called by RedisLeaderElection when leadership is acquired or lost.
+     * Called by LeaderElection when leadership is acquired or lost.
      *
      * @param key      the subscription key
      * @param acquired true if leadership acquired, false if lost

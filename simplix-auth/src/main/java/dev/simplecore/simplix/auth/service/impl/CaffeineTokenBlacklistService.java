@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnClass(name = "com.github.benmanes.caffeine.cache.Caffeine")
 @ConditionalOnMissingBean(name = "redisTemplate")
 @ConditionalOnProperty(name = "simplix.auth.token.enable-blacklist", havingValue = "true")
+@ConditionalOnExpression(
+        "'${simplix.auth.token.blacklist-store:AUTO}'.equalsIgnoreCase('AUTO') "
+                + "or '${simplix.auth.token.blacklist-store:AUTO}'.equalsIgnoreCase('CAFFEINE')")
 public class CaffeineTokenBlacklistService implements TokenBlacklistService {
 
     private static final Logger log = LoggerFactory.getLogger(CaffeineTokenBlacklistService.class);

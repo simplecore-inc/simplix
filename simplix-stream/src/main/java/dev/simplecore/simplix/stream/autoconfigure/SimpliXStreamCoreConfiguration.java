@@ -10,7 +10,7 @@ import dev.simplecore.simplix.stream.core.session.SessionRegistry;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.eventsource.EventStreamHandler;
 import dev.simplecore.simplix.stream.eventsource.SimpliXStreamEventSourceRegistry;
-import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
+import dev.simplecore.simplix.stream.infrastructure.distributed.LeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalSessionRegistry;
 import dev.simplecore.simplix.stream.persistence.service.DbSessionRegistry;
@@ -124,7 +124,7 @@ public class SimpliXStreamCoreConfiguration {
     /**
      * Scheduler manager bean.
      * <p>
-     * In distributed mode, integrates with RedisLeaderElection to ensure
+     * In distributed mode, integrates with LeaderElection to ensure
      * only one instance runs the scheduler for each subscription key.
      */
     @Bean
@@ -134,7 +134,7 @@ public class SimpliXStreamCoreConfiguration {
             BroadcastService broadcastService,
             StreamProperties properties,
             ScheduledExecutorService streamScheduledExecutor,
-            @Autowired(required = false) RedisLeaderElection leaderElection) {
+            @Autowired(required = false) LeaderElection leaderElection) {
         return new SchedulerManager(
                 collectorRegistry, broadcastService, properties, streamScheduledExecutor, leaderElection);
     }

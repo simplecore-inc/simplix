@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * can have one leader that is responsible for running the scheduler.
  */
 @Slf4j
-public class RedisLeaderElection {
+public class RedisLeaderElection implements LeaderElection {
 
     private static final String LEADER_KEY_PREFIX = "stream:leader:";
 
@@ -54,6 +54,7 @@ public class RedisLeaderElection {
      * @param callback        callback invoked when leadership status changes
      * @return true if this instance became leader
      */
+    @Override
     public boolean tryBecomeLeader(String subscriptionKey, Consumer<Boolean> callback) {
         String redisKey = getLeaderKey(subscriptionKey);
 
@@ -96,6 +97,7 @@ public class RedisLeaderElection {
      * @param subscriptionKey the subscription key
      * @return true if this instance is leader
      */
+    @Override
     public boolean isLeader(String subscriptionKey) {
         String redisKey = getLeaderKey(subscriptionKey);
 
@@ -113,6 +115,7 @@ public class RedisLeaderElection {
      *
      * @param subscriptionKey the subscription key
      */
+    @Override
     public void releaseLeadership(String subscriptionKey) {
         String redisKey = getLeaderKey(subscriptionKey);
 
@@ -144,6 +147,7 @@ public class RedisLeaderElection {
     /**
      * Release all leadership held by this instance.
      */
+    @Override
     public void releaseAll() {
         log.info("Releasing all leadership (instance: {})", instanceId);
 
@@ -160,6 +164,7 @@ public class RedisLeaderElection {
      * @param subscriptionKey the subscription key
      * @return the leader instance ID, or null if no leader
      */
+    @Override
     public String getLeader(String subscriptionKey) {
         String redisKey = getLeaderKey(subscriptionKey);
 
@@ -220,6 +225,7 @@ public class RedisLeaderElection {
      *
      * @return the count
      */
+    @Override
     public int getLeadershipCount() {
         return leadershipRenewals.size();
     }

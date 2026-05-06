@@ -1,10 +1,16 @@
 package dev.simplecore.simplix.messaging.autoconfigure;
 
+import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import dev.simplecore.simplix.messaging.broker.redis.RedisBrokerStrategy;
 import dev.simplecore.simplix.messaging.broker.redis.RedisConsumerGroupManager;
+import dev.simplecore.simplix.messaging.broker.redis.RedisIdempotencyStore;
+import dev.simplecore.simplix.messaging.broker.redis.RedisScheduledMessagePublisher;
 import dev.simplecore.simplix.messaging.broker.redis.RedisStreamPublisher;
+import dev.simplecore.simplix.messaging.broker.redis.RedisStreamReplayService;
 import dev.simplecore.simplix.messaging.broker.redis.RedisStreamSubscriber;
-import dev.simplecore.simplix.messaging.subscriber.IdempotentGuard;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
+import dev.simplecore.simplix.messaging.replay.ReplayService;
+import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -75,9 +81,23 @@ public class RedisMessagingConfiguration {
     }
 
     @Bean
-    public IdempotentGuard idempotentGuard(StringRedisTemplate redisTemplate,
-                                           MessagingProperties properties) {
-        return new IdempotentGuard(redisTemplate, properties.getIdempotent().getTtl());
+    public IdempotencyStore idempotencyStore(StringRedisTemplate redisTemplate,
+                                              MessagingProperties properties) {
+        return new RedisIdempotencyStore(redisTemplate, properties.getIdempotent().getTtl());
+    }
+
+    @Bean
+    public ReplayService replayService(StringRedisTemplate redisTemplate,
+                                       MessagingProperties properties) {
+        return new RedisStreamReplayService(redisTemplate, properties.getRedis().getKeyPrefix());
+    }
+
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    public MessageScheduler messageScheduler(BrokerStrategy brokerStrategy,
+                                              StringRedisTemplate redisTemplate,
+                                              MessagingProperties properties) {
+        return new RedisScheduledMessagePublisher(brokerStrategy, redisTemplate,
+                properties.getRedis().getKeyPrefix(), java.time.Duration.ofSeconds(5));
     }
 
     /**

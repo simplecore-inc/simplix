@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class KafkaBrokerStrategy implements BrokerStrategy {
 
     private static final BrokerCapabilities CAPABILITIES =
-            new BrokerCapabilities(true, true, true, true);
+            new BrokerCapabilities(true, true, true, true, false, false, false);
     private static final long SEND_TIMEOUT_SECONDS = 30;
 
     private final KafkaTemplate<String, byte[]> kafkaTemplate;

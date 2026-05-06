@@ -40,6 +40,11 @@ dependencies {
     compileOnly 'com.hazelcast:hazelcast-spring'
     compileOnly 'org.ehcache:ehcache:3.10.8'
 
+    // Optional NATS-backed cache (consumes a Connection bean provided elsewhere,
+    // typically by simplix-messaging when its broker is set to nats).
+    compileOnly 'io.nats:jnats:2.21.4'
+    testImplementation 'io.nats:jnats:2.21.4'
+
     // Jackson for serialization
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'

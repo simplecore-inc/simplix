@@ -82,11 +82,11 @@ class LocalBrokerStrategyTest {
     class CapabilitiesTests {
 
         @Test
-        @DisplayName("should support consumer groups and ordering but not replay or dead letter")
+        @DisplayName("should support consumer groups, replay, and ordering but not dead letter")
         void shouldReturnCorrectCapabilities() {
             BrokerCapabilities caps = broker.capabilities();
             assertThat(caps.consumerGroups()).isTrue();
-            assertThat(caps.replay()).isFalse();
+            assertThat(caps.replay()).isTrue();
             assertThat(caps.ordering()).isTrue();
             assertThat(caps.deadLetter()).isFalse();
         }

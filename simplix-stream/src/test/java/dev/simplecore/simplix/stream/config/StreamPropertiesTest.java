@@ -109,7 +109,7 @@ class StreamPropertiesTest {
         void shouldHaveCorrectDefaults() {
             StreamProperties.DistributedConfig config = new StreamProperties().getDistributed();
 
-            assertThat(config.isRedisEnabled()).isFalse();
+            assertThat(config.getBroker()).isEqualTo(StreamProperties.Broker.NONE);
         }
     }
 
