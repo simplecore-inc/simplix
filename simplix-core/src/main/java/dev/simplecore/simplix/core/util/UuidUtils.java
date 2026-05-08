@@ -93,8 +93,11 @@ public class UuidUtils {
      * @return true if UUID is Version 7
      */
     public static boolean isUuidV7(UUID uuid) {
-        // Check if it's a time-ordered UUID (Version 7)
-        return (uuid.getLeastSignificantBits() & 0xF000L) == 0x7000L;
+        // The 4-bit version nibble lives in bits 48-51 of the 128-bit UUID,
+        // which is bits 12-15 of the most-significant long. Inspecting the
+        // least-significant long here would read random bits (or the variant)
+        // and produce ~6% false positives for v4 UUIDs.
+        return uuid.version() == 7;
     }
     
     /**
