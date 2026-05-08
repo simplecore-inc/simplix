@@ -633,6 +633,47 @@ class SessionManagerTest {
             // No callback set
             assertDoesNotThrow(() -> sessionManager.terminateSession(session.getId()));
         }
+
+        @Test
+        @DisplayName("should expose subscriptions to callback before clearing them")
+        void shouldExposeSubscriptionsToCallbackBeforeClearing() {
+            // Regression: callback used to fire AFTER clearSubscriptions(), so listeners
+            // iterating session.getSubscriptions() saw an empty set and could not perform
+            // per-subscription cleanup (e.g., removing scheduler subscribers).
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            SubscriptionKey k1 = SubscriptionKey.of("stock", Map.of("symbol", "AAPL"));
+            SubscriptionKey k2 = SubscriptionKey.of("news", Map.of("topic", "tech"));
+            session.addSubscription(k1);
+            session.addSubscription(k2);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            AtomicReference<Set<SubscriptionKey>> snapshotInCallback = new AtomicReference<>();
+            sessionManager.setOnSessionTerminated(s ->
+                    snapshotInCallback.set(s.getSubscriptions()));
+
+            sessionManager.terminateSession(session.getId());
+
+            assertNotNull(snapshotInCallback.get());
+            assertEquals(Set.of(k1, k2), snapshotInCallback.get(),
+                    "callback must see subscriptions intact; reordering of clear/callback regressed");
+            // After termination the session itself is cleared
+            assertTrue(session.getSubscriptions().isEmpty());
+        }
+
+        @Test
+        @DisplayName("should still terminate when callback throws")
+        void shouldStillTerminateWhenCallbackThrows() {
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionRegistry.findById(session.getId())).thenReturn(Optional.of(session));
+
+            sessionManager.setOnSessionTerminated(s -> {
+                throw new RuntimeException("listener boom");
+            });
+
+            assertDoesNotThrow(() -> sessionManager.terminateSession(session.getId()));
+            verify(sessionRegistry).unregister(session.getId());
+            assertEquals(SessionState.TERMINATED, session.getState());
+        }
     }
 
     @Nested

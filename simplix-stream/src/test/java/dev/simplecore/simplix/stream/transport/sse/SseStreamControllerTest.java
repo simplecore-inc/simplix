@@ -465,4 +465,40 @@ class SseStreamControllerTest {
             assertEquals(0, controller.getActiveSessionCount());
         }
     }
+
+    @Nested
+    @DisplayName("releaseTransportResources()")
+    class ReleaseTransportResourcesMethod {
+
+        @Test
+        @DisplayName("should release active session, broadcaster sender and heartbeat")
+        void shouldReleaseTransportResources() {
+            // Regression for the leak where SessionManager-driven terminations
+            // (user-limit eviction, grace expiry) bypassed the controller, leaving
+            // activeSessions/broadcaster/heartbeat references for ghost sessions.
+            StreamSession session = StreamSession.create("user123", TransportType.SSE);
+            when(sessionManager.createSession(eq("user123"), eq(TransportType.SSE)))
+                    .thenReturn(session);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+
+            controller.connect(null, mockRequest);
+            assertEquals(1, controller.getActiveSessionCount());
+
+            controller.releaseTransportResources(session.getId());
+
+            assertEquals(0, controller.getActiveSessionCount());
+            verify(broadcaster).unregisterSender(session.getId());
+            verify(scheduledFuture).cancel(false);
+        }
+
+        @Test
+        @DisplayName("should be idempotent for already-released sessions")
+        void shouldBeIdempotent() {
+            // Called twice from controller.cleanupSession() and again from the wiring
+            // callback when SessionManager.terminateSession() fires onSessionTerminated.
+            assertDoesNotThrow(() -> controller.releaseTransportResources("never-existed"));
+            assertDoesNotThrow(() -> controller.releaseTransportResources("never-existed"));
+        }
+    }
 }

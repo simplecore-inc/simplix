@@ -32,6 +32,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * REST controller for SSE streaming connections.
@@ -325,7 +326,16 @@ public class SseStreamController {
     }
 
     private void setupCleanupCallbacks(SseEmitter emitter, String sessionId) {
+        // Spring fires both onTimeout AND onCompletion when an SSE emitter times out
+        // (timeout callback first, then completion when the response is finalized).
+        // Without dedup the cleanup runs twice — markDisconnected is internally guarded
+        // but the log line and listener wake-ups still duplicate. CAS gate runs cleanup
+        // exactly once per emitter regardless of which callback fires first.
+        AtomicBoolean cleaned = new AtomicBoolean(false);
         Runnable cleanup = () -> {
+            if (!cleaned.compareAndSet(false, true)) {
+                return;
+            }
             log.debug("SSE connection closed, starting grace period for session: {}", sessionId);
             SseStreamSession sseSession = activeSessions.get(sessionId);
             if (sseSession != null) {
@@ -394,22 +404,44 @@ public class SseStreamController {
     }
 
     private void cleanupSession(String sessionId) {
-        SseStreamSession sseSession = activeSessions.remove(sessionId);
-        if (sseSession == null) {
+        if (!activeSessions.containsKey(sessionId)) {
             return; // Already cleaned up — idempotent guard
         }
 
-        cancelHeartbeat(sessionId);
-        sseSession.close();
-
-        broadcaster.unregisterSender(sessionId);
+        // Release transport resources first; per-key subscription cleanup runs through
+        // SubscriptionManager so scheduler/event listeners receive removal notifications.
         subscriptionManager.clearSubscriptions(sessionId);
+        releaseTransportResources(sessionId);
         sessionManager.terminateSession(sessionId);
+
+        log.info("Session cleaned up: {}", sessionId);
+    }
+
+    /**
+     * Release transport-level resources for a session.
+     * <p>
+     * Closes the SSE emitter, removes the session from the active map and the
+     * broadcaster's sender registry, cancels the heartbeat task, and removes the
+     * session from any event-source registries. All operations are idempotent so
+     * this method is safe to call multiple times for the same session ID.
+     * <p>
+     * Invoked from two paths: (a) controller-driven cleanup (explicit disconnect,
+     * heartbeat-detected invalid session), and (b) the wiring-config callback when
+     * SessionManager terminates a session without going through the controller
+     * (user-limit eviction, grace-period expiry).
+     *
+     * @param sessionId the session ID
+     */
+    public void releaseTransportResources(String sessionId) {
+        cancelHeartbeat(sessionId);
+        SseStreamSession sseSession = activeSessions.remove(sessionId);
+        if (sseSession != null) {
+            sseSession.close();
+        }
+        broadcaster.unregisterSender(sessionId);
         if (eventStreamHandler != null) {
             eventStreamHandler.removeSubscriberFromAll(sessionId);
         }
-
-        log.info("Session cleaned up: {}", sessionId);
     }
 
     private List<Subscription> convertToSubscriptions(SubscriptionRequest request, StreamSession session) {

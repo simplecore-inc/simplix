@@ -84,8 +84,9 @@ public class SessionManager {
             long currentCount = sessionRegistry.countByUserId(userId);
             if (currentCount >= maxPerUser) {
                 log.warn("User {} has reached session limit: {}/{}", userId, currentCount, maxPerUser);
-                // Option: terminate oldest session or reject new connection
-                // Currently rejecting - can be configured
+                // Policy: evict oldest session (FIFO) to admit the new connection.
+                // Alternative would be to reject the new connection — make this configurable
+                // via properties when both policies are needed.
                 terminateOldestSession(userId);
             }
         }
@@ -295,24 +296,31 @@ public class SessionManager {
      * Complete session termination after state is marked as terminated.
      * <p>
      * This method should be called after acquiring gracePeriodLock and marking
-     * the session as terminated.
+     * the session as terminated. The termination callback runs while the
+     * session's subscriptions are still populated so listeners can iterate
+     * them; the subscriptions are cleared afterwards.
      *
      * @param session the session to terminate
      * @return the cleared subscriptions
      */
     private Set<SubscriptionKey> completeTermination(StreamSession session) {
-        Set<SubscriptionKey> clearedSubscriptions = session.clearSubscriptions();
-
-        // Unregister from registry
+        // Unregister from registry first so concurrent lookups see termination
         sessionRegistry.unregister(session.getId());
+
+        // Notify callback BEFORE clearing subscriptions so listeners can read them
+        if (onSessionTerminated != null) {
+            try {
+                onSessionTerminated.accept(session);
+            } catch (RuntimeException e) {
+                log.warn("onSessionTerminated callback threw for session {}: {}",
+                        session.getId(), e.getMessage(), e);
+            }
+        }
+
+        Set<SubscriptionKey> clearedSubscriptions = session.clearSubscriptions();
 
         log.info("Session terminated: {} (user={}, subscriptions={})",
                 session.getId(), session.getUserId(), clearedSubscriptions.size());
-
-        // Notify callback
-        if (onSessionTerminated != null) {
-            onSessionTerminated.accept(session);
-        }
 
         return clearedSubscriptions;
     }

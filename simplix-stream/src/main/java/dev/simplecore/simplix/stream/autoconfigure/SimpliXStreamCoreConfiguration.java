@@ -14,7 +14,9 @@ import dev.simplecore.simplix.stream.infrastructure.distributed.LeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalSessionRegistry;
 import dev.simplecore.simplix.stream.persistence.service.DbSessionRegistry;
+import dev.simplecore.simplix.stream.transport.sse.SseStreamController;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -161,11 +163,13 @@ public class SimpliXStreamCoreConfiguration {
             SessionManager sessionManager,
             StreamProperties properties,
             SimpliXStreamDataCollectorRegistry collectorRegistry,
+            ObjectProvider<SseStreamController> sseControllerProvider,
             @Autowired(required = false) EventStreamHandler eventStreamHandler,
             @Autowired(required = false) SimpliXStreamEventSourceRegistry eventSourceRegistry) {
         return new StreamComponentWiring(
                 subscriptionManager, schedulerManager, sessionManager, properties,
-                collectorRegistry, eventStreamHandler, eventSourceRegistry);
+                collectorRegistry, sseControllerProvider.getIfAvailable(),
+                eventStreamHandler, eventSourceRegistry);
     }
 
     /**
@@ -173,6 +177,10 @@ public class SimpliXStreamCoreConfiguration {
      * <p>
      * Routes subscriptions to either SchedulerManager (polling) or EventStreamHandler (event-based)
      * depending on whether a StreamEventSource is registered for the resource.
+     * Also bridges {@link SessionManager} termination events back to the SSE transport
+     * so non-controller-driven termination paths (user-limit eviction, grace expiry,
+     * idle cleanup) still release transport-level resources (active emitter, broadcaster
+     * sender, heartbeat task).
      */
     @Slf4j
     public static class StreamComponentWiring {
@@ -183,6 +191,7 @@ public class SimpliXStreamCoreConfiguration {
                 SessionManager sessionManager,
                 StreamProperties properties,
                 SimpliXStreamDataCollectorRegistry collectorRegistry,
+                SseStreamController sseStreamController,
                 EventStreamHandler eventStreamHandler,
                 SimpliXStreamEventSourceRegistry eventSourceRegistry) {
 
@@ -228,7 +237,9 @@ public class SimpliXStreamCoreConfiguration {
                 }
             });
 
-            // Wire session termination to subscription cleanup
+            // Wire session termination to subscription cleanup AND transport resource release.
+            // SessionManager invokes this callback BEFORE clearing the session's subscriptions,
+            // so iterating session.getSubscriptions() yields the live keys.
             sessionManager.setOnSessionTerminated(session -> {
                 for (var key : session.getSubscriptions()) {
                     String resource = key.getResource();
@@ -243,6 +254,13 @@ public class SimpliXStreamCoreConfiguration {
                 // Also clean up from event subscriber registry if enabled
                 if (eventSourceEnabled) {
                     eventStreamHandler.removeSubscriberFromAll(session.getId());
+                }
+
+                // Release SSE transport resources for paths that bypass the controller
+                // (user-limit eviction, grace expiry, idle cleanup). Idempotent — safe to
+                // re-run when the controller already released them in cleanupSession().
+                if (sseStreamController != null) {
+                    sseStreamController.releaseTransportResources(session.getId());
                 }
             });
 

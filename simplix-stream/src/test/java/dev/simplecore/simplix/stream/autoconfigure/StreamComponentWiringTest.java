@@ -10,6 +10,7 @@ import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.eventsource.EventStreamHandler;
 import dev.simplecore.simplix.stream.eventsource.SimpliXStreamEventSourceRegistry;
+import dev.simplecore.simplix.stream.transport.sse.SseStreamController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -80,7 +81,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, null, null);
+                    collectorRegistry, null, null, null);
 
             verify(subscriptionManager).setOnSubscriptionAdded(addCaptor.capture());
             verify(subscriptionManager).setOnSubscriptionRemoved(removeCaptor.capture());
@@ -102,7 +103,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, null, null);
+                    collectorRegistry, null, null, null);
 
             verify(subscriptionManager).setOnSubscriptionAdded(addCaptor.capture());
 
@@ -125,7 +126,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, null, null);
+                    collectorRegistry, null, null, null);
 
             verify(subscriptionManager).setOnSubscriptionRemoved(removeCaptor.capture());
 
@@ -143,7 +144,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, null, null);
+                    collectorRegistry, null, null, null);
 
             verify(sessionManager).setOnSessionTerminated(terminateCaptor.capture());
 
@@ -173,7 +174,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, eventStreamHandler, eventSourceRegistry);
+                    collectorRegistry, null, eventStreamHandler, eventSourceRegistry);
 
             verify(subscriptionManager).setOnSubscriptionAdded(addCaptor.capture());
 
@@ -196,7 +197,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, eventStreamHandler, eventSourceRegistry);
+                    collectorRegistry, null, eventStreamHandler, eventSourceRegistry);
 
             verify(subscriptionManager).setOnSubscriptionRemoved(removeCaptor.capture());
 
@@ -219,7 +220,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, eventStreamHandler, eventSourceRegistry);
+                    collectorRegistry, null, eventStreamHandler, eventSourceRegistry);
 
             verify(sessionManager).setOnSessionTerminated(terminateCaptor.capture());
 
@@ -235,6 +236,52 @@ class StreamComponentWiringTest {
         }
 
         @Test
+        @DisplayName("should release SSE transport resources on session termination when controller present")
+        void shouldReleaseSseTransportResourcesOnTermination() {
+            ArgumentCaptor<Consumer<StreamSession>> terminateCaptor =
+                    ArgumentCaptor.forClass(Consumer.class);
+            SseStreamController sseController = mock(SseStreamController.class);
+
+            when(eventSourceRegistry.getRegisteredResources()).thenReturn(Set.of("events"));
+
+            new SimpliXStreamCoreConfiguration.StreamComponentWiring(
+                    subscriptionManager, schedulerManager, sessionManager, properties,
+                    collectorRegistry, sseController, eventStreamHandler, eventSourceRegistry);
+
+            verify(sessionManager).setOnSessionTerminated(terminateCaptor.capture());
+
+            StreamSession session = mock(StreamSession.class);
+            when(session.getSubscriptions()).thenReturn(Set.of());
+            when(session.getId()).thenReturn("session-leak-fix");
+
+            terminateCaptor.getValue().accept(session);
+
+            verify(sseController).releaseTransportResources("session-leak-fix");
+        }
+
+        @Test
+        @DisplayName("should not fail termination callback when SSE controller is absent")
+        void shouldHandleAbsentSseControllerOnTermination() {
+            ArgumentCaptor<Consumer<StreamSession>> terminateCaptor =
+                    ArgumentCaptor.forClass(Consumer.class);
+
+            when(eventSourceRegistry.getRegisteredResources()).thenReturn(Set.of("events"));
+
+            new SimpliXStreamCoreConfiguration.StreamComponentWiring(
+                    subscriptionManager, schedulerManager, sessionManager, properties,
+                    collectorRegistry, null, eventStreamHandler, eventSourceRegistry);
+
+            verify(sessionManager).setOnSessionTerminated(terminateCaptor.capture());
+
+            StreamSession session = mock(StreamSession.class);
+            when(session.getSubscriptions()).thenReturn(Set.of());
+            when(session.getId()).thenReturn("session-no-sse");
+
+            // Must not throw — wiring should tolerate WebSocket-only or no-transport deployments
+            terminateCaptor.getValue().accept(session);
+        }
+
+        @Test
         @DisplayName("should route non-event resources to scheduler even with event source enabled")
         void shouldRouteNonEventResourcesToScheduler() {
             ArgumentCaptor<BiConsumer<SubscriptionKey, String>> addCaptor =
@@ -245,7 +292,7 @@ class StreamComponentWiringTest {
 
             new SimpliXStreamCoreConfiguration.StreamComponentWiring(
                     subscriptionManager, schedulerManager, sessionManager, properties,
-                    collectorRegistry, eventStreamHandler, eventSourceRegistry);
+                    collectorRegistry, null, eventStreamHandler, eventSourceRegistry);
 
             verify(subscriptionManager).setOnSubscriptionAdded(addCaptor.capture());
 
