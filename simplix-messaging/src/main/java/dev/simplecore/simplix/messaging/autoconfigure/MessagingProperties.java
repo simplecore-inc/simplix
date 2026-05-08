@@ -47,9 +47,23 @@ public class MessagingProperties {
 
     /**
      * Unique instance identifier used for consumer naming.
-     * Defaults to the hostname of the current machine.
+     *
+     * <p>Defaults to the sanitized hostname of the current machine. The setter
+     * also applies {@link #sanitizeInstanceId(String)} so that values supplied
+     * via configuration cannot leak NATS-incompatible characters into consumer
+     * durable names — macOS hosts for example yield names ending in
+     * {@code .local}, which the broker rejects.
      */
     private String instanceId = resolveDefaultInstanceId();
+
+    /**
+     * Setter that applies {@link #sanitizeInstanceId(String)} so that any
+     * configuration-supplied value remains safe to use as a NATS durable name
+     * (and as a derived consumer name on every other broker).
+     */
+    public void setInstanceId(String instanceId) {
+        this.instanceId = sanitizeInstanceId(instanceId);
+    }
 
     /**
      * Per-channel configuration overrides.
@@ -382,22 +396,26 @@ public class MessagingProperties {
          * ({@link #getKvBucket() kvBucket}) and therefore requires the connected
          * NATS user to hold KV-related permissions
          * ({@code $JS.API.STREAM.INFO.KV_<bucket>} and {@code $KV.<bucket>.>}, plus
-         * {@code $JS.API.STREAM.CREATE.KV_<bucket>} when {@code enabled=true} and
-         * the bucket is not pre-provisioned). Applications that do not need
-         * delayed messaging and are deployed under a NATS user whose ACL omits
-         * those permissions must set {@link #isEnabled() enabled} to {@code false}
-         * so the scheduler bean is not registered, otherwise startup will fail
-         * during KV bucket creation or binding.
+         * {@code $JS.API.STREAM.CREATE.KV_<bucket>} when the bucket is not
+         * pre-provisioned). The scheduler is deprecated and gated behind
+         * {@link #isEnabled() enabled}; deployments that do not opt in never
+         * touch the KV bucket and therefore do not require these grants.
          */
         @Data
         public static class SchedulerProperties {
             /**
              * Whether the NATS-backed {@code MessageScheduler} bean is registered.
              * When {@code false}, no KV bucket is created or bound at startup, and
-             * applications can publish without holding KV permissions. Default is
-             * {@code true} to preserve historical behaviour.
+             * applications can publish without holding KV permissions.
+             *
+             * <p>Default is {@code false} since 1.1.1: the scheduler is deprecated
+             * and gated behind an explicit opt-in. The Spring bean registration
+             * uses {@code @ConditionalOnProperty(matchIfMissing = false)} so an
+             * unset property leaves the bean unregistered regardless of this
+             * field's runtime value; consumers reading this field programmatically
+             * therefore see the same default that the Spring gate applies.
              */
-            private boolean enabled = true;
+            private boolean enabled = false;
 
             private String kvBucket = "simplix-scheduled";
             private Duration pollInterval = Duration.ofSeconds(5);
@@ -425,9 +443,44 @@ public class MessagingProperties {
 
     private static String resolveDefaultInstanceId() {
         try {
-            return InetAddress.getLocalHost().getHostName();
+            return sanitizeInstanceId(InetAddress.getLocalHost().getHostName());
         } catch (Exception e) {
             return "simplix-" + ProcessHandle.current().pid();
         }
+    }
+
+    /**
+     * Replaces characters disallowed by NATS JetStream consumer durable names
+     * ({@code .}, {@code *}, {@code >}, {@code \}, {@code /}, plus any
+     * non-printable ASCII) with {@code _}. Hostnames such as
+     * {@code MacBookPro.local} are otherwise rejected by the broker
+     * with "Durable must be in the printable ASCII range and cannot include ..."
+     * the moment they are used as a consumer name.
+     *
+     * <p>Other broker types tolerate a wider range, but the NATS rule is the
+     * strictest, so applying it as the universal default keeps a single
+     * derived id safe across brokers. The same sanitization is applied to
+     * any broker-bound name resolved at runtime — instance id, consumer group
+     * name, etc. — so callers building durable names from environment-derived
+     * values (hostnames, IPs, configuration placeholders) can route through
+     * this helper without duplicating the rule.
+     *
+     * @param raw the raw value (possibly null or empty)
+     * @return a sanitized value safe for use as a NATS durable name; for
+     *         {@code null} or empty input, a process-derived fallback prefixed
+     *         with {@code simplix-}
+     */
+    public static String sanitizeInstanceId(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return "simplix-" + ProcessHandle.current().pid();
+        }
+        StringBuilder sb = new StringBuilder(raw.length());
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            boolean printable = c >= 0x21 && c <= 0x7E;
+            boolean reserved = c == '.' || c == '*' || c == '>' || c == '\\' || c == '/';
+            sb.append(printable && !reserved ? c : '_');
+        }
+        return sb.toString();
     }
 }

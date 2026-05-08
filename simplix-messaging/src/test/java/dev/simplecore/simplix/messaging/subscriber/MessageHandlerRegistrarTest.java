@@ -15,6 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -423,6 +424,66 @@ class MessageHandlerRegistrarTest {
 
             registrar.start();
             assertThatCode(() -> registrar.stop()).doesNotThrowAnyException();
+        }
+    }
+
+    @Nested
+    @DisplayName("Group name sanitization")
+    class GroupSanitizationTests {
+
+        @Test
+        @DisplayName("should sanitize NATS-reserved characters in resolved group before passing to broker")
+        void shouldSanitizeResolvedGroupBeforeBroker() {
+            SampleHandler bean = new SampleHandler();
+            // The annotation literal "test-group" resolves at runtime to a hostname-derived
+            // value containing reserved characters (e.g., macOS "<host>.local" suffix). The
+            // registrar must sanitize this before any broker invocation.
+            when(environment.resolvePlaceholders("test-channel")).thenReturn("test-channel");
+            when(environment.resolvePlaceholders("test-group"))
+                    .thenReturn("pacs-studio-server-MacBookPro.local");
+            registrar.postProcessAfterInitialization(bean, "sampleHandler");
+
+            when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
+            when(propertiesProvider.getIfAvailable()).thenReturn(null);
+            registrar.afterSingletonsInstantiated();
+
+            when(brokerStrategy.name()).thenReturn("local");
+            Subscription mockSub = mock(Subscription.class);
+            when(brokerStrategy.subscribe(any(SubscribeRequest.class))).thenReturn(mockSub);
+
+            registrar.start();
+
+            String sanitized = "pacs-studio-server-MacBookPro_local";
+            verify(brokerStrategy).ensureConsumerGroup("test-channel", sanitized);
+
+            ArgumentCaptor<SubscribeRequest> captor = ArgumentCaptor.forClass(SubscribeRequest.class);
+            verify(brokerStrategy).subscribe(captor.capture());
+            SubscribeRequest request = captor.getValue();
+            assertThat(request.groupName()).isEqualTo(sanitized);
+            assertThat(request.consumerName()).isEqualTo(sanitized + "-0");
+        }
+
+        @Test
+        @DisplayName("should leave already-clean group names unchanged")
+        void shouldLeaveCleanGroupUnchanged() {
+            SampleHandler bean = new SampleHandler();
+            when(environment.resolvePlaceholders("test-channel")).thenReturn("test-channel");
+            when(environment.resolvePlaceholders("test-group")).thenReturn("clean-group-name");
+            registrar.postProcessAfterInitialization(bean, "sampleHandler");
+
+            when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
+            when(propertiesProvider.getIfAvailable()).thenReturn(null);
+            registrar.afterSingletonsInstantiated();
+
+            when(brokerStrategy.name()).thenReturn("local");
+            Subscription mockSub = mock(Subscription.class);
+            when(brokerStrategy.subscribe(any(SubscribeRequest.class))).thenReturn(mockSub);
+
+            registrar.start();
+
+            verify(brokerStrategy).ensureConsumerGroup("test-channel", "clean-group-name");
         }
     }
 

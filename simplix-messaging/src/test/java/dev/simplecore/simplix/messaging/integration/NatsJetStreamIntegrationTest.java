@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -146,7 +147,11 @@ class NatsJetStreamIntegrationTest {
                 .listener((m, ack) -> ack.ack())
                 .build());
         seed.cancel();
-        Instant t0 = Instant.now();
+        // Capture t0 with a small buffer ahead of the first publish to absorb any
+        // clock skew between this JVM and the NATS server (server-side timestamps
+        // are stamped by JetStream and may be a few ms behind/ahead of wall-clock
+        // here on dev machines that use Docker for NATS).
+        Instant t0 = Instant.now().minus(Duration.ofMillis(500));
         // Publish 3 messages in the "before" window
         broker.send(ch, "a0".getBytes(), MessageHeaders.empty());
         Thread.sleep(100);
@@ -154,8 +159,11 @@ class NatsJetStreamIntegrationTest {
         Thread.sleep(100);
         broker.send(ch, "a2".getBytes(), MessageHeaders.empty());
         Thread.sleep(500);
-        Instant t1 = Instant.now();
-        Thread.sleep(500);
+        // Same buffer applied on the upper boundary, then a generous gap before
+        // "after" publishes so clock skew cannot drag a2 past t1 nor pull b0
+        // before it.
+        Instant t1 = Instant.now().plus(Duration.ofMillis(500));
+        Thread.sleep(1500);
         // Publish 2 messages "after" the range
         broker.send(ch, "b0".getBytes(), MessageHeaders.empty());
         broker.send(ch, "b1".getBytes(), MessageHeaders.empty());

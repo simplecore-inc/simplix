@@ -14,7 +14,16 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * In-memory {@link MessageScheduler} backed by a {@link DelayQueue}.
+ *
+ * @deprecated since 1.1.1, see {@link MessageScheduler}. This implementation will
+ *             be removed in a future major release. Prefer Spring {@code @Scheduled}
+ *             or a dedicated scheduling engine for new code.
+ */
 @Slf4j
+@Deprecated(since = "1.1.1", forRemoval = true)
+@SuppressWarnings("removal")
 public class LocalMessageScheduler implements MessageScheduler {
 
     private final BrokerStrategy broker;

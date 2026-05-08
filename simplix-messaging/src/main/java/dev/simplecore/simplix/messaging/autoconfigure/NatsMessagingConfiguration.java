@@ -46,6 +46,20 @@ import java.io.IOException;
 public class NatsMessagingConfiguration {
 
     /**
+     * JetStream API error code returned when a stream creation is attempted
+     * for a name that is already in use. Standard code from the NATS server's
+     * JetStream error registry.
+     */
+    private static final int STREAM_NAME_IN_USE_CODE = 10058;
+
+    /**
+     * JetStream API error code returned when a stream lookup targets a name
+     * that does not exist. Standard code from the NATS server's JetStream
+     * error registry.
+     */
+    private static final int STREAM_NOT_FOUND_CODE = 10059;
+
+    /**
      * Creates and opens the NATS connection. Auth and TLS are applied via
      * {@link NatsOptionsBuilder} helper methods.
      *
@@ -178,13 +192,18 @@ public class NatsMessagingConfiguration {
      * Creates the NATS-backed {@link MessageScheduler} that uses a KV bucket for
      * deferred message storage and leader-elected polling for delivery.
      *
-     * <p>The KV bucket is created idempotently (an "already exists" error is ignored).
+     * <p>The KV bucket is ensured via {@code STREAM.INFO}-then-{@code CREATE}: an
+     * existing bucket (provisioned by NUI / IaC / NATS CLI) is detected without
+     * a CREATE call, so the application user only needs
+     * {@code $JS.API.STREAM.INFO.KV_<bucket>} and {@code $KV.<bucket>.>}. When
+     * the bucket is genuinely absent, a CREATE is attempted and additionally
+     * requires {@code $JS.API.STREAM.CREATE.KV_<bucket>}.
      *
-     * <p>Disabled by setting {@code simplix.messaging.nats.scheduler.enabled=false}
-     * for deployments whose NATS user is not granted KV permissions
-     * ({@code $JS.API.STREAM.INFO.KV_<bucket>}, {@code $KV.<bucket>.>}). When
-     * disabled this bean is not registered and applications using only direct
-     * publish/subscribe can boot without KV ACL grants.
+     * <p>Disabled by default since 1.1.1 (deprecation gate); opt in via
+     * {@code simplix.messaging.nats.scheduler.enabled=true}. When the bean
+     * is not registered, no KV bucket is created or bound at startup and
+     * applications using only direct publish/subscribe can boot without
+     * holding KV ACL grants.
      *
      * @param broker the broker strategy used to publish due messages
      * @param conn   the NATS connection for KV access
@@ -194,7 +213,9 @@ public class NatsMessagingConfiguration {
      */
     @Bean(initMethod = "start", destroyMethod = "stop")
     @ConditionalOnProperty(prefix = "simplix.messaging.nats.scheduler",
-            name = "enabled", havingValue = "true", matchIfMissing = true)
+            name = "enabled", havingValue = "true", matchIfMissing = false)
+    @Deprecated(since = "1.1.1", forRemoval = true)
+    @SuppressWarnings("removal")
     public MessageScheduler natsMessageScheduler(BrokerStrategy broker,
                                                   Connection conn,
                                                   MessagingProperties props) {
@@ -225,17 +246,58 @@ public class NatsMessagingConfiguration {
     // ---------------------------------------------------------------
 
     /**
-     * Creates the KV bucket if it does not already exist.
-     * A {@link JetStreamApiException} indicating the bucket already exists is silently ignored.
+     * Ensures the KV bucket exists, calling {@code STREAM.INFO} first so that
+     * {@code STREAM.CREATE} is only invoked when the bucket is genuinely
+     * absent.
+     *
+     * <p>Deployments that provision KV buckets externally (NUI, IaC, NATS CLI)
+     * can therefore run the application user without
+     * {@code $JS.API.STREAM.CREATE.KV_<bucket>} or
+     * {@code $JS.API.STREAM.UPDATE.KV_<bucket>} publish permissions; only
+     * {@code $JS.API.STREAM.INFO.KV_<bucket>} and the data-plane subjects
+     * {@code $KV.<bucket>.>} are required.
+     *
+     * <p>Failure semantics:
+     * <ul>
+     *   <li>{@code STREAM.INFO} returning {@value #STREAM_NOT_FOUND_CODE}
+     *       (stream not found) is the expected absence signal and falls through
+     *       to the create path.</li>
+     *   <li>{@code STREAM.CREATE} returning {@value #STREAM_NAME_IN_USE_CODE}
+     *       (stream name already in use) is treated as a benign concurrent
+     *       create — another instance won the race.</li>
+     *   <li>Any other {@link JetStreamApiException} or {@link IOException} is
+     *       wrapped in {@link IllegalStateException}; an INFO timeout caused by
+     *       missing ACL grants is surfaced as a fatal error rather than being
+     *       silently swallowed, mirroring the contract of {@code ensureStream}
+     *       for regular streams.</li>
+     * </ul>
      */
     private void ensureKvBucket(Connection conn, String bucketName) {
+        String streamName = "KV_" + bucketName;
+        try {
+            conn.jetStreamManagement().getStreamInfo(streamName);
+            return;
+        } catch (JetStreamApiException e) {
+            if (e.getApiErrorCode() != STREAM_NOT_FOUND_CODE) {
+                throw new IllegalStateException(
+                        "Failed to query KV bucket '" + bucketName + "'", e);
+            }
+            // Bucket does not exist yet — fall through to CREATE.
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Failed to query KV bucket '" + bucketName + "'", e);
+        }
+
         try {
             conn.keyValueManagement().create(
                     KeyValueConfiguration.builder().name(bucketName).build());
         } catch (JetStreamApiException e) {
-            // Bucket already exists — this is expected in normal operation.
-            log.debug("KV bucket '{}' already exists or could not be created: {}",
-                    bucketName, e.getMessage());
+            if (e.getApiErrorCode() != STREAM_NAME_IN_USE_CODE) {
+                throw new IllegalStateException(
+                        "Failed to create KV bucket '" + bucketName + "'", e);
+            }
+            // Another instance created the bucket between INFO and CREATE.
+            log.debug("KV bucket '{}' was created concurrently; continuing.", bucketName);
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Failed to create KV bucket '" + bucketName + "'", e);

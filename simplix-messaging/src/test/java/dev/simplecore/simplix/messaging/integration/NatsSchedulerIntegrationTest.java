@@ -35,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "simplix.messaging.nats.servers=nats://app:apppass@localhost:4222",
                 "simplix.messaging.nats.stream-prefix=test-",
                 "simplix.messaging.nats.subject-prefix=test.",
+                // MessageScheduler is deprecated and gated behind opt-in flag since 1.1.1.
+                "simplix.messaging.nats.scheduler.enabled=true",
                 "simplix.messaging.nats.scheduler.poll-interval=200ms"
         })
 @RequiresNats

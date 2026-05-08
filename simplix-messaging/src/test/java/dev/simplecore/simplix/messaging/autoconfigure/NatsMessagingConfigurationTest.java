@@ -18,6 +18,7 @@ import io.nats.client.KeyValue;
 import io.nats.client.KeyValueManagement;
 import io.nats.client.Options;
 import io.nats.client.api.KeyValueStatus;
+import io.nats.client.api.StreamInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -83,6 +84,11 @@ class NatsMessagingConfigurationTest {
         when(connection.keyValueManagement()).thenReturn(kvManagement);
         when(kvManagement.create(any())).thenReturn(kvStatus);
         when(connection.keyValue(any(String.class))).thenReturn(keyValue);
+        // ensureKvBucket() now performs STREAM.INFO before STREAM.CREATE so an
+        // existing bucket is detected without a CREATE call. The unit test only
+        // needs the INFO path to succeed for natsMessageScheduler() bean creation.
+        when(connection.jetStreamManagement()).thenReturn(jsManagement);
+        when(jsManagement.getStreamInfo(any(String.class))).thenReturn(mock(StreamInfo.class));
     }
 
     // ---------------------------------------------------------------
@@ -175,18 +181,18 @@ class NatsMessagingConfigurationTest {
         }
 
         @Test
-        @DisplayName("schedulerProperties.enabled defaults to true (historical behaviour)")
-        void schedulerProperties_enabled_defaultsTrue() {
+        @DisplayName("schedulerProperties.enabled defaults to false (deprecated, opt-in only since 1.1.1)")
+        void schedulerProperties_enabled_defaultsFalse() {
             MessagingProperties.NatsProperties.SchedulerProperties sp =
                     new MessagingProperties.NatsProperties.SchedulerProperties();
-            assertThat(sp.isEnabled()).isTrue();
+            assertThat(sp.isEnabled()).isFalse();
         }
 
         @Test
-        @DisplayName("schedulerProperties.enabled is settable to false to skip the scheduler bean")
-        void schedulerProperties_enabled_settableFalse() {
-            properties.getNats().getScheduler().setEnabled(false);
-            assertThat(properties.getNats().getScheduler().isEnabled()).isFalse();
+        @DisplayName("schedulerProperties.enabled is settable to true to opt into the scheduler bean")
+        void schedulerProperties_enabled_settableTrue() {
+            properties.getNats().getScheduler().setEnabled(true);
+            assertThat(properties.getNats().getScheduler().isEnabled()).isTrue();
         }
 
         @Test

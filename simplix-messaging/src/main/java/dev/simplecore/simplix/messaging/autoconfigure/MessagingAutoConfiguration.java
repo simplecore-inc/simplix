@@ -164,7 +164,15 @@ public class MessagingAutoConfiguration {
             return new LocalReplayService(broker);
         }
 
+        /**
+         * @deprecated see {@link MessageScheduler}. Disabled by default since 1.1.1;
+         *             opt in via {@code simplix.messaging.local.scheduler.enabled=true}.
+         */
         @Bean(initMethod = "start", destroyMethod = "stop")
+        @ConditionalOnProperty(prefix = "simplix.messaging.local.scheduler",
+                name = "enabled", havingValue = "true", matchIfMissing = false)
+        @Deprecated(since = "1.1.1", forRemoval = true)
+        @SuppressWarnings("removal")
         public MessageScheduler localMessageScheduler(LocalBrokerStrategy broker) {
             return new LocalMessageScheduler(broker);
         }

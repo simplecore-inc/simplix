@@ -92,7 +92,15 @@ public class RedisMessagingConfiguration {
         return new RedisStreamReplayService(redisTemplate, properties.getRedis().getKeyPrefix());
     }
 
+    /**
+     * @deprecated see {@link MessageScheduler}. Disabled by default since 1.1.1;
+     *             opt in via {@code simplix.messaging.redis.scheduler.enabled=true}.
+     */
     @Bean(initMethod = "start", destroyMethod = "stop")
+    @ConditionalOnProperty(prefix = "simplix.messaging.redis.scheduler",
+            name = "enabled", havingValue = "true", matchIfMissing = false)
+    @Deprecated(since = "1.1.1", forRemoval = true)
+    @SuppressWarnings("removal")
     public MessageScheduler messageScheduler(BrokerStrategy brokerStrategy,
                                               StringRedisTemplate redisTemplate,
                                               MessagingProperties properties) {

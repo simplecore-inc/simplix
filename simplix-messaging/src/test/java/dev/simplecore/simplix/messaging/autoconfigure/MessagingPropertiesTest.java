@@ -239,4 +239,51 @@ class MessagingPropertiesTest {
         props.getChannels().put("orders", ch);
         assertThat(props.getNats().resolveMaxMsgs("orders", props)).isEqualTo(1234L);
     }
+
+    @Nested
+    @DisplayName("sanitizeInstanceId")
+    class SanitizeInstanceIdTests {
+
+        @Test
+        @DisplayName("should replace dots with underscores")
+        void shouldReplaceDots() {
+            assertThat(MessagingProperties.sanitizeInstanceId("MacBookPro.local"))
+                    .isEqualTo("MacBookPro_local");
+        }
+
+        @Test
+        @DisplayName("should replace all NATS-reserved characters")
+        void shouldReplaceReservedChars() {
+            assertThat(MessagingProperties.sanitizeInstanceId("a.b*c>d\\e/f"))
+                    .isEqualTo("a_b_c_d_e_f");
+        }
+
+        @Test
+        @DisplayName("should replace non-printable ASCII characters")
+        void shouldReplaceNonPrintable() {
+            assertThat(MessagingProperties.sanitizeInstanceId("okbad"))
+                    .isEqualTo("ok_bad");
+        }
+
+        @Test
+        @DisplayName("should preserve already-clean values")
+        void shouldPreserveCleanValues() {
+            assertThat(MessagingProperties.sanitizeInstanceId("clean-id-123"))
+                    .isEqualTo("clean-id-123");
+        }
+
+        @Test
+        @DisplayName("should return process-derived fallback for null input")
+        void shouldFallbackForNullInput() {
+            assertThat(MessagingProperties.sanitizeInstanceId(null))
+                    .startsWith("simplix-");
+        }
+
+        @Test
+        @DisplayName("should return process-derived fallback for empty input")
+        void shouldFallbackForEmptyInput() {
+            assertThat(MessagingProperties.sanitizeInstanceId(""))
+                    .startsWith("simplix-");
+        }
+    }
 }

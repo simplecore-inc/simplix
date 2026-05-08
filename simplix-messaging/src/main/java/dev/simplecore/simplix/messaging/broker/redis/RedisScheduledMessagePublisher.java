@@ -44,8 +44,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>Note: {@link #cancel(String)} performs an O(N) scan of the ZSET. For very large
  * schedule sets, a secondary {@code scheduleId -> memberValue} HSET could be added later.
+ *
+ * @deprecated since 1.1.1, see {@link MessageScheduler}. This implementation will
+ *             be removed in a future major release.
  */
 @Slf4j
+@Deprecated(since = "1.1.1", forRemoval = true)
+@SuppressWarnings("removal")
 public class RedisScheduledMessagePublisher implements MessageScheduler {
 
     private static final String SCHEDULE_KEY_SUFFIX = ":scheduled";

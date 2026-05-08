@@ -233,6 +233,14 @@ public class MessageHandlerRegistrar
         String channel = resolvePlaceholder(annotation.channel());
         String group = resolvePlaceholder(annotation.group());
 
+        // Sanitize the resolved group: callers commonly derive group suffixes from
+        // hostnames or IPs (e.g. "<server>-<host>"), and macOS hostnames end in
+        // ".local" — characters that NATS JetStream durable names reject. Applying
+        // the same rule to all brokers keeps a single derived name safe everywhere.
+        if (!group.isEmpty()) {
+            group = MessagingProperties.sanitizeInstanceId(group);
+        }
+
         // Ensure consumer group exists if specified (non-blocking on failure)
         if (!group.isEmpty()) {
             try {
