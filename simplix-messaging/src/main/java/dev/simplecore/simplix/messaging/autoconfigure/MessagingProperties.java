@@ -62,6 +62,16 @@ public class MessagingProperties {
     private RedisProperties redis = new RedisProperties();
 
     /**
+     * NATS broker configuration.
+     */
+    private NatsProperties nats = new NatsProperties();
+
+    /**
+     * Publisher-side configuration shared across brokers.
+     */
+    private PublisherProperties publisher = new PublisherProperties();
+
+    /**
      * Idempotent guard configuration for message deduplication.
      */
     private IdempotentProperties idempotent = new IdempotentProperties();
@@ -99,6 +109,38 @@ public class MessagingProperties {
          * Approximate maximum number of entries retained in the stream (Redis MAXLEN ~).
          */
         private long maxLength = 50_000L;
+
+        /**
+         * Per-channel override for NATS JetStream {@code duplicate_window}.
+         * When {@code null}, falls back to {@code simplix.messaging.nats.duplicate-window}.
+         */
+        private Duration duplicateWindow;
+
+        /**
+         * Per-channel override for NATS consumer {@code deliver_policy}.
+         * Supported values: {@code all}, {@code new}, {@code last}, {@code last_per_subject}.
+         * When {@code null} or empty, falls back to {@code simplix.messaging.nats.deliver-policy}.
+         */
+        private String deliverPolicy;
+    }
+
+    /**
+     * Publisher-side properties applied across all broker implementations.
+     */
+    @Data
+    public static class PublisherProperties {
+
+        /**
+         * When {@code true}, the publisher automatically assigns a fresh UUIDv4 to the
+         * {@link dev.simplecore.simplix.messaging.core.MessageHeaders#MESSAGE_ID} header
+         * (and, for NATS, the {@code Nats-Msg-Id} header) when the caller did not provide one.
+         *
+         * <p>Defaults to {@code false} to preserve historical behavior. Enable this when
+         * the application's retry policy may republish the same payload — without an
+         * explicit message ID per attempt, NATS publish-time deduplication can silently
+         * drop a retry that the application intends to be a fresh delivery.
+         */
+        private boolean autoMessageId = false;
     }
 
     /**
@@ -185,6 +227,182 @@ public class MessagingProperties {
          * Whether dead letter queue routing is enabled.
          */
         private boolean enabled = false;
+    }
+
+    /**
+     * NATS broker configuration.
+     */
+    @Data
+    public static class NatsProperties {
+
+        private String servers = "nats://localhost:4222";
+        private String username = "";
+        private String password = "";
+        private String token = "";
+        private String credsFile = "";
+        private String nkeyFile = "";
+        private TlsProperties tls = new TlsProperties();
+        private String connectionName = "simplix-messaging";
+        private Duration connectionTimeout = Duration.ofSeconds(5);
+        private Duration reconnectWait = Duration.ofSeconds(2);
+        private int maxReconnects = -1;
+        private String streamPrefix = "simplix-";
+        private String subjectPrefix = "simplix.";
+
+        /**
+         * When {@code true}, {@code ensureStream} creates the stream on first use.
+         * When {@code false}, the stream must already exist; missing streams cause
+         * {@link IllegalStateException} so misconfiguration is detected at boot.
+         */
+        private boolean autoCreateStreams = true;
+
+        /**
+         * When {@code true}, {@code ensureStream} updates the stream's configuration
+         * if it already exists. When {@code false}, an existing stream's settings are
+         * preserved as-is — useful when an external operator (e.g., IaC) owns the
+         * stream definition and the application should only verify presence.
+         */
+        private boolean autoUpdateStreams = true;
+
+        private Duration ackWait;
+        private Integer maxDeliver;
+        private String ackPolicy = "explicit";
+
+        /**
+         * Default consumer {@code deliver_policy} when no per-channel override is set.
+         * Supported values: {@code all} (default), {@code new}, {@code last},
+         * {@code last_per_subject}.
+         */
+        private String deliverPolicy = "all";
+
+        private String retention = "limits";
+        private String storage = "file";
+        private String discardPolicy = "old";
+        private long maxMsgs = -1;
+        private Duration maxAge = Duration.ofDays(7);
+        private long maxBytes = -1;
+        private Duration duplicateWindow = Duration.ofMinutes(2);
+        private int replicas = 1;
+        private Duration pollTimeout = Duration.ofSeconds(2);
+        private int batchSize = 10;
+        private Duration pendingCheckInterval = Duration.ofSeconds(30);
+        private SchedulerProperties scheduler = new SchedulerProperties();
+
+        /**
+         * Resolves the ack-wait duration, falling back to 30 seconds if not explicitly set.
+         *
+         * @param err the error/retry configuration
+         * @return the effective ack-wait duration
+         */
+        public Duration resolveAckWait(ErrorProperties err) {
+            if (ackWait != null) return ackWait;
+            // The default 30s mirrors the hardcoded maxBackoff in MessagingAutoConfiguration.retryPolicy()
+            // (RetryPolicy with maxBackoff = Duration.ofSeconds(30)). If RetryPolicy ever exposes
+            // maxBackoff via properties, this should be changed to read from err instead.
+            return Duration.ofSeconds(30);
+        }
+
+        /**
+         * Resolves max-deliver as maxRetries + 1 when not explicitly set.
+         *
+         * @param err the error/retry configuration
+         * @return the effective max-deliver value
+         */
+        public int resolveMaxDeliver(ErrorProperties err) {
+            if (maxDeliver != null) return maxDeliver;
+            return err.getMaxRetries() + 1;
+        }
+
+        /**
+         * Resolves the max-msgs limit for a channel, preferring the per-channel override,
+         * then the global maxMsgs setting, then falling back to 50 000.
+         *
+         * @param channel the channel name
+         * @param props   the top-level messaging properties
+         * @return the effective max-msgs value
+         */
+        public long resolveMaxMsgs(String channel, MessagingProperties props) {
+            ChannelProperties ch = props.getChannels().get(channel);
+            if (ch != null) return ch.getMaxLength();
+            if (maxMsgs >= 0) return maxMsgs;
+            return 50_000L;
+        }
+
+        /**
+         * Resolves the duplicate-window for a channel. The per-channel
+         * {@code channels.<name>.duplicate-window} takes precedence over the global
+         * {@code simplix.messaging.nats.duplicate-window}.
+         *
+         * @param channel the channel name
+         * @param props   the top-level messaging properties
+         * @return the effective duplicate window for the channel's stream
+         */
+        public Duration resolveDuplicateWindow(String channel, MessagingProperties props) {
+            ChannelProperties ch = props.getChannels().get(channel);
+            if (ch != null && ch.getDuplicateWindow() != null) {
+                return ch.getDuplicateWindow();
+            }
+            return duplicateWindow;
+        }
+
+        /**
+         * Resolves the deliver-policy string for a channel. The per-channel
+         * {@code channels.<name>.deliver-policy} takes precedence over the global
+         * {@code simplix.messaging.nats.deliver-policy}.
+         *
+         * @param channel the channel name
+         * @param props   the top-level messaging properties
+         * @return the effective deliver policy string ({@code all}, {@code new},
+         *         {@code last}, or {@code last_per_subject})
+         */
+        public String resolveDeliverPolicy(String channel, MessagingProperties props) {
+            ChannelProperties ch = props.getChannels().get(channel);
+            if (ch != null && ch.getDeliverPolicy() != null && !ch.getDeliverPolicy().isEmpty()) {
+                return ch.getDeliverPolicy();
+            }
+            return deliverPolicy;
+        }
+
+        /**
+         * TLS configuration for the NATS connection.
+         */
+        @Data
+        public static class TlsProperties {
+            private boolean enabled = false;
+            private String trustStore = "";
+            private String trustStorePassword = "";
+            private String keyStore = "";
+            private String keyStorePassword = "";
+        }
+
+        /**
+         * NATS KV-based message scheduler configuration.
+         *
+         * <p>The scheduler relies on a JetStream KV bucket
+         * ({@link #getKvBucket() kvBucket}) and therefore requires the connected
+         * NATS user to hold KV-related permissions
+         * ({@code $JS.API.STREAM.INFO.KV_<bucket>} and {@code $KV.<bucket>.>}, plus
+         * {@code $JS.API.STREAM.CREATE.KV_<bucket>} when {@code enabled=true} and
+         * the bucket is not pre-provisioned). Applications that do not need
+         * delayed messaging and are deployed under a NATS user whose ACL omits
+         * those permissions must set {@link #isEnabled() enabled} to {@code false}
+         * so the scheduler bean is not registered, otherwise startup will fail
+         * during KV bucket creation or binding.
+         */
+        @Data
+        public static class SchedulerProperties {
+            /**
+             * Whether the NATS-backed {@code MessageScheduler} bean is registered.
+             * When {@code false}, no KV bucket is created or bound at startup, and
+             * applications can publish without holding KV permissions. Default is
+             * {@code true} to preserve historical behaviour.
+             */
+            private boolean enabled = true;
+
+            private String kvBucket = "simplix-scheduled";
+            private Duration pollInterval = Duration.ofSeconds(5);
+            private Duration leaderLockTtl = Duration.ofSeconds(30);
+        }
     }
 
     // ---------------------------------------------------------------

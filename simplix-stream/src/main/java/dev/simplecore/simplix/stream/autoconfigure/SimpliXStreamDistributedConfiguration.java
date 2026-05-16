@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.broadcast.SubscriberLookup;
+import dev.simplecore.simplix.stream.infrastructure.distributed.NatsBroadcaster;
+import dev.simplecore.simplix.stream.infrastructure.distributed.NatsLeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisBroadcaster;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
@@ -57,29 +59,32 @@ public class SimpliXStreamDistributedConfiguration {
     }
 
     /**
-     * Local broadcaster for distributed mode without Redis.
+     * Local broadcaster for distributed mode without a cross-server broker.
      * <p>
-     * When Redis is not enabled, each server operates independently,
-     * broadcasting only to its own local sessions.
+     * Activated when {@code simplix.stream.distributed.broker=NONE} (default).
+     * Each server operates independently, broadcasting only to its own local
+     * sessions.
      */
     @Bean
-    @ConditionalOnProperty(name = "simplix.stream.distributed.redis-enabled", havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(name = "simplix.stream.distributed.broker", havingValue = "NONE", matchIfMissing = true)
     @ConditionalOnMissingBean(BroadcastService.class)
     public LocalBroadcaster distributedLocalBroadcaster() {
         LocalBroadcaster broadcaster = new LocalBroadcaster();
         broadcaster.initialize();
-        log.info("Created local broadcaster for distributed mode (Redis not enabled)");
+        log.info("Created local broadcaster for distributed mode (broker=NONE)");
         return broadcaster;
     }
 
     /**
      * Redis-enabled configuration for distributed mode.
      * <p>
-     * Provides leader election and cross-server broadcasting when Redis is available.
+     * Activated when {@code simplix.stream.distributed.broker=REDIS} and a
+     * {@code StringRedisTemplate} bean is available. Provides leader election
+     * and cross-server broadcasting via Redis Pub/Sub.
      */
     @Configuration
     @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
-    @ConditionalOnProperty(name = "simplix.stream.distributed.redis-enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "simplix.stream.distributed.broker", havingValue = "REDIS")
     @ConditionalOnBean(StringRedisTemplate.class)
     public static class RedisEnabledConfiguration {
 
@@ -151,6 +156,53 @@ public class SimpliXStreamDistributedConfiguration {
 
             log.info("Configured Redis message listener for channel pattern: {}*", channelPrefix);
             return container;
+        }
+    }
+
+    /**
+     * NATS-enabled configuration for distributed mode. Activated when
+     * {@code simplix.stream.distributed.broker=NATS} and an
+     * {@code io.nats.client.Connection} bean is available.
+     *
+     * <p>Provides leader election + cross-server broadcasting purely on NATS,
+     * removing the runtime dependency on Redis.
+     */
+    @Configuration
+    @ConditionalOnClass(name = "io.nats.client.Connection")
+    @ConditionalOnProperty(name = "simplix.stream.distributed.broker", havingValue = "NATS")
+    public static class NatsEnabledConfiguration {
+
+        @Bean
+        @Primary
+        @ConditionalOnMissingBean(BroadcastService.class)
+        @ConditionalOnBean(io.nats.client.Connection.class)
+        public NatsBroadcaster natsBroadcaster(
+                io.nats.client.Connection connection,
+                ObjectMapper objectMapper,
+                StreamProperties properties,
+                String streamInstanceId,
+                @Autowired(required = false) List<SubscriberLookup> subscriberLookups) {
+
+            List<SubscriberLookup> lookups = subscriberLookups != null ? subscriberLookups : List.of();
+            NatsBroadcaster broadcaster = new NatsBroadcaster(
+                    connection, objectMapper, properties, streamInstanceId, lookups);
+            broadcaster.initialize();
+            log.info("Created NATS broadcaster for cross-server messaging (subscriberLookups={})",
+                    lookups.size());
+            return broadcaster;
+        }
+
+        @Bean
+        @ConditionalOnMissingBean
+        @ConditionalOnBean(io.nats.client.Connection.class)
+        public NatsLeaderElection natsLeaderElection(
+                io.nats.client.Connection connection,
+                ScheduledExecutorService streamScheduledExecutor,
+                String streamInstanceId,
+                StreamProperties properties) {
+            log.info("Created NATS leader election");
+            return new NatsLeaderElection(
+                    connection, streamScheduledExecutor, streamInstanceId, properties);
         }
     }
 

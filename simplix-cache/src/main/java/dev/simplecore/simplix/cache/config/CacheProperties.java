@@ -44,6 +44,11 @@ public class CacheProperties {
     private RedisConfig redis = new RedisConfig();
 
     /**
+     * NATS-specific configuration
+     */
+    private NatsConfig nats = new NatsConfig();
+
+    /**
      * Initialize default cache configurations
      */
     public CacheProperties() {
@@ -83,5 +88,26 @@ public class CacheProperties {
     public static class RedisConfig {
         private String keyPrefix = "cache:";
         private boolean useKeyPrefix = true;
+    }
+
+    /**
+     * NATS KV-specific configuration.
+     *
+     * <p>Each cache name is mapped to a separate JetStream KV bucket named
+     * {@code <bucketPrefix><sanitized cacheName>}. Because NATS KV honours
+     * a single {@code maxAge} per bucket, the configured TTL is applied at
+     * bucket creation; per-call TTL parameters cannot override the bucket
+     * setting once the bucket exists. Cache names containing characters that
+     * are invalid in NATS bucket names ({@code .}, {@code *}, {@code >},
+     * spaces, etc.) are sanitised by replacing each invalid character with
+     * {@code _}.
+     */
+    @Data
+    public static class NatsConfig {
+        /** Prefix prepended to every per-cache KV bucket name. */
+        private String bucketPrefix = "simplix-cache-";
+
+        /** Default replicas for newly created KV buckets. */
+        private int replicas = 1;
     }
 }

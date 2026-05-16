@@ -2,6 +2,7 @@ package dev.simplecore.simplix.messaging.subscriber;
 
 import dev.simplecore.simplix.messaging.autoconfigure.MessagingProperties;
 import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import dev.simplecore.simplix.messaging.broker.SubscribeRequest;
 import dev.simplecore.simplix.messaging.broker.Subscription;
 import dev.simplecore.simplix.messaging.core.Message;
@@ -71,7 +72,7 @@ public class MessageHandlerRegistrar
     // Lazy providers — resolved after all singletons are instantiated to avoid
     // pulling the entire Redis/Metrics dependency chain during BeanPostProcessor creation.
     private final ObjectProvider<BrokerStrategy> brokerStrategyProvider;
-    private final ObjectProvider<IdempotentGuard> idempotentGuardProvider;
+    private final ObjectProvider<IdempotencyStore> idempotencyStoreProvider;
     private final ObjectProvider<MessagingProperties> propertiesProvider;
 
     private final Environment environment;
@@ -80,7 +81,7 @@ public class MessageHandlerRegistrar
 
     // Eagerly resolved from providers in afterSingletonsInstantiated()
     private BrokerStrategy brokerStrategy;
-    private IdempotentGuard idempotentGuard;
+    private IdempotencyStore idempotencyStore;
     private MessagingProperties properties;
 
     private volatile boolean running = false;
@@ -93,18 +94,18 @@ public class MessageHandlerRegistrar
      * during the {@link BeanPostProcessor} creation phase. They are resolved in
      * {@link #afterSingletonsInstantiated()} when all beans are available.
      *
-     * @param brokerStrategyProvider  lazy provider for the active broker strategy
-     * @param environment             the Spring environment for placeholder resolution
-     * @param idempotentGuardProvider lazy provider for the optional idempotent guard
-     * @param propertiesProvider      lazy provider for messaging properties
+     * @param brokerStrategyProvider   lazy provider for the active broker strategy
+     * @param environment              the Spring environment for placeholder resolution
+     * @param idempotencyStoreProvider lazy provider for the optional idempotency store
+     * @param propertiesProvider       lazy provider for messaging properties
      */
     public MessageHandlerRegistrar(ObjectProvider<BrokerStrategy> brokerStrategyProvider,
                                    Environment environment,
-                                   ObjectProvider<IdempotentGuard> idempotentGuardProvider,
+                                   ObjectProvider<IdempotencyStore> idempotencyStoreProvider,
                                    ObjectProvider<MessagingProperties> propertiesProvider) {
         this.brokerStrategyProvider = brokerStrategyProvider;
         this.environment = environment;
-        this.idempotentGuardProvider = idempotentGuardProvider;
+        this.idempotencyStoreProvider = idempotencyStoreProvider;
         this.propertiesProvider = propertiesProvider;
     }
 
@@ -127,7 +128,7 @@ public class MessageHandlerRegistrar
     public void afterSingletonsInstantiated() {
         // Resolve lazy dependencies now that all singletons are available
         this.brokerStrategy = brokerStrategyProvider.getObject();
-        this.idempotentGuard = idempotentGuardProvider.getIfAvailable();
+        this.idempotencyStore = idempotencyStoreProvider.getIfAvailable();
         this.properties = propertiesProvider.getIfAvailable();
 
         if (registrations.isEmpty()) {
@@ -290,16 +291,16 @@ public class MessageHandlerRegistrar
         method.setAccessible(true);
 
         return (rawMessage, ack) -> {
-            // Idempotent guard check
+            // Idempotency store check
             if (annotation.idempotent()) {
-                if (idempotentGuard == null) {
-                    log.warn("Idempotent guard is not configured but idempotent=true on {}.{}(). "
+                if (idempotencyStore == null) {
+                    log.warn("Idempotency store is not configured but idempotent=true on {}.{}(). "
                                     + "Proceeding without deduplication.",
                             bean.getClass().getSimpleName(), method.getName());
                 } else {
                     String messageId = rawMessage.getHeaders().get(MessageHeaders.MESSAGE_ID)
                             .orElse(rawMessage.getMessageId());
-                    if (!idempotentGuard.tryAcquire(channel, group, messageId)) {
+                    if (!idempotencyStore.tryAcquire(channel, group, messageId)) {
                         log.debug("Duplicate message detected, skipping: channel={} messageId={}",
                                 channel, messageId);
                         ack.ack();

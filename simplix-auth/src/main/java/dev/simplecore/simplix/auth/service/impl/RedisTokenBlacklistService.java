@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,9 @@ import java.time.Duration;
 @ConditionalOnClass(name = "org.springframework.data.redis.core.RedisTemplate")
 @ConditionalOnBean(name = "redisTemplate")
 @ConditionalOnProperty(name = "simplix.auth.token.enable-blacklist", havingValue = "true")
+@ConditionalOnExpression(
+        "'${simplix.auth.token.blacklist-store:AUTO}'.equalsIgnoreCase('AUTO') "
+                + "or '${simplix.auth.token.blacklist-store:AUTO}'.equalsIgnoreCase('REDIS')")
 public class RedisTokenBlacklistService implements TokenBlacklistService {
 
     private static final Logger log = LoggerFactory.getLogger(RedisTokenBlacklistService.class);

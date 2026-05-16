@@ -205,4 +205,38 @@ class MessagingPropertiesTest {
             assertThat(properties.getSubscriberStartupDelay()).isEqualTo(Duration.ofSeconds(5));
         }
     }
+
+    @Test
+    void natsProperties_haveSensibleDefaults() {
+        MessagingProperties.NatsProperties n = new MessagingProperties.NatsProperties();
+        assertThat(n.getServers()).isEqualTo("nats://localhost:4222");
+        assertThat(n.getStreamPrefix()).isEqualTo("simplix-");
+        assertThat(n.getSubjectPrefix()).isEqualTo("simplix.");
+        assertThat(n.isAutoCreateStreams()).isTrue();
+        assertThat(n.getDuplicateWindow()).isEqualTo(Duration.ofMinutes(2));
+    }
+
+    @Test
+    void natsAckWait_derivesFromRetryPolicy_whenNotSet() {
+        MessagingProperties.NatsProperties n = new MessagingProperties.NatsProperties();
+        MessagingProperties.ErrorProperties err = new MessagingProperties.ErrorProperties();
+        assertThat(n.resolveAckWait(err)).isEqualTo(Duration.ofSeconds(30));
+    }
+
+    @Test
+    void natsMaxDeliver_derivesFromMaxRetriesPlusOne() {
+        MessagingProperties.NatsProperties n = new MessagingProperties.NatsProperties();
+        MessagingProperties.ErrorProperties err = new MessagingProperties.ErrorProperties();
+        err.setMaxRetries(7);
+        assertThat(n.resolveMaxDeliver(err)).isEqualTo(8);
+    }
+
+    @Test
+    void natsResolveMaxMsgs_prefersChannelOverride() {
+        MessagingProperties props = new MessagingProperties();
+        MessagingProperties.ChannelProperties ch = new MessagingProperties.ChannelProperties();
+        ch.setMaxLength(1234L);
+        props.getChannels().put("orders", ch);
+        assertThat(props.getNats().resolveMaxMsgs("orders", props)).isEqualTo(1234L);
+    }
 }

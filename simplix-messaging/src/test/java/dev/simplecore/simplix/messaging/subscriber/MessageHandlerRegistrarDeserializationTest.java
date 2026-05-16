@@ -8,6 +8,7 @@ import dev.simplecore.simplix.messaging.core.Message;
 import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.MessageListener;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,7 +40,7 @@ class MessageHandlerRegistrarDeserializationTest {
     private ObjectProvider<BrokerStrategy> brokerStrategyProvider;
 
     @Mock
-    private ObjectProvider<IdempotentGuard> idempotentGuardProvider;
+    private ObjectProvider<IdempotencyStore> idempotencyStoreProvider;
 
     @Mock
     private ObjectProvider<MessagingProperties> propertiesProvider;
@@ -51,14 +52,14 @@ class MessageHandlerRegistrarDeserializationTest {
     private BrokerStrategy brokerStrategy;
 
     @Mock
-    private IdempotentGuard idempotentGuard;
+    private IdempotencyStore idempotencyStore;
 
     private MessageHandlerRegistrar registrar;
 
     @BeforeEach
     void setUp() {
         registrar = new MessageHandlerRegistrar(
-                brokerStrategyProvider, environment, idempotentGuardProvider, propertiesProvider);
+                brokerStrategyProvider, environment, idempotencyStoreProvider, propertiesProvider);
     }
 
     @Nested
@@ -74,7 +75,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "stringHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -120,7 +121,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "bytesHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -165,7 +166,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "twoParamHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -209,7 +210,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "idempotentHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(idempotentGuard);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(idempotencyStore);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -225,7 +226,7 @@ class MessageHandlerRegistrarDeserializationTest {
             MessageListener<byte[]> listener = capturedRequest.listener();
 
             // First message: not duplicate
-            when(idempotentGuard.tryAcquire("idem-channel", "idem-group", "msg-idem"))
+            when(idempotencyStore.tryAcquire("idem-channel", "idem-group", "msg-idem"))
                     .thenReturn(true);
 
             Message<byte[]> rawMessage = Message.<byte[]>builder()
@@ -241,7 +242,7 @@ class MessageHandlerRegistrarDeserializationTest {
             verify(ack1).ack(); // autoAck
 
             // Second message: duplicate
-            when(idempotentGuard.tryAcquire("idem-channel", "idem-group", "msg-idem"))
+            when(idempotencyStore.tryAcquire("idem-channel", "idem-group", "msg-idem"))
                     .thenReturn(false);
 
             MessageAcknowledgment ack2 = mock(MessageAcknowledgment.class);
@@ -259,7 +260,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "idempotentHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null); // no guard
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null); // no guard
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -302,7 +303,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "throwingHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -345,7 +346,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "rawHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -387,7 +388,7 @@ class MessageHandlerRegistrarDeserializationTest {
             registrar.postProcessAfterInitialization(bean, "placeholderHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 

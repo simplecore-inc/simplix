@@ -101,3 +101,4 @@ build-docs/
 .mcp.json
 .scip/
 *.scip
+.plans/

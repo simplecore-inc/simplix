@@ -78,4 +78,33 @@ class SyncPropertiesTest {
                     .containsExactly(SyncProperties.Mode.LOCAL, SyncProperties.Mode.DISTRIBUTED);
         }
     }
+
+    @Nested
+    @DisplayName("Broker enum")
+    class BrokerEnumTests {
+
+        @Test
+        @DisplayName("should default to REDIS for backward compatibility")
+        void shouldDefaultToRedis() {
+            SyncProperties properties = new SyncProperties();
+            assertThat(properties.getDistributed().getBroker())
+                    .isEqualTo(SyncProperties.Broker.REDIS);
+        }
+
+        @Test
+        @DisplayName("should be settable to NATS")
+        void shouldBeSettableToNats() {
+            SyncProperties properties = new SyncProperties();
+            properties.getDistributed().setBroker(SyncProperties.Broker.NATS);
+            assertThat(properties.getDistributed().getBroker())
+                    .isEqualTo(SyncProperties.Broker.NATS);
+        }
+
+        @Test
+        @DisplayName("should expose REDIS and NATS values")
+        void shouldExposeExpectedValues() {
+            assertThat(SyncProperties.Broker.values())
+                    .containsExactly(SyncProperties.Broker.REDIS, SyncProperties.Broker.NATS);
+        }
+    }
 }

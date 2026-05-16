@@ -2,13 +2,19 @@ package dev.simplecore.simplix.messaging.autoconfigure;
 
 import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import dev.simplecore.simplix.messaging.broker.local.LocalBrokerStrategy;
+import dev.simplecore.simplix.messaging.broker.local.LocalIdempotencyStore;
+import dev.simplecore.simplix.messaging.broker.local.LocalMessageScheduler;
+import dev.simplecore.simplix.messaging.broker.local.LocalReplayService;
 import dev.simplecore.simplix.messaging.core.DefaultMessagePublisher;
 import dev.simplecore.simplix.messaging.core.MessagePublisher;
 import dev.simplecore.simplix.messaging.core.RetryPolicy;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import dev.simplecore.simplix.messaging.error.DeadLetterStrategy;
 import dev.simplecore.simplix.messaging.error.PoisonMessageHandler;
 import dev.simplecore.simplix.messaging.monitoring.MessagingHealthIndicator;
 import dev.simplecore.simplix.messaging.monitoring.MessagingMetrics;
+import dev.simplecore.simplix.messaging.replay.ReplayService;
+import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -20,7 +26,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
-import dev.simplecore.simplix.messaging.subscriber.IdempotentGuard;
 import dev.simplecore.simplix.messaging.subscriber.MessageHandlerRegistrar;
 
 import java.time.Duration;
@@ -42,7 +47,12 @@ import java.util.Optional;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(MessagingProperties.class)
-@Import({RedisMessagingConfiguration.class, KafkaMessagingConfiguration.class, RabbitMessagingConfiguration.class})
+@Import({
+    RedisMessagingConfiguration.class,
+    KafkaMessagingConfiguration.class,
+    RabbitMessagingConfiguration.class,
+    NatsMessagingConfiguration.class
+})
 @Slf4j
 public class MessagingAutoConfiguration {
 
@@ -85,18 +95,18 @@ public class MessagingAutoConfiguration {
      * to be initialized before other BeanPostProcessors, triggering excessive
      * {@code BeanPostProcessorChecker} warnings.
      *
-     * @param brokerStrategy  lazy provider for the active broker strategy
-     * @param environment     the Spring environment for property placeholder resolution
-     * @param idempotentGuard lazy provider for the optional idempotent guard
-     * @param properties      lazy provider for the messaging properties
+     * @param brokerStrategy   lazy provider for the active broker strategy
+     * @param environment      the Spring environment for property placeholder resolution
+     * @param idempotencyStore lazy provider for the optional idempotency store
+     * @param properties       lazy provider for the messaging properties
      * @return the message handler registrar
      */
     @Bean
     public static MessageHandlerRegistrar messageHandlerRegistrar(ObjectProvider<BrokerStrategy> brokerStrategy,
                                                                   Environment environment,
-                                                                  ObjectProvider<IdempotentGuard> idempotentGuard,
+                                                                  ObjectProvider<IdempotencyStore> idempotencyStore,
                                                                   ObjectProvider<MessagingProperties> properties) {
-        return new MessageHandlerRegistrar(brokerStrategy, environment, idempotentGuard, properties);
+        return new MessageHandlerRegistrar(brokerStrategy, environment, idempotencyStore, properties);
     }
 
     // ---------------------------------------------------------------
@@ -147,6 +157,21 @@ public class MessagingAutoConfiguration {
             LocalBrokerStrategy strategy = new LocalBrokerStrategy();
             strategy.initialize();
             return strategy;
+        }
+
+        @Bean
+        public ReplayService localReplayService(LocalBrokerStrategy broker) {
+            return new LocalReplayService(broker);
+        }
+
+        @Bean(initMethod = "start", destroyMethod = "stop")
+        public MessageScheduler localMessageScheduler(LocalBrokerStrategy broker) {
+            return new LocalMessageScheduler(broker);
+        }
+
+        @Bean
+        public IdempotencyStore localIdempotencyStore(MessagingProperties props) {
+            return new LocalIdempotencyStore(props.getIdempotent().getTtl(), 100_000);
         }
     }
 

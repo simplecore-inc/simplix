@@ -51,6 +51,11 @@ dependencies {
     compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // Optional: NATS for distributed mode (consumes a Connection bean provided
+    // elsewhere, typically by simplix-messaging when its broker is set to nats).
+    compileOnly 'io.nats:jnats:2.21.4'
+    testImplementation 'io.nats:jnats:2.21.4'
+
     // Optional: JPA for distributed admin commands
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'jakarta.persistence:jakarta.persistence-api'

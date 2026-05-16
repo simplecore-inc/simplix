@@ -9,6 +9,7 @@ import dev.simplecore.simplix.messaging.core.Message;
 import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
+import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,7 +41,7 @@ class MessageHandlerRegistrarTest {
     private ObjectProvider<BrokerStrategy> brokerStrategyProvider;
 
     @Mock
-    private ObjectProvider<IdempotentGuard> idempotentGuardProvider;
+    private ObjectProvider<IdempotencyStore> idempotencyStoreProvider;
 
     @Mock
     private ObjectProvider<MessagingProperties> propertiesProvider;
@@ -56,7 +57,7 @@ class MessageHandlerRegistrarTest {
     @BeforeEach
     void setUp() {
         registrar = new MessageHandlerRegistrar(
-                brokerStrategyProvider, environment, idempotentGuardProvider, propertiesProvider);
+                brokerStrategyProvider, environment, idempotencyStoreProvider, propertiesProvider);
     }
 
     @Nested
@@ -112,13 +113,13 @@ class MessageHandlerRegistrarTest {
         @DisplayName("should resolve lazy dependencies")
         void shouldResolveLazyDependencies() {
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
 
             registrar.afterSingletonsInstantiated();
 
             verify(brokerStrategyProvider).getObject();
-            verify(idempotentGuardProvider).getIfAvailable();
+            verify(idempotencyStoreProvider).getIfAvailable();
             verify(propertiesProvider).getIfAvailable();
         }
     }
@@ -172,7 +173,7 @@ class MessageHandlerRegistrarTest {
 
             // Resolve dependencies
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -197,7 +198,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "sampleHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -241,7 +242,7 @@ class MessageHandlerRegistrarTest {
             properties.setSubscriberStartupDelay(Duration.ofMillis(50));
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(properties);
             registrar.afterSingletonsInstantiated();
 
@@ -300,7 +301,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "byteArrayHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -359,7 +360,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "sampleHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -380,7 +381,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "sampleHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -408,7 +409,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "sampleHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 
@@ -438,7 +439,7 @@ class MessageHandlerRegistrarTest {
             registrar.postProcessAfterInitialization(bean, "concurrentHandler");
 
             when(brokerStrategyProvider.getObject()).thenReturn(brokerStrategy);
-            when(idempotentGuardProvider.getIfAvailable()).thenReturn(null);
+            when(idempotencyStoreProvider.getIfAvailable()).thenReturn(null);
             when(propertiesProvider.getIfAvailable()).thenReturn(null);
             registrar.afterSingletonsInstantiated();
 

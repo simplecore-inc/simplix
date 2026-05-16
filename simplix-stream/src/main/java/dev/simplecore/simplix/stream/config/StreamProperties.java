@@ -202,20 +202,30 @@ public class StreamProperties {
     }
 
     /**
-     * Distributed mode configuration (Redis)
+     * Distributed mode configuration (Redis or NATS)
      */
     @Data
     public static class DistributedConfig {
         /**
-         * Enable Redis for distributed features (leader election + Pub/Sub broadcast).
-         * When enabled in DISTRIBUTED mode:
-         * - Leader election ensures only one server runs each scheduler
-         * - Pub/Sub broadcasts data to all servers
-         * When disabled in DISTRIBUTED mode:
-         * - Each server runs schedulers independently
-         * - No cross-server data broadcast
+         * Distributed-mode broker selector.
+         *
+         * <ul>
+         *   <li>{@link Broker#NONE} (default) — each server runs schedulers
+         *       independently, no cross-server data broadcast.</li>
+         *   <li>{@link Broker#REDIS} — Redis Pub/Sub broadcaster + Redis SETNX
+         *       leader election. Requires a {@code StringRedisTemplate} bean.</li>
+         *   <li>{@link Broker#NATS} — NATS core pub/sub broadcaster + NATS KV
+         *       optimistic-lock leader election. Requires an
+         *       {@code io.nats.client.Connection} bean (typically supplied by
+         *       simplix-messaging when its broker is set to {@code nats}).</li>
+         * </ul>
          */
-        private boolean redisEnabled = false;
+        private Broker broker = Broker.NONE;
+
+        /**
+         * NATS-specific distributed configuration
+         */
+        private NatsConfig nats = new NatsConfig();
 
         /**
          * Leader election configuration
@@ -231,6 +241,46 @@ public class StreamProperties {
          * Registry configuration
          */
         private RegistryConfig registry = new RegistryConfig();
+    }
+
+    /**
+     * Distributed-mode broker selector.
+     */
+    public enum Broker {
+        /** No cross-server broadcast — each server runs schedulers independently. */
+        NONE,
+        /** Redis-backed broadcaster + leader election. */
+        REDIS,
+        /** NATS-backed broadcaster + leader election. */
+        NATS
+    }
+
+    /**
+     * NATS-specific distributed configuration.
+     */
+    @Data
+    public static class NatsConfig {
+        /**
+         * NATS subject prefix used for cross-instance broadcast messages.
+         * Channel keys are appended after this prefix.
+         */
+        private String subjectPrefix = "stream.data.";
+
+        /**
+         * Subject under {@link #subjectPrefix} used for direct (per-session) messages.
+         */
+        private String directSubjectSegment = "direct";
+
+        /**
+         * Subject under {@link #subjectPrefix} used for keyed broadcast messages.
+         */
+        private String broadcastSubjectSegment = "broadcast";
+
+        /**
+         * NATS KV bucket used for leader election. Created idempotically with a
+         * {@code maxAge} of {@code distributed.leader-election.ttl}.
+         */
+        private String leaderBucket = "simplix-stream-leaders";
     }
 
     /**

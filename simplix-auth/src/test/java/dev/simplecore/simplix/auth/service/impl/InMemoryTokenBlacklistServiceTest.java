@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.auth.service.impl;
 
+import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,7 +17,7 @@ class InMemoryTokenBlacklistServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new InMemoryTokenBlacklistService();
+        service = new InMemoryTokenBlacklistService(new SimpliXAuthProperties());
     }
 
     @Nested

@@ -174,6 +174,43 @@ public class SimpliXCacheAutoConfiguration {
     }
 
     /**
+     * NATS Configuration
+     * Activates a NATS JetStream KV-backed cache strategy when
+     * {@code simplix.cache.mode=nats} and an {@link io.nats.client.Connection}
+     * bean is available (typically supplied by simplix-messaging).
+     */
+    @Slf4j
+    @Configuration
+    @ConditionalOnClass(name = "io.nats.client.Connection")
+    @ConditionalOnProperty(name = "simplix.cache.mode", havingValue = "nats")
+    public static class NatsConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean(CacheStrategy.class)
+        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(io.nats.client.Connection.class)
+        public CacheStrategy natsCacheStrategy(io.nats.client.Connection connection,
+                                                CacheProperties properties,
+                                                org.springframework.beans.factory.ObjectProvider<com.fasterxml.jackson.databind.ObjectMapper> objectMapperProvider) {
+            log.info("Using NATS KV cache strategy");
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = objectMapperProvider
+                    .getIfAvailable(() -> {
+                        com.fasterxml.jackson.databind.ObjectMapper fallback =
+                                new com.fasterxml.jackson.databind.ObjectMapper();
+                        fallback.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                        return fallback;
+                    });
+            dev.simplecore.simplix.cache.strategy.NatsCacheStrategy strategy =
+                    new dev.simplecore.simplix.cache.strategy.NatsCacheStrategy(connection, properties, objectMapper);
+            try {
+                strategy.initialize();
+            } catch (Exception e) {
+                log.warn("Failed to initialize NATS cache strategy during bean creation, will retry on first use: {}", e.getMessage());
+            }
+            return strategy;
+        }
+    }
+
+    /**
      * Health Configuration
      * Configures health indicator when Spring Boot Actuator is available
      */

@@ -28,7 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * simulation via round-robin distribution. Messages are stored in memory
  * for test assertions via {@link #getPublishedMessages(String)}.
  *
- * <p>Capabilities: consumer groups (simulated), no replay, ordering guaranteed, no dead letter.
+ * <p>Capabilities: consumer groups (simulated), replay (via published-message buffer),
+ * ordering guaranteed, no dead letter.
  */
 @Slf4j
 public class LocalBrokerStrategy implements BrokerStrategy {
@@ -93,7 +94,7 @@ public class LocalBrokerStrategy implements BrokerStrategy {
 
     @Override
     public BrokerCapabilities capabilities() {
-        return new BrokerCapabilities(true, false, true, false);
+        return new BrokerCapabilities(true, true, true, false, true, false, false);
     }
 
     @Override

@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RedisBrokerStrategy implements BrokerStrategy {
 
     private static final BrokerCapabilities CAPABILITIES =
-            new BrokerCapabilities(true, true, true, false);
+            new BrokerCapabilities(true, true, true, false, true, true, false);
 
     private final StringRedisTemplate redisTemplate;
     private final String keyPrefix;
