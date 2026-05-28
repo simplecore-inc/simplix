@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.orm.jpa.EntityManagerFactoryUtils;
 import org.springframework.stereotype.Component;
 
@@ -156,7 +157,9 @@ public class EntityEventPublishingListener {
     }
 
     private EntityEventConfig getConfig(Object entity) {
-        return entity.getClass().getAnnotation(EntityEventConfig.class);
+        // Use Spring AnnotationUtils to traverse @MappedSuperclass / interface hierarchy.
+        // A subclass-level @EntityEventConfig still takes precedence (direct annotation first).
+        return AnnotationUtils.findAnnotation(entity.getClass(), EntityEventConfig.class);
     }
 
     private void publishEvent(String eventType, Object entity, Set<String> changedProperties,
