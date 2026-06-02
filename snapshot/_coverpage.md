@@ -2,7 +2,7 @@
 
 # SimpliX Framework
 
-![version](https://img.shields.io/badge/version-1.0.18--SNAPSHOT-blue)
+![version](https://img.shields.io/badge/version-1.1.1--SNAPSHOT-blue)
 
 > Modular Spring Boot Starter Library for Enterprise Applications
 
