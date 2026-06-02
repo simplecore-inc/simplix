@@ -53,6 +53,13 @@ public class ImageProperties {
     private int defaultQuality = 85;
 
     /**
+     * Whether to downscale images that exceed the configured maximum dimensions
+     * at upload time. When false, the original is stored losslessly and only
+     * derived thumbnails are resized on demand.
+     */
+    private boolean resizeOnUpload = true;
+
+    /**
      * Maximum file size for images
      */
     private DataSize maxFileSize = DataSize.ofMegabytes(10);

@@ -171,7 +171,8 @@ public class DefaultFileProcessingService implements FileProcessingService {
                     metadata.width(), metadata.height(), finalWidth, finalHeight,
                     optimized.data().length);
 
-            } else if (metadata.width() > maxWidth || metadata.height() > maxHeight) {
+            } else if (imageProperties.isResizeOnUpload()
+                && (metadata.width() > maxWidth || metadata.height() > maxHeight)) {
                 // Only resize without WebP conversion
                 ProcessedImage resized = imageProcessingService.resizeIfExceeds(
                     file.getInputStream(), maxWidth, maxHeight
