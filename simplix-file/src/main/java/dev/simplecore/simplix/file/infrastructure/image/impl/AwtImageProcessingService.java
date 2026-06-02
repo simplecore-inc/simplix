@@ -150,44 +150,32 @@ public class AwtImageProcessingService implements ImageProcessingService {
                 );
             }
 
-            // Calculate crop dimensions to center-crop to target aspect ratio
             int originalWidth = image.getWidth();
             int originalHeight = image.getHeight();
 
-            double targetRatio = (double) width / height;
-            double originalRatio = (double) originalWidth / originalHeight;
-
-            int cropWidth;
-            int cropHeight;
-            int cropX;
-            int cropY;
-
-            if (originalRatio > targetRatio) {
-                // Original is wider, crop sides
-                cropHeight = originalHeight;
-                cropWidth = (int) (originalHeight * targetRatio);
-                cropX = (originalWidth - cropWidth) / 2;
-                cropY = 0;
-            } else {
-                // Original is taller, crop top/bottom
-                cropWidth = originalWidth;
-                cropHeight = (int) (originalWidth / targetRatio);
-                cropX = 0;
-                cropY = (originalHeight - cropHeight) / 2;
+            // Fit the whole image inside the width x height bounding box, preserving
+            // aspect ratio (no cropping). The box is treated as a maximum; the output
+            // dimensions vary so the entire image stays visible (object-contain).
+            // Never upscale beyond the original size.
+            double scale = Math.min((double) width / originalWidth, (double) height / originalHeight);
+            if (scale > 1.0) {
+                scale = 1.0;
             }
 
-            // Crop to target aspect ratio
-            BufferedImage cropped = image.getSubimage(cropX, cropY, cropWidth, cropHeight);
+            int targetWidth = Math.max(1, (int) Math.round(originalWidth * scale));
+            int targetHeight = Math.max(1, (int) Math.round(originalHeight * scale));
 
-            // Resize to target dimensions
-            BufferedImage thumbnail = resizeImage(cropped, width, height);
+            // Resize to the fitted dimensions (resizeImage fully covers the canvas, so
+            // no padding is baked in — letterboxing is handled by the display CSS).
+            BufferedImage thumbnail = resizeImage(image, targetWidth, targetHeight);
 
             int quality = imageProperties.getThumbnail().getDefaultQuality();
             byte[] resultBytes = writeImage(thumbnail, "jpg", quality);
 
-            log.debug("Generated thumbnail {}x{} from {}x{}", width, height, originalWidth, originalHeight);
+            log.debug("Generated thumbnail {}x{} (box {}x{}) from {}x{}",
+                targetWidth, targetHeight, width, height, originalWidth, originalHeight);
 
-            return new ProcessedImage(resultBytes, "image/jpeg", width, height);
+            return new ProcessedImage(resultBytes, "image/jpeg", targetWidth, targetHeight);
         } catch (IOException e) {
             throw new ImageProcessingException(
                 ImageProcessingException.ImageErrorCode.THUMBNAIL_GENERATION_FAILED,
