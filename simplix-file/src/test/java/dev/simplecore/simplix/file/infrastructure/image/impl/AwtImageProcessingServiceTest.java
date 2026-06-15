@@ -220,38 +220,53 @@ class AwtImageProcessingServiceTest {
     class GenerateThumbnail {
 
         @Test
-        @DisplayName("Should generate square thumbnail from landscape image")
-        void shouldGenerateSquareThumbnailFromLandscapeImage() throws IOException {
+        @DisplayName("Should fit landscape image inside thumbnail box preserving aspect ratio")
+        void shouldFitLandscapeImageInsideThumbnailBox() throws IOException {
             InputStream input = createTestImageStream(400, 200, "jpg");
 
             ProcessedImage result = service.generateThumbnail(input, 100, 100);
 
+            // 400x200 scaled by min(100/400, 100/200) = 0.25 -> 100x50
             assertThat(result.width()).isEqualTo(100);
-            assertThat(result.height()).isEqualTo(100);
+            assertThat(result.height()).isEqualTo(50);
             assertThat(result.mimeType()).isEqualTo("image/jpeg");
             assertThat(result.data()).isNotEmpty();
         }
 
         @Test
-        @DisplayName("Should generate square thumbnail from portrait image")
-        void shouldGenerateSquareThumbnailFromPortraitImage() throws IOException {
+        @DisplayName("Should fit portrait image inside thumbnail box preserving aspect ratio")
+        void shouldFitPortraitImageInsideThumbnailBox() throws IOException {
             InputStream input = createTestImageStream(200, 400, "jpg");
 
             ProcessedImage result = service.generateThumbnail(input, 100, 100);
 
+            // 200x400 scaled by min(100/200, 100/400) = 0.25 -> 50x100
+            assertThat(result.width()).isEqualTo(50);
+            assertThat(result.height()).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("Should constrain thumbnail to the tighter box dimension preserving aspect ratio")
+        void shouldConstrainThumbnailToTighterBoxDimension() throws IOException {
+            InputStream input = createTestImageStream(400, 400, "jpg");
+
+            ProcessedImage result = service.generateThumbnail(input, 200, 100);
+
+            // 400x400 scaled by min(200/400, 100/400) = 0.25 -> 100x100
             assertThat(result.width()).isEqualTo(100);
             assertThat(result.height()).isEqualTo(100);
         }
 
         @Test
-        @DisplayName("Should generate rectangular thumbnail")
-        void shouldGenerateRectangularThumbnail() throws IOException {
-            InputStream input = createTestImageStream(400, 400, "jpg");
+        @DisplayName("Should not upscale image smaller than the thumbnail box")
+        void shouldNotUpscaleImageSmallerThanBox() throws IOException {
+            InputStream input = createTestImageStream(80, 60, "jpg");
 
-            ProcessedImage result = service.generateThumbnail(input, 200, 100);
+            ProcessedImage result = service.generateThumbnail(input, 256, 256);
 
-            assertThat(result.width()).isEqualTo(200);
-            assertThat(result.height()).isEqualTo(100);
+            // Scale would be > 1.0, so it is clamped to 1.0 and the original size is kept
+            assertThat(result.width()).isEqualTo(80);
+            assertThat(result.height()).isEqualTo(60);
         }
 
         @Test

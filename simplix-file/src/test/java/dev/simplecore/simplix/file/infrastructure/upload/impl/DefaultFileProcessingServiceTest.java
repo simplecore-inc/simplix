@@ -147,6 +147,7 @@ class DefaultFileProcessingServiceTest {
             when(imageProcessingService.isSupported("image/jpeg")).thenReturn(true);
             when(imageProperties.getDefaultMaxWidth()).thenReturn(1024);
             when(imageProperties.getDefaultMaxHeight()).thenReturn(1024);
+            when(imageProperties.isResizeOnUpload()).thenReturn(true);
             when(imageProperties.getOptimization()).thenReturn(optimizationConfig);
             when(optimizationConfig.isEnableWebpConversion()).thenReturn(false);
 

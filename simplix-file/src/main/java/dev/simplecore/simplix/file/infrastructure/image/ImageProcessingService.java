@@ -35,12 +35,15 @@ public interface ImageProcessingService {
     /**
      * Generate thumbnail from image.
      * <p>
-     * Creates a square thumbnail centered on the image.
+     * Fits the entire image inside the {@code width} x {@code height} bounding box
+     * while preserving the aspect ratio (no cropping). The box is treated as a
+     * maximum, so the returned image may be smaller than the box on one axis.
+     * Images are never upscaled beyond their original size.
      *
      * @param input  image input stream
-     * @param width  target width
-     * @param height target height
-     * @return thumbnail image
+     * @param width  bounding box width
+     * @param height bounding box height
+     * @return thumbnail image fitted inside the bounding box
      */
     ProcessedImage generateThumbnail(InputStream input, int width, int height);
 
