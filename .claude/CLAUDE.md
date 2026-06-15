@@ -45,16 +45,20 @@ This project is licensed under **SimpleCORE License 1.0 (SCL-1.0)**. Always use 
 ```
 simplix/
 ├── simplix-core/                   # Core utilities, base entities/repositories, tree structures, security utilities
-├── spring-boot-starter-simplix/    # Umbrella starter with auto-configuration (includes all modules)
+├── spring-boot-starter-simplix/    # Umbrella starter with auto-configuration
 ├── simplix-auth/                   # JWE token authentication, OAuth2 social login, Spring Security integration
 ├── simplix-cache/                  # SPI-based caching with Caffeine (local) and Redis (distributed)
+├── simplix-egov/                   # eGovFrame (Korean e-Government framework) integration with auto-registered core beans
 ├── simplix-email/                  # Multi-provider email (SMTP, AWS SES, SendGrid, Resend) with templates
 ├── simplix-encryption/             # Data encryption with key rotation (Simple, Managed, Vault providers)
-├── simplix-event/                  # Event-driven architecture with NATS messaging
 ├── simplix-excel/                  # Excel/CSV import/export with Apache POI
 ├── simplix-file/                   # File storage abstraction (local, AWS S3, GCS)
 ├── simplix-hibernate/              # Hibernate L2 cache management (Ehcache, Redis, Hazelcast)
-└── simplix-mybatis/                # MyBatis integration with custom type handlers
+├── simplix-messaging/              # Broker-abstracted messaging (NATS JetStream, Redis Streams, Kafka, RabbitMQ, local)
+├── simplix-mybatis/                # MyBatis integration with custom type handlers
+├── simplix-scheduler/              # AOP-based @Scheduled execution tracking with ShedLock integration
+├── simplix-stream/                 # Real-time subscriptions over SSE and WebSocket
+└── simplix-sync/                   # Multi-instance state sync and lightweight pub/sub (Redis, NATS)
 ```
 
 ### Key Auto-Configuration Classes
@@ -135,19 +139,24 @@ gpr.token=your_github_personal_access_token
 ```
 simplix-core (base library)
 │
-└── spring-boot-starter-simplix (umbrella starter, depends on all modules)
-    ├── simplix-auth          # Authentication
-    ├── simplix-cache         # Caching
-    ├── simplix-email         # Email
-    ├── simplix-encryption    # Encryption
-    ├── simplix-event         # Events
-    ├── simplix-excel         # Excel/CSV
-    ├── simplix-file          # File storage
-    ├── simplix-hibernate     # L2 Cache
-    └── simplix-mybatis       # MyBatis
+├── spring-boot-starter-simplix (umbrella starter)
+│   ├── simplix-auth          # Authentication
+│   ├── simplix-cache         # Caching
+│   ├── simplix-egov          # eGovFrame integration
+│   ├── simplix-email         # Email
+│   ├── simplix-encryption    # Encryption
+│   ├── simplix-excel         # Excel/CSV
+│   ├── simplix-file          # File storage
+│   ├── simplix-hibernate     # L2 Cache
+│   ├── simplix-messaging     # Messaging
+│   ├── simplix-mybatis       # MyBatis
+│   └── simplix-scheduler     # Scheduler monitoring
+│
+├── simplix-stream            # SSE/WebSocket streaming (not included in the starter)
+└── simplix-sync              # Multi-instance sync (not included in the starter)
 ```
 
-All feature modules depend on `simplix-core`. Use individual modules for selective inclusion, or `spring-boot-starter-simplix` for all features.
+All feature modules depend on `simplix-core`. The starter bundles every module except `simplix-stream` and `simplix-sync`, which must be added as individual dependencies when needed.
 
 ## Common Development Tasks
 
@@ -158,10 +167,8 @@ All feature modules depend on `simplix-core`. Use individual modules for selecti
 4. Register in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
 
 ### Working with Type Converters
-Core converters are in `simplix-core/convert`. To add custom converter:
-1. Extend `TypeConverter<F, T>`
-2. Register in `TypeConverterRegistry`
-3. Converters are automatically discovered by Excel and other modules
+- Core converters are in `simplix-core/convert`: `BooleanConverter`, `DateTimeConverter`, and `EnumConverter` interfaces with `Standard*` default implementations. The Excel importer (`StandardExcelImporter`) consumes these directly.
+- The Excel module has its own string-conversion layer in `simplix-excel/convert` (`TypeConverter`, `ConverterRegistry`). Register custom conversions with `ConverterRegistry.registerToStringConverter()` / `registerFromStringConverter()`.
 
 ### Debugging Build Issues
 ```bash
