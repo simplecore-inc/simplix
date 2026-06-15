@@ -11,8 +11,10 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -32,10 +34,11 @@ public class MaskingConverter implements AttributeConverter<String, String> {
     private static final String PREFIX = "MASKED:";
     private static final char MASK_CHAR = '*';
 
-    @Value("${core.masking.enabled:true}")
+    // Legacy keys (core.masking.*) are kept as nested fallback for existing consumers.
+    @Value("${simplix.core.masking.enabled:${core.masking.enabled:true}}")
     private boolean maskingEnabled;
 
-    @Value("${core.masking.key:#{null}}")
+    @Value("${simplix.core.masking.key:${core.masking.key:#{null}}}")
     private String maskingKey;
 
     private final SecureRandom secureRandom = new SecureRandom();
@@ -54,7 +57,7 @@ public class MaskingConverter implements AttributeConverter<String, String> {
                 // Generate default key (for development only)
                 byte[] defaultKey = "DefaultMaskingKeyForDevelopment!".getBytes(StandardCharsets.UTF_8);
                 secretKey = new SecretKeySpec(defaultKey, "AES");
-                log.warn("⚠ Using default masking key - configure domain.masking.key for production");
+                log.warn("⚠ Using default masking key - configure simplix.core.masking.key for production");
             }
         }
     }
@@ -95,7 +98,7 @@ public class MaskingConverter implements AttributeConverter<String, String> {
             String encoded = Base64.getEncoder().encodeToString(byteBuffer.array());
             return PREFIX + encoded;
 
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             log.error("✖ CRITICAL: Failed to mask data for storage - cannot store unencrypted sensitive data", e);
             throw new IllegalStateException("Masking failed - refusing to store plaintext sensitive data", e);
         }
@@ -123,7 +126,7 @@ public class MaskingConverter implements AttributeConverter<String, String> {
                 // Return masked representation
                 return getMaskedRepresentation(dbData);
             }
-        } catch (Exception e) {
+        } catch (GeneralSecurityException | IllegalArgumentException | BufferUnderflowException e) {
             log.error("✖ Failed to process masked data", e);
             return getMaskedRepresentation(dbData);
         }
@@ -132,7 +135,7 @@ public class MaskingConverter implements AttributeConverter<String, String> {
     /**
      * Decrypts the encrypted value
      */
-    private String decrypt(String encryptedData) throws Exception {
+    private String decrypt(String encryptedData) throws GeneralSecurityException {
         initializeKey();
 
         String encoded = encryptedData.substring(PREFIX.length());
@@ -167,8 +170,10 @@ public class MaskingConverter implements AttributeConverter<String, String> {
         // - Request context (admin panel vs public API)
         // - Audit requirements
 
-        // For now, check system property or thread-local context
-        String unmaskMode = System.getProperty("domain.masking.unmask", "false");
+        // For now, check system property or thread-local context.
+        // The legacy property (domain.masking.unmask) is kept as fallback for existing consumers.
+        String unmaskMode = System.getProperty("simplix.core.masking.unmask",
+                System.getProperty("domain.masking.unmask", "false"));
         return "true".equals(unmaskMode);
     }
 

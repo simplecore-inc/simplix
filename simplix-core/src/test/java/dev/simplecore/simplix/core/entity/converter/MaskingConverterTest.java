@@ -79,13 +79,13 @@ class MaskingConverterTest {
         void shouldDecryptWhenUnmaskEnabled() {
             String encrypted = converter.convertToDatabaseColumn("original-value");
 
-            String previousValue = System.getProperty("domain.masking.unmask", "false");
+            String previousValue = System.getProperty("simplix.core.masking.unmask", "false");
             try {
-                System.setProperty("domain.masking.unmask", "true");
+                System.setProperty("simplix.core.masking.unmask", "true");
                 String result = converter.convertToEntityAttribute(encrypted);
                 assertThat(result).isEqualTo("original-value");
             } finally {
-                System.setProperty("domain.masking.unmask", previousValue);
+                System.setProperty("simplix.core.masking.unmask", previousValue);
             }
         }
 
@@ -126,13 +126,13 @@ class MaskingConverterTest {
             String original = "Hello, World! 123";
             String encrypted = converter.convertToDatabaseColumn(original);
 
-            String previousValue = System.getProperty("domain.masking.unmask", "false");
+            String previousValue = System.getProperty("simplix.core.masking.unmask", "false");
             try {
-                System.setProperty("domain.masking.unmask", "true");
+                System.setProperty("simplix.core.masking.unmask", "true");
                 String decrypted = converter.convertToEntityAttribute(encrypted);
                 assertThat(decrypted).isEqualTo(original);
             } finally {
-                System.setProperty("domain.masking.unmask", previousValue);
+                System.setProperty("simplix.core.masking.unmask", previousValue);
             }
         }
     }

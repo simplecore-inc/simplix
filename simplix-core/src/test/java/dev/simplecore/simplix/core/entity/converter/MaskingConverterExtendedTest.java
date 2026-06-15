@@ -23,6 +23,7 @@ class MaskingConverterExtendedTest {
 
     @AfterEach
     void tearDown() {
+        System.clearProperty("simplix.core.masking.unmask");
         System.clearProperty("domain.masking.unmask");
     }
 
@@ -84,6 +85,16 @@ class MaskingConverterExtendedTest {
         @Test
         @DisplayName("should decrypt when unmask mode is enabled")
         void shouldDecryptWhenUnmaskEnabled() {
+            System.setProperty("simplix.core.masking.unmask", "true");
+
+            String encrypted = converter.convertToDatabaseColumn("hello-world");
+            String result = converter.convertToEntityAttribute(encrypted);
+            assertThat(result).isEqualTo("hello-world");
+        }
+
+        @Test
+        @DisplayName("should decrypt when legacy unmask property is enabled")
+        void shouldDecryptWhenLegacyUnmaskEnabled() {
             System.setProperty("domain.masking.unmask", "true");
 
             String encrypted = converter.convertToDatabaseColumn("hello-world");
