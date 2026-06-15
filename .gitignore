@@ -102,3 +102,4 @@ build-docs/
 .scip/
 *.scip
 .plans/
+.coregraph/
