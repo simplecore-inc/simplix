@@ -221,6 +221,16 @@ public class SimpliXAuthSecurityConfiguration {
                 if (permissions != null && !permissions.isEmpty()) {
                     headers.permissionsPolicyHeader(pp -> pp.policy(permissions));
                 }
+                // HSTS: Spring Security only emits the header over HTTPS, so this is
+                // a no-op on plain HTTP (local/dev) yet enforces HTTPS once require-https
+                // and a TLS terminator are in place (prod).
+                if (properties.getSecurity().isEnableHsts()) {
+                    headers.httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .maxAgeInSeconds(properties.getSecurity().getHstsMaxAgeSeconds()));
+                } else {
+                    headers.httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable);
+                }
             });
 
         // HTTP Basic authentication configuration

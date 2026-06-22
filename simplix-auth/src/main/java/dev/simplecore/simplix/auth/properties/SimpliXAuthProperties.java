@@ -25,6 +25,15 @@ public class SimpliXAuthProperties {
         private boolean enableCsrf = true;
         private boolean enableHttpBasic = false;
         private boolean requireHttps = false;
+        /**
+         * Emit the {@code Strict-Transport-Security} (HSTS) response header.
+         * Spring Security only sends it over HTTPS, so it is inert on plain HTTP
+         * (local/dev). Default values are also seeded by
+         * {@link SimpliXAuthEnvironmentPostProcessor}.
+         */
+        private boolean enableHsts = true;
+        /** {@code max-age} (seconds) for the HSTS header. Default: 1 year. */
+        private long hstsMaxAgeSeconds = 31536000L;
         private boolean preferTokenOverSession = true;
         private String[] csrfIgnorePatterns = new String[]{"/api/token/**", "/h2-console/**"};
         private String loginPageTemplate = "login";
