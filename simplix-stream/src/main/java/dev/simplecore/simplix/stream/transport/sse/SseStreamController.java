@@ -22,6 +22,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -441,6 +443,34 @@ public class SseStreamController {
         broadcaster.unregisterSender(sessionId);
         if (eventStreamHandler != null) {
             eventStreamHandler.removeSubscriberFromAll(sessionId);
+        }
+    }
+
+    /**
+     * Eagerly close all active SSE connections when the application context begins shutting down.
+     * <p>
+     * With {@code server.shutdown=graceful}, the web server waits up to
+     * {@code spring.lifecycle.timeout-per-shutdown-phase} for in-flight async requests to finish
+     * before it stops. A live SSE stream is an in-flight async request whose own timeout is measured
+     * in minutes ({@code simplix.stream.session.timeout}), so it never completes inside that window —
+     * without this hook every shutdown stalls for the full graceful-shutdown timeout.
+     * {@link ContextClosedEvent} is published before the web-server lifecycle is stopped, while the
+     * container can still dispatch the async completion, so completing the emitters here drains the
+     * active requests and lets graceful shutdown return immediately.
+     * <p>
+     * Sessions are marked disconnected (grace period), not terminated, so clients can reconnect after
+     * a restart. Cleanup reuses {@link #releaseTransportResources(String)} and is idempotent.
+     */
+    @EventListener(ContextClosedEvent.class)
+    public void onContextClosed() {
+        List<String> sessionIds = new ArrayList<>(activeSessions.keySet());
+        if (sessionIds.isEmpty()) {
+            return;
+        }
+        log.info("Application shutdown: closing {} active SSE session(s)", sessionIds.size());
+        for (String sessionId : sessionIds) {
+            sessionManager.markDisconnected(sessionId);
+            releaseTransportResources(sessionId);
         }
     }
 

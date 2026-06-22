@@ -501,4 +501,47 @@ class SseStreamControllerTest {
             assertDoesNotThrow(() -> controller.releaseTransportResources("never-existed"));
         }
     }
+
+    @Nested
+    @DisplayName("onContextClosed()")
+    class OnContextClosedMethod {
+
+        @Test
+        @DisplayName("should drain all active SSE sessions so graceful shutdown returns immediately")
+        void shouldDrainAllActiveSessionsOnShutdown() {
+            // Regression for the 30s shutdown stall: graceful shutdown waits for in-flight SSE
+            // async requests, which never complete on their own (their timeout is minutes). The
+            // ContextClosedEvent listener must complete the emitters and release them so the
+            // web server finds no active requests to wait for.
+            StreamSession session1 = StreamSession.create("user123", TransportType.SSE);
+            StreamSession session2 = StreamSession.create("user123", TransportType.SSE);
+            when(sessionManager.createSession(eq("user123"), eq(TransportType.SSE)))
+                    .thenReturn(session1, session2);
+            doReturn(scheduledFuture).when(scheduledExecutor)
+                    .scheduleAtFixedRate(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+
+            controller.connect(null, mockRequest);
+            controller.connect(null, mockRequest);
+            assertEquals(2, controller.getActiveSessionCount());
+
+            controller.onContextClosed();
+
+            assertEquals(0, controller.getActiveSessionCount());
+            // Grace period (not termination) so clients can reconnect after a restart.
+            verify(sessionManager).markDisconnected(session1.getId());
+            verify(sessionManager).markDisconnected(session2.getId());
+            verify(sessionManager, never()).terminateSession(anyString());
+            verify(broadcaster).unregisterSender(session1.getId());
+            verify(broadcaster).unregisterSender(session2.getId());
+        }
+
+        @Test
+        @DisplayName("should be a no-op when there are no active sessions")
+        void shouldBeNoOpWhenNoActiveSessions() {
+            assertDoesNotThrow(() -> controller.onContextClosed());
+
+            assertEquals(0, controller.getActiveSessionCount());
+            verify(sessionManager, never()).markDisconnected(anyString());
+        }
+    }
 }

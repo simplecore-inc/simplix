@@ -132,8 +132,13 @@ public class SseStreamSession implements MessageSender {
             try {
                 emitter.complete();
                 log.debug("SSE session closed: {}", session.getId());
-            } catch (Exception e) {
-                log.trace("Error completing SSE emitter: {}", e.getMessage());
+            } catch (RuntimeException e) {
+                // complete() typically throws IllegalStateException when the emitter was already
+                // finalized (a timeout/disconnect raced this close); the connection is gone either
+                // way. Guard against any runtime failure so a single bad session cannot abort a bulk
+                // close (e.g. the ContextClosedEvent shutdown sweep). Log at debug, not trace, so
+                // shutdown-time closes stay visible.
+                log.debug("Error completing SSE emitter for session {}: {}", session.getId(), e.getMessage());
             }
         }
     }
