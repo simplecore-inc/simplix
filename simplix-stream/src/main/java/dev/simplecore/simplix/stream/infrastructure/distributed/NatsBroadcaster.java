@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Functionally equivalent to {@code RedisBroadcaster}: every instance
  * publishes broadcast/direct messages to fixed NATS subjects derived from
- * {@link StreamProperties.NatsConfig#getSubjectPrefix()}, and every other
+ * {@code subjectPrefix}, and every other
  * instance receives the messages and resolves its own local subscribers via
  * {@link SubscriberLookup}. Self-messages are filtered out by comparing the
  * {@code sourceInstance} field.

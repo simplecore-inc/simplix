@@ -30,8 +30,8 @@ import java.util.concurrent.atomic.LongAdder;
  * {@code <bucketPrefix><sanitized-cacheName>}. NATS KV applies a single
  * {@code maxAge} per bucket — when a bucket is created (idempotently, on
  * first access), the per-cache TTL from
- * {@link CacheProperties#getCacheConfigs()} is used (falling back to
- * {@link CacheProperties#getDefaultTtlSeconds()}). Once a bucket exists,
+ * {@code cacheConfigs} is used (falling back to
+ * {@code defaultTtlSeconds}). Once a bucket exists,
  * this strategy does not mutate it.
  *
  * <p><b>Per-call TTL is silently ignored.</b> The {@code Duration ttl}

@@ -393,12 +393,12 @@ public class MessagingProperties {
          * NATS KV-based message scheduler configuration.
          *
          * <p>The scheduler relies on a JetStream KV bucket
-         * ({@link #getKvBucket() kvBucket}) and therefore requires the connected
+         * ({@code kvBucket}) and therefore requires the connected
          * NATS user to hold KV-related permissions
          * ({@code $JS.API.STREAM.INFO.KV_<bucket>} and {@code $KV.<bucket>.>}, plus
          * {@code $JS.API.STREAM.CREATE.KV_<bucket>} when the bucket is not
          * pre-provisioned). The scheduler is deprecated and gated behind
-         * {@link #isEnabled() enabled}; deployments that do not opt in never
+         * {@code enabled}; deployments that do not opt in never
          * touch the KV bucket and therefore do not require these grants.
          */
         @Data
