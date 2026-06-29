@@ -100,7 +100,6 @@ public class RedisMessagingConfiguration {
     @ConditionalOnProperty(prefix = "simplix.messaging.redis.scheduler",
             name = "enabled", havingValue = "true", matchIfMissing = false)
     @Deprecated(since = "1.1.1", forRemoval = true)
-    @SuppressWarnings("removal")
     public MessageScheduler messageScheduler(BrokerStrategy brokerStrategy,
                                               StringRedisTemplate redisTemplate,
                                               MessagingProperties properties) {

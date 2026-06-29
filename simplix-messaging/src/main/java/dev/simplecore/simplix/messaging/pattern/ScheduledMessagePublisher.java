@@ -14,7 +14,6 @@ import java.time.Duration;
  *             This class will be removed in a future release.
  */
 @Deprecated(since = "1.1.1", forRemoval = true)
-@SuppressWarnings("removal")
 public class ScheduledMessagePublisher implements MessageScheduler {
 
     private final RedisScheduledMessagePublisher delegate;

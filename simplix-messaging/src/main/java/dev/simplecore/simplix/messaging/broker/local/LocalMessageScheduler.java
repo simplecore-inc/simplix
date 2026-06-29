@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Deprecated(since = "1.1.1", forRemoval = true)
-@SuppressWarnings("removal")
 public class LocalMessageScheduler implements MessageScheduler {
 
     private final BrokerStrategy broker;

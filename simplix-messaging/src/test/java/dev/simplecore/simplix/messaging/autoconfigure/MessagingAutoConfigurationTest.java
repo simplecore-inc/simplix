@@ -39,7 +39,6 @@ class MessagingAutoConfigurationTest {
 
     @Test
     @DisplayName("local broker registers ReplayService, MessageScheduler (when opted-in), and IdempotencyStore SPI beans")
-    @SuppressWarnings("removal")
     void localBroker_registersReplayScheduledAndIdempotencySpi() {
         // MessageScheduler is deprecated and gated behind an opt-in flag since 1.1.1.
         // Enable it explicitly so the SPI wiring is exercised end-to-end.
@@ -55,7 +54,6 @@ class MessagingAutoConfigurationTest {
 
     @Test
     @DisplayName("local broker omits MessageScheduler bean by default (deprecated, opt-in only)")
-    @SuppressWarnings("removal")
     void localBroker_omitsMessageSchedulerByDefault() {
         contextRunner.withPropertyValues("simplix.messaging.broker=local")
             .run(ctx -> {

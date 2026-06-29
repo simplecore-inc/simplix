@@ -215,7 +215,6 @@ public class NatsMessagingConfiguration {
     @ConditionalOnProperty(prefix = "simplix.messaging.nats.scheduler",
             name = "enabled", havingValue = "true", matchIfMissing = false)
     @Deprecated(since = "1.1.1", forRemoval = true)
-    @SuppressWarnings("removal")
     public MessageScheduler natsMessageScheduler(BrokerStrategy broker,
                                                   Connection conn,
                                                   MessagingProperties props) {
