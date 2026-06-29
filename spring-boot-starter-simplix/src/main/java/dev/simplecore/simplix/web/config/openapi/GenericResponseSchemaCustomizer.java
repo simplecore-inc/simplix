@@ -105,6 +105,13 @@ public class GenericResponseSchemaCustomizer implements OperationCustomizer, Ord
             return operation;
         }
 
+        if (hasRedirectResponse(operation)) {
+            log.trace("Skipping customization for {}.{} - redirect (3xx) response declared",
+                    handlerMethod.getBeanType().getSimpleName(),
+                    handlerMethod.getMethod().getName());
+            return operation;
+        }
+
         ResolvableType returnType = ResolvableType.forMethodReturnType(handlerMethod.getMethod());
         returnType = unwrapTransparent(returnType);
 
@@ -192,6 +199,24 @@ public class GenericResponseSchemaCustomizer implements OperationCustomizer, Ord
     private boolean isSuccessResponse(ApiResponse apiResponse) {
         String code = apiResponse.responseCode();
         return code.isEmpty() || "200".equals(code) || "default".equals(code);
+    }
+
+    /**
+     * Check if the operation already documents a redirect (3xx) response.
+     *
+     * <p>Redirect endpoints (e.g. OAuth2 link/authorize/callback) navigate the
+     * user agent and never return a JSON body, so a wrapped 200 would contradict
+     * the declared 3xx and break client generators (orval oneOf validation).
+     * This mirrors {@code SimpliXResponseBodyAdvice}, which never wraps
+     * view/redirect results, and follows the same skip approach already used for
+     * streaming types.
+     */
+    private boolean hasRedirectResponse(Operation operation) {
+        if (operation.getResponses() == null) {
+            return false;
+        }
+        return operation.getResponses().keySet().stream()
+                .anyMatch(code -> code.startsWith("3"));
     }
 
     /**

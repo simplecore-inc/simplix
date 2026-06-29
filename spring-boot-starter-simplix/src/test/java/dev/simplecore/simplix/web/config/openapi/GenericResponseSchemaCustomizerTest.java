@@ -378,6 +378,27 @@ class GenericResponseSchemaCustomizerTest {
         }
 
         @Test
+        @DisplayName("Should skip auto-wrapping when operation declares a redirect (3xx) response")
+        void skipRedirectResponse() throws Exception {
+            Operation operation = new Operation();
+            io.swagger.v3.oas.models.responses.ApiResponses responses =
+                    new io.swagger.v3.oas.models.responses.ApiResponses();
+            responses.addApiResponse("302",
+                    new io.swagger.v3.oas.models.responses.ApiResponse().description("Redirect"));
+            operation.setResponses(responses);
+
+            // void return would otherwise inject a wrapped 200 via the void branch
+            Method method = SampleApi.class.getMethod("doVoid");
+            HandlerMethod localHandlerMethod =
+                    new HandlerMethod(new SampleApi(), method);
+
+            Operation result = customizer.customize(operation, localHandlerMethod);
+
+            assertThat(result.getResponses().get("302")).isNotNull();
+            assertThat(result.getResponses().get("200")).isNull();
+        }
+
+        @Test
         @DisplayName("Should handle generic wrapper return type")
         void handleGenericWrapper() throws Exception {
             Operation operation = new Operation();
