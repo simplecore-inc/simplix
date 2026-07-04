@@ -62,7 +62,8 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
             ObjectMapper objectMapper,
             ScheduledExecutorService streamScheduledExecutor,
             SessionValidator sessionValidator,
-            ExecutorService sessionValidationExecutor) {
+            ExecutorService sessionValidationExecutor,
+            ExecutorService streamSendExecutor) {
 
         log.info("Creating SSE stream controller");
         return new SseStreamController(
@@ -75,7 +76,8 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
                 objectMapper,
                 streamScheduledExecutor,
                 sessionValidator,
-                sessionValidationExecutor
+                sessionValidationExecutor,
+                streamSendExecutor
         );
     }
 }

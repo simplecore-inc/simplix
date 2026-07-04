@@ -57,6 +57,7 @@ public class SseStreamController {
     private final ScheduledExecutorService streamScheduledExecutor;
     private final SessionValidator sessionValidator;
     private final ExecutorService sessionValidationExecutor;
+    private final ExecutorService streamSendExecutor;
 
     /** Optional — only present when simplix.stream.event-source.enabled=true. */
     @Autowired(required = false)
@@ -95,7 +96,8 @@ public class SseStreamController {
         extractAndStoreBearerToken(request, streamSession);
 
         // Create SSE session wrapper
-        SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper);
+        SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper,
+                streamSendExecutor, properties.getSend().getQueueCapacity());
         activeSessions.put(sessionId, sseSession);
 
         // Register sender for broadcasting
@@ -297,7 +299,8 @@ public class SseStreamController {
         SseEmitter emitter = new SseEmitter(timeoutMs);
 
         // Create SSE session wrapper
-        SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper);
+        SseStreamSession sseSession = new SseStreamSession(streamSession, emitter, objectMapper,
+                streamSendExecutor, properties.getSend().getQueueCapacity());
         activeSessions.put(sessionId, sseSession);
 
         // Register sender for broadcasting

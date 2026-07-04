@@ -1,5 +1,7 @@
 package dev.simplecore.simplix.stream.core.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;
@@ -15,6 +17,32 @@ import java.time.Instant;
 @Jacksonized
 @ToString
 public class StreamMessage {
+
+    /**
+     * Per-message JSON cache so a broadcast serializes once and every session
+     * writer reuses the result instead of re-serializing per recipient.
+     * The {@code $} prefix keeps the field out of Lombok's builder/toString and,
+     * being private and getter-less, out of Jackson's own serialization.
+     */
+    private transient volatile String $serializedJson;
+
+    /**
+     * Serialize this message to JSON, caching the result. Safe to call from
+     * concurrent session writers: a duplicated serialization under race is
+     * harmless, and the same mapper is used process-wide.
+     *
+     * @param objectMapper the mapper to serialize with
+     * @return the JSON representation of this message
+     * @throws JsonProcessingException if serialization fails
+     */
+    public String serialize(ObjectMapper objectMapper) throws JsonProcessingException {
+        String json = this.$serializedJson;
+        if (json == null) {
+            json = objectMapper.writeValueAsString(this);
+            this.$serializedJson = json;
+        }
+        return json;
+    }
 
     /**
      * Message type

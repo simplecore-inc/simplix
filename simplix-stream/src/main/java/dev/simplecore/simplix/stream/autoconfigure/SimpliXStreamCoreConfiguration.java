@@ -26,7 +26,11 @@ import org.springframework.context.annotation.Configuration;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Core configuration for SimpliX Stream components.
@@ -55,6 +59,38 @@ public class SimpliXStreamCoreConfiguration {
             t.setDaemon(true);
             return t;
         });
+    }
+
+    /**
+     * Writer pool for blocking transport writes (SSE emitter sends).
+     * <p>
+     * Producer threads (event handlers, schedulers, broadcast fan-out) only
+     * enqueue into per-session queues; tasks on this pool perform the actual
+     * socket writes. A slow client therefore occupies at most one writer
+     * thread — bounded by the container's blocking-write timeout — instead of
+     * stalling the thread that produced the data. Fixed size with idle
+     * timeout: the task queue is unbounded but bounded in practice by the
+     * single-flight drain guarantee (at most one task per session).
+     */
+    @Bean(destroyMethod = "shutdown")
+    @ConditionalOnMissingBean(name = "streamSendExecutor")
+    public ExecutorService streamSendExecutor(StreamProperties properties) {
+        int configured = properties.getSend().getWriterThreads();
+        int threads = configured > 0
+                ? configured
+                : Math.max(4, Runtime.getRuntime().availableProcessors());
+        log.info("Creating stream send executor with {} writer threads", threads);
+        AtomicInteger counter = new AtomicInteger(1);
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                threads, threads, 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                r -> {
+                    Thread t = new Thread(r, "sse-writer-" + counter.getAndIncrement());
+                    t.setDaemon(true);
+                    return t;
+                });
+        executor.allowCoreThreadTimeOut(true);
+        return executor;
     }
 
     /**

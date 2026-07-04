@@ -46,6 +46,11 @@ public class StreamProperties {
     private BroadcastConfig broadcast = new BroadcastConfig();
 
     /**
+     * Outbound send configuration (per-session queue + shared writer pool)
+     */
+    private SendConfig send = new SendConfig();
+
+    /**
      * Distributed mode configuration (Redis)
      */
     private DistributedConfig distributed = new DistributedConfig();
@@ -199,6 +204,29 @@ public class StreamProperties {
          * Batch size for message sending (0 to disable batching)
          */
         private int batchSize = 0;
+    }
+
+    /**
+     * Outbound send configuration.
+     * <p>
+     * Producer threads enqueue messages into a bounded per-session queue and a
+     * shared writer pool performs the blocking transport writes, so a slow
+     * client can never stall event handlers, schedulers, or broadcast fan-out.
+     */
+    @Data
+    public static class SendConfig {
+        /**
+         * Per-session outbound queue capacity. When a client falls this many
+         * messages behind, its session is closed so it reconnects and
+         * re-bootstraps instead of silently missing incremental updates.
+         */
+        private int queueCapacity = 256;
+
+        /**
+         * Writer pool size for blocking transport writes.
+         * {@code <= 0} selects max(4, available processors).
+         */
+        private int writerThreads = 0;
     }
 
     /**

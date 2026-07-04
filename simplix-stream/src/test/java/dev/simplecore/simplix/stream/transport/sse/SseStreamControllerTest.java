@@ -74,6 +74,9 @@ class SseStreamControllerTest {
     private ExecutorService sessionValidationExecutor;
 
     @Mock
+    private ExecutorService streamSendExecutor;
+
+    @Mock
     private ScheduledFuture<?> scheduledFuture;
 
     @Mock
@@ -109,7 +112,8 @@ class SseStreamControllerTest {
                 objectMapper,
                 scheduledExecutor,
                 sessionValidator,
-                sessionValidationExecutor
+                sessionValidationExecutor,
+                streamSendExecutor
         );
 
         // Set up authentication for tests
