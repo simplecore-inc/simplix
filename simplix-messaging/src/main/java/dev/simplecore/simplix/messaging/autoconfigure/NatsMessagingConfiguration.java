@@ -7,12 +7,16 @@ import dev.simplecore.simplix.messaging.broker.nats.NatsJetStreamPublisher;
 import dev.simplecore.simplix.messaging.broker.nats.NatsJetStreamPullSubscriber;
 import dev.simplecore.simplix.messaging.broker.nats.NatsJetStreamReplayService;
 import dev.simplecore.simplix.messaging.broker.nats.NatsLeaderElection;
+import dev.simplecore.simplix.messaging.broker.nats.NatsLoggingConnectionListener;
+import dev.simplecore.simplix.messaging.broker.nats.NatsLoggingErrorListener;
 import dev.simplecore.simplix.messaging.broker.nats.NatsNativeIdempotencyStore;
 import dev.simplecore.simplix.messaging.broker.nats.NatsScheduledMessagePublisher;
 import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import dev.simplecore.simplix.messaging.replay.ReplayService;
 import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import io.nats.client.Connection;
+import io.nats.client.ConnectionListener;
+import io.nats.client.ErrorListener;
 import io.nats.client.JetStream;
 import io.nats.client.JetStreamApiException;
 import io.nats.client.JetStreamManagement;
@@ -21,6 +25,7 @@ import io.nats.client.Nats;
 import io.nats.client.Options;
 import io.nats.client.api.KeyValueConfiguration;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -63,19 +68,34 @@ public class NatsMessagingConfiguration {
      * Creates and opens the NATS connection. Auth and TLS are applied via
      * {@link NatsOptionsBuilder} helper methods.
      *
-     * @param props the messaging configuration
+     * <p>Registers severity-aware SLF4J listeners by default —
+     * {@link NatsLoggingErrorListener} (transient transport blips at WARN, real
+     * message-flow anomalies at ERROR, replacing jnats' everything-at-SEVERE
+     * default) and {@link NatsLoggingConnectionListener} (reconnect/resubscribe
+     * visibility). Applications can override either by defining their own
+     * {@link ErrorListener} or {@link ConnectionListener} bean — at most one
+     * candidate per type (or one marked {@code @Primary}); multiple ambiguous
+     * candidates fail context startup.
+     *
+     * @param props                      the messaging configuration
+     * @param errorListenerProvider      optional application-supplied error listener
+     * @param connectionListenerProvider optional application-supplied connection listener
      * @return an open {@link Connection}
      * @throws Exception if the connection cannot be established
      */
     @Bean(destroyMethod = "close")
-    public Connection natsConnection(MessagingProperties props) throws Exception {
+    public Connection natsConnection(MessagingProperties props,
+                                     ObjectProvider<ErrorListener> errorListenerProvider,
+                                     ObjectProvider<ConnectionListener> connectionListenerProvider) throws Exception {
         MessagingProperties.NatsProperties n = props.getNats();
         Options.Builder builder = new Options.Builder()
                 .server(n.getServers())
                 .connectionName(n.getConnectionName())
                 .connectionTimeout(n.getConnectionTimeout())
                 .reconnectWait(n.getReconnectWait())
-                .maxReconnects(n.getMaxReconnects());
+                .maxReconnects(n.getMaxReconnects())
+                .errorListener(errorListenerProvider.getIfAvailable(NatsLoggingErrorListener::new))
+                .connectionListener(connectionListenerProvider.getIfAvailable(NatsLoggingConnectionListener::new));
         NatsOptionsBuilder.applyAuth(builder, n);
         NatsOptionsBuilder.applyTls(builder, n.getTls());
         return Nats.connect(builder.build());
