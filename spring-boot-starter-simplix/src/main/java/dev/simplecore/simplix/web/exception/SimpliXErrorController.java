@@ -142,7 +142,13 @@ public class SimpliXErrorController extends AbstractErrorController {
         if (statusCode == null) {
             statusCode = HttpStatus.INTERNAL_SERVER_ERROR.value();
         }
-        
+
+        // This method only runs on the container's internal "ERROR" dispatch to /error,
+        // where request.getRequestURI() always resolves to the forward target ("/error")
+        // rather than the request that actually failed. The Servlet spec exposes the
+        // original path via this request attribute instead.
+        String originalRequestUri = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
+
         // Get original exception
         Throwable throwable = (Throwable) request.getAttribute(RequestDispatcher.ERROR_EXCEPTION);
         
@@ -173,7 +179,7 @@ public class SimpliXErrorController extends AbstractErrorController {
         } else {
             // Get error details when throwable is not available
             String errorMessage = (String) request.getAttribute(RequestDispatcher.ERROR_MESSAGE);
-            String requestUri = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
+            String requestUri = originalRequestUri;
             String errorServletName = (String) request.getAttribute(RequestDispatcher.ERROR_SERVLET_NAME);
 
             // Handle specific HTTP status codes
@@ -229,8 +235,8 @@ public class SimpliXErrorController extends AbstractErrorController {
         String traceId = MDC.get("traceId");
         if (traceId != null && !traceId.isEmpty()) {
             response.setHeader("X-Trace-Id", traceId);
-            log.error("Error response sent - TraceId: {}, Status: {}, Path: {}", 
-                traceId, statusCode, request.getRequestURI());
+            log.error("Error response sent - TraceId: {}, Status: {}, Path: {}",
+                traceId, statusCode, originalRequestUri != null ? originalRequestUri : request.getRequestURI());
         }
         
         objectMapper.writeValue(response.getWriter(), errorResponse);

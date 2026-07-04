@@ -65,6 +65,11 @@ class SimpliXErrorControllerTest {
         controller = new SimpliXErrorController(
                 errorAttributes, exceptionHandler, objectMapper, serverProperties, messageSource);
         MDC.clear();
+        // handleErrorJson now reads ERROR_REQUEST_URI unconditionally (for logging the real
+        // originating path instead of the "/error" forward target), so every test's request
+        // mock needs a default stub for it — lenient so tests that override it explicitly
+        // aren't flagged as redundant.
+        lenient().when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn(null);
     }
 
     @Nested
@@ -532,6 +537,56 @@ class SimpliXErrorControllerTest {
             controller.handleErrorJson(request, response);
 
             verify(response).setStatus(401);
+        }
+
+        @Test
+        @DisplayName("Should log the original request URI, not the /error forward target")
+        void logsOriginalRequestUriNotForwardTarget() throws IOException {
+            MDC.put("traceId", "test-trace-403");
+            try {
+                when(request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)).thenReturn(403);
+                when(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION)).thenReturn(null);
+                when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn("/api/v1/floor/019f2758/plan-data");
+                when(messageSource.getMessage(eq("error.insufficientPermissions"), isNull(), any(Locale.class)))
+                        .thenReturn("Insufficient permissions");
+                when(messageSource.getMessage(eq("error.insufficientPermissions.detail"), isNull(), any(Locale.class)))
+                        .thenReturn("You do not have permission");
+
+                StringWriter sw = new StringWriter();
+                when(response.getWriter()).thenReturn(new PrintWriter(sw));
+
+                controller.handleErrorJson(request, response);
+
+                // request.getRequestURI() during this internal ERROR dispatch would only
+                // ever resolve to "/error" — the fix must not consult it when the real
+                // originating path is available via the ERROR_REQUEST_URI attribute.
+                verify(request, never()).getRequestURI();
+            } finally {
+                MDC.clear();
+            }
+        }
+
+        @Test
+        @DisplayName("Should fall back to request.getRequestURI() when ERROR_REQUEST_URI is absent")
+        void fallsBackToRequestUriWhenAttributeAbsent() throws IOException {
+            MDC.put("traceId", "test-trace-fallback");
+            try {
+                when(request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE)).thenReturn(500);
+                when(request.getAttribute(RequestDispatcher.ERROR_EXCEPTION)).thenReturn(null);
+                when(request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI)).thenReturn(null);
+                when(request.getRequestURI()).thenReturn("/error");
+                when(messageSource.getMessage(eq("error.unknownError"), isNull(), any(Locale.class)))
+                        .thenReturn("Unknown error");
+
+                StringWriter sw = new StringWriter();
+                when(response.getWriter()).thenReturn(new PrintWriter(sw));
+
+                controller.handleErrorJson(request, response);
+
+                verify(request).getRequestURI();
+            } finally {
+                MDC.clear();
+            }
         }
 
         @Test

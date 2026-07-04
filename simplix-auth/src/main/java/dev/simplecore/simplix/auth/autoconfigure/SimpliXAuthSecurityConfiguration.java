@@ -141,7 +141,8 @@ public class SimpliXAuthSecurityConfiguration {
             @Qualifier("authenticationSuccessHandler") AuthenticationSuccessHandler authenticationSuccessHandler,
             @Qualifier("authenticationFailureHandler") AuthenticationFailureHandler authenticationFailureHandler,
             ObjectProvider<LogoutHandler> logoutHandlerProvider,
-            ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider) throws Exception {
+            ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
+            SimpliXAccessDeniedHandler accessDeniedHandler) throws Exception {
         final String loginPage = properties.getSecurity().getLoginPageTemplate().startsWith("/") ? 
             properties.getSecurity().getLoginPageTemplate() : "/" + properties.getSecurity().getLoginPageTemplate();
         
@@ -257,6 +258,11 @@ public class SimpliXAuthSecurityConfiguration {
         if (properties.getSecurity() != null && properties.getSecurity().isRequireHttps()) {
             http.requiresChannel(channel -> channel.anyRequest().requiresSecure());
         }
+
+        // Log the real denied path for an authenticated-but-unauthorized user (403).
+        // The unauthenticated case (401) stays on formLogin's own entry point, which
+        // already redirects to the login page — the desired UX for a browser page.
+        http.exceptionHandling(exceptions -> exceptions.accessDeniedHandler(accessDeniedHandler));
 
         return http.build();
     }
