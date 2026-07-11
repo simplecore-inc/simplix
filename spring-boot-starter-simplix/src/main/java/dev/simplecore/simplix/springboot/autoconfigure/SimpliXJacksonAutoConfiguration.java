@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.OffsetTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.OffsetTimeSerializer;
 import dev.simplecore.simplix.core.jackson.*;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
@@ -20,6 +24,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -114,6 +119,13 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
         dateTimeModule.addDeserializer(ZonedDateTime.class, new SimpliXDateTimeDeserializer<ZonedDateTime>(zoneId, ZonedDateTime.class));
         dateTimeModule.addDeserializer(OffsetDateTime.class, new SimpliXDateTimeDeserializer<OffsetDateTime>(zoneId, OffsetDateTime.class));
         dateTimeModule.addDeserializer(Instant.class, new SimpliXDateTimeDeserializer<Instant>(zoneId, Instant.class));
+
+        // Zone-less clock times have no timezone semantics, so they bypass the
+        // zone-aware SimpliX handlers and use the plain ISO jsr310 codecs.
+        dateTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ISO_LOCAL_TIME));
+        dateTimeModule.addDeserializer(LocalTime.class, LocalTimeDeserializer.INSTANCE);
+        dateTimeModule.addSerializer(OffsetTime.class, OffsetTimeSerializer.INSTANCE);
+        dateTimeModule.addDeserializer(OffsetTime.class, OffsetTimeDeserializer.INSTANCE);
 
         objectMapper.registerModule(dateTimeModule);
         
