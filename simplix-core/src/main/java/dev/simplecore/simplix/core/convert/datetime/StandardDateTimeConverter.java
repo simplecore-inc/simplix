@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public class StandardDateTimeConverter implements DateTimeConverter {
     private static final String ISO_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+    private static final DateTimeFormatter LOCAL_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Map<Class<?>, String[]> FORMATS = new HashMap<>();
     
     static {
@@ -30,16 +31,10 @@ public class StandardDateTimeConverter implements DateTimeConverter {
             "yyyyMMddHHmm"                   // Short compact format
         });
         FORMATS.put(LocalDate.class, new String[] {
-            "yyyy-MM-dd",                    // ISO date
-            "yyyy/MM/dd",                    // Common date with slash
-            "yyyyMMdd",                      // Compact date
-            "yyyy.MM.dd",                    // Dot format
-            "dd-MM-yyyy",                    // European format
-            "dd/MM/yyyy",                    // European slash format
-            "dd.MM.yyyy",                    // European dot format
-            "MM-dd-yyyy",                    // US format
-            "MM/dd/yyyy",                    // US slash format
-            "MM.dd.yyyy"                     // US dot format
+            "yyyy-MM-dd",   // ISO date
+            "yyyy/MM/dd",   // year-first slash (unambiguous)
+            "yyyyMMdd",     // compact (unambiguous)
+            "yyyy.MM.dd"    // year-first dot (unambiguous)
         });
         FORMATS.put(LocalTime.class, new String[] {
             "HH:mm:ss.SSS",                  // Full time with millis
@@ -233,12 +228,11 @@ public class StandardDateTimeConverter implements DateTimeConverter {
                 return DateTimeFormatter.ofPattern(ISO_FORMAT)
                     .format(((Instant) value).atZone(zoneId));
             } else if (value instanceof LocalDate) {
-                return DateTimeFormatter.ofPattern(ISO_FORMAT)
-                    .format(((LocalDate) value).atStartOfDay(zoneId));
+                // Calendar date: bare yyyy-MM-dd, never expanded to an offset instant.
+                return DateTimeFormatter.ISO_LOCAL_DATE.format((LocalDate) value);
             } else if (value instanceof LocalTime) {
-                return DateTimeFormatter.ofPattern(ISO_FORMAT)
-                    .format(((LocalTime) value).atDate(LocalDate.now(zoneId))
-                    .atZone(zoneId));
+                // Wall-clock time: HH:mm:ss, no date/zone binding.
+                return LOCAL_TIME_FORMAT.format((LocalTime) value);
             }
         } catch (Exception e) {
             return value.toString();

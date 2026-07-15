@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.time.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("StandardDateTimeConverter - More Formats")
 class StandardDateTimeConverterMoreTest {
@@ -77,15 +78,31 @@ class StandardDateTimeConverterMoreTest {
         }
 
         @Test
-        @DisplayName("should parse dd-MM-yyyy European")
-        void shouldParseEuropean() {
-            assertThat(converter.fromString("15-03-2024", LocalDate.class)).isNotNull();
+        @DisplayName("should reject dd-MM-yyyy European format (ambiguous, removed)")
+        void shouldRejectEuropean() {
+            assertThatThrownBy(() -> converter.fromString("15-03-2024", LocalDate.class))
+                .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("should parse MM-dd-yyyy US format")
-        void shouldParseUs() {
-            assertThat(converter.fromString("03-15-2024", LocalDate.class)).isNotNull();
+        @DisplayName("should reject MM-dd-yyyy US format (ambiguous, removed)")
+        void shouldRejectUs() {
+            assertThatThrownBy(() -> converter.fromString("03-15-2024", LocalDate.class))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("should reject ambiguous day/month value with no silent swap")
+        void shouldRejectAmbiguousDayMonth() {
+            assertThatThrownBy(() -> converter.fromString("03-04-2026", LocalDate.class))
+                .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("should parse ISO yyyy-MM-dd unambiguously")
+        void shouldParseIsoDate() {
+            assertThat(converter.fromString("2026-03-04", LocalDate.class))
+                .isEqualTo(LocalDate.of(2026, 3, 4));
         }
     }
 

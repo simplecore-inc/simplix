@@ -232,19 +232,19 @@ class StandardDateTimeConverterExtendedTest {
         }
 
         @Test
-        @DisplayName("should convert LocalDate to string")
+        @DisplayName("should convert LocalDate to bare yyyy-MM-dd string")
         void shouldConvertLocalDate() {
             LocalDate date = LocalDate.of(2024, 3, 15);
             String result = converter.toString(date);
-            assertThat(result).contains("2024-03-15");
+            assertThat(result).isEqualTo("2024-03-15");
         }
 
         @Test
-        @DisplayName("should convert LocalTime to string")
+        @DisplayName("should convert LocalTime to HH:mm:ss string")
         void shouldConvertLocalTime() {
             LocalTime time = LocalTime.of(10, 30, 0);
             String result = converter.toString(time);
-            assertThat(result).isNotNull();
+            assertThat(result).isEqualTo("10:30:00");
         }
 
         @Test

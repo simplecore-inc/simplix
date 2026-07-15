@@ -151,13 +151,13 @@ class StandardDateTimeConverterTest {
         }
 
         @Test
-        @DisplayName("should format LocalDate to ISO string")
+        @DisplayName("should format LocalDate as bare yyyy-MM-dd")
         void shouldFormatLocalDate() {
             LocalDate date = LocalDate.of(2024, 1, 15);
 
             String result = converter.toString(date);
 
-            assertThat(result).contains("2024-01-15");
+            assertThat(result).isEqualTo("2024-01-15");
         }
 
         @Test

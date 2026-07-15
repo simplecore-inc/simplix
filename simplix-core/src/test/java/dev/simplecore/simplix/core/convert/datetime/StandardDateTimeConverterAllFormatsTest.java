@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.time.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("StandardDateTimeConverter - All Format Branches")
 class StandardDateTimeConverterAllFormatsTest {
@@ -54,35 +55,35 @@ class StandardDateTimeConverterAllFormatsTest {
     }
 
     @Nested
-    @DisplayName("LocalDate - all remaining formats")
-    class LdAllFormats {
+    @DisplayName("LocalDate - ambiguous locale-order formats are rejected")
+    class LdAmbiguousFormats {
 
         @Test
-        @DisplayName("should parse dd/MM/yyyy European slash")
-        void shouldParseEuropeanSlash() {
-            LocalDate result = converter.fromString("15/03/2024", LocalDate.class);
-            assertThat(result).isNotNull();
+        @DisplayName("should reject dd/MM/yyyy European slash (ambiguous, removed)")
+        void shouldRejectEuropeanSlash() {
+            assertThatThrownBy(() -> converter.fromString("15/03/2024", LocalDate.class))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("should parse dd.MM.yyyy European dot")
-        void shouldParseEuropeanDot() {
-            LocalDate result = converter.fromString("15.03.2024", LocalDate.class);
-            assertThat(result).isNotNull();
+        @DisplayName("should reject dd.MM.yyyy European dot (ambiguous, removed)")
+        void shouldRejectEuropeanDot() {
+            assertThatThrownBy(() -> converter.fromString("15.03.2024", LocalDate.class))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("should parse MM/dd/yyyy US slash")
-        void shouldParseUsSlash() {
-            LocalDate result = converter.fromString("03/15/2024", LocalDate.class);
-            assertThat(result).isNotNull();
+        @DisplayName("should reject MM/dd/yyyy US slash (ambiguous, removed)")
+        void shouldRejectUsSlash() {
+            assertThatThrownBy(() -> converter.fromString("03/15/2024", LocalDate.class))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
-        @DisplayName("should parse MM.dd.yyyy US dot")
-        void shouldParseUsDot() {
-            LocalDate result = converter.fromString("03.15.2024", LocalDate.class);
-            assertThat(result).isNotNull();
+        @DisplayName("should reject MM.dd.yyyy US dot (ambiguous, removed)")
+        void shouldRejectUsDot() {
+            assertThatThrownBy(() -> converter.fromString("03.15.2024", LocalDate.class))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
