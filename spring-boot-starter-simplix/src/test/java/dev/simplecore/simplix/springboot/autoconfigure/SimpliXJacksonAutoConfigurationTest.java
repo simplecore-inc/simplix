@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
@@ -18,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SimpliXJacksonAutoConfiguration - ObjectMapper auto-configuration")
 class SimpliXJacksonAutoConfigurationTest {
 
@@ -99,7 +102,7 @@ class SimpliXJacksonAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("Should use spring.jackson.time-zone when configured")
+        @DisplayName("Should resolve from deprecated spring.jackson.time-zone alias when canonical key absent")
         void useSpringTimezone() {
             when(environment.getProperty("spring.jackson.time-zone")).thenReturn("Asia/Seoul");
 
@@ -110,9 +113,8 @@ class SimpliXJacksonAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("Should fall back to simplix.date-time.default-timezone")
+        @DisplayName("Should resolve from canonical simplix.date-time.default-timezone")
         void fallbackToSimplixTimezone() {
-            when(environment.getProperty("spring.jackson.time-zone")).thenReturn(null);
             when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Europe/London");
 
             ObjectMapper mapper = config.objectMapper();

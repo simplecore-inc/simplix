@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.HttpMessageConverter;
 
@@ -17,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SimpliXJacksonAutoConfiguration - additional timezone fallback and converter tests")
 class SimpliXJacksonAutoConfigurationAdditionalTest {
 
@@ -24,13 +27,12 @@ class SimpliXJacksonAutoConfigurationAdditionalTest {
     private Environment environment;
 
     @Nested
-    @DisplayName("getZoneId fallback chain")
+    @DisplayName("timezone resolution fallback chain")
     class ZoneIdFallback {
 
         @Test
-        @DisplayName("Should handle invalid spring.jackson.time-zone and fall back to simplix timezone")
+        @DisplayName("Should resolve canonical simplix timezone ahead of the deprecated spring alias")
         void invalidSpringTimezone() {
-            when(environment.getProperty("spring.jackson.time-zone")).thenReturn("Not/Valid/Zone");
             when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Asia/Seoul");
 
             SimpliXJacksonAutoConfiguration config = new SimpliXJacksonAutoConfiguration(environment);

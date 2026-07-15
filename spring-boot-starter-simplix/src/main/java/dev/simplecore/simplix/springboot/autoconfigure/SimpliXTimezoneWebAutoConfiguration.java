@@ -1,28 +1,23 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import dev.simplecore.simplix.springboot.web.timezone.TimezoneAwareInstantSerializer;
 import dev.simplecore.simplix.springboot.web.timezone.TimezoneInterceptor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.time.Instant;
 import java.time.ZoneId;
 
 /**
  * Auto-configuration for per-request timezone support via {@code X-Timezone} header.
  *
- * <p>Registers:
- * <ul>
- *   <li>{@link TimezoneInterceptor} — extracts timezone from HTTP header into ThreadLocal</li>
- *   <li>{@link TimezoneAwareInstantSerializer} — serializes {@link Instant} using request timezone</li>
- * </ul>
+ * <p>Registers {@link TimezoneInterceptor}, which extracts the timezone from the HTTP header
+ * into a ThreadLocal ({@code TimezoneContext}). The request-aware {@code Instant} serializer
+ * that reads that ThreadLocal is registered on the primary {@code ObjectMapper} by
+ * {@link SimpliXJacksonAutoConfiguration}, so it reaches the MVC message converter.
  *
  * <p>Uses the {@code applicationZoneId} bean (from {@link SimpliXDateTimeAutoConfiguration})
  * as the fallback timezone when the header is absent.
@@ -51,15 +46,5 @@ public class SimpliXTimezoneWebAutoConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(timezoneInterceptor());
         log.info("TimezoneInterceptor registered [fallback={}]", fallbackZoneId);
-    }
-
-    @Bean
-    public Jackson2ObjectMapperBuilderCustomizer timezoneAwareInstantCustomizer() {
-        return builder -> {
-            SimpleModule module = new SimpleModule("TimezoneAwareInstantModule");
-            module.addSerializer(Instant.class, new TimezoneAwareInstantSerializer(fallbackZoneId));
-            builder.modules(module);
-            log.info("TimezoneAwareInstantSerializer registered [fallback={}]", fallbackZoneId);
-        };
     }
 }

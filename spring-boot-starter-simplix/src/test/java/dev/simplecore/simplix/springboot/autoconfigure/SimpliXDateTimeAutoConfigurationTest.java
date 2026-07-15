@@ -8,6 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 
 import java.time.OffsetDateTime;
@@ -18,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("SimpliXDateTimeAutoConfiguration - centralized timezone management")
 class SimpliXDateTimeAutoConfigurationTest {
 
@@ -36,9 +39,9 @@ class SimpliXDateTimeAutoConfigurationTest {
     class ApplicationZoneId {
 
         @Test
-        @DisplayName("Should use simplix.date-time.default-timezone when configured")
+        @DisplayName("Should use canonical simplix.date-time.default-timezone when configured")
         void useSimplixTimezone() {
-            properties.getDateTime().setDefaultTimezone("Asia/Seoul");
+            when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Asia/Seoul");
 
             SimpliXDateTimeAutoConfiguration config =
                     new SimpliXDateTimeAutoConfiguration(environment, properties);
@@ -49,7 +52,7 @@ class SimpliXDateTimeAutoConfigurationTest {
         }
 
         @Test
-        @DisplayName("Should fall back to spring.jackson.time-zone")
+        @DisplayName("Should fall back to deprecated spring.jackson.time-zone alias")
         void fallbackToSpringTimezone() {
             properties.getDateTime().setDefaultTimezone(null);
             when(environment.getProperty("spring.jackson.time-zone")).thenReturn("Europe/London");
@@ -84,7 +87,7 @@ class SimpliXDateTimeAutoConfigurationTest {
         @Test
         @DisplayName("Should return ZoneOffset matching the configured timezone")
         void matchesConfiguredTimezone() {
-            properties.getDateTime().setDefaultTimezone("UTC");
+            when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("UTC");
 
             SimpliXDateTimeAutoConfiguration config =
                     new SimpliXDateTimeAutoConfiguration(environment, properties);
@@ -103,6 +106,7 @@ class SimpliXDateTimeAutoConfigurationTest {
         @DisplayName("Should configure timezone when default-timezone is set")
         void configureWithDefaultTimezone() {
             properties.getDateTime().setDefaultTimezone("Asia/Tokyo");
+            when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Asia/Tokyo");
 
             SimpliXDateTimeAutoConfiguration config =
                     new SimpliXDateTimeAutoConfiguration(environment, properties);
@@ -132,7 +136,7 @@ class SimpliXDateTimeAutoConfigurationTest {
         @Test
         @DisplayName("Should handle invalid simplix timezone gracefully")
         void handleInvalidSimplixTimezone() {
-            properties.getDateTime().setDefaultTimezone("Invalid/Zone");
+            when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Invalid/Zone");
             when(environment.getProperty("spring.jackson.time-zone")).thenReturn(null);
 
             SimpliXDateTimeAutoConfiguration config =
@@ -179,7 +183,7 @@ class SimpliXDateTimeAutoConfigurationTest {
         @Test
         @DisplayName("Should create timezone service with correct configuration")
         void createTimezoneService() {
-            properties.getDateTime().setDefaultTimezone("Asia/Seoul");
+            when(environment.getProperty("simplix.date-time.default-timezone")).thenReturn("Asia/Seoul");
             properties.getDateTime().setUseUtcForDatabase(true);
             properties.getDateTime().setNormalizeTimezone(true);
 

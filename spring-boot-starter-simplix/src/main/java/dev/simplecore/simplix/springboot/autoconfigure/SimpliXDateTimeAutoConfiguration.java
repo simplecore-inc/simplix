@@ -66,11 +66,13 @@ public class SimpliXDateTimeAutoConfiguration {
 
     /**
      * Provides the application's default ZoneId.
-     * Priority order:
-     * 1. simplix.date-time.default-timezone
-     * 2. spring.jackson.time-zone
-     * 3. user.timezone system property
-     * 4. System default timezone
+     * Resolved via {@link ApplicationTimezoneResolver}:
+     * <ol>
+     *   <li>{@code simplix.date-time.default-timezone} (canonical key)</li>
+     *   <li>{@code spring.jackson.time-zone} (deprecated alias, logged)</li>
+     *   <li>{@code user.timezone} (deprecated alias, logged)</li>
+     *   <li>JVM default timezone (last resort, logged)</li>
+     * </ol>
      */
     @Bean
     public ZoneId applicationZoneId() {
@@ -116,46 +118,7 @@ public class SimpliXDateTimeAutoConfiguration {
     }
 
     private ZoneId resolveApplicationZoneId() {
-        // 1. Check SimpliX configuration
-        String simplixTimezone = properties.getDateTime().getDefaultTimezone();
-        if (simplixTimezone != null && !simplixTimezone.isEmpty()) {
-            try {
-                ZoneId zoneId = ZoneId.of(simplixTimezone);
-                log.debug("Using SimpliX configured timezone: {}", zoneId);
-                return zoneId;
-            } catch (Exception e) {
-                log.warn("Invalid SimpliX timezone configuration '{}', falling back to next option", simplixTimezone);
-            }
-        }
-
-        // 2. Check Spring Jackson configuration
-        String springTimezone = environment.getProperty("spring.jackson.time-zone");
-        if (springTimezone != null && !springTimezone.isEmpty()) {
-            try {
-                ZoneId zoneId = ZoneId.of(springTimezone);
-                log.debug("Using Spring Jackson timezone: {}", zoneId);
-                return zoneId;
-            } catch (Exception e) {
-                log.warn("Invalid Spring Jackson timezone configuration '{}', falling back to next option", springTimezone);
-            }
-        }
-
-        // 3. Check JVM system property
-        String userTimezone = System.getProperty("user.timezone");
-        if (userTimezone != null && !userTimezone.isEmpty()) {
-            try {
-                ZoneId zoneId = ZoneId.of(userTimezone);
-                log.debug("Using JVM system timezone: {}", zoneId);
-                return zoneId;
-            } catch (Exception e) {
-                log.warn("Invalid JVM system timezone '{}', falling back to system default", userTimezone);
-            }
-        }
-
-        // 4. Use system default timezone
-        ZoneId systemDefault = ZoneId.systemDefault();
-        log.debug("Using system default timezone: {}", systemDefault);
-        return systemDefault;
+        return ApplicationTimezoneResolver.resolve(environment);
     }
 
     /**
