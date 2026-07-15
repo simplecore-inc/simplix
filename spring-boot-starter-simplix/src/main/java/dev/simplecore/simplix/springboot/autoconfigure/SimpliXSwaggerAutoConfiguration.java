@@ -6,6 +6,7 @@ import dev.simplecore.simplix.web.config.openapi.GenericResponseSchemaCustomizer
 import dev.simplecore.simplix.web.config.openapi.NestedObjectSchemaExtractor;
 import dev.simplecore.simplix.web.config.openapi.OperationIdCustomizer;
 import dev.simplecore.simplix.web.config.openapi.SchemaOrganizer;
+import dev.simplecore.simplix.web.config.openapi.TemporalSchemaRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.properties.SpringDocConfigProperties;
@@ -157,6 +158,17 @@ public class SimpliXSwaggerAutoConfiguration {
     @ConditionalOnMissingBean
     public SchemaOrganizer schemaOrganizer() {
         return new SchemaOrganizer();
+    }
+
+    /**
+     * Registers OpenAPI schema overrides for temporal types swagger-core does not map to a string
+     * by default (currently {@link java.time.LocalTime}), keeping the generated contract aligned
+     * with the Jackson wire format.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public TemporalSchemaRegistrar temporalSchemaRegistrar() {
+        return new TemporalSchemaRegistrar();
     }
 
     /**

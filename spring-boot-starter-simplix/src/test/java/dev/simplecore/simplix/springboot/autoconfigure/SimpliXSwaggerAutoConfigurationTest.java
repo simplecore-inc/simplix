@@ -110,5 +110,13 @@ class SimpliXSwaggerAutoConfigurationTest {
 
             assertThat(registrar).isNotNull();
         }
+
+        @Test
+        @DisplayName("Should create TemporalSchemaRegistrar bean")
+        void createTemporalSchemaRegistrar() {
+            TemporalSchemaRegistrar registrar = config.temporalSchemaRegistrar();
+
+            assertThat(registrar).isNotNull();
+        }
     }
 }
