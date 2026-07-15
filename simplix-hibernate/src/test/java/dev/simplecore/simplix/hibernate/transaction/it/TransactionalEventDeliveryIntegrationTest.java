@@ -134,4 +134,29 @@ class TransactionalEventDeliveryIntegrationTest {
         assertThat(consumer.afterCommit)
                 .extracting(EventMessage::eventType).contains("HARD_ITEM_CREATED");
     }
+
+    @Test // R-1(f) failOnError=false: publication failure is swallowed, business change commits
+    @DisplayName("R-1(f): failOnError=false swallows a payload failure and still commits the change")
+    void bestEffortPayloadFailure_commitsWithoutEvent() {
+        BestEffortPayloadItem item = new BestEffortPayloadItem("be");
+        transactionTemplate.executeWithoutResult(tx -> em.persist(item));
+
+        assertThat(em.find(BestEffortPayloadItem.class, item.getId())).isNotNull(); // change committed
+        assertThat(consumer.beforeCommit.stream().filter(e -> e.isType("BEST_EFFORT_CREATED"))).isEmpty();
+        assertThat(consumer.afterCommit.stream().filter(e -> e.isType("BEST_EFFORT_CREATED"))).isEmpty();
+    }
+
+    @Test // R-1(g) failOnError=true (default): publication failure aborts the commit
+    @DisplayName("R-1(g): failOnError=true aborts the commit on a payload failure")
+    void strictPayloadFailure_abortsCommit() {
+        StrictPayloadItem item = new StrictPayloadItem("st");
+
+        assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(tx -> em.persist(item)))
+                .isInstanceOf(RuntimeException.class);
+
+        Long rows = transactionTemplate.execute(tx -> (Long) em.createQuery(
+                "SELECT count(e) FROM StrictPayloadItem e").getSingleResult());
+        assertThat(rows).isZero(); // change rolled back
+        assertThat(consumer.afterCommit).isEmpty();
+    }
 }

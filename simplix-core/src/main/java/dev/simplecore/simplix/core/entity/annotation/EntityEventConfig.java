@@ -76,6 +76,25 @@ public @interface EntityEventConfig {
     boolean publishDelete() default true;
 
     /**
+     * Whether a failure in the event publication path - custom payload construction via
+     * {@code EntityEventPayloadProvider.getEventPayloadData()} or synchronous listener
+     * dispatch - aborts the surrounding transaction.
+     * <p>
+     * {@code true} (default): a publication failure propagates out of the commit-time
+     * flush and rolls the transaction back. Required for outbox-style delivery, where the
+     * event must persist atomically with the business change.
+     * <p>
+     * {@code false}: a publication failure is logged and swallowed, and the transaction
+     * still commits. Suitable for best-effort audit or notification events whose loss must
+     * not break the business operation.
+     * <p>
+     * This flag governs only the publication path. A downstream
+     * {@code @TransactionalEventListener(BEFORE_COMMIT)} that throws in its own body always
+     * aborts the commit, independent of this flag.
+     */
+    boolean failOnError() default true;
+
+    /**
      * Properties to ignore when determining if an update event should fire.
      * If ONLY these properties changed, no update event is published.
      * <p>

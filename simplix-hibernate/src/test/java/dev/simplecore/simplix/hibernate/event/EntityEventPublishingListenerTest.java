@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.hibernate.event;
 
+import dev.simplecore.simplix.core.entity.EntityEventPayloadProvider;
 import dev.simplecore.simplix.core.entity.annotation.EntityEventConfig;
 import jakarta.persistence.Id;
 import org.junit.jupiter.api.AfterEach;
@@ -12,7 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -162,6 +166,34 @@ class EntityEventPublishingListenerTest {
     }
 
     @Nested
+    @DisplayName("failOnError")
+    class FailOnErrorTests {
+
+        @Test
+        @DisplayName("should propagate a publication failure when failOnError is true (default)")
+        void shouldPropagateWhenFailOnErrorTrue() {
+            listener.setApplicationEventPublisher(eventPublisher);
+            FailOnErrorEntity entity = new FailOnErrorEntity();
+            entity.id = 1L;
+
+            assertThatThrownBy(() -> listener.onPostPersist(entity))
+                    .isInstanceOf(IllegalStateException.class);
+            verify(eventPublisher, never()).publishEvent((Object) any());
+        }
+
+        @Test
+        @DisplayName("should swallow a publication failure when failOnError is false")
+        void shouldSwallowWhenFailOnErrorFalse() {
+            listener.setApplicationEventPublisher(eventPublisher);
+            BestEffortEntity entity = new BestEffortEntity();
+            entity.id = 1L;
+
+            assertThatCode(() -> listener.onPostPersist(entity)).doesNotThrowAnyException();
+            verify(eventPublisher, never()).publishEvent((Object) any());
+        }
+    }
+
+    @Nested
     @DisplayName("shouldPublish edge cases")
     class ShouldPublishEdgeCases {
 
@@ -248,5 +280,27 @@ class EntityEventPublishingListenerTest {
     static class PlainEntity {
         @Id
         Long id;
+    }
+
+    @EntityEventConfig(onCreate = "STRICT_CREATED")
+    static class FailOnErrorEntity implements EntityEventPayloadProvider {
+        @Id
+        Long id;
+
+        @Override
+        public Map<String, Object> getEventPayloadData() {
+            throw new IllegalStateException("payload build failure (test)");
+        }
+    }
+
+    @EntityEventConfig(onCreate = "BEST_EFFORT_CREATED", failOnError = false)
+    static class BestEffortEntity implements EntityEventPayloadProvider {
+        @Id
+        Long id;
+
+        @Override
+        public Map<String, Object> getEventPayloadData() {
+            throw new IllegalStateException("payload build failure (test)");
+        }
     }
 }

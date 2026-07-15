@@ -171,22 +171,35 @@ public class EntityEventPublishingListener {
 
     private void publishEvent(String eventType, Object entity, Set<String> changedProperties,
             Map<String, Object> extraMetadata) {
-        Map<String, Object> metadata = buildMetadata(extraMetadata);
-        Map<String, Object> payload = buildPayload(entity);
+        EntityEventConfig config = getConfig(entity);
+        boolean failOnError = config == null || config.failOnError();
+        try {
+            Map<String, Object> metadata = buildMetadata(extraMetadata);
+            Map<String, Object> payload = buildPayload(entity);
 
-        Object entityId = resolveEntityId(entity);
-        String aggregateId = entityId != null ? String.valueOf(entityId) : null;
-        String aggregateType = entity.getClass().getSimpleName();
+            Object entityId = resolveEntityId(entity);
+            String aggregateId = entityId != null ? String.valueOf(entityId) : null;
+            String aggregateType = entity.getClass().getSimpleName();
 
-        EventMessage event = new EventMessage(
-            aggregateId, aggregateType, eventType,
-            payload, metadata, changedProperties, Instant.now()
-        );
+            EventMessage event = new EventMessage(
+                aggregateId, aggregateType, eventType,
+                payload, metadata, changedProperties, Instant.now()
+            );
 
-        applicationEventPublisher.publishEvent(event);
+            applicationEventPublisher.publishEvent(event);
 
-        log.trace("Published entity event: type={}, aggregate={}, id={}",
-            eventType, aggregateType, aggregateId);
+            log.trace("Published entity event: type={}, aggregate={}, id={}",
+                eventType, aggregateType, aggregateId);
+        } catch (RuntimeException e) {
+            // failOnError=true (default) propagates the failure so the commit-time flush
+            // aborts the transaction, preserving outbox atomicity. failOnError=false keeps
+            // the business commit intact for best-effort events.
+            if (failOnError) {
+                throw e;
+            }
+            log.error("Failed to publish entity event (best-effort, transaction not aborted): type={}, entity={}",
+                eventType, entity.getClass().getSimpleName(), e);
+        }
     }
 
     /**
