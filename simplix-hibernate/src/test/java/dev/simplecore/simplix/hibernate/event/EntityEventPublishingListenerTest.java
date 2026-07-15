@@ -82,8 +82,8 @@ class EntityEventPublishingListenerTest {
     }
 
     @Nested
-    @DisplayName("onPostRemove")
-    class OnPostRemoveTests {
+    @DisplayName("onPreRemove")
+    class OnPreRemoveTests {
 
         @Test
         @DisplayName("should publish event for annotated entity on remove")
@@ -94,7 +94,7 @@ class EntityEventPublishingListenerTest {
             TestEntity entity = new TestEntity();
             entity.id = 1L;
 
-            listener.onPostRemove(entity);
+            listener.onPreRemove(entity);
 
             verify(eventPublisher).publishEvent((Object) any());
         }
@@ -105,7 +105,7 @@ class EntityEventPublishingListenerTest {
             NoDeleteEntity entity = new NoDeleteEntity();
             entity.id = 1L;
 
-            listener.onPostRemove(entity);
+            listener.onPreRemove(entity);
 
             verify(eventPublisher, never()).publishEvent((Object) any());
         }

@@ -1,2 +1,3 @@
 dev.simplecore.simplix.hibernate.cache.config.SimpliXHibernateCacheAutoConfiguration
 dev.simplecore.simplix.hibernate.event.config.EntityEventAutoConfiguration
+dev.simplecore.simplix.hibernate.transaction.config.SimpliXTransactionAutoConfiguration

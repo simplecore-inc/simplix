@@ -8,8 +8,8 @@ import dev.simplecore.simplix.core.event.EventContext;
 import dev.simplecore.simplix.core.event.model.EventMessage;
 import jakarta.persistence.Id;
 import jakarta.persistence.PostPersist;
-import jakarta.persistence.PostRemove;
 import jakarta.persistence.PostUpdate;
+import jakarta.persistence.PreRemove;
 import jakarta.persistence.PreUpdate;
 import org.hibernate.engine.spi.EntityEntry;
 import org.hibernate.engine.spi.PersistenceContext;
@@ -137,8 +137,15 @@ public class EntityEventPublishingListener {
         publishEvent(config.onUpdate(), entity, dirtyProperties, null);
     }
 
-    @PostRemove
-    public void onPostRemove(Object entity) {
+    /**
+     * Publishes the DELETE event at @PreRemove time, while the entity graph is still
+     * alive, so payload snapshots ({@code getEventPayloadData()}) can carry pre-delete
+     * data (parent FKs, controller routing). Soft deletes via {@code em.remove} on
+     * {@code @SQLDelete} entities also pass through here exactly once - the
+     * {@code @PostUpdate} soft-delete branch only covers manual flag updates.
+     */
+    @PreRemove
+    public void onPreRemove(Object entity) {
         if (!shouldPublish(entity)) return;
 
         EntityEventConfig config = getConfig(entity);
@@ -164,27 +171,22 @@ public class EntityEventPublishingListener {
 
     private void publishEvent(String eventType, Object entity, Set<String> changedProperties,
             Map<String, Object> extraMetadata) {
-        try {
-            Map<String, Object> metadata = buildMetadata(extraMetadata);
-            Map<String, Object> payload = buildPayload(entity);
+        Map<String, Object> metadata = buildMetadata(extraMetadata);
+        Map<String, Object> payload = buildPayload(entity);
 
-            Object entityId = resolveEntityId(entity);
-            String aggregateId = entityId != null ? String.valueOf(entityId) : null;
-            String aggregateType = entity.getClass().getSimpleName();
+        Object entityId = resolveEntityId(entity);
+        String aggregateId = entityId != null ? String.valueOf(entityId) : null;
+        String aggregateType = entity.getClass().getSimpleName();
 
-            EventMessage event = new EventMessage(
-                aggregateId, aggregateType, eventType,
-                payload, metadata, changedProperties, Instant.now()
-            );
+        EventMessage event = new EventMessage(
+            aggregateId, aggregateType, eventType,
+            payload, metadata, changedProperties, Instant.now()
+        );
 
-            applicationEventPublisher.publishEvent(event);
+        applicationEventPublisher.publishEvent(event);
 
-            log.trace("Published entity event: type={}, aggregate={}, id={}",
-                eventType, aggregateType, aggregateId);
-        } catch (Exception e) {
-            log.error("Failed to publish entity event: type={}, entity={}",
-                eventType, entity.getClass().getSimpleName(), e);
-        }
+        log.trace("Published entity event: type={}, aggregate={}, id={}",
+            eventType, aggregateType, aggregateId);
     }
 
     /**

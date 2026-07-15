@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -329,8 +330,8 @@ class EntityEventPublishingListenerExtendedTest {
     }
 
     @Nested
-    @DisplayName("onPostRemove edge cases")
-    class OnPostRemoveEdgeCases {
+    @DisplayName("onPreRemove edge cases")
+    class OnPreRemoveEdgeCases {
 
         @Test
         @DisplayName("Should publish DELETE event with correct aggregate type")
@@ -340,7 +341,7 @@ class EntityEventPublishingListenerExtendedTest {
             TestEntity entity = new TestEntity();
             entity.id = 5L;
 
-            listener.onPostRemove(entity);
+            listener.onPreRemove(entity);
 
             ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
             verify(eventPublisher).publishEvent(captor.capture());
@@ -357,8 +358,8 @@ class EntityEventPublishingListenerExtendedTest {
     class PublishEventErrorTests {
 
         @Test
-        @DisplayName("Should handle exception during event publish gracefully")
-        void shouldHandlePublishExceptionGracefully() {
+        @DisplayName("Should propagate publish exception to abort the surrounding transaction (outbox atomicity)")
+        void shouldPropagatePublishException() {
             listener.setApplicationEventPublisher(eventPublisher);
 
             doThrow(new RuntimeException("Publisher error"))
@@ -367,8 +368,9 @@ class EntityEventPublishingListenerExtendedTest {
             TestEntity entity = new TestEntity();
             entity.id = 1L;
 
-            // Should not throw
-            assertThatCode(() -> listener.onPostPersist(entity)).doesNotThrowAnyException();
+            assertThatThrownBy(() -> listener.onPostPersist(entity))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Publisher error");
         }
     }
 
