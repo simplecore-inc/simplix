@@ -236,3 +236,4 @@ simplix:
 
 - [Configuration Guide (설정 가이드)](ko/hibernate/configuration.md) - 설정 옵션 및 @Cache 사용법
 - [Cache Eviction Guide (캐시 무효화)](ko/hibernate/cache-eviction.md) - 수동 제거 및 @EvictCache 사용법
+- [Entity 이벤트 발행 가이드](ko/hibernate/entity-events-guide.md) - 엔티티 생명주기 이벤트와 BEFORE_COMMIT 전달 보장

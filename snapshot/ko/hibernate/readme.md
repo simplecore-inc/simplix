@@ -175,6 +175,7 @@ simplix:
 - [Overview (아키텍처 상세)](ko/hibernate/overview.md)
 - [Configuration Guide (설정 가이드)](ko/hibernate/configuration.md)
 - [Cache Eviction Guide (캐시 무효화)](ko/hibernate/cache-eviction.md)
+- [Entity 이벤트 발행 가이드](ko/hibernate/entity-events-guide.md)
 
 ## Requirements
 

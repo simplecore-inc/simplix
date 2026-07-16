@@ -80,6 +80,7 @@
   * [개요](ko/hibernate/overview.md)
   * [설정](ko/hibernate/configuration.md)
   * [캐시 무효화](ko/hibernate/cache-eviction.md)
+  * [Entity 이벤트 발행](ko/hibernate/entity-events-guide.md)
 
 * **MyBatis**
   * [소개](ko/mybatis/readme.md)
