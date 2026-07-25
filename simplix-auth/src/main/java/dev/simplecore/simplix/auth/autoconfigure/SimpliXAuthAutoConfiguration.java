@@ -83,8 +83,10 @@ public class SimpliXAuthAutoConfiguration {
      */
     @Bean(name = "authenticationFailureHandler")
     @ConditionalOnMissingBean(name = "authenticationFailureHandler")
-    public AuthenticationFailureHandler authenticationFailureHandler() {
-        return new SimpleUrlAuthenticationFailureHandler("/login?error");
+    public AuthenticationFailureHandler authenticationFailureHandler(SimpliXAuthProperties properties) {
+        String loginPagePath = properties.getSecurity().getLoginPagePath();
+        String path = loginPagePath.startsWith("/") ? loginPagePath : "/" + loginPagePath;
+        return new SimpleUrlAuthenticationFailureHandler(path + "?error");
     }
 
     /**

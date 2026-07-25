@@ -143,14 +143,11 @@ public class SimpliXAuthSecurityConfiguration {
             ObjectProvider<LogoutHandler> logoutHandlerProvider,
             ObjectProvider<LogoutSuccessHandler> logoutSuccessHandlerProvider,
             SimpliXAccessDeniedHandler accessDeniedHandler) throws Exception {
-        final String loginPage = properties.getSecurity().getLoginPageTemplate().startsWith("/") ? 
-            properties.getSecurity().getLoginPageTemplate() : "/" + properties.getSecurity().getLoginPageTemplate();
-        
-        final String loginProcessingUrl = properties.getSecurity().getLoginProcessingUrl().startsWith("/") ? 
-            properties.getSecurity().getLoginProcessingUrl() : "/" + properties.getSecurity().getLoginProcessingUrl();
-        
-        final String logoutUrl = properties.getSecurity().getLogoutUrl().startsWith("/") ? 
-            properties.getSecurity().getLogoutUrl() : "/" + properties.getSecurity().getLogoutUrl();
+        final String loginPage = asPath(properties.getSecurity().getLoginPagePath());
+
+        final String loginProcessingUrl = asPath(properties.getSecurity().getLoginProcessingUrl());
+
+        final String logoutUrl = asPath(properties.getSecurity().getLogoutUrl());
 
         String[] defaultPermitPatterns = {
             loginPage, loginProcessingUrl, logoutUrl, "/error", "/",
@@ -322,6 +319,16 @@ public class SimpliXAuthSecurityConfiguration {
     @ConditionalOnMissingBean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    /**
+     * Normalizes a configured URL path so a leading slash is optional in configuration.
+     *
+     * @param configured path as configured
+     * @return the path with a leading slash
+     */
+    private String asPath(String configured) {
+        return configured.startsWith("/") ? configured : "/" + configured;
     }
 
     private String[] combineArrays(String[] arr1, String[] arr2) {

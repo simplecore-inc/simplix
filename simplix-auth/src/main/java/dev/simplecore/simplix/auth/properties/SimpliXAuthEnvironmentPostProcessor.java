@@ -31,6 +31,7 @@ public class SimpliXAuthEnvironmentPostProcessor implements EnvironmentPostProce
         defaults.put("server.servlet.session.timeout", "30m");
 
         defaults.put("simplix.auth.login-page-template", "login");
+        defaults.put("simplix.auth.security.login-page-path", "/login");
         defaults.put("simplix.auth.login-processing-url", "/login");
         defaults.put("simplix.auth.logout-url", "/logout");
         

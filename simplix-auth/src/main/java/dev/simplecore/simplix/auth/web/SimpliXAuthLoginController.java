@@ -15,7 +15,7 @@ public class SimpliXAuthLoginController {
     
     private final SimpliXAuthProperties properties;
     
-    @GetMapping("/login")
+    @GetMapping("${simplix.auth.security.login-page-path:/login}")
     public String login() {
         return properties.getSecurity().getLoginPageTemplate();
     }

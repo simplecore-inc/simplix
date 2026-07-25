@@ -37,6 +37,14 @@ public class SimpliXAuthProperties {
         private boolean preferTokenOverSession = true;
         private String[] csrfIgnorePatterns = new String[]{"/api/token/**", "/h2-console/**"};
         private String loginPageTemplate = "login";
+        /**
+         * URL path the login view is served at, and the path unauthenticated web requests
+         * are redirected to. Kept separate from {@link #loginPageTemplate} so an application
+         * can relocate the login page without renaming the view — for example when a
+         * single-page application owns {@code /login} and the server-rendered pages move
+         * under their own prefix.
+         */
+        private String loginPagePath = "/login";
         private String loginProcessingUrl = "/login";
         private String logoutUrl = "/logout";
         private String[] permitAllPatterns;
