@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
@@ -16,7 +17,11 @@ public class SimpliXAuthLoginController {
     private final SimpliXAuthProperties properties;
     
     @GetMapping("${simplix.auth.security.login-page-path:/login}")
-    public String login() {
+    public String login(Model model) {
+        // The form posts to the configured processing URL: an application that relocates its
+        // server-rendered pages moves that URL with them.
+        String processingUrl = properties.getSecurity().getLoginProcessingUrl();
+        model.addAttribute("loginProcessingUrl", processingUrl.startsWith("/") ? processingUrl : "/" + processingUrl);
         return properties.getSecurity().getLoginPageTemplate();
     }
 } 

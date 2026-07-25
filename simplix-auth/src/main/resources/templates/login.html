@@ -56,7 +56,7 @@
             Your session has expired. Please log in again.
         </div>
 
-        <form th:action="@{/login}" method="post">
+        <form th:action="@{${loginProcessingUrl} ?: '/login'}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <div class="form-group">
                 <label for="username" class="form-label" th:text="#{login.username}">Username</label>
