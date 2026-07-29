@@ -1,0 +1,110 @@
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+dependencies {
+    // The license SDK owns the token format, the judgement, the neutral gate, and the host
+    // interfaces. Exposed to consumers so a module that gates a feature reads the same
+    // definitions this deployment is judged by. Keeping this module out of the umbrella
+    // starter is what stops an application that licenses nothing from ever seeing the SDK.
+    api "dev.accesscore:license-sdk:${licenseSdkVersion}"
+
+    api project(':simplix-core')
+    implementation project(':simplix-hibernate')
+    implementation project(':simplix-encryption')
+
+    // @SimpliXStandardApi and the response envelope live in the umbrella starter. This module
+    // is deliberately absent from that starter, so depending on it here is not circular — and
+    // compileOnly keeps the dependency from travelling to consumers, which run the starter
+    // anyway.
+    compileOnly project(':spring-boot-starter-simplix')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework:spring-web'
+    implementation 'org.springframework:spring-webmvc'
+
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.springframework.boot:spring-boot-starter-aop'
+    compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
+    compileOnly 'jakarta.persistence:jakarta.persistence-api'
+    compileOnly 'jakarta.validation:jakarta.validation-api'
+
+    // Nullability annotations the activation probe is written against.
+    compileOnly 'org.jspecify:jspecify'
+
+    // Actuator is optional at runtime; the health indicator and metrics stay absent without it.
+    compileOnly 'org.springframework.boot:spring-boot-starter-actuator'
+    compileOnly 'io.micrometer:micrometer-core'
+
+    compileOnly 'org.springdoc:springdoc-openapi-starter-webmvc-api'
+    compileOnly 'com.fasterxml.jackson.core:jackson-databind'
+    compileOnly 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation "dev.accesscore:license-sdk:${licenseSdkVersion}"
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version
+        )
+    }
+}
+
+test {
+    useJUnitPlatform()
+
+    jvmArgs = [
+        '-Dfile.encoding=UTF-8',
+        '-Djava.awt.headless=true'
+    ]
+}
+
+compileJava {
+    options.compilerArgs << '-parameters'
+}

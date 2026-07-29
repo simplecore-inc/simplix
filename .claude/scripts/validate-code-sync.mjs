@@ -40,6 +40,7 @@ const MODULES = [
   'simplix-excel',
   'simplix-file',
   'simplix-hibernate',
+  'simplix-license',
   'simplix-mybatis',
   'spring-boot-starter-simplix'
 ];

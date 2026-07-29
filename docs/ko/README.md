@@ -30,6 +30,14 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 | **simplix-scheduler** | @Scheduled 메서드 실행 로깅 및 모니터링 (ShedLock 연동 지원) |
 | **spring-boot-starter-simplix** | 모든 모듈을 포함하는 자동 구성 통합 스타터 |
 
+다음 모듈은 통합 스타터에 포함되지 않습니다. 필요할 때 개별 의존성으로 추가합니다.
+
+| 모듈 | 설명 |
+|------|------|
+| **simplix-stream** | SSE 및 WebSocket 기반 실시간 구독 |
+| **simplix-sync** | 다중 인스턴스 상태 동기화와 경량 pub/sub |
+| **simplix-license** | 라이선스 등록·활성화·하트비트와 기능·수량 제한 강제 |
+
 ## 빠른 시작
 
 ### 1. 의존성 추가
@@ -166,6 +174,14 @@ flowchart TB
         SCHED[simplix-scheduler<br/>스케줄러 로깅]
     end
 
+    subgraph standalone["개별 모듈"]
+        direction TB
+        STREAM[simplix-stream<br/>실시간 구독]
+        SYNC[simplix-sync<br/>상태 동기화]
+        LICENSE[simplix-license<br/>라이선스 강제]
+    end
+
+    core --> standalone
     core --> starter
     starter --> AUTH
     starter --> CACHE
@@ -207,6 +223,9 @@ SimpliX를 시작하기 위한 단계별 가이드:
 - [simplix-mybatis](../../simplix-mybatis/README.md) - MyBatis 통합
 - [simplix-scheduler](../../simplix-scheduler/README.md) - 스케줄러 실행 로깅
 - [spring-boot-starter-simplix](../../spring-boot-starter-simplix/README.md) - 통합 스타터
+- [simplix-stream](../../simplix-stream/README.md) - SSE/WebSocket 실시간 구독
+- [simplix-sync](../../simplix-sync/README.md) - 다중 인스턴스 상태 동기화
+- [simplix-license](../../simplix-license/README.md) - 라이선스 강제
 
 ## 보안
 

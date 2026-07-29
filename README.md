@@ -30,6 +30,14 @@ SimpliX provides a comprehensive set of modules for building enterprise applicat
 | **simplix-scheduler** | @Scheduled method execution logging and monitoring with ShedLock integration |
 | **spring-boot-starter-simplix** | Umbrella starter that includes all modules with auto-configuration |
 
+The following modules are published separately and are not bundled in the umbrella starter. Add them individually when needed:
+
+| Module | Description |
+|--------|-------------|
+| **simplix-stream** | Real-time subscriptions over SSE and WebSocket |
+| **simplix-sync** | Multi-instance state sync and lightweight pub/sub |
+| **simplix-license** | License registration, activation, heartbeat, and feature/quota gating |
+
 ## Quick Start
 
 ### 1. Add Dependency
@@ -154,7 +162,13 @@ SimpliX Framework
 │       ├── simplix-hibernate ─────── L2 Cache
 │       ├── simplix-mybatis ───────── MyBatis
 │       └── simplix-scheduler ─────── Scheduler Logging
+│
+├── simplix-stream ───────────────── SSE/WebSocket streaming
+├── simplix-sync ─────────────────── Multi-instance sync
+└── simplix-license ──────────────── License enforcement
 ```
+
+`simplix-stream`, `simplix-sync`, and `simplix-license` are not part of the umbrella starter and must be added as individual dependencies.
 
 ## Tutorials
 
@@ -183,6 +197,9 @@ Each module has its own README with detailed documentation:
 - [simplix-mybatis](simplix-mybatis/README.md) - MyBatis integration
 - [simplix-scheduler](simplix-scheduler/README.md) - Scheduler execution logging
 - [spring-boot-starter-simplix](spring-boot-starter-simplix/README.md) - Umbrella starter
+- [simplix-stream](simplix-stream/README.md) - SSE/WebSocket streaming
+- [simplix-sync](simplix-sync/README.md) - Multi-instance state sync
+- [simplix-license](simplix-license/README.md) - License enforcement
 
 ## Security
 

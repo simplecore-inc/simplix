@@ -54,6 +54,7 @@ simplix/
 ├── simplix-excel/                  # Excel/CSV import/export with Apache POI
 ├── simplix-file/                   # File storage abstraction (local, AWS S3, GCS)
 ├── simplix-hibernate/              # Hibernate L2 cache management (Ehcache, Redis, Hazelcast)
+├── simplix-license/                # License registration, activation, heartbeat, feature/quota gating
 ├── simplix-messaging/              # Broker-abstracted messaging (NATS JetStream, Redis Streams, Kafka, RabbitMQ, local)
 ├── simplix-mybatis/                # MyBatis integration with custom type handlers
 ├── simplix-scheduler/              # AOP-based @Scheduled execution tracking with ShedLock integration
@@ -153,10 +154,18 @@ simplix-core (base library)
 │   └── simplix-scheduler     # Scheduler monitoring
 │
 ├── simplix-stream            # SSE/WebSocket streaming (not included in the starter)
-└── simplix-sync              # Multi-instance sync (not included in the starter)
+├── simplix-sync              # Multi-instance sync (not included in the starter)
+└── simplix-license           # License enforcement (not included in the starter)
 ```
 
-All feature modules depend on `simplix-core`. The starter bundles every module except `simplix-stream` and `simplix-sync`, which must be added as individual dependencies when needed.
+All feature modules depend on `simplix-core`. The starter bundles every module except `simplix-stream`, `simplix-sync`, and `simplix-license`, which must be added as individual dependencies when needed.
+
+`simplix-license` carries the license SDK from a separate package repository. Building it requires credentials for that repository in `gradle.properties`:
+
+```properties
+accesscore.gpr.user=your_github_username
+accesscore.gpr.token=your_github_personal_access_token
+```
 
 ## Common Development Tasks
 
