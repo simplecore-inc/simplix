@@ -24,6 +24,9 @@ include 'simplix-stream'
 include 'simplix-sync'
 include 'spring-boot-starter-simplix'
 include 'simplix-egov'
+// Deliberately absent from spring-boot-starter-simplix: it carries the license SDK, which
+// only an application that is licensed has any use for.
+include 'simplix-license'
 
 def props = new Properties()
 def propertiesFile = file("gradle.properties")
@@ -76,6 +79,19 @@ dependencyResolutionManagement {
             url = "https://maven.egovframe.go.kr/maven/"
             content {
                 includeGroup "org.egovframe.rte"
+            }
+        }
+
+        // The license SDK, consumed by simplix-license. Scoped to its own group so a developer
+        // without credentials for it still resolves everything else.
+        maven {
+            url = uri("https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist")
+            credentials {
+                username = props.getProperty("accesscore.gpr.user") ?: System.getenv("ACCESSCORE_GITHUB_USERNAME")
+                password = props.getProperty("accesscore.gpr.token") ?: System.getenv("ACCESSCORE_GITHUB_TOKEN")
+            }
+            content {
+                includeGroup "dev.accesscore"
             }
         }
 

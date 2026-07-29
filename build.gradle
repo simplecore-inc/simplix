@@ -27,7 +27,7 @@ ext {
     // ============================================================
     // Searchable JPA
     // ============================================================
-    searchableJpaVersion = '1.1.0'
+    searchableJpaVersion = '1.1.1'
 
     // ============================================================
     // Excel & Document Processing
@@ -65,6 +65,14 @@ ext {
     // File Processing
     // ============================================================
     webpImageIoVersion = '0.8.0'
+
+    // ============================================================
+    // Licensing
+    // ============================================================
+    // The token format and the judgement over it. Pinned rather than ranged: a schemaVersion
+    // change must arrive by a deliberate upgrade, because the issuing and verifying halves of
+    // a deployment have to agree on the format.
+    licenseSdkVersion = '1.0.0'
 
     // ============================================================
     // Email Providers
@@ -229,6 +237,10 @@ subprojects {
                         'simplix-egov': [
                             name: 'SimpliX eGov',
                             description: 'eGovFrame standard framework compatibility module providing EgovAbstractServiceImpl bridge for SimpliX services'
+                        ],
+                        'simplix-license': [
+                            name: 'SimpliX License',
+                            description: 'License registration, activation, heartbeat, and feature/quota gating for SimpliX applications'
                         ]
                     ]
                     if (metadata.containsKey(project.name)) {
