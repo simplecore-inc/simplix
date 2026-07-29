@@ -13,6 +13,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.util.regex.Pattern;
 import java.util.*;
 
 /**
@@ -31,6 +32,8 @@ import java.util.*;
  * for further processing.
  */
 public class DtoSchemaAutoRegistrar implements OpenApiCustomizer, Ordered {
+
+    private static final Pattern COMPONENT_KEY = Pattern.compile("^[a-zA-Z0-9.\\-_]+$");
 
     private static final Logger log = LoggerFactory.getLogger(DtoSchemaAutoRegistrar.class);
 
@@ -82,6 +85,10 @@ public class DtoSchemaAutoRegistrar implements OpenApiCustomizer, Ordered {
 
         String name = clazz.getSimpleName();
 
+        if (!isValidComponentKey(name)) {
+            return;
+        }
+
         if (openApi.getComponents().getSchemas() != null
                 && openApi.getComponents().getSchemas().containsKey(name)) {
             return;
@@ -100,6 +107,9 @@ public class DtoSchemaAutoRegistrar implements OpenApiCustomizer, Ordered {
             }
             if (resolved.referencedSchemas != null) {
                 resolved.referencedSchemas.forEach((refName, refSchema) -> {
+                    if (!isValidComponentKey(refName)) {
+                        return;
+                    }
                     if (openApi.getComponents().getSchemas() == null
                             || !openApi.getComponents().getSchemas().containsKey(refName)) {
                         openApi.getComponents().addSchemas(refName, refSchema);
@@ -109,6 +119,21 @@ public class DtoSchemaAutoRegistrar implements OpenApiCustomizer, Ordered {
         } catch (Exception e) {
             log.warn("Failed to register schema for {}: {}", name, e.getMessage());
         }
+    }
+
+    /**
+     * Whether a name may be used as an OpenAPI component key.
+     *
+     * <p>A Java simple name is not always one: an array type resolves to {@code byte[]}, and the
+     * brackets are outside the character set the specification allows. Such a schema is never
+     * referenced — an array-valued property is inlined — so skipping it costs nothing, while
+     * emitting it makes the whole document unusable to generators that validate component keys.
+     *
+     * @param name the candidate key
+     * @return whether the key is valid per the OpenAPI specification
+     */
+    private static boolean isValidComponentKey(String name) {
+        return name != null && COMPONENT_KEY.matcher(name).matches();
     }
 
     /**
