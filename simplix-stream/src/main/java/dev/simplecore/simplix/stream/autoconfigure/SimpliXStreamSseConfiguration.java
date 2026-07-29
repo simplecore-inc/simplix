@@ -6,6 +6,7 @@ import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.ConnectTicketService;
 import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.sse.SseStreamController;
@@ -61,6 +62,7 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
             StreamProperties properties,
             ObjectMapper objectMapper,
             ScheduledExecutorService streamScheduledExecutor,
+            ConnectTicketService connectTicketService,
             SessionValidator sessionValidator,
             ExecutorService sessionValidationExecutor,
             ExecutorService streamSendExecutor) {
@@ -75,6 +77,7 @@ public class SimpliXStreamSseConfiguration implements WebMvcConfigurer {
                 properties,
                 objectMapper,
                 streamScheduledExecutor,
+                connectTicketService,
                 sessionValidator,
                 sessionValidationExecutor,
                 streamSendExecutor

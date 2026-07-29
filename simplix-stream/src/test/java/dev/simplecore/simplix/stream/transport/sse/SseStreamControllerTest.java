@@ -11,6 +11,7 @@ import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.exception.SessionNotFoundException;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.ConnectTicketService;
 import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
@@ -111,6 +112,7 @@ class SseStreamControllerTest {
                 properties,
                 objectMapper,
                 scheduledExecutor,
+                new ConnectTicketService(Duration.ofSeconds(30)),
                 sessionValidator,
                 sessionValidationExecutor,
                 streamSendExecutor

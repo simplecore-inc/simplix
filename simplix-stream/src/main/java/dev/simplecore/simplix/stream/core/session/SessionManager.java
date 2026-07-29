@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,6 +78,23 @@ public class SessionManager {
      * @param transportType the transport type
      * @return the created session
      */
+    /**
+     * Whether a session belongs to the given user.
+     * <p>
+     * A session may legitimately have no user: transports admit unauthenticated connections, and
+     * an application that streams to anonymous clients — a public status page, a checkout screen
+     * whose buyer has no account yet — creates exactly those. Comparing a null owner directly
+     * would fail such a connection with a NullPointerException on its first request, which reads
+     * as a server fault rather than as the anonymous session it actually is.
+     *
+     * @param session  the session
+     * @param userId   the requester, or null when the request is anonymous
+     * @return true when both are the same user, or both are anonymous
+     */
+    private boolean ownedBy(StreamSession session, String userId) {
+        return Objects.equals(session.getUserId(), userId);
+    }
+
     public StreamSession createSession(String userId, TransportType transportType) {
         // Check user session limit
         int maxPerUser = properties.getSession().getMaxPerUser();
@@ -134,7 +152,7 @@ public class SessionManager {
     public StreamSession getSessionForUser(String sessionId, String userId) {
         StreamSession session = getSession(sessionId);
 
-        if (!session.getUserId().equals(userId)) {
+        if (!ownedBy(session, userId)) {
             log.warn("Session ownership violation: session={}, owner={}, requester={}",
                     sessionId, session.getUserId(), userId);
             throw new SecurityException("Session not owned by user");
@@ -226,7 +244,7 @@ public class SessionManager {
         Optional<StreamSession> localSession = sessionRegistry.findById(sessionId);
         if (localSession.isPresent()) {
             StreamSession session = localSession.get();
-            if (!session.getUserId().equals(userId)) {
+            if (!ownedBy(session, userId)) {
                 log.warn("Session restore denied: ownership mismatch (session={}, owner={}, requester={})",
                         sessionId, session.getUserId(), userId);
                 return Optional.empty();

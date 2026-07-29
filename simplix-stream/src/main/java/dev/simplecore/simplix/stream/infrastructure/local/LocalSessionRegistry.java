@@ -5,6 +5,7 @@ import dev.simplecore.simplix.stream.core.session.SessionRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -43,7 +44,7 @@ public class LocalSessionRegistry implements SessionRegistry {
     @Override
     public Collection<StreamSession> findByUserId(String userId) {
         return sessions.values().stream()
-                .filter(s -> userId.equals(s.getUserId()))
+                .filter(s -> Objects.equals(userId, s.getUserId()))
                 .collect(Collectors.toList());
     }
 
@@ -60,7 +61,7 @@ public class LocalSessionRegistry implements SessionRegistry {
     @Override
     public long countByUserId(String userId) {
         return sessions.values().stream()
-                .filter(s -> userId.equals(s.getUserId()))
+                .filter(s -> Objects.equals(userId, s.getUserId()))
                 .count();
     }
 

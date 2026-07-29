@@ -424,6 +424,14 @@ public class StreamProperties {
          * Require authentication for stream connections.
          */
         private boolean requireAuthentication = false;
+
+        /**
+         * How long a connect ticket may be redeemed for.
+         * <p>
+         * Seconds rather than hours on purpose: a ticket exists only to carry an already
+         * authenticated identity across the one request a browser cannot put a header on.
+         */
+        private Duration connectTicketValidity = Duration.ofSeconds(30);
     }
 
     /**

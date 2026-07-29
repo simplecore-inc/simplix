@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.stream.autoconfigure;
 
 import dev.simplecore.simplix.stream.config.StreamProperties;
+import dev.simplecore.simplix.stream.security.ConnectTicketService;
 import dev.simplecore.simplix.stream.security.SessionValidationResult;
 import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
@@ -31,6 +32,18 @@ public class SimpliXStreamSecurityConfiguration {
         boolean enforceAuth = properties.getSecurity().isEnforceAuthorization();
         log.info("Creating stream authorization service (enforceAuthorization={})", enforceAuth);
         return new StreamAuthorizationService(enforceAuth);
+    }
+
+    /**
+     * Connect tickets, for clients whose session cannot ride on the connect request.
+     * <p>
+     * A browser's {@code EventSource} sends no headers, so an application authenticated by one
+     * has no other way to open a stream as itself.
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ConnectTicketService connectTicketService(StreamProperties properties) {
+        return new ConnectTicketService(properties.getSecurity().getConnectTicketValidity());
     }
 
     /**

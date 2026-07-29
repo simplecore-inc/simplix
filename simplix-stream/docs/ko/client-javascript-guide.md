@@ -4,12 +4,52 @@ SimpliX Stream을 위한 JavaScript 클라이언트 구현 가이드입니다.
 
 ## 목차
 
-1. [재연결 및 구독 복구](#재연결-및-구독-복구)
-2. [SSE 클라이언트](#sse-클라이언트)
-3. [WebSocket 클라이언트](#websocket-클라이언트)
-4. [공통 유틸리티](#공통-유틸리티)
-5. [에러 처리](#에러-처리)
-6. [TypeScript 지원](#typescript-지원)
+1. [연결 인증](#연결-인증)
+2. [재연결 및 구독 복구](#재연결-및-구독-복구)
+3. [SSE 클라이언트](#sse-클라이언트)
+4. [WebSocket 클라이언트](#websocket-클라이언트)
+5. [공통 유틸리티](#공통-유틸리티)
+6. [에러 처리](#에러-처리)
+7. [TypeScript 지원](#typescript-지원)
+
+---
+
+## 연결 인증
+
+`EventSource`는 요청 헤더를 보낼 수 없습니다. 애플리케이션의 인증 방식에 따라 연결 경로가 달라집니다.
+
+| 인증 방식 | 연결 방법 |
+|----------|----------|
+| 쿠키 세션 | `withCredentials: true`로 연결, 별도 처리 불필요 |
+| 헤더 토큰 (Bearer 등) | 연결 티켓을 발급받아 쿼리 파라미터로 전달 |
+| 인증 없음 | 그대로 연결, 익명 세션으로 처리 |
+
+### 연결 티켓
+
+인증된 일반 요청으로 티켓을 발급받고, 연결 URL에 붙입니다. 티켓은 일회용이며 기본 30초 후 만료됩니다.
+
+```javascript
+async function issueConnectTicket(baseUrl, accessToken) {
+    const response = await fetch(`${baseUrl}/api/stream/tickets`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to issue connect ticket: ${response.status}`);
+    }
+    const { ticket } = await response.json();
+    return ticket;
+}
+
+async function connectWithTicket(baseUrl, accessToken) {
+    const ticket = await issueConnectTicket(baseUrl, accessToken);
+    return new EventSource(`${baseUrl}/api/stream/connect?ticket=${encodeURIComponent(ticket)}`);
+}
+```
+
+티켓은 발급한 서버 인스턴스의 메모리에만 있습니다. 분산 환경에서는 sticky 세션이 필요하며, 다른 인스턴스에 도달한 티켓은 익명 연결로 처리되므로 재연결 시에는 티켓을 새로 발급받아야 합니다.
+
+> ⚠ 세션 토큰을 쿼리 문자열에 직접 넣지 마세요. 접근 로그, 프록시 로그, 브라우저 기록에 그대로 남습니다. 티켓은 이 문제를 피하기 위해 짧은 유효 시간과 일회성을 갖습니다.
 
 ---
 

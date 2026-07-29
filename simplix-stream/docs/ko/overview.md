@@ -14,6 +14,8 @@ SSE (Server-Sent Events) 및 WebSocket 기반 실시간 구독 시스템 모듈�
 | 분산 모드 | Redis Pub/Sub 기반 다중 인스턴스 지원 |
 | 분산 Admin | DB 기반 클러스터 전체 관리 (Redis 없이 가능) |
 | 권한 관리 | 리소스별 접근 권한 제어 |
+| 연결 티켓 | 헤더를 보낼 수 없는 `EventSource`를 위한 일회용 단기 티켓 |
+| 익명 세션 | 로그인하지 않은 클라이언트도 공개 스트림 구독 가능 |
 | 서버 측 Interval 제어 | 폴링 주기는 서버에서만 설정 (DoS 방지) |
 | 모니터링 | Health Check, Micrometer 메트릭 |
 

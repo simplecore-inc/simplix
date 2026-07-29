@@ -13,6 +13,7 @@ import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
 import dev.simplecore.simplix.stream.exception.SessionNotFoundException;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import dev.simplecore.simplix.stream.security.ConnectTicketService;
 import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
@@ -55,6 +56,7 @@ public class SseStreamController {
     private final StreamProperties properties;
     private final ObjectMapper objectMapper;
     private final ScheduledExecutorService streamScheduledExecutor;
+    private final ConnectTicketService connectTicketService;
     private final SessionValidator sessionValidator;
     private final ExecutorService sessionValidationExecutor;
     private final ExecutorService streamSendExecutor;
@@ -73,11 +75,19 @@ public class SseStreamController {
      *
      * @return SSE emitter for the connection
      */
+    @PostMapping("/tickets")
+    public ResponseEntity<Map<String, String>> issueConnectTicket() {
+        // Minted on an ordinary request, where the client's own authentication — a header, a
+        // bearer token, whatever the application uses — has already been applied by its filter
+        // chain. The ticket carries only the identity that arrived here.
+        return ResponseEntity.ok(Map.of("ticket", connectTicketService.issue(extractUserId())));
+    }
+
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter connect(
             @RequestParam(required = false) Map<String, String> connectParams,
             HttpServletRequest request) {
-        String userId = extractUserId();
+        String userId = resolveConnectUser(connectParams);
 
         // Create SSE emitter with configured timeout
         long timeoutMs = properties.getSession().getTimeout().toMillis();
@@ -513,6 +523,31 @@ public class SseStreamController {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             streamSession.addTransientMetadata("bearerToken", authHeader.substring(7));
         }
+    }
+
+    /**
+     * Who is opening this stream.
+     * <p>
+     * The request's own authentication first, because a client that could authenticate the
+     * connect request has no reason to hold a ticket. A ticket answers only for the clients that
+     * could not — a browser's {@code EventSource} sends no headers — and is spent on redemption.
+     *
+     * @param connectParams the connect query string, which may carry a ticket
+     * @return the user the session belongs to, or null for an anonymous one
+     */
+    private String resolveConnectUser(Map<String, String> connectParams) {
+        String authenticated = extractUserId();
+        if (authenticated != null) {
+            return authenticated;
+        }
+        if (connectParams == null) {
+            return null;
+        }
+        // An empty redemption is an anonymous ticket, which is still a redemption; a missing one
+        // is an unauthenticated connect, which stays anonymous by the same rule as before.
+        return connectTicketService.redeem(connectParams.get("ticket"))
+                .filter(user -> !user.isEmpty())
+                .orElse(null);
     }
 
     private String extractUserId() {
