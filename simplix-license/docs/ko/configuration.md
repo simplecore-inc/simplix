@@ -107,7 +107,9 @@ application:
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `api.version.prefix` | String | `/api/v1` | 필터가 예외 경로를 계산할 때 쓰는 API 접두사 |
-| `simplix.license.setup.token` | String | 없음 | 설치 마법사에 원격 접근을 허용하는 부트스트랩 토큰. 비우면 로컬 접속만 허용 |
+| `simplix.license.setup.token` | String | 없음 | 설치 마법사의 상태 변경 경로를 여는 부트스트랩 토큰. 비우면 루프백 요청만 허용 |
+
+> ⚠ 루프백 판정은 `getRemoteAddr()`을 읽습니다. 리버스 프록시를 같은 호스트에 두고 `127.0.0.1`로 전달하는 구성에서는 외부 요청도 루프백으로 보이므로, 그런 배포본은 `simplix.license.setup.token`을 반드시 설정해야 설치 전 창이 외부에 열리지 않습니다.
 | `APP_BINARY_HASH` | String | 없음 | 배포된 바이너리의 기대 체크섬. 설정하면 무결성 검사에 사용 |
 
 ---

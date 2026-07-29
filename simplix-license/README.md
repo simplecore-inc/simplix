@@ -152,7 +152,7 @@ public class VisitorAnalyticsService {
 | `application.license.activation.heartbeat-enabled` | `true` | 하트비트 전송 여부 |
 | `application.license.enforcement.http-filter-enabled` | `true` | 요청 단위 강제 필터 등록 여부 |
 | `api.version.prefix` | `/api/v1` | 필터가 예외 경로를 계산할 때 쓰는 API 접두사 |
-| `simplix.license.setup.token` | 없음 | 원격 설치를 허용하는 부트스트랩 토큰, 비우면 로컬 접속만 허용 |
+| `simplix.license.setup.token` | 없음 | 설치 마법사의 상태 변경 경로를 여는 부트스트랩 토큰. 비우면 루프백 요청만 허용 (같은 호스트의 프록시 뒤에서는 외부 요청도 루프백으로 보이므로 반드시 설정) |
 
 > ℹ 강제 실행을 끄는 설정은 없습니다. `http-filter-enabled`는 판정을 없애는 것이 아니라 판정을 묻는 위치를 요청 필터에서 애플리케이션 코드로 옮깁니다.
 
