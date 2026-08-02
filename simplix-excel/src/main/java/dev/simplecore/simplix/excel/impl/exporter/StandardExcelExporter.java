@@ -7,6 +7,8 @@ package dev.simplecore.simplix.excel.impl.exporter;
 
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import dev.simplecore.simplix.excel.api.ExcelExporter;
+import dev.simplecore.simplix.excel.exception.ExcelExportException;
+import dev.simplecore.simplix.excel.i18n.ExcelLabels;
 import dev.simplecore.simplix.excel.style.ExcelStyleManager;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -131,7 +133,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error during Excel export: {}", e.getMessage(), e);
-            throw new dev.simplecore.simplix.excel.exception.ExcelExportException("Excel export failed", e);
+            throw new ExcelExportException("Excel export failed", e);
         }
     }
     
@@ -362,7 +364,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             ExcelColumn column = field.getAnnotation(ExcelColumn.class);
             
             Cell cell = headerRow.createCell(i);
-            cell.setCellValue(column.name());
+            cell.setCellValue(ExcelLabels.columnName(column.name()));
             cell.setCellStyle(headerStyle);
             
             // Set column width
@@ -451,7 +453,9 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
         } else if (value instanceof Number) {
             cell.setCellValue(((Number) value).doubleValue());
         } else if (value instanceof Boolean) {
-            cell.setCellValue((Boolean) value);
+            // Written as the same word the comma-separated file writes: one list exported twice
+            // must not read two ways.
+            cell.setCellValue(ExcelLabels.booleanLabel((Boolean) value));
         } else if (value instanceof LocalDate) {
             LocalDate localDate = (LocalDate) value;
             cell.setCellValue(localDate);
@@ -506,17 +510,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
         } else if (value instanceof Date) {
             cell.setCellValue((Date) value);
         } else if (value instanceof Enum<?>) {
-            // Process Enum type
-            Enum<?> enumValue = (Enum<?>) value;
-            
-            // Check if implements SimpliXLabeledEnum
-            if (value instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
-                dev.simplecore.simplix.core.enums.SimpliXLabeledEnum labeledEnum = 
-                    (dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) value;
-                cell.setCellValue(labeledEnum.getLabel());
-            } else {
-                cell.setCellValue(enumValue.name());
-            }
+            cell.setCellValue(ExcelLabels.enumLabel((Enum<?>) value));
         } else if (value instanceof Collection<?>) {
             // Process collection types (List, Set, etc.)
             Collection<?> collection = (Collection<?>) value;
@@ -548,14 +542,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
         if (obj instanceof String) {
             return (String) obj;
         } else if (obj instanceof Enum<?>) {
-            // Check if implements SimpliXLabeledEnum
-            if (obj instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
-                dev.simplecore.simplix.core.enums.SimpliXLabeledEnum labeledEnum = 
-                    (dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) obj;
-                return labeledEnum.getLabel();
-            } else {
-                return ((Enum<?>) obj).name();
-            }
+            return ExcelLabels.enumLabel((Enum<?>) obj);
         }
         
         // Try to extract ID or name from entity object

@@ -8,6 +8,7 @@ package dev.simplecore.simplix.excel.impl.exporter;
 import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import dev.simplecore.simplix.excel.api.CsvExporter;
 import dev.simplecore.simplix.excel.convert.TypeConverter;
+import dev.simplecore.simplix.excel.i18n.ExcelLabels;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -69,13 +70,20 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
     
     // Default settings
     private static final int DEFAULT_PAGE_SIZE = 1000;
-    
+
+    /**
+     * The characters a spreadsheet reads as the start of a formula rather than as text.
+     * A customer named "=cmd" must not become an instruction in somebody's spreadsheet.
+     */
+    private static final String FORMULA_STARTS = "=+-@\t\r";
+
     // CSV format settings
     private String delimiter;
     private String dateFormat;
     private String numberFormat;
     private boolean includeHeader;
     private boolean quoteStrings;
+    private boolean sanitizeFormulas;
     private String lineEnding;
     private Encoding encoding;
     
@@ -98,6 +106,7 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         this.numberFormat = "#,##0.###";
         this.includeHeader = true;
         this.quoteStrings = true;
+        this.sanitizeFormulas = true;
         this.lineEnding = "\r\n";
         this.encoding = Encoding.UTF8;
         this.useStreaming = false;
@@ -144,6 +153,15 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         return this;
     }
     
+    /**
+     * Set whether a cell starting with a formula character is prefixed so a spreadsheet renders
+     * it as text (default: true)
+     */
+    public UnifiedCsvExporter<T> sanitizeFormulas(boolean sanitizeFormulas) {
+        this.sanitizeFormulas = sanitizeFormulas;
+        return this;
+    }
+
     /**
      * Set line ending character (default: \r\n)
      */
@@ -356,16 +374,14 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
      */
     private void writeHeader(Writer writer) throws IOException {
         String headerLine = exportFields.stream()
-                .map(field -> {
-                    String title = field.getAnnotation(ExcelColumn.class).name();
-                    return quoteStrings ? "\"" + title + "\"" : title;
-                })
+                .map(field -> ExcelLabels.columnName(field.getAnnotation(ExcelColumn.class).name()))
+                .map(title -> escape(title, true))
                 .collect(Collectors.joining(delimiter));
-        
+
         writer.write(headerLine);
         writer.write(lineEnding);
     }
-    
+
     /**
      * Write data row
      */
@@ -376,17 +392,7 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
                 field.setAccessible(true);
                 Object value = field.get(item);
                 ExcelColumn column = field.getAnnotation(ExcelColumn.class);
-                String cellValue = formatValue(value, column);
-                
-                if (value != null && quoteStrings && (value instanceof String || 
-                    value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime ||
-                    value instanceof OffsetDateTime || value instanceof OffsetTime || value instanceof ZonedDateTime ||
-                    value instanceof Instant || value instanceof Year || value instanceof YearMonth || 
-                    value instanceof MonthDay || value instanceof Duration || value instanceof Period)) {
-                    cellValue = "\"" + cellValue + "\"";
-                }
-                
-                joiner.add(cellValue != null ? cellValue : "");
+                joiner.add(escape(formatValue(value, column), quotePreferred(value)));
             } catch (IllegalAccessException e) {
                 log.error("Failed to access field: " + field.getName(), e);
                 joiner.add("");
@@ -395,7 +401,19 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         writer.write(joiner.toString());
         writer.write(lineEnding);
     }
-    
+
+    /**
+     * Whether a value is of a kind this format has always written quoted, independently of
+     * whether the text itself forces quoting
+     */
+    private boolean quotePreferred(Object value) {
+        return value instanceof String
+                || value instanceof LocalDate || value instanceof LocalDateTime || value instanceof LocalTime
+                || value instanceof OffsetDateTime || value instanceof OffsetTime || value instanceof ZonedDateTime
+                || value instanceof Instant || value instanceof Year || value instanceof YearMonth
+                || value instanceof MonthDay || value instanceof Duration || value instanceof Period;
+    }
+
     /**
      * Format value based on field type and annotation
      */
@@ -403,31 +421,52 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         if (value == null) {
             return "";
         }
-        
+
+        String pattern = column == null || column.format().isEmpty() ? null : column.format();
+
         // Use simplified conversion logic
         if (value instanceof Date) {
-            return TypeConverter.formatDate((Date) value, dateFormat);
+            return TypeConverter.formatDate((Date) value, pattern != null ? pattern : dateFormat);
         } else if (value instanceof Calendar) {
-            return TypeConverter.formatDate(((Calendar) value).getTime(), dateFormat);
+            return TypeConverter.formatDate(((Calendar) value).getTime(), pattern != null ? pattern : dateFormat);
         } else if (value instanceof Number) {
-            return TypeConverter.formatNumber((Number) value, numberFormat);
+            return TypeConverter.formatNumber((Number) value, pattern != null ? pattern : numberFormat);
+        } else if (value instanceof Boolean) {
+            return ExcelLabels.booleanLabel((Boolean) value);
         } else if (value instanceof Enum<?>) {
-            // Check if implements SimpliXLabeledEnum
-            if (value instanceof dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) {
-                return ((dev.simplecore.simplix.core.enums.SimpliXLabeledEnum) value).getLabel();
-            } else {
-                return ((Enum<?>) value).name();
-            }
+            return ExcelLabels.enumLabel((Enum<?>) value);
         } else {
-            return TypeConverter.toString(value, "");
+            return TypeConverter.toString(value, pattern != null ? pattern : "");
         }
     }
-    
+
     /**
-     * Quote string value
+     * Render one cell as the format carries it.
+     *
+     * <p>Quoting is not decoration: a cell holding the delimiter, a quote, or a line break splits
+     * the row in two everywhere it is read unless it is quoted and its quotes doubled. A grouped
+     * number carries the delimiter as readily as a company name does.
+     *
+     * @param value the cell's text, which may be absent
+     * @param quotePreferred whether this cell is quoted even when its text does not force it
+     * @return the cell, ready to write
      */
-    private String quote(String value) {
-        return "\"" + value + "\"";
+    private String escape(String value, boolean quotePreferred) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        String text = value;
+        if (sanitizeFormulas && FORMULA_STARTS.indexOf(text.charAt(0)) >= 0) {
+            text = "'" + text;
+        }
+        boolean forced = text.contains(delimiter)
+                || text.indexOf('"') >= 0
+                || text.indexOf('\n') >= 0
+                || text.indexOf('\r') >= 0;
+        if (!forced && !(quotePreferred && quoteStrings)) {
+            return text;
+        }
+        return "\"" + text.replace("\"", "\"\"") + "\"";
     }
 
     protected void setResponseHeaders(HttpServletResponse response, String filename) {
@@ -462,13 +501,15 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         StringJoiner joiner = new StringJoiner(delimiter);
         for (Field field : fields) {
             ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
-            String header = annotation != null ? annotation.name() : field.getName();
-            joiner.add(quoteIfNeeded(header));
+            String header = annotation != null
+                    ? ExcelLabels.columnName(annotation.name())
+                    : field.getName();
+            joiner.add(escape(header, true));
         }
         writer.write(joiner.toString());
-        writer.write("\n");
+        writer.write(lineEnding);
     }
-    
+
     private void writeRow(Object item, List<Field> fields, Writer writer) throws IOException {
         StringJoiner joiner = new StringJoiner(delimiter);
         for (Field field : fields) {
@@ -476,8 +517,7 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
                 field.setAccessible(true);
                 Object value = field.get(item);
                 ExcelColumn column = field.getAnnotation(ExcelColumn.class);
-                String cellValue = formatValue(value, column);
-                joiner.add(quoteStrings && value instanceof String ? quote(cellValue) : cellValue);
+                joiner.add(escape(formatValue(value, column), quotePreferred(value)));
             } catch (IllegalAccessException e) {
                 log.error("Failed to access field: " + field.getName(), e);
                 joiner.add("");
@@ -486,33 +526,21 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         writer.write(joiner.toString());
         writer.write(lineEnding);
     }
-    
-    private String quoteIfNeeded(String value) {
-        if (value == null) {
-            return "";
-        }
-        if (quoteStrings && (value.contains(delimiter) || value.contains("\"") || value.contains("\n"))) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
-    }
 
-    protected List<Field> getExportableFields(Class<?> type) {
-        return Arrays.stream(type.getDeclaredFields())
-            .filter(field -> !field.isAnnotationPresent(ExcelColumn.class) || 
-                           !field.getAnnotation(ExcelColumn.class).ignore())
-            .sorted(Comparator.comparingInt(field -> {
-                ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
-                return annotation != null ? annotation.order() : Integer.MAX_VALUE;
-            }))
-            .collect(Collectors.toList());
-    }
-    
+    /**
+     * Render one value with no column configuration to consult.
+     *
+     * <p>Kept for callers that hold a value and no field — the annotated path is
+     * {@code formatValue(Object, ExcelColumn)}, which is what the exporter itself writes through.
+     *
+     * @param value the value, which may be absent
+     * @return its text
+     */
     protected String formatValue(Object value) {
         if (value == null) {
             return "";
         }
-        
+
         if (value instanceof Date) {
             return new SimpleDateFormat(dateFormat).format(value);
         } else if (value instanceof LocalDate) {
@@ -528,23 +556,26 @@ public class UnifiedCsvExporter<T> extends AbstractExporter<T> implements CsvExp
         } else if (value instanceof ZonedDateTime) {
             return ((ZonedDateTime) value).format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
         } else if (value instanceof Instant) {
-            return ((Instant) value).toString();
-        } else if (value instanceof Year) {
-            return ((Year) value).toString();
-        } else if (value instanceof YearMonth) {
-            return ((YearMonth) value).toString();
-        } else if (value instanceof MonthDay) {
-            return ((MonthDay) value).toString();
-        } else if (value instanceof Duration) {
-            return ((Duration) value).toString();
-        } else if (value instanceof Period) {
-            return ((Period) value).toString();
+            return value.toString();
+        } else if (value instanceof Year || value instanceof YearMonth || value instanceof MonthDay
+                || value instanceof Duration || value instanceof Period || value instanceof Boolean) {
+            return value.toString();
         } else if (value instanceof Number) {
             return new DecimalFormat(numberFormat).format(value);
-        } else if (value instanceof Boolean) {
-            return value.toString();
         }
-        
+
         return value.toString();
     }
+
+    protected List<Field> getExportableFields(Class<?> type) {
+        return Arrays.stream(type.getDeclaredFields())
+            .filter(field -> !field.isAnnotationPresent(ExcelColumn.class) || 
+                           !field.getAnnotation(ExcelColumn.class).ignore())
+            .sorted(Comparator.comparingInt(field -> {
+                ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+                return annotation != null ? annotation.order() : Integer.MAX_VALUE;
+            }))
+            .collect(Collectors.toList());
+    }
+    
 } 

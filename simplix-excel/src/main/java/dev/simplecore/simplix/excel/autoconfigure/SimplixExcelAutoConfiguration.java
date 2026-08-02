@@ -10,6 +10,8 @@ import dev.simplecore.simplix.excel.api.ExcelExporter;
 import dev.simplecore.simplix.excel.api.JxlsExporter;
 import dev.simplecore.simplix.excel.convert.ExcelConverter;
 import dev.simplecore.simplix.excel.format.ValueFormatter;
+import dev.simplecore.simplix.excel.i18n.ExcelLabelResolver;
+import dev.simplecore.simplix.excel.i18n.ExcelLabelsInitializer;
 import dev.simplecore.simplix.excel.impl.exporter.JxlsExporterImpl;
 import dev.simplecore.simplix.excel.impl.exporter.StandardExcelExporter;
 import dev.simplecore.simplix.excel.impl.exporter.UnifiedCsvExporter;
@@ -17,10 +19,12 @@ import dev.simplecore.simplix.excel.properties.SimplixExcelProperties;
 import dev.simplecore.simplix.excel.template.ExcelTemplateGenerator;
 import dev.simplecore.simplix.excel.template.ExcelTemplateManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -45,6 +49,22 @@ public class SimplixExcelAutoConfiguration {
         initializeCaches();
         
         log.info("SimpliX Excel module initialized with configuration: {}", properties);
+    }
+
+    /**
+     * Points the label resolver at the application's own messages, so a header written as a
+     * {@code {key}} placeholder and an enum constant read as the words the screen uses.
+     *
+     * @param messageSource the application's messages, which a context need not have
+     * @param resolvers label resolvers the application registered for bundles the message source
+     *                  cannot reach
+     * @return the initializer, which does its work once the context is up
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public ExcelLabelsInitializer excelLabelsInitializer(ObjectProvider<MessageSource> messageSource,
+                                                        ObjectProvider<ExcelLabelResolver> resolvers) {
+        return new ExcelLabelsInitializer(messageSource, resolvers, properties);
     }
 
     /**
@@ -122,7 +142,7 @@ public class SimplixExcelAutoConfiguration {
         if (!properties.getCache().isFieldCacheEnabled() || 
             !properties.getCache().isColumnCacheEnabled()) {
             // Clear converter caches if either is disabled
-            dev.simplecore.simplix.excel.convert.ExcelConverter.clearCaches();
+            ExcelConverter.clearCaches();
             log.debug("Converter caches cleared: fieldCache={}, columnCache={}", 
                     properties.getCache().isFieldCacheEnabled(),
                     properties.getCache().isColumnCacheEnabled());

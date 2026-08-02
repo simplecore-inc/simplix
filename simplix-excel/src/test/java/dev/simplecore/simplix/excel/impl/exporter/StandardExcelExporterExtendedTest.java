@@ -35,7 +35,7 @@ class StandardExcelExporterExtendedTest {
     class DataTypeCellValueTests {
 
         @Test
-        @DisplayName("should export Boolean field correctly")
+        @DisplayName("should export Boolean field as the configured word, as CSV does")
         void shouldExportBoolean() throws IOException {
             AllTypesEntity entity = new AllTypesEntity();
             entity.setBoolField(true);
@@ -48,7 +48,7 @@ class StandardExcelExporterExtendedTest {
             try (Workbook wb = new XSSFWorkbook(new ByteArrayInputStream(baos.toByteArray()))) {
                 Row row = wb.getSheetAt(0).getRow(1);
                 assertThat(row.getCell(0).getStringCellValue()).isEqualTo("test");
-                assertThat(row.getCell(1).getBooleanCellValue()).isTrue();
+                assertThat(row.getCell(1).getStringCellValue()).isEqualTo("Y");
             }
         }
 
