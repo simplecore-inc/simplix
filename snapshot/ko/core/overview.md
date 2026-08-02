@@ -198,7 +198,7 @@ simplix-core/
 | **SimpliXBaseEntity<K>** | entity | 모든 엔티티의 추상 베이스 클래스 |
 | **SimpliXBaseRepository<E, ID>** | repository | JpaRepository + JpaSpecificationExecutor 확장 |
 | **TreeEntity<T, ID>** | tree.entity | 트리 구조 엔티티 인터페이스 |
-| **SimpliXTreeRepository<T, ID>** | tree.repository | 트리 전용 리포지토리 |
+| **SimpliXTreeRepository<T, ID>** | tree.repository | 트리 전용 저장소 |
 | **SimpliXTreeService<T, ID>** | tree.service | 트리 CRUD, 탐색, 조작, 분석 서비스 |
 | **@TreeEntityAttributes** | tree.annotation | 트리 엔티티 메타데이터 설정 |
 | **SoftDeletable** | entity | Soft-delete 마커 인터페이스 (트리 네이티브 쿼리 자동 필터링) |
@@ -328,7 +328,7 @@ ServiceLoader.load(CacheProvider.class)
 
 ## Related Documents
 
-- [Entity & Repository Guide (엔티티/리포지토리)](ko/core/entity-repository.md) - 베이스 엔티티, 복합 키
+- [Entity & Repository Guide (엔티티/저장소)](ko/core/entity-repository.md) - 베이스 엔티티, 복합 키
 - [Tree Structure Guide (트리 구조)](ko/core/tree-structure.md) - TreeEntity, SimpliXTreeService
 - [Type Converters Guide (타입 변환)](ko/core/type-converters.md) - Boolean, Enum, DateTime 변환
 - [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹

@@ -14,6 +14,8 @@ SSE (Server-Sent Events) 및 WebSocket 기반 실시간 구독 시스템 모듈�
 - ✔ **전역 통계** - 모든 서버의 세션/구독 통계 조회
 - ✔ **분산 Admin** - DB 기반 클러스터 전체 관리
 - ✔ **권한 관리** - 리소스별 접근 권한 제어
+- ✔ **연결 티켓** - 헤더를 보낼 수 없는 `EventSource`를 위한 일회용 단기 티켓
+- ✔ **익명 세션** - 로그인하지 않은 클라이언트도 공개 스트림 구독 가능
 - ✔ **모니터링** - Health Check, Micrometer 메트릭
 
 ## Quick Start
@@ -80,7 +82,7 @@ public class StockPriceCollector implements SimpliXStreamDataCollector {
 ### 4. 클라이언트 연결 (JavaScript)
 
 ```javascript
-// SSE 연결
+// SSE 연결 (쿠키 인증 또는 익명 연결)
 const eventSource = new EventSource('/api/stream/connect');
 
 eventSource.addEventListener('connected', (event) => {
@@ -105,6 +107,20 @@ async function updateSubscriptions(sessionId, subscriptions) {
         body: JSON.stringify({ subscriptions })
     });
 }
+```
+
+Bearer 토큰처럼 헤더로 인증하는 애플리케이션은 `EventSource`가 헤더를 보내지 못하므로 연결 티켓을 사용합니다.
+
+```javascript
+// 인증된 일반 요청으로 티켓 발급
+const response = await fetch('/api/stream/tickets', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+});
+const { ticket } = await response.json();
+
+// 티켓을 붙여 연결
+const eventSource = new EventSource(`/api/stream/connect?ticket=${ticket}`);
 ```
 
 ## Operation Modes
@@ -246,6 +262,9 @@ simplix:
 | `simplix.stream.scheduler.min-interval` | `100ms` | 최소 푸시 주기 |
 | `simplix.stream.scheduler.max-interval` | `60000ms` | 최대 푸시 주기 |
 | `simplix.stream.subscription.max-per-session` | `20` | 세션당 최대 구독 수 |
+| `simplix.stream.security.enforce-authorization` | `false` | authorizer 없는 리소스 거부 |
+| `simplix.stream.security.require-authentication` | `false` | 스트림 연결에 인증 요구 |
+| `simplix.stream.security.connect-ticket-validity` | `30s` | 연결 티켓 유효 시간 |
 | `simplix.stream.distributed.redis-enabled` | `false` | Redis 리더선출/브로드캐스트 활성화 |
 | `simplix.stream.server.instance-id` | auto | 서버 인스턴스 ID |
 | `simplix.stream.server.heartbeat-interval` | `30s` | 서버 하트비트 주기 |
@@ -294,7 +313,8 @@ simplix-stream/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/stream/connect` | SSE 연결 수립 |
+| POST | `/api/stream/tickets` | 연결 티켓 발급 (일회용, 기본 30초 유효) |
+| GET | `/api/stream/connect` | SSE 연결 수립 (`?ticket={ticket}`으로 티켓 사용) |
 | GET | `/api/stream/reconnect?sessionId={id}` | 세션 재연결 (크로스서버 지원) |
 | PUT | `/api/stream/sessions/{id}/subscriptions` | 구독 업데이트 |
 | GET | `/api/stream/sessions/{id}/subscriptions` | 현재 구독 조회 |
@@ -464,7 +484,31 @@ simplix:
     security:
       enforce-authorization: false  # true면 authorizer 없는 리소스 거부
       require-authentication: false # true면 인증 필수
+      connect-ticket-validity: 30s  # 연결 티켓 유효 시간
 ```
+
+#### 연결 티켓
+
+브라우저의 `EventSource`는 요청 헤더를 보낼 수 없습니다. 세션이 헤더로 이동하는 애플리케이션(Bearer 토큰 등)은 다른 모든 호출이 인증되는데도 `GET /api/stream/connect`만 인증할 수단이 없습니다. 세션 값을 쿼리 문자열에 넣는 방식은 클라이언트와 서버 사이의 모든 접근 로그, 프록시 로그, 브라우저 기록에 그 값을 남깁니다.
+
+연결 티켓은 그 대안입니다. 클라이언트가 인증된 일반 요청으로 티켓을 받고, 연결 URL에는 세션 대신 티켓을 붙입니다.
+
+| 속성 | 값 |
+|------|-----|
+| 사용 횟수 | 1회 (읽는 즉시 폐기) |
+| 유효 시간 | 기본 30초 |
+| 담고 있는 정보 | 발급 대상 사용자 ID뿐 |
+| 보관 위치 | 발급한 인스턴스의 메모리 |
+
+분산 모드에서는 티켓을 발급한 인스턴스에서 사용해야 합니다. 일반적인 sticky 로드 밸런서가 이미 하는 동작이며, 다른 인스턴스에 도달한 티켓은 실패하므로 클라이언트가 새로 발급받으면 됩니다.
+
+쿠키로 인증하는 애플리케이션은 티켓이 필요 없습니다. `EventSource`가 쿠키는 보내므로 연결 요청 자체가 인증되며, 이때는 티켓을 붙여도 요청의 인증이 우선합니다.
+
+#### 익명 세션
+
+인증되지 않은 연결도 세션을 만듭니다. 공개 상태 페이지, 계정 없는 구매 화면처럼 로그인 없이 데이터를 받아야 하는 클라이언트가 여기에 해당합니다. 익명 세션은 사용자 ID가 없는 상태로 관리되며, 세션 소유권 검사에서 익명끼리만 서로 소유자로 인정됩니다.
+
+인증을 필수로 하려면 `require-authentication: true`로 설정합니다.
 
 ### 분산 Admin (DB 기반)
 

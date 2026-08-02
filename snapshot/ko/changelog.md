@@ -8,6 +8,68 @@
 
 ## 최근 변경 사항
 
+### 2026-08
+
+#### 새로운 기능
+- **Excel/CSV 다국어 라벨**
+  - `@ExcelColumn(name)`을 `{key}` 형태로 적으면 메시지 키로 해석
+  - 열거형은 `enums.{클래스 단순명}.{상수명}` 키 → `SimpliXLabeledEnum.getLabel()` → `name()` 순으로 해석
+  - 번들이 클래스패스 와일드카드로 병합된 애플리케이션을 위한 `ExcelLabelResolver` 빈
+  - 번역이 없어도 파일 생성은 실패하지 않고 키가 그대로 남음
+  - [상세 문서](ko/excel/export-guide.md)
+
+- **라이선스 검증 키 교체와 유출 키 천장**
+  - 검증 키를 `classpath:license-verification-keys.json` 한 자원에 여러 개 담아 서명 키 교체 시에도 이전 라이선스 유지
+  - 키 이름과 공개키를 한 항목에 함께 담아 둘이 어긋나지 않음
+  - 유출로 표시된 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없으며, 기능·수량 한도·만료·릴리스 상한 중 하나라도 올라가면 `SIGNING_KEY_COMPROMISED`로 거절
+  - 아무것도 등록되지 않은 배포본은 천장이 "보유한 것 없음"으로 고정
+  - `VerificationKeyIdentity` 빈이 필요 없어짐
+  - [상세 문서](ko/license/overview.md)
+
+#### 개선 사항
+- **CSV 셀 이스케이프**
+  - 구분자·따옴표·줄바꿈을 담은 값을 따옴표로 감싸고 내부 따옴표를 중복
+  - 천 단위로 구분한 숫자처럼 문자열이 아닌 값도 같은 규칙 적용
+  - `=` `+` `-` `@`로 시작하는 값 앞에 작은따옴표를 붙여 스프레드시트가 수식으로 실행하지 않게 함 (`sanitizeFormulas`, 기본 켜짐)
+  - `@ExcelColumn(format)`을 CSV 내보내기에서도 사용
+
+- **논리값 표기 통일**
+  - Excel이 참·거짓 셀 대신 CSV와 같은 표기(`format.booleanTrueValue` / `booleanFalseValue`)로 기록
+  - 같은 목록을 두 형식으로 내려받았을 때 두 파일이 다르게 읽히지 않음
+
+#### 빌드/의존성
+- searchable-jpa 1.1.2
+- license-sdk 1.0.6
+
+### 2026-07
+
+#### 새로운 기능
+- **simplix-license 모듈 추가**
+  - 빌드에 내장된 공개키로 서명된 라이선스 토큰 검증
+  - 온라인 활성화와 폐쇄망을 위한 오프라인 활성화
+  - 하트비트 갱신과 주기적 재검증
+  - `@RequiresFeature` 기반 기능 게이팅, 관리자 활성화 연동
+  - `QuotaCounter` 기반 수량 제한 (신규 등록만 차단)
+  - 라이선스 상태별 요청 강제 필터와 최초 설치 게이트
+  - JPA/파일 저장소 자동 선택, Actuator Health와 Micrometer 메트릭
+  - 통합 스타터에 포함되지 않으며 개별 의존성으로 추가
+  - [상세 문서](ko/license/overview.md)
+
+- **스트림 연결 티켓**
+  - `POST /api/stream/tickets`로 일회용 단기 티켓 발급
+  - 헤더를 보낼 수 없는 `EventSource`가 세션 값을 쿼리 문자열에 노출하지 않고 인증
+  - `simplix.stream.security.connect-ticket-validity`로 유효 시간 설정 (기본 30초)
+  - [상세 문서](ko/stream/client-javascript-guide.md)
+
+#### 개선 사항
+- **스트림 익명 세션 처리**
+  - 인증되지 않은 연결의 세션 소유권 비교를 null 안전하게 변경
+  - 공개 상태 페이지처럼 로그인 없이 구독하는 클라이언트가 첫 요청에서 실패하지 않음
+
+- **OpenAPI 컴포넌트 키 검증**
+  - 배열 타입처럼 OpenAPI 명세가 허용하지 않는 문자를 포함한 이름을 스키마 등록에서 제외
+  - 컴포넌트 키를 검증하는 코드 생성기가 문서 전체를 읽지 못하던 문제 해소
+
 ### 2025-12
 
 #### 새로운 기능
@@ -55,7 +117,7 @@
 - **Unique 검증 어노테이션** [`d5fd78a`](https://github.com/simplecore-inc/simplix/commit/d5fd78a)
   - `@UniqueField`: 단일 필드 유니크 검증
   - `@UniqueFields`: 복합 필드 유니크 검증
-  - JPA 리포지토리 기반 중복 검사
+  - JPA 저장소 기반 중복 검사
 
 #### 빌드/의존성
 - **searchable-jpa 버전 업데이트** [`04705c6`](https://github.com/simplecore-inc/simplix/commit/04705c6)
@@ -72,7 +134,7 @@
 - 버그 수정 및 안정성 개선
 
 ### v1.0.0
-- 최초 정식 릴리즈
+- 최초 정식 릴리스
 - Spring Boot 3.x 지원
 - Jakarta EE 9+ 호환
 

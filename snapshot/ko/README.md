@@ -17,7 +17,7 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 
 | 모듈 | 설명 |
 |------|------|
-| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/리포지토리, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답, 유니크 검증(@Unique), I18n 번역(@I18nTrans) |
+| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/저장소, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답, 유니크 검증(@Unique), I18n 번역(@I18nTrans) |
 | **simplix-auth** | Spring Security 통합 JWT/JWE 토큰 인증 |
 | **simplix-cache** | Caffeine(로컬) 및 Redis(분산) 지원 SPI 기반 캐싱 |
 | **simplix-encryption** | 다중 키 프로바이더(Simple, Managed, Vault) 및 키 로테이션 지원 데이터 암호화 |
@@ -29,6 +29,14 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 | **simplix-mybatis** | 커스텀 타입 핸들러 포함 MyBatis 통합 |
 | **simplix-scheduler** | @Scheduled 메서드 실행 로깅 및 모니터링 (ShedLock 연동 지원) |
 | **spring-boot-starter-simplix** | 모든 모듈을 포함하는 자동 구성 통합 스타터 |
+
+다음 모듈은 통합 스타터에 포함되지 않습니다. 필요할 때 개별 의존성으로 추가합니다.
+
+| 모듈 | 설명 |
+|------|------|
+| **simplix-stream** | SSE 및 WebSocket 기반 실시간 구독 |
+| **simplix-sync** | 다중 인스턴스 상태 동기화와 경량 pub/sub |
+| **simplix-license** | 라이선스 등록·활성화·하트비트와 기능·수량 제한 강제 |
 
 ## 빠른 시작
 
@@ -166,6 +174,14 @@ flowchart TB
         SCHED[simplix-scheduler<br/>스케줄러 로깅]
     end
 
+    subgraph standalone["개별 모듈"]
+        direction TB
+        STREAM[simplix-stream<br/>실시간 구독]
+        SYNC[simplix-sync<br/>상태 동기화]
+        LICENSE[simplix-license<br/>라이선스 강제]
+    end
+
+    core --> standalone
     core --> starter
     starter --> AUTH
     starter --> CACHE
@@ -207,6 +223,9 @@ SimpliX를 시작하기 위한 단계별 가이드:
 - [simplix-mybatis](ko/mybatis/readme.md) - MyBatis 통합
 - [simplix-scheduler](ko/scheduler/readme.md) - 스케줄러 실행 로깅
 - [spring-boot-starter-simplix](ko/starter/readme.md) - 통합 스타터
+- [simplix-stream](ko/stream/readme.md) - SSE/WebSocket 실시간 구독
+- [simplix-sync](ko/sync/readme.md) - 다중 인스턴스 상태 동기화
+- [simplix-license](ko/license/readme.md) - 라이선스 강제
 
 ## 보안
 
@@ -216,7 +235,7 @@ SimpliX는 엔터프라이즈 보안을 고려하여 설계되었습니다:
 |------|------|
 | **OWASP Top 10** | 일반적인 웹 취약점 방어 |
 | **XSS 방지** | `HtmlSanitizer`를 통한 내장 HTML 살균 |
-| **SQL Injection 방지** | 파라미터화된 쿼리 및 `SqlInjectionValidator` |
+| **SQL Injection 방지** | 매개변수를 바인딩한 쿼리 및 `SqlInjectionValidator` |
 | **데이터 암호화** | 키 로테이션 지원 AES-256 암호화 |
 | **데이터 마스킹** | 로그에서 PII 자동 마스킹 (`DataMaskingUtils`, `IpAddressMaskingUtils`) |
 | **JWT/JWE 토큰** | 암호화를 통한 안전한 토큰 기반 인증 |

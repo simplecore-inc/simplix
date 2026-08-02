@@ -7,6 +7,7 @@
 - [@ExcelColumn Annotation](#excelcolumn-annotation)
 - [Export Implementations](#export-implementations)
 - [Import Functionality](#import-functionality)
+- [다국어 라벨](#다국어-라벨)
 - [Type Conversion](#type-conversion)
 - [Style Management](#style-management)
 - [Formatter System](#formatter-system)
@@ -40,6 +41,7 @@ flowchart TB
             STYLE[ExcelStyleManager]
             FORMATTER[FormatterCache]
             CONVERTER[ExcelConverter]
+            LABELS["ExcelLabels<br/>헤더·열거형·논리값 라벨"]
         end
 
         STANDARD --> ABSTRACT
@@ -48,9 +50,12 @@ flowchart TB
         ABSTRACT --> STYLE
         ABSTRACT --> FORMATTER
         ABSTRACT --> CONVERTER
+        STANDARD --> LABELS
+        CSV --> LABELS
     end
 
     APP --> EXCEL_MODULE
+    LABELS --> MSG[애플리케이션 MessageSource]
 ```
 
 ---
@@ -278,6 +283,27 @@ CsvExporter.of(User.class)
     .export(response);
 ```
 
+#### 셀 이스케이프
+
+값이 구분자·따옴표·줄바꿈을 담고 있으면 행이 갈라지므로, 모든 셀은 쓰기 직전에 다음 규칙을 거칩니다.
+
+| 조건 | 처리 |
+|------|------|
+| 값에 구분자, `"`, `\n`, `\r`이 있음 | 값을 따옴표로 감싸고 내부 `"`를 `""`로 중복 |
+| `quoteStrings`가 켜져 있고 문자열·날짜·시간 타입 | 위 조건이 아니어도 따옴표로 감쌈 |
+| 값이 `=` `+` `-` `@` 탭 캐리지리턴으로 시작 | 앞에 작은따옴표를 붙여 스프레드시트가 문자열로 읽게 함 |
+| 값이 `null`이거나 빈 문자열 | 빈 칸 |
+
+숫자를 천 단위로 구분해 쓰면 값 자체가 쉼표를 담게 되므로, 이 규칙은 문자열뿐 아니라 모든 타입에 적용됩니다.
+
+수식 차단은 `sanitizeFormulas(false)`로 끌 수 있으며, 기본값은 켜짐입니다. 이 메서드는 `UnifiedCsvExporter`에만 있습니다.
+
+```java
+UnifiedCsvExporter<User> exporter = new UnifiedCsvExporter<>(User.class);
+exporter.sanitizeFormulas(false)     // 값을 원문 그대로 기록
+        .export(users, response);
+```
+
 ---
 
 ## Import Functionality
@@ -322,6 +348,65 @@ importer.setColumnMapping(mapping);
 
 ---
 
+## 다국어 라벨
+
+내보낸 파일은 화면을 본 사람이 그대로 읽습니다. 헤더가 메시지 코드이고 상태 열이 상수 이름이면 화면과 다른 문서가 되므로, 헤더·열거형·논리값은 화면과 같은 말로 기록됩니다.
+
+### ExcelLabels
+
+`StandardExcelExporter`와 `UnifiedCsvExporter`가 값을 쓰기 직전에 거치는 지점입니다. Exporter는 요청마다 `new`로 만드는 평범한 객체라 주입 대상이 아니므로, `ValueFormatter.configure`와 같은 방식으로 정적 설정을 씁니다.
+
+| 대상 | 해석 방식 |
+|------|----------|
+| 컬럼 헤더 | `@ExcelColumn(name)`이 `{key}` 형태면 키로 해석, 아니면 문자열 그대로 |
+| 열거형 값 | `enums.{클래스 단순명}.{상수명}` 키 → `SimpliXLabeledEnum.getLabel()` → `name()` 순으로 해석 |
+| 논리값 | `format.booleanTrueValue` / `booleanFalseValue` 설정값 (기본 `Y` / `N`) |
+
+해석 순서는 등록된 `ExcelLabelResolver` → 애플리케이션 `MessageSource` → 호출자가 준 문자열입니다. 어느 단계에서도 예외를 던지지 않으며, 번역이 없는 키는 중괄호를 벗긴 키 자체로 기록됩니다. 라벨 하나가 없다고 파일 전체가 실패하는 편이 더 나쁘기 때문입니다.
+
+열거형 키를 만들 때는 `getDeclaringClass()`를 씁니다. 본문을 가진 상수는 익명 하위 클래스라 `getClass().getSimpleName()`이 빈 문자열이 됩니다.
+
+```java
+public class ContractExportDto {
+
+    @ExcelColumn(name = "{entities.Contract.customer}", order = 1)
+    private String customer;
+
+    @ExcelColumn(name = "고객 메모", order = 2)   // 키가 아니면 그대로 사용
+    private String note;
+
+    @ExcelColumn(name = "{entities.Contract.status}", order = 3)
+    private ContractStatus status;               // enums.ContractStatus.ACTIVE
+
+    @ExcelColumn(name = "{entities.Contract.active}", order = 4)
+    private Boolean active;                      // Y / N
+}
+```
+
+로케일은 `LocaleContextHolder`가 들고 있는 값을 씁니다. 요청 로케일이 그대로 파일에 반영됩니다.
+
+### ExcelLabelResolver
+
+엔티티 라벨과 열거형 라벨 번들을 클래스패스 와일드카드로 병합하는 애플리케이션은 그 경로를 `MessageSource` basename 목록으로 표현할 수 없습니다. 이런 경우 리졸버를 빈으로 등록하면 `MessageSource`보다 먼저 조회됩니다.
+
+```java
+@Bean
+public ExcelLabelResolver entityLabelResolver(EntityLabelBundle bundle) {
+    // 자기 키가 아니면 null을 반환해 다음 리졸버로 넘김
+    return (key, locale) -> key.startsWith("entities.") ? bundle.find(key, locale) : null;
+}
+```
+
+리졸버가 키를 그대로 돌려주면 번역이 없는 것으로 간주하고 다음 단계로 넘어갑니다. 병합 번들 구현이 미해석을 알리는 일반적인 방식이기 때문입니다.
+
+### ExcelLabelsInitializer
+
+`MessageSource`와 등록된 리졸버를 `ExcelLabels`에 넘기는 빈이며 자동 구성이 등록합니다. 자동 구성 생성자가 아니라 별도 빈인 이유는, 생성자 시점에 `MessageSource`를 당겨오면 애플리케이션이 손볼 기회를 갖기 전에 먼저 만들어지기 때문입니다.
+
+`MessageSource`가 없는 컨텍스트에서도 동작하며, 이때는 리졸버와 호출자 문자열만으로 해석합니다.
+
+---
+
 ## Type Conversion
 
 ### 지원 타입
@@ -334,19 +419,29 @@ importer.setColumnMapping(mapping);
 | 날짜/시간 (Legacy) | Date, Calendar |
 | 날짜/시간 (Java 8+) | LocalDate, LocalDateTime, LocalTime, OffsetDateTime, ZonedDateTime, Instant |
 | 기간 | Year, YearMonth, MonthDay, Duration, Period |
-| 열거형 | Enum, SimpliXLabeledEnum |
+| 열거형 | Enum, SimpliXLabeledEnum (메시지 키 → `getLabel()` → `name()`) |
+| 논리형 | Boolean (Excel·CSV 모두 설정된 표기, 기본 `Y` / `N`) |
 | 컬렉션 | List, Set, Collection (쉼표 구분 문자열로 변환) |
 | 객체 | getId(), getName(), getTitle(), getCode() 메서드 자동 탐색 |
 
 ### Enum 처리
 
+내보내기는 `enums.{클래스 단순명}.{상수명}` 메시지 키를 먼저 찾고, 없으면 `SimpliXLabeledEnum.getLabel()`, 둘 다 없으면 `name()`을 씁니다. 자세한 내용은 [다국어 라벨](#다국어-라벨)에 있습니다.
+
+```properties
+# messages/enums_ko.properties
+enums.Status.ACTIVE=활성
+enums.Status.INACTIVE=비활성
+enums.Status.PENDING=대기
+```
+
 ```java
-// 기본 Enum - name() 사용
+// 메시지 키만으로 라벨을 붙이는 경우
 public enum Status {
     ACTIVE, INACTIVE, PENDING
 }
 
-// SimpliXLabeledEnum - getLabel() 사용
+// 코드에 라벨을 두는 경우 - 메시지 키가 없을 때 getLabel()이 쓰임
 public enum Status implements SimpliXLabeledEnum {
     ACTIVE("활성"),
     INACTIVE("비활성"),
@@ -467,7 +562,7 @@ InputStream stream = templateManager.getTemplateStream("templates/report.xlsx");
 
 #### 자동 템플릿 생성
 
-classpath/filesystem에서 템플릿을 찾을 수 없으면 temp 디렉토리에 기본 템플릿을 자동 생성합니다:
+classpath/filesystem에서 템플릿을 찾을 수 없으면 temp 디렉터리에 기본 템플릿을 자동 생성합니다:
 
 ```java
 // 내부적으로 @ExcelColumn 어노테이션을 분석하여 헤더가 포함된 템플릿 생성
@@ -475,7 +570,7 @@ byte[] template = templateManager.getOrCreateTemplate(
     "nonexistent-template.xlsx",
     UserExportDto.class
 );
-// → temp 디렉토리에 UserExportDto 필드 기반 헤더가 포함된 템플릿 생성
+// → temp 디렉터리에 UserExportDto 필드 기반 헤더가 포함된 템플릿 생성
 ```
 
 ### JXLS Markers
@@ -541,6 +636,8 @@ simplix:
       fieldCacheEnabled: true
       columnCacheEnabled: true
 ```
+
+`booleanTrueValue`와 `booleanFalseValue`는 Excel과 CSV 양쪽에 같이 적용됩니다. `{key}` 형태로 적으면 메시지 키로 해석되어 로케일별로 다른 표기를 쓸 수 있습니다.
 
 ---
 

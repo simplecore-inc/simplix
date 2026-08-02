@@ -281,7 +281,7 @@ public class Menu implements TreeEntity<Menu, UUID> {
 
 ## SimpliXTreeRepository
 
-트리 구조 전용 리포지토리입니다.
+트리 구조 전용 저장소입니다.
 
 ```java
 @NoRepositoryBean
@@ -297,7 +297,7 @@ public interface SimpliXTreeRepository<T extends TreeEntity<T, ID>, ID>
 }
 ```
 
-### 리포지토리 정의
+### 저장소 정의
 
 ```java
 public interface CategoryRepository
@@ -739,7 +739,7 @@ public class Department implements TreeEntity<Department, Long>, SoftDeletable {
 
 ### 자동 감지 메커니즘
 
-`SimpliXRepositoryFactoryBean`이 리포지토리 생성 시 다음 단계를 자동 수행합니다:
+`SimpliXRepositoryFactoryBean`이 저장소 생성 시 다음 단계를 자동 수행합니다:
 
 1. 엔티티가 `SoftDeletable` 인터페이스를 구현하는지 확인
 2. `@Filter` 어노테이션의 `condition` 속성에서 컬럼명 추출 (예: `"deleted = :isDeleted"` -> `"deleted"`)
@@ -839,7 +839,7 @@ public class Category implements TreeEntity<Category, Long> {
 ## Related Documents
 
 - [Overview (아키텍처 개요)](ko/core/overview.md) - 모듈 구조
-- [Entity & Repository Guide (엔티티/리포지토리)](ko/core/entity-repository.md) - 베이스 엔티티
+- [Entity & Repository Guide (엔티티/저장소)](ko/core/entity-repository.md) - 베이스 엔티티
 - [Type Converters Guide (타입 변환)](ko/core/type-converters.md) - Boolean, Enum, DateTime 변환
 - [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹
 - [Exception & API Guide (예외/API)](ko/core/exception-api.md) - 에러 코드, API 응답

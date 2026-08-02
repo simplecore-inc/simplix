@@ -7,7 +7,7 @@
 * **SimpliX Core**
   * [소개](ko/core/readme.md)
   * [개요](ko/core/overview.md)
-  * [엔티티/리포지토리](ko/core/entity-repository.md)
+  * [엔티티/저장소](ko/core/entity-repository.md)
   * [트리 구조](ko/core/tree-structure.md)
   * [타입 변환](ko/core/type-converters.md)
   * [I18n 번역](ko/core/i18n-translation.md)
@@ -91,7 +91,38 @@
   * [사용 가이드](ko/scheduler/usage-guide.md)
   * [설정 가이드](ko/scheduler/configuration.md)
 
+* **실시간 스트림 (Stream)**
+  * [소개](ko/stream/readme.md)
+  * [개요](ko/stream/overview.md)
+  * [SSE 단독 모드 튜토리얼](ko/stream/tutorial-sse-standalone.md)
+  * [SSE 분산 (DB) 튜토리얼](ko/stream/tutorial-sse-distributed-db.md)
+  * [SSE 분산 (Redis) 튜토리얼](ko/stream/tutorial-sse-distributed-redis.md)
+  * [WebSocket 단독 튜토리얼](ko/stream/tutorial-websocket-standalone.md)
+  * [WebSocket 분산 튜토리얼](ko/stream/tutorial-websocket-distributed.md)
+  * [이벤트 기반 스트리밍](ko/stream/tutorial-event-source.md)
+  * [JavaScript 클라이언트](ko/stream/client-javascript-guide.md)
+  * [프레임워크 통합](ko/stream/client-framework-guide.md)
+  * [Admin API](ko/stream/admin-api-guide.md)
+  * [모니터링](ko/stream/monitoring-guide.md)
+
+* **상태 동기화 (Sync)**
+  * [소개](ko/sync/readme.md)
+  * [개요](ko/sync/overview.md)
+  * [시작하기](ko/sync/getting-started.md)
+  * [고급 가이드](ko/sync/advanced-guide.md)
+
+* **라이선스 (License)**
+  * [소개](ko/license/readme.md)
+  * [개요](ko/license/overview.md)
+  * [활성화 가이드](ko/license/activation-guide.md)
+  * [강제 적용 가이드](ko/license/enforcement-guide.md)
+  * [설정 레퍼런스](ko/license/configuration.md)
+
+* **eGovFrame 연동**
+  * [소개](ko/egov/readme.md)
+  * [개요](ko/egov/overview.md)
+
 * **기타**
   * [변경 이력](ko/changelog.md)
-  * [라이선스](ko/license.md)
+  * [배포 라이선스 정책](ko/license.md)
   * [문서 기여 가이드](ko/documentation-guide.md)

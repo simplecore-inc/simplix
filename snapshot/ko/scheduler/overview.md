@@ -9,7 +9,7 @@ SimpliX Scheduler 모듈은 Spring `@Scheduled` 메서드의 실행을 자동으
 - **AOP 기반 자동 로깅**: `@Scheduled` 메서드를 자동으로 인터셉트하여 실행 정보 기록
 - **Strategy Pattern**: database/in-memory 저장 전략 지원
 - **ShedLock 통합**: 분산 환경에서 스케줄러 레지스트리 생성 시 락 지원
-- **Provider Interface**: 사용자 프로젝트에서 엔티티/리포지토리를 유연하게 구현
+- **Provider Interface**: 사용자 프로젝트에서 엔티티/저장소를 유연하게 구현
 - **Auto-Configuration**: Spring Boot 자동 설정
 - **Custom Naming**: `@SchedulerName` 어노테이션으로 스케줄러 이름 지정
 - **Placeholder Resolution**: Spring `${...}` placeholder를 실제 값으로 치환하여 저장

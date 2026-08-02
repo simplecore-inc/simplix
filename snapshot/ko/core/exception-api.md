@@ -404,7 +404,7 @@ public class GlobalExceptionHandler {
 ## Related Documents
 
 - [Overview (아키텍처 개요)](ko/core/overview.md) - 모듈 구조
-- [Entity & Repository Guide (엔티티/리포지토리)](ko/core/entity-repository.md) - 베이스 엔티티, 복합 키
+- [Entity & Repository Guide (엔티티/저장소)](ko/core/entity-repository.md) - 베이스 엔티티, 복합 키
 - [Tree Structure Guide (트리 구조)](ko/core/tree-structure.md) - TreeEntity, SimpliXTreeService
 - [Type Converters Guide (타입 변환)](ko/core/type-converters.md) - Boolean, Enum, DateTime 변환
 - [Security Guide (보안)](ko/core/security.md) - XSS 방지, 해싱, 마스킹

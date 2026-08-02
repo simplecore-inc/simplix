@@ -73,7 +73,7 @@ public class Article extends SimpliXBaseEntity<UUID> {
 
 ### SimpliXBaseRepository<E, ID>
 
-JpaRepository와 JpaSpecificationExecutor를 확장하는 베이스 리포지토리입니다.
+JpaRepository와 JpaSpecificationExecutor를 확장하는 베이스 저장소입니다.
 
 ```java
 @NoRepositoryBean

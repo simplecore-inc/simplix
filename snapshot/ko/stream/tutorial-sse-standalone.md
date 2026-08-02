@@ -344,7 +344,12 @@ simplix:
     security:
       enforce-authorization: true   # true: authorizer 없으면 거부
       require-authentication: true  # true: 인증 필수
+      connect-ticket-validity: 30s  # 연결 티켓 유효 시간
 ```
+
+`require-authentication`이 `false`면 인증되지 않은 클라이언트도 익명 세션으로 연결됩니다. 공개 상태 페이지처럼 로그인 없이 데이터를 받아야 하는 화면에 사용합니다.
+
+헤더로 인증하는 애플리케이션은 `EventSource`가 헤더를 보내지 못하므로 연결 티켓을 사용합니다. 자세한 내용은 [JavaScript 클라이언트 가이드](ko/stream/client-javascript-guide.md#연결-인증)를 참고하세요.
 
 ---
 

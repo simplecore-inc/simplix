@@ -320,7 +320,7 @@ GET /oauth2/authorize/google
 
 ### 1. REDIRECT
 
-URL 쿼리 파라미터로 토큰 전달:
+URL 쿼리 매개변수로 토큰 전달:
 
 ```yaml
 simplix:
