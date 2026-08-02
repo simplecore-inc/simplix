@@ -8,6 +8,39 @@
 
 ## 최근 변경 사항
 
+### 2026-08
+
+#### 새로운 기능
+- **Excel/CSV 다국어 라벨**
+  - `@ExcelColumn(name)`을 `{key}` 형태로 적으면 메시지 키로 해석
+  - 열거형은 `enums.{클래스 단순명}.{상수명}` 키 → `SimpliXLabeledEnum.getLabel()` → `name()` 순으로 해석
+  - 번들이 클래스패스 와일드카드로 병합된 애플리케이션을 위한 `ExcelLabelResolver` 빈
+  - 번역이 없어도 파일 생성은 실패하지 않고 키가 그대로 남음
+  - [상세 문서](/ko/excel/export-guide.md)
+
+- **라이선스 검증 키 교체와 유출 키 천장**
+  - 검증 키를 `classpath:license-verification-keys.json` 한 자원에 여러 개 담아 서명 키 교체 시에도 이전 라이선스 유지
+  - 키 이름과 공개키를 한 항목에 함께 담아 둘이 어긋나지 않음
+  - 유출로 표시된 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없으며, 기능·수량 한도·만료·릴리스 상한 중 하나라도 올라가면 `SIGNING_KEY_COMPROMISED`로 거절
+  - 아무것도 등록되지 않은 배포본은 천장이 "보유한 것 없음"으로 고정
+  - `VerificationKeyIdentity` 빈이 필요 없어짐
+  - [상세 문서](/ko/license/overview.md)
+
+#### 개선 사항
+- **CSV 셀 이스케이프**
+  - 구분자·따옴표·줄바꿈을 담은 값을 따옴표로 감싸고 내부 따옴표를 중복
+  - 천 단위로 구분한 숫자처럼 문자열이 아닌 값도 같은 규칙 적용
+  - `=` `+` `-` `@`로 시작하는 값 앞에 작은따옴표를 붙여 스프레드시트가 수식으로 실행하지 않게 함 (`sanitizeFormulas`, 기본 켜짐)
+  - `@ExcelColumn(format)`을 CSV 내보내기에서도 사용
+
+- **논리값 표기 통일**
+  - Excel이 참·거짓 셀 대신 CSV와 같은 표기(`format.booleanTrueValue` / `booleanFalseValue`)로 기록
+  - 같은 목록을 두 형식으로 내려받았을 때 두 파일이 다르게 읽히지 않음
+
+#### 빌드/의존성
+- searchable-jpa 1.1.2
+- license-sdk 1.0.6
+
 ### 2026-07
 
 #### 새로운 기능
@@ -84,7 +117,7 @@
 - **Unique 검증 어노테이션** [`d5fd78a`](https://github.com/simplecore-inc/simplix/commit/d5fd78a)
   - `@UniqueField`: 단일 필드 유니크 검증
   - `@UniqueFields`: 복합 필드 유니크 검증
-  - JPA 리포지토리 기반 중복 검사
+  - JPA 저장소 기반 중복 검사
 
 #### 빌드/의존성
 - **searchable-jpa 버전 업데이트** [`04705c6`](https://github.com/simplecore-inc/simplix/commit/04705c6)
@@ -101,7 +134,7 @@
 - 버그 수정 및 안정성 개선
 
 ### v1.0.0
-- 최초 정식 릴리즈
+- 최초 정식 릴리스
 - Spring Boot 3.x 지원
 - Jakarta EE 9+ 호환
 
