@@ -90,6 +90,10 @@ public class LicenseRegistration extends SimpliXBaseEntity<String> {
     @Comment("When the license server reported this activation revoked")
     private Instant revokedAt;
 
+    @Column(name = "compromise_ceiling", length = 4096)
+    @Comment("What was held when a compromised signing key was first learned of, as JSON")
+    private String compromiseCeiling;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Comment("When the registration row was first written")
     private Instant createdAt;

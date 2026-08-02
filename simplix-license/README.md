@@ -5,6 +5,8 @@
 ## Features
 
 - ✔ **서명 검증** - 빌드에 내장된 공개키로만 토큰을 검증하며, 검증 키는 설정으로 바꿀 수 없음
+- ✔ **키 교체** - 검증 키를 여러 개 담아 발급자가 서명 키를 바꿔도 이전 라이선스가 살아 있음
+- ✔ **유출 키 천장** - 유출로 표시된 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없음
 - ✔ **온라인 활성화** - 제품 키로 라이선스 서버에 좌석을 확보하고 머신에 바인딩된 토큰 발급
 - ✔ **오프라인 활성화** - 폐쇄망 설치를 위한 활성화 요청 파일 생성과 서명된 응답 등록
 - ✔ **하트비트 갱신** - 주기적으로 새 토큰을 받아 폐기·만료·계약 변경을 배포본에 반영
@@ -48,11 +50,10 @@ accesscore.gpr.token=github_personal_access_token
 
 ### 2. 필수 구현
 
-애플리케이션은 자신이 어떤 제품인지 두 개의 빈으로 알려야 합니다. 기본값은 없으며, 없으면 컨텍스트가 기동하지 않습니다.
+애플리케이션은 자신이 어떤 제품인지 빈 하나로 알려야 합니다. 기본값은 없으며, 없으면 컨텍스트가 기동하지 않습니다.
 
 ```java
 import dev.accesscore.license.sdk.spi.LicenseSpi.ProductIdentity;
-import dev.simplecore.simplix.license.config.VerificationKeyIdentity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -78,17 +79,23 @@ public class LicenseIdentityConfig {
             }
         };
     }
-
-    @Bean
-    public VerificationKeyIdentity verificationKeyIdentity() {
-        return () -> "acps-portal-2026";
-    }
 }
 ```
 
 `release()`는 활성화 시 라이선스 서버에 보고되며, 계약된 릴리스 상한과 비교됩니다.
 
-검증 공개키는 `src/main/resources/license-public-key.pem`에 둡니다. 위치가 고정되어 있어 배포본이 스스로 만든 키로 토큰을 검증할 수 없습니다.
+검증 키는 `src/main/resources/license-verification-keys.json`에 둡니다. 키 이름과 공개키가 한 항목에 함께 있어 둘이 어긋날 수 없고, 위치가 고정되어 있어 배포본이 스스로 만든 키로 토큰을 검증할 수 없습니다.
+
+```json
+[
+  { "keyId": "acps-portal-2026", "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...", "compromised": false },
+  { "keyId": "acps-portal-2024", "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...", "compromised": true }
+]
+```
+
+키를 여러 개 담는 이유는 발급자가 서명 키를 바꿔도 이전 키로 서명된 라이선스가 한꺼번에 거절되지 않게 하기 위함입니다. 어떤 키로 검증할지는 토큰이 싣고 있는 키 이름이 정합니다.
+
+`compromised`가 `true`인 키는 검증에는 그대로 쓰이지만, **그 키로 서명된 토큰은 배포본이 이미 보유한 것보다 많이 줄 수 없습니다.** 자리 수·기능·수량 한도·만료 중 하나라도 늘면 토큰 전체가 거절됩니다. 비교 기준은 그 표시를 처음 읽은 시점의 보유 상태로 고정되며, 아무것도 등록되지 않은 배포본은 고정할 것이 없어 그 키로는 아무것도 받지 못합니다.
 
 ### 3. Configuration
 
@@ -164,12 +171,15 @@ simplix-license/
 |   +-- LicenseAutoConfiguration        # Bean assembly over the license SDK
 |   +-- LicenseActuatorAutoConfiguration# Health indicator and metrics
 |   +-- LicenseProperties               # Configuration properties
-|   +-- VerificationKeyIdentity         # Key name the product files its key under
+|   +-- VerificationKey                 # One carried key: name, material, standing
+|   +-- VerificationKeys                # Every key this build carries
 |   +-- ContactIdentity                 # Address the deployment answers at
 |   +-- LicenseRuntimeHints             # Native image hints
 +-- core/
 |   +-- LicenseManager                  # Verification orchestration
 |   +-- FileLicenseStore                # File-backed registration store
+|   +-- CompromiseCeiling               # What was held when a key turned out compromised
+|   +-- CompromiseCeilingStore          # Where that ceiling is kept
 |   +-- LicenseAuditTrail               # Status and lifecycle recording
 +-- store/
 |   +-- JpaLicenseStore                 # Database-backed registration store
@@ -255,6 +265,7 @@ simplix-license/
 | `CLOCK_TAMPERED` | 차단 | 호스트 시계가 되돌려짐 |
 | `INTEGRITY_FAILED` | 차단 | 바이너리 체크섬 불일치 |
 | `HEARTBEAT_OVERDUE` | 차단 | 하트비트가 요구 주기를 넘김 |
+| `SIGNING_KEY_COMPROMISED` | 차단 | 유출된 키로 서명된 토큰이 이미 보유한 것보다 더 요구함 |
 
 차단 상태에서도 다음 경로는 열려 있어 운영자가 셸 없이 라이선스를 등록할 수 있습니다.
 
@@ -283,16 +294,6 @@ public interface ProductIdentity {
 }
 ```
 
-### VerificationKeyIdentity (필수)
-
-토큰이 어떤 이름의 키로 서명됐는지, 내장 공개키를 어떤 이름으로 등록할지 결정합니다.
-
-```java
-public interface VerificationKeyIdentity {
-    String verificationKeyId();
-}
-```
-
 ### 선택 구현
 
 | 인터페이스 | 주요 메서드 | 등록 시 동작 |
@@ -304,7 +305,7 @@ public interface VerificationKeyIdentity {
 | `ActivationServerDirectory` | `serverUrl()` | 라이선스 서버 주소를 설정 대신 애플리케이션이 보관 |
 | `ContactIdentity` | `contactEmail()` | 활성화 시 담당자 주소를 함께 보고해 다른 회사 설치본에 키가 잘못 쓰이는 것을 막음 |
 | `SetupState` | `isInitialized()`, `licenseServerUrl()`, `saveLicenseServerUrl(String)` | 최초 설치 마법사와 설치 게이트 필터 활성화 |
-| `LicenseStore` | `load()`, `save(RegistrationRecord)`, `clear()` | 등록 정보를 애플리케이션이 직접 보관, 없으면 JPA 또는 파일 저장소 |
+| `LicenseStore` + `CompromiseCeilingStore` | `load()`, `save(RegistrationRecord)`, `clear()`, `loadCeiling()`, `saveCeiling(CompromiseCeiling)` | 등록 정보와 고정된 천장을 애플리케이션이 직접 보관, 없으면 JPA 또는 파일 저장소. 둘 중 하나만 등록하면 컨텍스트가 기동하지 않습니다 |
 
 ### QuotaCounter 구현 예시
 
@@ -362,9 +363,9 @@ public class DeviceRegistrationService {
 |--------|------|------|
 | `JpaLicenseStore` | JPA가 클래스패스에 있음 | 컨테이너를 교체해도 볼륨 없이 라이선스 유지 |
 | `FileLicenseStore` | JPA 없음 | `state-path`에 상태 기록, 볼륨 마운트 필요 |
-| 직접 구현 | `LicenseStore` 빈 등록 | 애플리케이션이 보관 위치 결정 |
+| 직접 구현 | `LicenseStore` + `CompromiseCeilingStore` 빈 등록 | 애플리케이션이 보관 위치 결정 |
 
-DB 저장소는 `license_registration` 테이블 한 개를 사용하며 항상 한 행만 유지합니다.
+DB 저장소는 `license_registration` 테이블 한 개를 사용하며 항상 한 행만 유지합니다. 유출 키 천장도 같은 행의 `compromise_ceiling` 열에 보관되는데, 등록 정보가 살아남는 만큼 정확히 같이 살아남아야 하기 때문입니다.
 
 ## Monitoring
 

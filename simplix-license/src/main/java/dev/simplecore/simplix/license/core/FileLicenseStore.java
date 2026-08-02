@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * <p>Both files are created with owner-only permissions where the filesystem supports it.
  */
-public class FileLicenseStore implements LicenseStore {
+public class FileLicenseStore implements LicenseStore, CompromiseCeilingStore {
 
     private static final Logger log = LoggerFactory.getLogger(FileLicenseStore.class);
 
@@ -53,7 +53,11 @@ public class FileLicenseStore implements LicenseStore {
         String token = readToken().orElse(null);
         State state = readState().orElse(null);
 
-        if (token == null && state == null) {
+        // A state file holding only the fixed ceiling is not a registration. It exists on a
+        // deployment that carries a compromised key and has registered nothing, and reporting a
+        // record there would tell every caller that asks whether anything is registered that
+        // something is — down to offering to release a seat this deployment never took.
+        if (token == null && (state == null || holdsNoRegistration(state))) {
             return Optional.empty();
         }
         if (state == null) {
@@ -75,25 +79,66 @@ public class FileLicenseStore implements LicenseStore {
         if (record.hasToken()) {
             write(tokenPath, record.licenseToken());
         }
-        State state = new State(
+        writeState(new State(
                 record.productKey(),
                 record.activationId(),
                 record.activationSecret(),
                 record.instanceId(),
                 record.verificationWatermark(),
                 record.lastHeartbeatAt(),
-                record.revokedAt());
-        try {
-            write(statePath, objectMapper.writeValueAsString(state));
-        } catch (IOException e) {
-            log.error("Failed to serialize license state to {}", statePath, e);
-        }
+                record.revokedAt(),
+                readState().map(State::compromiseCeiling).orElse(null)));
     }
 
     @Override
     public void clear() {
         deleteQuietly(tokenPath);
         deleteQuietly(statePath);
+    }
+
+    @Override
+    public Optional<CompromiseCeiling> loadCeiling() {
+        return readState().map(State::compromiseCeiling);
+    }
+
+    @Override
+    public void saveCeiling(CompromiseCeiling ceiling) {
+        State existing = readState()
+                .orElseGet(() -> new State(null, null, null, null, null, null, null, null));
+        writeState(new State(
+                existing.productKey(),
+                existing.activationId(),
+                existing.activationSecret(),
+                existing.instanceId(),
+                existing.verificationWatermark(),
+                existing.lastHeartbeatAt(),
+                existing.revokedAt(),
+                ceiling));
+    }
+
+    /**
+     * @param state the state file's contents
+     * @return whether it carries nothing of the registration itself
+     */
+    private static boolean holdsNoRegistration(State state) {
+        return state.productKey() == null
+                && state.activationId() == null
+                && state.activationSecret() == null
+                && state.instanceId() == null
+                && state.verificationWatermark() == null
+                && state.lastHeartbeatAt() == null
+                && state.revokedAt() == null;
+    }
+
+    /**
+     * @param state what to persist into the state file
+     */
+    private void writeState(State state) {
+        try {
+            write(statePath, objectMapper.writeValueAsString(state));
+        } catch (IOException e) {
+            log.error("Failed to serialize license state to {}", statePath, e);
+        }
     }
 
     /**
@@ -179,6 +224,8 @@ public class FileLicenseStore implements LicenseStore {
      * @param verificationWatermark the latest instant a judgement succeeded at
      * @param lastHeartbeatAt the latest instant a heartbeat succeeded at
      * @param revokedAt when the license server reported this activation revoked
+     * @param compromiseCeiling what was held when a compromised signing key was first learned
+     *        of, null while no key this build carries is marked compromised
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record State(
@@ -188,7 +235,8 @@ public class FileLicenseStore implements LicenseStore {
             String instanceId,
             Instant verificationWatermark,
             Instant lastHeartbeatAt,
-            Instant revokedAt
+            Instant revokedAt,
+            CompromiseCeiling compromiseCeiling
     ) {
     }
 }

@@ -57,6 +57,7 @@ flowchart TD
 | `RELEASE_NOT_ENTITLED` | 모든 요청 허용, 유료 기능은 기능 게이트가 거부 |
 | `GRACE_PERIOD` + `READ_ONLY` | GET, HEAD, OPTIONS만 허용 |
 | `GRACE_PERIOD` + `RESTRICTED` | 모든 요청 허용, 기능 제한만 적용 |
+| `SIGNING_KEY_COMPROMISED` | 예외 경로를 제외하고 403 |
 | 그 외 | 예외 경로를 제외하고 403 |
 
 ### 항상 열려 있는 경로
@@ -385,6 +386,7 @@ public class LicenseAuditRecorder implements AuditRecorder {
 | Key | 발생 지점 |
 |-----|----------|
 | `error.license.notValid` | 요청 필터의 일반 거부 |
+| `error.license.signingKeyCompromised` | 유출로 표시된 키로 서명된 토큰이 고정된 천장보다 더 요구함 |
 | `error.license.gracePeriodReadOnly` | 유예 기간 읽기 전용 모드의 쓰기 요청 |
 | `error.license.quotaReached` | 수량 상한 초과 |
 | `error.license.malformedProductKey` | 제품 키 형식 오류 |
@@ -420,6 +422,16 @@ public class LicenseAuditRecorder implements AuditRecorder {
 증상: 조회는 되는데 저장이 403으로 실패합니다.
 
 원인: `grace-period-mode`가 `READ_ONLY`입니다. 의도한 동작이며, 유예 기간에도 쓰기를 허용하려면 `RESTRICTED`로 바꿉니다. 이 경우 요청은 통과하고 기능 게이트만 적용됩니다.
+
+### SIGNING_KEY_COMPROMISED로 차단됩니다
+
+증상: 정상 발급된 토큰인데 상태가 `SIGNING_KEY_COMPROMISED`입니다.
+
+원인: 토큰을 서명한 키가 이 빌드의 검증 키 목록에서 유출로 표시되어 있고, 토큰이 고정된 천장보다 많은 것을 요구합니다. 기능·수량 한도·만료·릴리스 상한 중 하나라도 올라가면 토큰 전체가 거절됩니다.
+
+기동 로그에 거절된 토큰의 키 이름이 남습니다. 현재 서명 키를 담은 릴리스로 올린 뒤 그 키로 발급된 토큰을 등록하면 풀립니다. 유출 키로 서명된 토큰을 다시 발급받아도 결과는 같습니다.
+
+아무것도 등록되지 않은 배포본은 천장이 "보유한 것 없음"으로 고정되므로, 유출 키로 서명된 토큰으로는 어떤 것도 등록할 수 없습니다.
 
 ### 라이선스 등록 화면에도 접근할 수 없습니다
 

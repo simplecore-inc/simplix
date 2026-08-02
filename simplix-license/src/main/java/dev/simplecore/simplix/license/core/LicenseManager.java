@@ -1,8 +1,11 @@
 package dev.simplecore.simplix.license.core;
 
 import dev.simplecore.simplix.license.config.LicenseProperties;
+import dev.simplecore.simplix.license.config.VerificationKeys;
 import dev.simplecore.simplix.license.integrity.RuntimeIntegrityChecker;
 import dev.simplecore.simplix.license.model.LicenseState;
+import dev.accesscore.license.sdk.issuing.ReleaseVersions;
+import dev.accesscore.license.sdk.model.LicenseModel.Denial;
 import dev.accesscore.license.sdk.model.LicenseModel.EvaluationResponse;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.LicenseModel.RegistrationRecord;
@@ -17,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -35,6 +39,9 @@ public class LicenseManager {
 
     private static final Logger log = LoggerFactory.getLogger(LicenseManager.class);
 
+    /** The message key explaining that refusal to whoever is looking at the screen. */
+    public static final String CEILING_MESSAGE_KEY = "error.license.signingKeyCompromised";
+
     private final LicenseProperties properties;
     // The SDK's manager shares this class's simple name; it is named in full here because both
     // are needed in one file, and this is the only line that mentions it.
@@ -42,7 +49,14 @@ public class LicenseManager {
     private final RuntimeIntegrityChecker integrityChecker;
     private final LicenseState state;
     private final LicenseAuditTrail auditTrail;
+    private final VerificationKeys verificationKeys;
+    private final CompromiseCeilingStore ceilingStore;
     private final String publicKeyFingerprint;
+
+    // The ceiling's release axis is ranked by the SDK rather than here, because the deployment
+    // and the issuer have to agree on whether 3.10 is newer than 3.9, and a second ranking
+    // written in Java would only disagree at a customer site.
+    private final ReleaseVersions releaseVersions = new ReleaseVersions();
 
     /**
      * @param properties the license configuration
@@ -50,6 +64,8 @@ public class LicenseManager {
      * @param integrityChecker the binary checksum verifier
      * @param state the shared runtime state every gate reads
      * @param auditTrail where status transitions are recorded
+     * @param verificationKeys the keys this build carries, and which of them are compromised
+     * @param ceilingStore where the fixed ceiling is kept
      * @param publicKeyFingerprint the fingerprint of the verification key this build carries
      */
     public LicenseManager(LicenseProperties properties,
@@ -57,12 +73,16 @@ public class LicenseManager {
                           RuntimeIntegrityChecker integrityChecker,
                           LicenseState state,
                           LicenseAuditTrail auditTrail,
+                          VerificationKeys verificationKeys,
+                          CompromiseCeilingStore ceilingStore,
                           String publicKeyFingerprint) {
         this.properties = properties;
         this.sdk = sdk;
         this.integrityChecker = integrityChecker;
         this.state = state;
         this.auditTrail = auditTrail;
+        this.verificationKeys = verificationKeys;
+        this.ceilingStore = ceilingStore;
         this.publicKeyFingerprint = publicKeyFingerprint;
     }
 
@@ -76,11 +96,17 @@ public class LicenseManager {
      *
      * <p>Verification runs before the recovery attempt, because whether the provisioned file is
      * even considered depends on what the stored registration turned out to be worth.
+     *
+     * <p>A deployment holding nothing fixes its ceiling before the provisioned file is read.
+     * Reading first would let a token dropped in by hand become the very thing the ceiling is
+     * measured against, and a fresh deployment fed a forged token is exactly the route the
+     * ceiling closes.
      */
     public void initialize() {
         log.info("License public key fingerprint: {}. Only licenses signed by the matching "
                         + "private key can be registered here; compare this with the fingerprint "
                         + "the license server logs for its signing key.", publicKeyFingerprint);
+        fixEmptyCeilingWhenNothingHeld();
         importProvisionedToken();
         verify();
         recoverFromProvisionedToken();
@@ -93,7 +119,8 @@ public class LicenseManager {
         LicenseStatus previous = state.status();
         Instant now = Instant.now();
 
-        EvaluationResponse evaluation = sdk.verify(now, integrityChecker.verify());
+        EvaluationResponse evaluation =
+                underCompromiseCeiling(sdk.verify(now, integrityChecker.verify()), now);
         state.markChecked(now);
 
         if (previous != evaluation.status()) {
@@ -193,6 +220,81 @@ public class LicenseManager {
     public boolean isGracePeriodReadOnly() {
         return state.isGracePeriod()
                 && properties.getGracePeriodMode() == LicenseProperties.GracePeriodMode.READ_ONLY;
+    }
+
+    /**
+     * Fixes an empty ceiling when this deployment holds no token at all.
+     *
+     * <p>Only ever runs once, and only in a build that carries a compromised key. What it
+     * settles is the case the ceiling would otherwise miss: a deployment with nothing stored has
+     * nothing to measure against, so the first token it is given would become its own ceiling.
+     * Fixed at nothing beforehand, that token grants nothing instead.
+     */
+    private void fixEmptyCeilingWhenNothingHeld() {
+        if (!verificationKeys.carriesCompromisedKey()) {
+            return;
+        }
+        if (ceilingStore.loadCeiling().isPresent()) {
+            return;
+        }
+        if (sdk.currentRecord().map(RegistrationRecord::hasToken).orElse(false)) {
+            return;
+        }
+        ceilingStore.saveCeiling(CompromiseCeiling.nothing(Instant.now()));
+        log.warn("One of the verification keys this build carries is compromised and nothing is "
+                + "registered here, so a licence signed by that key can grant this deployment "
+                + "nothing. Register under a key this build still trusts.");
+    }
+
+    /**
+     * Holds a judgement to what this deployment already had when it learned of a compromise.
+     *
+     * <p>Judgements reached under a key that is not compromised pass through untouched, which is
+     * what keeps a retired key — one merely no longer signing — able to grant everything it
+     * always could.
+     *
+     * @param evaluation what the core concluded
+     * @param now the instant this judgement was reached at
+     * @return the judgement, or a refusal when a compromised key tried to grant more
+     */
+    private EvaluationResponse underCompromiseCeiling(EvaluationResponse evaluation, Instant now) {
+        if (!verificationKeys.carriesCompromisedKey()) {
+            return evaluation;
+        }
+
+        CompromiseCeiling ceiling = ceilingStore.loadCeiling().orElse(null);
+        if (ceiling == null) {
+            ceiling = evaluation.usable()
+                    ? CompromiseCeiling.from(now, evaluation.payload())
+                    : CompromiseCeiling.nothing(now);
+            ceilingStore.saveCeiling(ceiling);
+        }
+
+        LicensePayload payload = evaluation.payload();
+        if (payload == null || !verificationKeys.isCompromised(payload.kid())) {
+            return evaluation;
+        }
+        if (ceiling.covers(payload, releaseVersions)) {
+            return evaluation;
+        }
+
+        log.error("The licence registered here is signed by key {}, whose signing half is no "
+                        + "longer trusted to grant more than this deployment already held. It is "
+                        + "refused. A release carrying the current signing key accepts it.",
+                payload.kid());
+        EvaluationResponse refused = new EvaluationResponse(
+                LicenseStatus.SIGNING_KEY_COMPROMISED,
+                false,
+                LicenseStatus.SIGNING_KEY_COMPROMISED.errorCode(),
+                new Denial(CEILING_MESSAGE_KEY, List.of()),
+                evaluation.nextWatermark(),
+                List.of(),
+                Map.of(),
+                evaluation.graceExpiresAt(),
+                evaluation.heartbeatDeadline(),
+                payload);
+        state.gate().refresh(refused);
+        return refused;
     }
 
     /**

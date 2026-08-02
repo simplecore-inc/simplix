@@ -1,6 +1,9 @@
 package dev.simplecore.simplix.license.store;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.accesscore.license.sdk.model.LicenseModel.RegistrationRecord;
+import dev.simplecore.simplix.license.core.CompromiseCeiling;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +39,7 @@ class JpaLicenseStoreTest {
 
     @BeforeEach
     void setUp() {
-        store = new JpaLicenseStore();
+        store = new JpaLicenseStore(new ObjectMapper().registerModule(new JavaTimeModule()));
         ReflectionTestUtils.setField(store, "entityManager", entityManager);
         when(entityManager.createQuery(anyString(), eq(LicenseRegistration.class)))
                 .thenReturn(query);
@@ -86,6 +89,25 @@ class JpaLicenseStoreTest {
         store.save(RegistrationRecord.ofToken("token"));
 
         verify(entityManager).merge(existing);
+    }
+
+    @Test
+    @DisplayName("A row holding only the fixed ceiling is not a registration")
+    void ceilingOnlyRowIsNotARegistration() {
+        LicenseRegistration existing = new LicenseRegistration();
+        existing.setLicenseRegistrationId("reg_1");
+        singletonLookupReturns(existing);
+
+        store.saveCeiling(CompromiseCeiling.nothing(Instant.parse("2026-08-01T00:00:00Z")));
+
+        singletonLookupReturns(existing);
+        // Nothing is registered here — the row exists only to keep the ceiling. Reported as a
+        // registration it would have every caller that asks believe a seat is held, down to
+        // offering to release one this deployment never took.
+        assertThat(store.load()).isEmpty();
+
+        singletonLookupReturns(existing);
+        assertThat(store.loadCeiling()).isPresent();
     }
 
     @Test

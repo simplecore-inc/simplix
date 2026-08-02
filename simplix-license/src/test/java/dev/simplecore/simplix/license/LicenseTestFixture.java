@@ -1,10 +1,12 @@
 package dev.simplecore.simplix.license;
 
+import dev.accesscore.license.sdk.ffi.AclicCore;
 import dev.accesscore.license.sdk.issuing.LicenseIssuer;
 import dev.accesscore.license.sdk.model.LicenseChannel;
+import dev.accesscore.license.sdk.model.LicenseModel.CollectedIdentifiers;
 import dev.accesscore.license.sdk.model.LicenseModel.EvaluationRequest;
 import dev.accesscore.license.sdk.model.LicenseModel.EvaluationResponse;
-import dev.accesscore.license.sdk.model.LicenseModel.GeneratedKeyPair;
+import dev.accesscore.license.sdk.model.LicenseModel.KeyPairDescription;
 import dev.accesscore.license.sdk.model.LicenseModel.KeyMaterial;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.SignatureAlgorithm;
@@ -48,10 +50,15 @@ public final class LicenseTestFixture {
     /** The name the fixture's verification key is filed under. */
     public static final String KEY_ID = "test-2026-01";
 
+    /** The name a key that no longer signs but is still carried is filed under. */
+    public static final String RETIRED_KEY_ID = "test-2024-01";
+
     private static final LicenseIssuer ISSUER = new LicenseIssuer();
-    private static final GeneratedKeyPair KEY_PAIR =
+    private static final AclicCore.GeneratedPair<KeyPairDescription> KEY_PAIR =
             ISSUER.generateKeyPair(SignatureAlgorithm.ED25519);
-    private static final GeneratedKeyPair FOREIGN_KEY_PAIR =
+    private static final AclicCore.GeneratedPair<KeyPairDescription> RETIRED_KEY_PAIR =
+            ISSUER.generateKeyPair(SignatureAlgorithm.ED25519);
+    private static final AclicCore.GeneratedPair<KeyPairDescription> FOREIGN_KEY_PAIR =
             ISSUER.generateKeyPair(SignatureAlgorithm.ED25519);
 
     private LicenseTestFixture() {
@@ -61,21 +68,50 @@ public final class LicenseTestFixture {
      * @return the key a deployment carries to accept this fixture's licenses
      */
     public static List<KeyMaterial> keys() {
-        return List.of(KeyMaterial.of(KEY_ID, KEY_PAIR.publicKeyPem()));
+        return List.of(KeyMaterial.of(KEY_ID, KEY_PAIR.described().publicKeyPem()));
     }
 
     /**
      * @return a key that signs nothing this fixture issues, for signature-rejection cases
      */
     public static List<KeyMaterial> foreignKeys() {
-        return List.of(KeyMaterial.of(KEY_ID, FOREIGN_KEY_PAIR.publicKeyPem()));
+        return List.of(KeyMaterial.of(KEY_ID, FOREIGN_KEY_PAIR.described().publicKeyPem()));
     }
 
     /**
      * @return the fixture's verification key in PEM form
      */
     public static String publicKeyPem() {
-        return KEY_PAIR.publicKeyPem();
+        return KEY_PAIR.described().publicKeyPem();
+    }
+
+    /**
+     * @return the verification half of the key a deployment still carries but no longer receives
+     *         fresh licenses under
+     */
+    public static String retiredPublicKeyPem() {
+        return RETIRED_KEY_PAIR.described().publicKeyPem();
+    }
+
+    /**
+     * @param payload the payload to sign, which must name {@link #RETIRED_KEY_ID}
+     * @return a token signed by the retired key
+     */
+    public static String tokenSignedByRetiredKey(LicensePayload payload) {
+        return ISSUER.sign(payload, RETIRED_KEY_PAIR.privateKey()).token();
+    }
+
+    /**
+     * What the machine running these tests reports about itself.
+     *
+     * <p>A case that drives a whole deployment rather than one judgement cannot say which
+     * machine it is, because the core asks the host it runs on. A payload stamped for these is
+     * one this machine accepts.
+     *
+     * @return this machine's identifiers
+     */
+    public static List<String> machineFingerprints() {
+        return AclicCore.shared().fingerprint(CollectedIdentifiers.class).fingerprintsOrEmpty();
     }
 
     /**
@@ -116,7 +152,7 @@ public final class LicenseTestFixture {
      * @return the token a deployment would store
      */
     public static String tokenFor(LicensePayload payload) {
-        return ISSUER.sign(payload, KEY_PAIR.privateKeyPem()).token();
+        return ISSUER.sign(payload, KEY_PAIR.privateKey()).token();
     }
 
     /**
@@ -131,7 +167,7 @@ public final class LicenseTestFixture {
      * @return a token signed by a key no deployment here carries
      */
     public static String tokenSignedByAnotherKey(LicensePayload payload) {
-        return ISSUER.sign(payload, FOREIGN_KEY_PAIR.privateKeyPem()).token();
+        return ISSUER.sign(payload, FOREIGN_KEY_PAIR.privateKey()).token();
     }
 
     /**

@@ -10,9 +10,9 @@ import org.springframework.validation.annotation.Validated;
  * Type-safe configuration properties for the license system.
  *
  * <p>There is deliberately no property that switches enforcement off, and no property that
- * points at a different verification public key: both would hand a customer-controlled
- * bypass to an on-premise deployment. The verification key is fixed in the binary, and a
- * development deployment runs the same verification path with a DEV-channel license.
+ * points at different verification keys: both would hand a customer-controlled bypass to an
+ * on-premise deployment. The verification keys are fixed in the binary, and a development
+ * deployment runs the same verification path with a DEV-channel license.
  *
  * <pre>{@code
  * application:
@@ -34,10 +34,13 @@ import org.springframework.validation.annotation.Validated;
 public class LicenseProperties {
 
     /**
-     * Classpath location of the public key licenses are verified against. Fixed rather than
-     * configurable so a deployment cannot verify against a key of its own making.
+     * Classpath location of the keys licenses are verified against, each with its name and
+     * whether its signing half is known to be compromised. Fixed rather than configurable so a
+     * deployment cannot verify against keys of its own making, and one resource rather than a
+     * name in code beside a key in a file so the two cannot drift apart.
      */
-    public static final String PUBLIC_KEY_LOCATION = "classpath:license-public-key.pem";
+    public static final String VERIFICATION_KEYS_LOCATION =
+            "classpath:license-verification-keys.json";
 
     /**
      * Path a license token may be provisioned at by hand. Read at startup and imported into

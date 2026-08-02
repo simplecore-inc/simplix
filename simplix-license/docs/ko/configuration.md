@@ -120,9 +120,9 @@ application:
 
 | 항목 | 값 | 이유 |
 |------|-----|------|
-| 검증 공개키 위치 | `classpath:license-public-key.pem` | 배포본이 자기가 만든 키로 토큰을 검증하지 못하게 함 |
+| 검증 키 위치 | `classpath:license-verification-keys.json` | 배포본이 자기가 만든 키로 토큰을 검증하지 못하게 함 |
 | 강제 실행 여부 | 항상 켜짐 | 우회 플래그를 만들지 않기 위함 |
-| 검증 키 이름 | `VerificationKeyIdentity` 빈 | 컴파일된 코드에 두어 설정 파일 수정으로 바꾸지 못하게 함 |
+| 검증 키 이름과 유출 표시 | 같은 자원의 각 항목 | 이름과 공개키를 한 항목에 두어 둘이 어긋나지 않게 하고, 설정 파일 수정으로 바꾸지 못하게 함 |
 | 제품 코드 | `ProductIdentity` 빈 | 같은 이유 |
 
 개발 환경도 같은 검증 경로를 거치며, 개발용 채널로 발급된 라이선스를 사용합니다.
@@ -198,7 +198,6 @@ application:
 | 빈 | 필수 | 없을 때 |
 |----|------|---------|
 | `ProductIdentity` | 예 | 컨텍스트 기동 실패 |
-| `VerificationKeyIdentity` | 예 | 컨텍스트 기동 실패 |
 | `FeatureCatalogue` | 아니오 | 기능 목록을 서버에 보고하지 않음 |
 | `QuotaCounter` | 아니오 | 상한이 강제되지 않음 (기동 시 경고) |
 | `FeatureActivationChecker` | 아니오 | 관리자 활성화 게이트 비활성 |
@@ -206,9 +205,28 @@ application:
 | `ActivationServerDirectory` | 아니오 | 설정의 `server-url` 사용 |
 | `ContactIdentity` | 아니오 | 담당자 주소를 보고하지 않음 |
 | `SetupState` | 아니오 | 설치 마법사와 설치 게이트 비활성 |
-| `LicenseStore` | 아니오 | JPA 또는 파일 저장소 자동 선택 |
+| `LicenseStore` + `CompromiseCeilingStore` | 아니오 | JPA 또는 파일 저장소 자동 선택. 직접 등록할 때는 두 인터페이스를 함께 구현해야 하며, 한쪽만 있으면 컨텍스트 기동 실패 |
 
-검증 공개키 파일(`src/main/resources/license-public-key.pem`)도 필수입니다. 없으면 기동 시 키를 읽지 못해 실패합니다.
+검증 키 자원(`src/main/resources/license-verification-keys.json`)도 필수입니다.
+
+```json
+[
+  { "keyId": "acps-portal-2026", "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...", "compromised": false },
+  { "keyId": "acps-portal-2024", "publicKeyPem": "-----BEGIN PUBLIC KEY-----\n...", "compromised": true }
+]
+```
+
+| 항목 | 설명 |
+|------|------|
+| `keyId` | 토큰이 싣고 있는 키 이름과 대조되는 이름 |
+| `publicKeyPem` | X.509 PEM 형식 공개키 |
+| `compromised` | 서명 키가 유출됐는지 여부. `true`면 그 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없음 |
+
+다음 경우 기동에 실패합니다. 셋 다 어떤 라이선스를 검증 불가로 만들면서 로그에는 이유가 남지 않는 상태이기 때문입니다.
+
+- 자원이 없거나 항목이 하나도 없음
+- 이름이나 공개키가 비어 있는 항목이 있음
+- 같은 이름이 두 번 있음
 
 ---
 

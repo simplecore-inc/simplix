@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.simplecore.simplix.license.LicenseTestFixture;
 import dev.simplecore.simplix.license.config.LicenseProperties;
+import dev.simplecore.simplix.license.config.VerificationKey;
+import dev.simplecore.simplix.license.config.VerificationKeys;
+import dev.simplecore.simplix.license.core.CompromiseCeiling;
+import dev.simplecore.simplix.license.core.CompromiseCeilingStore;
 import dev.simplecore.simplix.license.core.LicenseAuditTrail;
 import dev.simplecore.simplix.license.core.LicenseManager;
 import dev.simplecore.simplix.license.integrity.RuntimeIntegrityChecker;
@@ -61,15 +65,19 @@ class LicenseEnforcementFilterTest {
         // A path that does not exist, so no token is imported from disk.
         properties.setTokenPath("./build/no-such-license.key");
 
+        EmptyLicenseStore store = new EmptyLicenseStore();
         manager = new LicenseManager(properties,
                 dev.accesscore.license.sdk.LicenseManager
-                        .builder(new EmptyLicenseStore(), LicenseTestFixture.identity(),
+                        .builder(store, LicenseTestFixture.identity(),
                                 LicenseTestFixture.keys())
                         .gate(gate)
                         .build(),
                 new RuntimeIntegrityChecker(null),
                 state,
                 new LicenseAuditTrail(noRecorder()),
+                new VerificationKeys(List.of(new VerificationKey(LicenseTestFixture.KEY_ID,
+                        LicenseTestFixture.publicKeyPem(), false))),
+                store,
                 "SHA256:test");
 
         // The response envelope carries an instant, so the mapper needs the same time module
@@ -201,7 +209,7 @@ class LicenseEnforcementFilterTest {
     }
 
     /** A store holding nothing, so the judgement reaches whatever the test published. */
-    private static final class EmptyLicenseStore implements LicenseStore {
+    private static final class EmptyLicenseStore implements LicenseStore, CompromiseCeilingStore {
 
         @Override
         public Optional<RegistrationRecord> load() {
@@ -217,6 +225,16 @@ class LicenseEnforcementFilterTest {
         @Override
         public void clear() {
             // Nothing to clear.
+        }
+
+        @Override
+        public Optional<CompromiseCeiling> loadCeiling() {
+            return Optional.empty();
+        }
+
+        @Override
+        public void saveCeiling(CompromiseCeiling ceiling) {
+            // No key this deployment carries is compromised, so nothing fixes a ceiling.
         }
     }
 }

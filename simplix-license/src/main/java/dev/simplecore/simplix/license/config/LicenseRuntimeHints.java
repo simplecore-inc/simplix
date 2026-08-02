@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.license.config;
 
+import dev.simplecore.simplix.license.core.CompromiseCeiling;
 import dev.simplecore.simplix.license.core.FileLicenseStore;
 import dev.simplecore.simplix.license.model.LicenseState;
 import dev.accesscore.license.sdk.model.LicenseChannel;
@@ -42,6 +43,8 @@ public class LicenseRuntimeHints implements RuntimeHintsRegistrar {
                 PreparedRequest.class,
                 ActivationOutcome.class,
                 FileLicenseStore.State.class,
+                CompromiseCeiling.class,
+                VerificationKey.class,
                 LicenseState.Snapshot.class,
                 LicenseProperties.class,
                 LicenseProperties.Activation.class
@@ -66,8 +69,8 @@ public class LicenseRuntimeHints implements RuntimeHintsRegistrar {
      * @param hints where the resource hints are registered
      */
     private void registerResourceHints(RuntimeHints hints) {
-        // The verification key this build carries.
-        hints.resources().registerPattern("license-public-key.pem");
+        // The verification keys this build carries.
+        hints.resources().registerPattern("license-verification-keys.json");
 
         // The license core, extracted from the jar on first use. Without this the native image
         // carries no library to extract and licensing cannot start.

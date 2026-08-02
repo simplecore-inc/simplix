@@ -1,8 +1,10 @@
 package dev.simplecore.simplix.license.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.license.activation.LicenseActivationClient;
 import dev.simplecore.simplix.license.activation.LicenseActivationService;
+import dev.simplecore.simplix.license.core.CompromiseCeilingStore;
 import dev.simplecore.simplix.license.core.FileLicenseStore;
 import dev.simplecore.simplix.license.core.LicenseAuditTrail;
 import dev.simplecore.simplix.license.core.LicenseManager;
@@ -53,7 +55,6 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -95,31 +96,38 @@ public class LicenseAutoConfiguration {
     private static final String BINARY_HASH_PROPERTY = "APP_BINARY_HASH";
 
     /**
-     * The verification key this build carries.
+     * The verification keys this build carries, with their names and their standing.
      *
-     * <p>Read from a fixed classpath location. A deployment that could point at a key of its own
+     * <p>Read from a fixed classpath location. A deployment that could point at keys of its own
      * could verify a license it minted itself, and at that moment the signature check defends
-     * nothing.
+     * nothing. Several keys are carried so that replacing the issuer's signing key does not
+     * refuse every license the previous one signed; which of them checks a given token is the
+     * payload's name for it, and that choice is the SDK's.
      *
-     * <p>The name it is filed under comes from the product's {@link VerificationKeyIdentity},
-     * which is compiled code for the same reason. There is no fallback: a name borrowed from
-     * another product resolves no key, and every license then looks unverifiable with nothing
-     * to point at.
-     *
-     * @param resourceLoader where the embedded key is read from
-     * @param keyIdentity the name this product files its key under
-     * @return the keys this deployment accepts tokens under
-     * @throws IOException when the embedded key cannot be read
+     * @param resourceLoader where the embedded resource is read from
+     * @param objectMapper how the resource is read
+     * @return every key this deployment accepts tokens under
+     * @throws IOException when the embedded resource cannot be read
      */
     @Bean
-    public List<KeyMaterial> simplixLicenseVerificationKeys(
-            ResourceLoader resourceLoader,
-            VerificationKeyIdentity keyIdentity) throws IOException {
+    public VerificationKeys simplixLicenseVerificationKeyRegistry(ResourceLoader resourceLoader,
+                                                                  ObjectMapper objectMapper)
+            throws IOException {
         try (InputStream stream = resourceLoader
-                .getResource(LicenseProperties.PUBLIC_KEY_LOCATION).getInputStream()) {
-            String pem = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-            return List.of(KeyMaterial.of(keyIdentity.verificationKeyId(), pem));
+                .getResource(LicenseProperties.VERIFICATION_KEYS_LOCATION).getInputStream()) {
+            return new VerificationKeys(objectMapper.readValue(stream.readAllBytes(),
+                    new TypeReference<List<VerificationKey>>() {
+                    }));
         }
+    }
+
+    /**
+     * @param verificationKeys the keys this build carries
+     * @return those keys in the form the SDK takes them
+     */
+    @Bean
+    public List<KeyMaterial> simplixLicenseVerificationKeys(VerificationKeys verificationKeys) {
+        return verificationKeys.materials();
     }
 
     /**
@@ -154,13 +162,19 @@ public class LicenseAutoConfiguration {
      * sees it. A replaced container comes back licensed without a mounted volume, and the
      * secrets sit under the same encryption as the rest of the deployment's credentials.
      *
+     * <p>Declared as the concrete class rather than as {@code LicenseStore}, because the same
+     * object also keeps the fixed ceiling and a product injecting that has to be able to find
+     * it. A product contributing a store of its own contributes both halves or the context does
+     * not start — a deployment silently unable to keep a ceiling is worse than one that says so.
+     *
+     * @param objectMapper how the fixed ceiling is written into its column
      * @return the database-backed store
      */
     @Bean
     @ConditionalOnClass(EntityManager.class)
     @ConditionalOnMissingBean(LicenseStore.class)
-    public LicenseStore simplixLicenseJpaLicenseStore() {
-        return new JpaLicenseStore();
+    public JpaLicenseStore simplixLicenseJpaLicenseStore(ObjectMapper objectMapper) {
+        return new JpaLicenseStore(objectMapper);
     }
 
     /**
@@ -170,7 +184,8 @@ public class LicenseAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(LicenseStore.class)
-    public LicenseStore simplixLicenseFileLicenseStore(LicenseProperties properties, ObjectMapper objectMapper) {
+    public FileLicenseStore simplixLicenseFileLicenseStore(LicenseProperties properties,
+                                                           ObjectMapper objectMapper) {
         return new FileLicenseStore(
                 Path.of(properties.getTokenPath()),
                 Path.of(properties.getStatePath()),
@@ -351,6 +366,8 @@ public class LicenseAutoConfiguration {
      * @param integrityChecker the binary checksum verifier
      * @param state the shared runtime state every gate reads
      * @param auditTrail where status transitions are recorded
+     * @param verificationKeys the keys this build carries, and which of them are compromised
+     * @param ceilingStore where the fixed ceiling is kept
      * @param keys the verification keys this build carries
      * @return the orchestrator every enforcement point reads through
      */
@@ -360,9 +377,11 @@ public class LicenseAutoConfiguration {
                                          RuntimeIntegrityChecker integrityChecker,
                                          LicenseState state,
                                          LicenseAuditTrail auditTrail,
+                                         VerificationKeys verificationKeys,
+                                         CompromiseCeilingStore ceilingStore,
                                          List<KeyMaterial> keys) {
         return new LicenseManager(properties, sdk, integrityChecker, state, auditTrail,
-                fingerprintOf(keys));
+                verificationKeys, ceilingStore, fingerprintOf(keys));
     }
 
     /**
