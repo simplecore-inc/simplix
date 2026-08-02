@@ -79,7 +79,7 @@ JPA 엔티티 스캔 범위를 지정합니다:
 
 ### @EnableJpaRepositories
 
-JPA 리포지토리 설정입니다. **SimpliX Tree 기능을 사용하려면 필수**입니다.
+JPA 저장소 설정입니다. **SimpliX Tree 기능을 사용하려면 필수**입니다.
 
 ```java
 @EnableJpaRepositories(
@@ -93,7 +93,7 @@ JPA 리포지토리 설정입니다. **SimpliX Tree 기능을 사용하려면 �
 | 속성 | 설명 |
 |------|------|
 | `repositoryFactoryBeanClass` | SimpliX Tree Repository 지원을 위해 `SimpliXRepositoryFactoryBean.class` 지정 |
-| `basePackages` | 리포지토리 인터페이스가 위치한 패키지 |
+| `basePackages` | 저장소 인터페이스가 위치한 패키지 |
 
 ## SimpliXRepositoryFactoryBean
 

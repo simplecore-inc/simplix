@@ -340,9 +340,9 @@ AWS SES (100) → Resend (55) → SendGrid (50) → SMTP (10) → Console (-100)
 | Provider | Retryable | Non-Retryable |
 |----------|-----------|---------------|
 | SMTP | 연결 타임아웃, 네트워크 오류 | 인증 실패 |
-| AWS SES | Throttling, ServiceUnavailable | 잘못된 파라미터, 인증 실패 |
+| AWS SES | Throttling, ServiceUnavailable | 잘못된 매개변수, 인증 실패 |
 | SendGrid | HTTP 429, 5xx 서버 오류 | 4xx 클라이언트 오류 |
-| Resend | Rate limit, 500/503 오류 | 잘못된 파라미터 |
+| Resend | Rate limit, 500/503 오류 | 잘못된 매개변수 |
 
 ---
 

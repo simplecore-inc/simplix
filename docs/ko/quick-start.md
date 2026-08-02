@@ -313,7 +313,7 @@ public class JpaAuditingConfig {
 
 ## 6. 다음 단계
 
-- [CRUD Tutorial](./crud-tutorial.md) - 엔티티, 리포지토리, 서비스, 컨트롤러 구현
+- [CRUD Tutorial](./crud-tutorial.md) - 엔티티, 저장소, 서비스, 컨트롤러 구현
 - [Application Setup Guide](../../spring-boot-starter-simplix/docs/ko/application-setup.md) - 상세 설정 가이드
 - [Configuration Guide](../../spring-boot-starter-simplix/docs/ko/configuration.md) - YAML 설정 속성
 

@@ -17,7 +17,7 @@ SimpliX는 엔터프라이즈 애플리케이션 구축을 위한 포괄적인 �
 
 | 모듈 | 설명 |
 |------|------|
-| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/리포지토리, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답, 유니크 검증(@Unique), I18n 번역(@I18nTrans) |
+| **simplix-core** | 핵심 유틸리티, 베이스 엔티티/저장소, 트리 구조, 보안 유틸리티, 표준화된 예외 및 API 응답, 유니크 검증(@Unique), I18n 번역(@I18nTrans) |
 | **simplix-auth** | Spring Security 통합 JWT/JWE 토큰 인증 |
 | **simplix-cache** | Caffeine(로컬) 및 Redis(분산) 지원 SPI 기반 캐싱 |
 | **simplix-encryption** | 다중 키 프로바이더(Simple, Managed, Vault) 및 키 로테이션 지원 데이터 암호화 |
@@ -235,7 +235,7 @@ SimpliX는 엔터프라이즈 보안을 고려하여 설계되었습니다:
 |------|------|
 | **OWASP Top 10** | 일반적인 웹 취약점 방어 |
 | **XSS 방지** | `HtmlSanitizer`를 통한 내장 HTML 살균 |
-| **SQL Injection 방지** | 파라미터화된 쿼리 및 `SqlInjectionValidator` |
+| **SQL Injection 방지** | 매개변수를 바인딩한 쿼리 및 `SqlInjectionValidator` |
 | **데이터 암호화** | 키 로테이션 지원 AES-256 암호화 |
 | **데이터 마스킹** | 로그에서 PII 자동 마스킹 (`DataMaskingUtils`, `IpAddressMaskingUtils`) |
 | **JWT/JWE 토큰** | 암호화를 통한 안전한 토큰 기반 인증 |

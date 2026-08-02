@@ -244,7 +244,7 @@ simplix:
 
 | 값 | 설명 |
 |----|------|
-| `REDIRECT` | URL 쿼리 파라미터 |
+| `REDIRECT` | URL 쿼리 매개변수 |
 | `COOKIE` | HttpOnly 쿠키 (권장) |
 | `POST_MESSAGE` | window.postMessage (SPA) |
 

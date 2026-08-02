@@ -367,7 +367,7 @@ emailService.sendTemplate(
 
 ### Locale-Based Resolution
 
-템플릿은 `locale` 파라미터에 따라 자동으로 선택됩니다:
+템플릿은 `locale` 매개변수에 따라 자동으로 선택됩니다:
 
 ```java
 // Korean template selected

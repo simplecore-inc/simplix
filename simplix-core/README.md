@@ -4,7 +4,7 @@ SimpliX 프레임워크의 핵심 모듈입니다. 다른 모든 SimpliX 모듈�
 
 ## Features
 
-- ✔ **베이스 엔티티/리포지토리** - SimpliXBaseEntity, SimpliXBaseRepository
+- ✔ **베이스 엔티티/저장소** - SimpliXBaseEntity, SimpliXBaseRepository
 - ✔ **계층 구조(트리) 지원** - TreeEntity, SimpliXTreeService (40+ 메서드), SoftDeletable 자동 필터링
 - ✔ **타입 변환 시스템** - Boolean, Enum, DateTime 변환기
 - ✔ **XSS/SQL Injection 방지** - OWASP 기반 HtmlSanitizer, SqlInjectionValidator
@@ -98,7 +98,7 @@ simplix-core는 Auto-Configuration이 없는 순수 라이브러리 모듈입니
 ## Documentation
 
 - [Overview (아키텍처 상세)](docs/ko/overview.md)
-- [Entity & Repository Guide (엔티티/리포지토리)](docs/ko/entity-repository.md)
+- [Entity & Repository Guide (엔티티/저장소)](docs/ko/entity-repository.md)
 - [Tree Structure Guide (트리 구조)](docs/ko/tree-structure.md)
 - [Type Converters Guide (타입 변환)](docs/ko/type-converters.md)
 - [Security Guide (보안)](docs/ko/security.md)

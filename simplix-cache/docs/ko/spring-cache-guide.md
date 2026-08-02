@@ -375,7 +375,7 @@ public class ProductService {
 
 Spring Expression Language를 사용하여 동적으로 키를 생성합니다.
 
-### 메서드 파라미터 참조
+### 메서드 매개변수 참조
 
 ```java
 @Service
@@ -470,8 +470,8 @@ public class ConditionalCacheService {
 
 | 표현식 | 설명 |
 |--------|------|
-| `#paramName` | 파라미터 이름으로 참조 |
-| `#p0`, `#a0` | 인덱스로 파라미터 참조 |
+| `#paramName` | 매개변수 이름으로 참조 |
+| `#p0`, `#a0` | 인덱스로 매개변수 참조 |
 | `#result` | 메서드 반환값 참조 |
 | `#root.method.name` | 메서드 이름 |
 | `#root.target` | 대상 객체 |

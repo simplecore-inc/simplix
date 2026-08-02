@@ -7,7 +7,7 @@
 * **SimpliX Core**
   * [소개](/ko/core/readme.md)
   * [개요](/ko/core/overview.md)
-  * [엔티티/리포지토리](/ko/core/entity-repository.md)
+  * [엔티티/저장소](/ko/core/entity-repository.md)
   * [트리 구조](/ko/core/tree-structure.md)
   * [타입 변환](/ko/core/type-converters.md)
   * [I18n 번역](/ko/core/i18n-translation.md)

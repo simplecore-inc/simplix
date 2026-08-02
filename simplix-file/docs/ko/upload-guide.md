@@ -151,9 +151,9 @@ FileProcessingRequest request = FileProcessingRequest.builder(file)
 ProcessedFileResult result = fileProcessingService.processAndStore(request);
 ```
 
-### 파라미터 설명
+### 매개변수 설명
 
-| 파라미터 | 타입 | 기본값 | 설명 |
+| 매개변수 | 타입 | 기본값 | 설명 |
 |---------|------|-------|------|
 | `file` | MultipartFile | (필수) | 업로드할 파일 |
 | `directory` | String | "files" | 저장 디렉토리 |

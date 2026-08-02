@@ -554,7 +554,7 @@ public class UserService {
 | `hasAuthority('AUTH')` | 특정 권한 보유 |
 | `isAuthenticated()` | 인증된 사용자 |
 | `isAnonymous()` | 익명 사용자 |
-| `#paramName` | 메서드 파라미터 참조 |
+| `#paramName` | 메서드 매개변수 참조 |
 | `authentication.name` | 현재 인증된 사용자명 |
 | `returnObject` | 메서드 반환값 (PostAuthorize) |
 

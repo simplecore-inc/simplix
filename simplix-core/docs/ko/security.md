@@ -530,7 +530,7 @@ public class Payment {
 - [ ] 모든 사용자 입력에 `@SafeHtml` 또는 `SqlInjectionValidator` 적용
 - [ ] Bean Validation (`@Valid`) 사용
 - [ ] 파일 업로드 시 MIME 타입 검증
-- [ ] URL 파라미터 검증
+- [ ] URL 매개변수 검증
 
 ### XSS 방지
 
@@ -540,7 +540,7 @@ public class Payment {
 
 ### SQL Injection 방지
 
-- [ ] JPA/MyBatis 파라미터 바인딩 사용
+- [ ] JPA/MyBatis 매개변수 바인딩 사용
 - [ ] 동적 쿼리 시 `SqlInjectionValidator.isSafeInput()` 검증
 - [ ] ORDER BY 필드명 화이트리스트 검증
 
@@ -562,7 +562,7 @@ public class Payment {
 ## Related Documents
 
 - [Overview (아키텍처 개요)](./overview.md) - 모듈 구조
-- [Entity & Repository Guide (엔티티/리포지토리)](./entity-repository.md) - 베이스 엔티티, 복합 키
+- [Entity & Repository Guide (엔티티/저장소)](./entity-repository.md) - 베이스 엔티티, 복합 키
 - [Tree Structure Guide (트리 구조)](./tree-structure.md) - TreeEntity, SimpliXTreeService
 - [Type Converters Guide (타입 변환)](./type-converters.md) - Boolean, Enum, DateTime 변환
 - [Exception & API Guide (예외/API)](./exception-api.md) - 에러 코드, API 응답

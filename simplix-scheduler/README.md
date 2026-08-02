@@ -7,7 +7,7 @@ Spring `@Scheduled` 메서드의 실행을 자동으로 추적하고 로깅하�
 - ✔ **AOP 자동 추적** - `@Scheduled` 메서드를 자동 인터셉트하여 실행 정보 기록
 - ✔ **전략 패턴** - In-Memory / Database 저장 전략 자유 선택
 - ✔ **ShedLock 통합** - 분산 환경 레지스트리 생성 시 락 보장
-- ✔ **Provider 인터페이스** - 사용자 프로젝트의 엔티티/리포지토리 유연 연동
+- ✔ **Provider 인터페이스** - 사용자 프로젝트의 엔티티/저장소 유연 연동
 - ✔ **커스텀 네이밍** - `@SchedulerName`으로 스케줄러 이름 지정
 - ✔ **Placeholder Resolution** - Spring `${...}` 표현식을 실제 값으로 치환 후 저장
 - ✔ **Auto-Configuration** - Spring Boot 자동 구성
