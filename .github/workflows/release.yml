@@ -67,31 +67,27 @@ jobs:
 
       - name: Build
         run: |
-          gradle clean assemble --stacktrace
+          gradle clean build --stacktrace
 
-      - name: Update version in build.gradle
-        env:
-          RELEASE_BRANCH: ${{ github.event.inputs.branch }}
+      - name: Set release version
         run: |
           sed -i "s/projectVersion = '.*'/projectVersion = '${{ steps.version.outputs.release }}'/" build.gradle
-          git config --global user.email "devteam@simplecore.dev"
-          git config --global user.name "simplecore"
-          git add build.gradle
-          git commit -m "release: v${{ steps.version.outputs.release }}"
-          git push origin "$RELEASE_BRANCH"
 
       - name: Publish
         run: |
           gradle publish --info --stacktrace
 
-      - name: Create Release Tag
+      - name: Commit and tag the release version
+        env:
+          RELEASE_BRANCH: ${{ github.event.inputs.branch }}
         run: |
-          if git rev-parse "v${{ steps.version.outputs.release }}" >/dev/null 2>&1; then
-            echo "Tag v${{ steps.version.outputs.release }} already exists, skipping"
-          else
-            git tag -a "v${{ steps.version.outputs.release }}" -m "v${{ steps.version.outputs.release }}"
-            git push origin "v${{ steps.version.outputs.release }}"
-          fi
+          git config --global user.email "devteam@simplecore.dev"
+          git config --global user.name "simplecore"
+          git add build.gradle
+          git commit -m "release: v${{ steps.version.outputs.release }}"
+          git push origin "$RELEASE_BRANCH"
+          git tag -a "v${{ steps.version.outputs.release }}" -m "v${{ steps.version.outputs.release }}"
+          git push origin "v${{ steps.version.outputs.release }}"
 
       - name: Update to Next Development Version
         env:
