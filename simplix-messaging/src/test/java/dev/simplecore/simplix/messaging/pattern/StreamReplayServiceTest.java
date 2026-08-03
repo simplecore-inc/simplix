@@ -26,6 +26,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("StreamReplayService")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("removal")
 class StreamReplayServiceTest {
 
     @Mock

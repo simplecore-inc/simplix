@@ -18,6 +18,7 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("IdempotentGuard")
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("removal")
 class IdempotentGuardTest {
 
     @Mock

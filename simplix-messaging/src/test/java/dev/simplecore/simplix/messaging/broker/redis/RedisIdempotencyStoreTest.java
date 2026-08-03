@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 class RedisIdempotencyStoreTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     void firstAcquireTrue_secondFalse() {
         StringRedisTemplate tpl = mock(StringRedisTemplate.class);
         ValueOperations<String, String> ops = mock(ValueOperations.class);

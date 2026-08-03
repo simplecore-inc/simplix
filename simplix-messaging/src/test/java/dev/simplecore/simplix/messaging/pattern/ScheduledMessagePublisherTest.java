@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("ScheduledMessagePublisher")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("removal")
 class ScheduledMessagePublisherTest {
 
     @Mock

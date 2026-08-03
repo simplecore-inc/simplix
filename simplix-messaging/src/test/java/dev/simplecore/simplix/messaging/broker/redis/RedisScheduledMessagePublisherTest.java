@@ -33,6 +33,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("RedisScheduledMessagePublisher")
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
+@SuppressWarnings("removal")
 class RedisScheduledMessagePublisherTest {
 
     @Mock

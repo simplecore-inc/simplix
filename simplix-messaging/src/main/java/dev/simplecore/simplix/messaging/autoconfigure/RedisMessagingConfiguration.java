@@ -11,6 +11,7 @@ import dev.simplecore.simplix.messaging.broker.redis.RedisStreamSubscriber;
 import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
 import dev.simplecore.simplix.messaging.replay.ReplayService;
 import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -100,11 +101,12 @@ public class RedisMessagingConfiguration {
     @ConditionalOnProperty(prefix = "simplix.messaging.redis.scheduler",
             name = "enabled", havingValue = "true", matchIfMissing = false)
     @Deprecated(since = "1.1.1", forRemoval = true)
+    @SuppressWarnings("removal")
     public MessageScheduler messageScheduler(BrokerStrategy brokerStrategy,
                                               StringRedisTemplate redisTemplate,
                                               MessagingProperties properties) {
         return new RedisScheduledMessagePublisher(brokerStrategy, redisTemplate,
-                properties.getRedis().getKeyPrefix(), java.time.Duration.ofSeconds(5));
+                properties.getRedis().getKeyPrefix(), Duration.ofSeconds(5));
     }
 
     /**

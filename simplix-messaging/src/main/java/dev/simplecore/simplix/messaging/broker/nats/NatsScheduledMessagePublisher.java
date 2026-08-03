@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Deprecated(since = "1.1.1", forRemoval = true)
+@SuppressWarnings("removal")
 public class NatsScheduledMessagePublisher implements MessageScheduler {
 
     private static final ObjectMapper JSON = new ObjectMapper();

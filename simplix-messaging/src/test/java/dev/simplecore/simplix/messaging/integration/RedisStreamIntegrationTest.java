@@ -425,6 +425,7 @@ class RedisStreamIntegrationTest {
 
     @Nested
     @DisplayName("IdempotentGuard")
+    @SuppressWarnings("removal")
     class IdempotentGuardTests {
 
         @Test

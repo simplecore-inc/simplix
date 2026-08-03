@@ -40,6 +40,7 @@ class NatsJetStreamReplayServiceTest {
 
     @Test
     @DisplayName("replay by ID builds ByStartSequence consumer and delivers all messages")
+    @SuppressWarnings("unchecked")
     void replayById_buildsByStartSequenceConsumer() throws Exception {
         JetStreamSubscription sub = mock(JetStreamSubscription.class);
         Message m1 = messageWithSeq(1L);
@@ -64,6 +65,7 @@ class NatsJetStreamReplayServiceTest {
 
     @Test
     @DisplayName("replay by ID stops at toSeq and does not invoke listener beyond it")
+    @SuppressWarnings("unchecked")
     void replayById_stopsAtToSeq() throws Exception {
         JetStreamSubscription sub = mock(JetStreamSubscription.class);
         // Messages with seq 1-5; toId = "stream-3" means toSeq=3
@@ -85,6 +87,7 @@ class NatsJetStreamReplayServiceTest {
 
     @Test
     @DisplayName("replay by time builds ByStartTime consumer with correct startTime")
+    @SuppressWarnings("unchecked")
     void replayByTime_buildsByStartTimeConsumer() throws Exception {
         JetStreamSubscription sub = mock(JetStreamSubscription.class);
         when(sub.nextMessage(any(Duration.class))).thenReturn(null);
@@ -105,6 +108,7 @@ class NatsJetStreamReplayServiceTest {
 
     @Test
     @DisplayName("replayPaginated delegates to replay; counts messages correctly")
+    @SuppressWarnings("unchecked")
     void replayPaginated_isAliasForReplayWithSamePageSizeBehavior() throws Exception {
         JetStreamSubscription sub = mock(JetStreamSubscription.class);
         Message m1 = messageWithSeq(1L);
@@ -121,6 +125,7 @@ class NatsJetStreamReplayServiceTest {
 
     @Test
     @DisplayName("replay unsubscribes the ephemeral consumer after completion")
+    @SuppressWarnings("unchecked")
     void replay_unsubscribesEphemeralConsumer_atEnd() throws Exception {
         JetStreamSubscription sub = mock(JetStreamSubscription.class);
         Message m1 = messageWithSeq(1L);

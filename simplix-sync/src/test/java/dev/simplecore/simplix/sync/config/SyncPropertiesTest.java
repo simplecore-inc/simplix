@@ -29,6 +29,7 @@ class SyncPropertiesTest {
 
         @Test
         @DisplayName("should have distributed settings initialized")
+        @SuppressWarnings("deprecation")
         void shouldHaveDistributedSettings() {
             SyncProperties properties = new SyncProperties();
             assertThat(properties.getDistributed()).isNotNull();
@@ -58,6 +59,7 @@ class SyncPropertiesTest {
 
         @Test
         @DisplayName("should set distributed settings")
+        @SuppressWarnings("deprecation")
         void shouldSetDistributedSettings() {
             SyncProperties properties = new SyncProperties();
             SyncProperties.Distributed distributed = new SyncProperties.Distributed();

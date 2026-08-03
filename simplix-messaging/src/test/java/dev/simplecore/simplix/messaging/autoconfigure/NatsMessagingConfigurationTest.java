@@ -156,6 +156,7 @@ class NatsMessagingConfigurationTest {
 
         @Test
         @DisplayName("natsMessageScheduler returns MessageScheduler of NATS type")
+        @SuppressWarnings("removal")
         void natsMessageScheduler_returnsNatsScheduledMessagePublisher() throws Exception {
             NatsConsumerGroupManager manager =
                     configuration.natsConsumerGroupManager(jsManagement, properties);
@@ -215,6 +216,7 @@ class NatsMessagingConfigurationTest {
 
         @Test
         @DisplayName("URL-embedded credentials: no extra userInfo/token set on options")
+        @SuppressWarnings("deprecation")
         void optionsBuilder_urlEmbeddedAuth_noExtraCredentials() {
             MessagingProperties.NatsProperties props = new MessagingProperties.NatsProperties();
             props.setServers("nats://user:pass@localhost:4222");
@@ -232,6 +234,7 @@ class NatsMessagingConfigurationTest {
 
         @Test
         @DisplayName("username/password: userInfo set when URL has no auth")
+        @SuppressWarnings("deprecation")
         void optionsBuilder_usernamePassword_setsUserInfo() {
             MessagingProperties.NatsProperties props = new MessagingProperties.NatsProperties();
             props.setServers("nats://localhost:4222");
@@ -248,6 +251,7 @@ class NatsMessagingConfigurationTest {
 
         @Test
         @DisplayName("token: token set when no username/password")
+        @SuppressWarnings("deprecation")
         void optionsBuilder_token_setWhenNoUserPass() {
             MessagingProperties.NatsProperties props = new MessagingProperties.NatsProperties();
             props.setServers("nats://localhost:4222");

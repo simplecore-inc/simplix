@@ -172,6 +172,7 @@ public class MessagingAutoConfiguration {
         @ConditionalOnProperty(prefix = "simplix.messaging.local.scheduler",
                 name = "enabled", havingValue = "true", matchIfMissing = false)
         @Deprecated(since = "1.1.1", forRemoval = true)
+        @SuppressWarnings("removal")
         public MessageScheduler localMessageScheduler(LocalBrokerStrategy broker) {
             return new LocalMessageScheduler(broker);
         }

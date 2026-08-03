@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Deprecated(since = "1.1.1", forRemoval = true)
+@SuppressWarnings("removal")
 public class RedisScheduledMessagePublisher implements MessageScheduler {
 
     private static final String SCHEDULE_KEY_SUFFIX = ":scheduled";

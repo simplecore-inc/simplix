@@ -105,6 +105,7 @@ class RedisMessagingConfigurationTest {
 
         @Test
         @DisplayName("should create MessageScheduler")
+        @SuppressWarnings("removal")
         void shouldCreateMessageScheduler() {
             BrokerStrategy brokerStrategy = configuration.redisBrokerStrategy(
                     redisTemplate, properties,

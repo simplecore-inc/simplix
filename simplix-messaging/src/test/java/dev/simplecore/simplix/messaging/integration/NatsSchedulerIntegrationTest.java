@@ -53,6 +53,7 @@ class NatsSchedulerIntegrationTest {
     static class TestApp {}
 
     @Autowired NatsBrokerStrategy broker;
+    @SuppressWarnings("removal")
     @Autowired MessageScheduler scheduler;
     @Autowired JetStreamManagement jsm;
 

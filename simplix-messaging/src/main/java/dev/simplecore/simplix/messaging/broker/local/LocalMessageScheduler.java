@@ -7,6 +7,7 @@ import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
@@ -23,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Slf4j
 @Deprecated(since = "1.1.1", forRemoval = true)
+@SuppressWarnings("removal")
 public class LocalMessageScheduler implements MessageScheduler {
 
     private final BrokerStrategy broker;
@@ -36,7 +38,7 @@ public class LocalMessageScheduler implements MessageScheduler {
     }
 
     @Override
-    public String publishDelayed(Message<?> message, java.time.Duration delay) {
+    public String publishDelayed(Message<?> message, Duration delay) {
         String scheduleId = UUID.randomUUID().toString();
         long deliverAtNanos = System.nanoTime() + delay.toNanos();
         byte[] payload = toBytes(message);

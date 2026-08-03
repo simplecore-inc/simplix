@@ -10,6 +10,7 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("removal")
 class LocalMessageSchedulerTest {
 
     private LocalBrokerStrategy broker;
