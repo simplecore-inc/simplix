@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.messaging.integration;
 
+import dev.simplecore.searchable.autoconfigure.SearchableJpaConfiguration;
 import dev.simplecore.simplix.messaging.broker.SubscribeRequest;
 import dev.simplecore.simplix.messaging.broker.Subscription;
 import dev.simplecore.simplix.messaging.broker.nats.NatsBrokerStrategy;
@@ -41,7 +42,10 @@ class NatsRedeliveryIntegrationTest {
 
     @SpringBootApplication(exclude = {
             DataSourceAutoConfiguration.class,
-            HibernateJpaAutoConfiguration.class
+            HibernateJpaAutoConfiguration.class,
+            // Contributes a bean taking an EntityManager with no guard for JPA being
+            // absent, which a broker test running without a database cannot satisfy.
+            SearchableJpaConfiguration.class
     })
     static class TestApp {}
 
