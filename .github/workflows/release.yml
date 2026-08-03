@@ -15,11 +15,27 @@ jobs:
       contents: write
       packages: write
 
+    env:
+      GITHUB_USERNAME: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ACCESSCORE_GITHUB_USERNAME: ${{ github.actor }}
+      ACCESSCORE_GITHUB_TOKEN: ${{ secrets.ACCESSCORE_GITHUB_TOKEN }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
+
+      - name: Verify license SDK credentials
+        run: |
+          if [ -z "$ACCESSCORE_GITHUB_TOKEN" ]; then
+            echo "✖ Error: ACCESSCORE_GITHUB_TOKEN secret is not set."
+            echo "  simplix-license resolves dev.accesscore:license-sdk from"
+            echo "  https://maven.pkg.github.com/accesscore-dev/accesscore-license-sdk-dist,"
+            echo "  which requires a token with the read:packages scope."
+            exit 1
+          fi
 
       - name: Extract and validate version
         id: version
@@ -49,21 +65,24 @@ jobs:
         with:
           gradle-version: '8.5'
 
+      - name: Build
+        run: |
+          gradle clean assemble --stacktrace
+
       - name: Update version in build.gradle
+        env:
+          RELEASE_BRANCH: ${{ github.event.inputs.branch }}
         run: |
           sed -i "s/projectVersion = '.*'/projectVersion = '${{ steps.version.outputs.release }}'/" build.gradle
           git config --global user.email "devteam@simplecore.dev"
           git config --global user.name "simplecore"
           git add build.gradle
           git commit -m "release: v${{ steps.version.outputs.release }}"
-          git push origin ${{ github.event.inputs.branch }}
+          git push origin "$RELEASE_BRANCH"
 
-      - name: Build and Publish
+      - name: Publish
         run: |
-          gradle clean publish --info --stacktrace
-        env:
-          GITHUB_USERNAME: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          gradle publish --info --stacktrace
 
       - name: Create Release Tag
         run: |
@@ -75,13 +94,15 @@ jobs:
           fi
 
       - name: Update to Next Development Version
+        env:
+          RELEASE_BRANCH: ${{ github.event.inputs.branch }}
         run: |
           NEXT_VERSION=$(echo ${{ steps.version.outputs.release }} | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')-SNAPSHOT
           sed -i "s/projectVersion = '.*'/projectVersion = '$NEXT_VERSION'/" build.gradle
           if ! git diff --quiet build.gradle; then
             git add build.gradle
             git commit -m "chore: prepare for next development version $NEXT_VERSION"
-            git push origin ${{ github.event.inputs.branch }}
+            git push origin "$RELEASE_BRANCH"
           else
             echo "Version already set to $NEXT_VERSION, skipping commit"
           fi
