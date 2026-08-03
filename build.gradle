@@ -72,7 +72,7 @@ ext {
     // The token format and the judgement over it. Pinned rather than ranged: a schemaVersion
     // change must arrive by a deliberate upgrade, because the issuing and verifying halves of
     // a deployment have to agree on the format.
-    licenseSdkVersion = '1.0.6'
+    licenseSdkVersion = '1.0.8'
 
     // ============================================================
     // Email Providers

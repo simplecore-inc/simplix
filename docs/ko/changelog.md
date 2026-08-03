@@ -39,7 +39,7 @@
 
 #### 빌드/의존성
 - searchable-jpa 1.1.2
-- license-sdk 1.0.6
+- license-sdk 1.0.8
 
 ### 2026-07
 
