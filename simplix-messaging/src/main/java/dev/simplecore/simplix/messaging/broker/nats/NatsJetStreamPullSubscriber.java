@@ -106,6 +106,7 @@ public class NatsJetStreamPullSubscriber {
             try {
                 // fetch blocks for up to pollTimeout; checked exceptions vary across jnats versions
                 // so we catch broadly to keep the loop alive on unexpected failures
+                // Fully qualified: Message stands for dev.simplecore.simplix.messaging.core.Message in this file.
                 List<io.nats.client.Message> batch = jsSub.fetch(batchSize, pollTimeout);
                 if (batch == null || batch.isEmpty()) {
                     continue;

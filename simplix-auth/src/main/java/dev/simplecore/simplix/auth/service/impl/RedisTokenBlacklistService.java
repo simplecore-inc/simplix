@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -35,12 +36,12 @@ public class RedisTokenBlacklistService implements TokenBlacklistService {
 
     private static final Logger log = LoggerFactory.getLogger(RedisTokenBlacklistService.class);
 
-    private final org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
     private final SimpliXAuthProperties properties;
     private static final String BLACKLIST_PREFIX = "simplix:token:bl:";
 
     public RedisTokenBlacklistService(
-            org.springframework.data.redis.core.RedisTemplate<String, String> redisTemplate,
+            RedisTemplate<String, String> redisTemplate,
             SimpliXAuthProperties properties) {
         this.redisTemplate = redisTemplate;
         this.properties = properties;

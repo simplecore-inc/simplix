@@ -1,6 +1,8 @@
 package dev.simplecore.simplix.web.advice;
 
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
+import io.swagger.v3.oas.models.OpenAPI;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -8,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -49,7 +52,7 @@ class SimpliXResponseBodyAdviceTest {
         @SuppressWarnings("unchecked")
         void excludeSpringdocClasses() {
             when(returnType.getContainingClass())
-                    .thenReturn((Class) org.springdoc.core.properties.SpringDocConfigProperties.class);
+                    .thenReturn((Class) SpringDocConfigProperties.class);
 
             boolean result = advice.supports(returnType, MappingJackson2HttpMessageConverter.class);
 
@@ -61,7 +64,7 @@ class SimpliXResponseBodyAdviceTest {
         @SuppressWarnings("unchecked")
         void excludeSwaggerClasses() {
             when(returnType.getContainingClass())
-                    .thenReturn((Class) io.swagger.v3.oas.models.OpenAPI.class);
+                    .thenReturn((Class) OpenAPI.class);
 
             boolean result = advice.supports(returnType, MappingJackson2HttpMessageConverter.class);
 
@@ -160,7 +163,7 @@ class SimpliXResponseBodyAdviceTest {
         @Test
         @DisplayName("Should wrap list body with success response")
         void wrapListBody() {
-            var body = java.util.List.of("a", "b", "c");
+            var body = List.of("a", "b", "c");
 
             Object result = advice.beforeBodyWrite(body, null, null, null, null, null);
 

@@ -14,6 +14,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.SQLException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -239,7 +241,7 @@ class JweKeyRotationServiceTest {
             JweKeyData oldKey = JweKeyData.builder()
                     .version("old-v1")
                     .active(false)
-                    .createdAt(java.time.Instant.now().minusSeconds(3600))
+                    .createdAt(Instant.now().minusSeconds(3600))
                     .build();
             when(keyStore.findCurrent()).thenReturn(Optional.empty());
             when(keyStore.findAll()).thenReturn(List.of(oldKey));
@@ -260,11 +262,11 @@ class JweKeyRotationServiceTest {
         void shouldUseLatestWhenMultipleInactiveKeys() {
             JweKeyData oldKey1 = JweKeyData.builder()
                     .version("old-v1").active(false)
-                    .createdAt(java.time.Instant.now().minusSeconds(7200))
+                    .createdAt(Instant.now().minusSeconds(7200))
                     .build();
             JweKeyData oldKey2 = JweKeyData.builder()
                     .version("old-v2").active(false)
-                    .createdAt(java.time.Instant.now().minusSeconds(3600))
+                    .createdAt(Instant.now().minusSeconds(3600))
                     .build();
             when(keyStore.findCurrent()).thenReturn(Optional.empty());
             when(keyStore.findAll()).thenReturn(List.of(oldKey1, oldKey2));
@@ -307,7 +309,7 @@ class JweKeyRotationServiceTest {
             when(encResult.getData()).thenReturn("encrypted");
             when(encryptionService.encrypt(anyString())).thenReturn(encResult);
 
-            java.sql.SQLException sqlEx = new java.sql.SQLException("dup", "23505");
+            SQLException sqlEx = new SQLException("dup", "23505");
             doThrow(new RuntimeException("wrap", sqlEx))
                     .when(keyStore).save(any());
 

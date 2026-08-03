@@ -131,6 +131,7 @@ class NatsJetStreamPullSubscriberTest {
 
     @Test
     void messageDispatched_decodesPayload_andHeaders() throws Exception {
+        // Fully qualified: Message stands for dev.simplecore.simplix.messaging.core.Message in this file.
         io.nats.client.Message natsMsg = mock(io.nats.client.Message.class);
 
         Headers natsHeaders = new Headers();

@@ -3,6 +3,7 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -45,7 +46,7 @@ public class SimpliXModelMapperAutoConfiguration {
         mapper.getConfiguration()
             .setMatchingStrategy(MatchingStrategies.STRICT)
             .setFieldMatchingEnabled(true)
-            .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE);
+            .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE);
 
         // Add timezone-aware datetime converters
         configureTimezoneConverters(mapper);

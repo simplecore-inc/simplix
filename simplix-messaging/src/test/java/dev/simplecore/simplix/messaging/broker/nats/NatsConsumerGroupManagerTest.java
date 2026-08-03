@@ -6,12 +6,14 @@ import io.nats.client.JetStreamManagement;
 import io.nats.client.api.AckPolicy;
 import io.nats.client.api.ConsumerConfiguration;
 import io.nats.client.api.ConsumerInfo;
+import io.nats.client.api.DeliverPolicy;
 import io.nats.client.api.StreamConfiguration;
 import io.nats.client.api.StreamInfo;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -260,7 +262,7 @@ class NatsConsumerGroupManagerTest {
         JetStreamManagement jsm = mock(JetStreamManagement.class);
         MessagingProperties props = new MessagingProperties();
         MessagingProperties.ChannelProperties ch = new MessagingProperties.ChannelProperties();
-        ch.setDuplicateWindow(java.time.Duration.ofMinutes(5));
+        ch.setDuplicateWindow(Duration.ofMinutes(5));
         props.getChannels().put("orders", ch);
         NatsConsumerGroupManager mgr = new NatsConsumerGroupManager(jsm, props);
 
@@ -269,7 +271,7 @@ class NatsConsumerGroupManagerTest {
         ArgumentCaptor<StreamConfiguration> captor = ArgumentCaptor.forClass(StreamConfiguration.class);
         verify(jsm).addStream(captor.capture());
         assertThat(captor.getValue().getDuplicateWindow())
-                .isEqualTo(java.time.Duration.ofMinutes(5));
+                .isEqualTo(Duration.ofMinutes(5));
     }
 
     @Test
@@ -284,7 +286,7 @@ class NatsConsumerGroupManagerTest {
         ArgumentCaptor<ConsumerConfiguration> captor = ArgumentCaptor.forClass(ConsumerConfiguration.class);
         verify(jsm).addOrUpdateConsumer(eq("simplix-orders"), captor.capture());
         assertThat(captor.getValue().getDeliverPolicy())
-                .isEqualTo(io.nats.client.api.DeliverPolicy.New);
+                .isEqualTo(DeliverPolicy.New);
     }
 
     @Test
@@ -302,6 +304,6 @@ class NatsConsumerGroupManagerTest {
         ArgumentCaptor<ConsumerConfiguration> captor = ArgumentCaptor.forClass(ConsumerConfiguration.class);
         verify(jsm).addOrUpdateConsumer(eq("simplix-orders"), captor.capture());
         assertThat(captor.getValue().getDeliverPolicy())
-                .isEqualTo(io.nats.client.api.DeliverPolicy.New);
+                .isEqualTo(DeliverPolicy.New);
     }
 }

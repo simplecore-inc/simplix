@@ -1,5 +1,7 @@
 package dev.simplecore.simplix.encryption.provider;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -490,7 +492,7 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
         metadata.put("lastRotation", lastRotation != null ? lastRotation.toString() : null);
         metadata.put("totalKeys", keyRegistry.size());
 
-        String json = new com.fasterxml.jackson.databind.ObjectMapper()
+        String json = new ObjectMapper()
             .writeValueAsString(metadata);
 
         Files.writeString(metadataPath, json,
@@ -504,8 +506,8 @@ public class ManagedKeyProvider extends AbstractKeyProvider {
      */
     private void parseMetadata(String json) {
         try {
-            Map<String, Object> metadata = new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+            Map<String, Object> metadata = new ObjectMapper()
+                .readValue(json, new TypeReference<Map<String, Object>>() {});
 
             currentKeyVersion = (String) metadata.get("currentVersion");
             String lastRotationStr = (String) metadata.get("lastRotation");

@@ -9,9 +9,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -313,7 +317,7 @@ public class AwtImageProcessingService implements ImageProcessingService {
     @Override
     public boolean isWebpSupported() {
         // Check if WebP writer is available
-        Iterator<javax.imageio.ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/webp");
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/webp");
         return writers.hasNext();
     }
 
@@ -347,15 +351,15 @@ public class AwtImageProcessingService implements ImageProcessingService {
 
         if ("jpg".equalsIgnoreCase(format) || "jpeg".equalsIgnoreCase(format)) {
             // For JPEG, we need to use ImageWriter for quality control
-            Iterator<javax.imageio.ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpeg");
+            Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpeg");
             if (writers.hasNext()) {
-                javax.imageio.ImageWriter writer = writers.next();
-                try (javax.imageio.stream.ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+                ImageWriter writer = writers.next();
+                try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
                     writer.setOutput(ios);
-                    javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
-                    param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+                    ImageWriteParam param = writer.getDefaultWriteParam();
+                    param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                     param.setCompressionQuality(quality / 100.0f);
-                    writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+                    writer.write(null, new IIOImage(image, null, null), param);
                 } finally {
                     writer.dispose();
                 }
@@ -381,18 +385,18 @@ public class AwtImageProcessingService implements ImageProcessingService {
             g2d.dispose();
         }
 
-        Iterator<javax.imageio.ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/webp");
+        Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType("image/webp");
         if (!writers.hasNext()) {
             throw new IOException("WebP writer not available. Ensure webp-imageio dependency is present.");
         }
 
-        javax.imageio.ImageWriter writer = writers.next();
-        try (javax.imageio.stream.ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
+        ImageWriter writer = writers.next();
+        try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
             writer.setOutput(ios);
 
-            javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
+            ImageWriteParam param = writer.getDefaultWriteParam();
             if (param.canWriteCompressed()) {
-                param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+                param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
                 if (lossless) {
                     param.setCompressionType("Lossless");
                 } else {
@@ -401,7 +405,7 @@ public class AwtImageProcessingService implements ImageProcessingService {
                 }
             }
 
-            writer.write(null, new javax.imageio.IIOImage(rgbImage, null, null), param);
+            writer.write(null, new IIOImage(rgbImage, null, null), param);
         } finally {
             writer.dispose();
         }

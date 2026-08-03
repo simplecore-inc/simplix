@@ -8,6 +8,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 /**
  * Token authentication failure handler wrapper for REST API endpoints.
@@ -53,8 +55,8 @@ public class SimpliXTokenAuthenticationFailureHandler implements AuthenticationF
             try {
                 // Extract base64 encoded credentials (trim for safety)
                 String base64Credentials = authHeader.substring("Basic ".length()).trim();
-                byte[] decodedBytes = java.util.Base64.getDecoder().decode(base64Credentials);
-                String credentials = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+                byte[] decodedBytes = Base64.getDecoder().decode(base64Credentials);
+                String credentials = new String(decodedBytes, StandardCharsets.UTF_8);
 
                 // Split username:password
                 String[] parts = credentials.split(":", 2);

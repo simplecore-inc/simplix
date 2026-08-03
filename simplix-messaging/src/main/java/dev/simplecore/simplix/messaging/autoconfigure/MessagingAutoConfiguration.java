@@ -15,6 +15,7 @@ import dev.simplecore.simplix.messaging.monitoring.MessagingHealthIndicator;
 import dev.simplecore.simplix.messaging.monitoring.MessagingMetrics;
 import dev.simplecore.simplix.messaging.replay.ReplayService;
 import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -199,7 +200,7 @@ public class MessagingAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean
         public MessagingMetrics messagingMetrics(
-                Optional<io.micrometer.core.instrument.MeterRegistry> meterRegistry) {
+                Optional<MeterRegistry> meterRegistry) {
             log.info("Configuring messaging metrics (Micrometer detected)");
             return new MessagingMetrics(meterRegistry.orElse(null));
         }

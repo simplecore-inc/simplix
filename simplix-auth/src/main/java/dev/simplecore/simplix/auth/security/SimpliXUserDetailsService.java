@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 public interface SimpliXUserDetailsService extends UserDetailsService {
@@ -92,7 +93,7 @@ public interface SimpliXUserDetailsService extends UserDetailsService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
         } catch (UsernameNotFoundException e) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
     }
 

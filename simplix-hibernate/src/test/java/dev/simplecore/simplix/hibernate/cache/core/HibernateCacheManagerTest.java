@@ -36,6 +36,7 @@ class HibernateCacheManagerTest {
     private SessionFactory sessionFactory;
 
     @Mock
+    // Fully qualified: Cache stands for jakarta.persistence.Cache in this file.
     private org.hibernate.Cache hibernateCache;
 
     private HibernateCacheManager cacheManager;

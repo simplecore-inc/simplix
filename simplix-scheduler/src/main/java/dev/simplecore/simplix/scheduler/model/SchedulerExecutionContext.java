@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.With;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -58,6 +59,6 @@ public class SchedulerExecutionContext {
         if (startTime == null) {
             return 0;
         }
-        return java.time.Duration.between(startTime, Instant.now()).toMillis();
+        return Duration.between(startTime, Instant.now()).toMillis();
     }
 }

@@ -2,8 +2,10 @@ package dev.simplecore.simplix.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -153,7 +156,7 @@ class SimpliXTokenAuthenticationFilterTest {
                     .build();
             when(tokenProvider.parseToken("test-token")).thenReturn(claims);
             when(tokenProvider.validateToken(eq("test-token"), anyString(), anyString()))
-                    .thenThrow(new dev.simplecore.simplix.auth.exception.TokenValidationException("Token expired", "Details"));
+                    .thenThrow(new TokenValidationException("Token expired", "Details"));
 
             filter.doFilterInternal(request, response, filterChain);
 
@@ -176,7 +179,7 @@ class SimpliXTokenAuthenticationFilterTest {
             properties.getSecurity().setPreferTokenOverSession(true);
 
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setCookies(new jakarta.servlet.http.Cookie("access_token", "cookie-token"));
+            request.setCookies(new Cookie("access_token", "cookie-token"));
             request.addHeader("User-Agent", "TestAgent");
             MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -222,7 +225,7 @@ class SimpliXTokenAuthenticationFilterTest {
             properties.getOauth2().getCookie().setAccessTokenName("access_token");
 
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setCookies(new jakarta.servlet.http.Cookie("session_id", "some-value"));
+            request.setCookies(new Cookie("session_id", "some-value"));
             MockHttpServletResponse response = new MockHttpServletResponse();
 
             filter.doFilterInternal(request, response, filterChain);
@@ -246,8 +249,8 @@ class SimpliXTokenAuthenticationFilterTest {
                     .password("pass")
                     .authorities(Collections.emptyList())
                     .build();
-            org.springframework.security.authentication.UsernamePasswordAuthenticationToken existingAuth =
-                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+            UsernamePasswordAuthenticationToken existingAuth =
+                    new UsernamePasswordAuthenticationToken(
                             existingUser, null, existingUser.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(existingAuth);
 
@@ -272,8 +275,8 @@ class SimpliXTokenAuthenticationFilterTest {
                     .password("pass")
                     .authorities(Collections.emptyList())
                     .build();
-            org.springframework.security.authentication.UsernamePasswordAuthenticationToken existingAuth =
-                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+            UsernamePasswordAuthenticationToken existingAuth =
+                    new UsernamePasswordAuthenticationToken(
                             existingUser, null, existingUser.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(existingAuth);
 

@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.web.advice;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.validation.FieldError;
 
 import java.util.ArrayList;
@@ -94,7 +95,7 @@ public class ValidationArgumentProcessor {
             Object arg = error.getArguments()[i];
 
             // Skip field name resolvables
-            if (arg instanceof org.springframework.context.support.DefaultMessageSourceResolvable) {
+            if (arg instanceof DefaultMessageSourceResolvable) {
                 continue;
             }
 
@@ -121,7 +122,7 @@ public class ValidationArgumentProcessor {
             Object arg = rawArguments[i];
 
             // Skip field name resolvables
-            if (arg instanceof org.springframework.context.support.DefaultMessageSourceResolvable) {
+            if (arg instanceof DefaultMessageSourceResolvable) {
                 continue;
             }
 

@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
@@ -274,7 +275,7 @@ public class JweKeyRotationService {
                 }
             }
             // Check for SQL state codes (23505 is PostgreSQL unique violation)
-            if (cause instanceof java.sql.SQLException sqlEx) {
+            if (cause instanceof SQLException sqlEx) {
                 String sqlState = sqlEx.getSQLState();
                 if ("23505".equals(sqlState) || "23000".equals(sqlState)) {
                     return true;

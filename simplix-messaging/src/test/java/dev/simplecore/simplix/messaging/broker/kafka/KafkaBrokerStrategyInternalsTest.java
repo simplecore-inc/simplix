@@ -23,6 +23,7 @@ import org.springframework.kafka.support.Acknowledgment;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -193,7 +194,7 @@ class KafkaBrokerStrategyInternalsTest {
             dispatchMethod.invoke(strategy, record, kafkaAck, request);
 
             receivedAck.get().nack(true);
-            verify(kafkaAck).nack(java.time.Duration.ZERO);
+            verify(kafkaAck).nack(Duration.ZERO);
         }
 
         @Test

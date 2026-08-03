@@ -2,6 +2,7 @@ package dev.simplecore.simplix.messaging.monitoring;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -174,7 +175,7 @@ public class MessagingMetrics {
             return;
         }
         registry.gauge(METRIC_PENDING_COUNT,
-                io.micrometer.core.instrument.Tags.of(TAG_CHANNEL, channel, TAG_GROUP, group),
+                Tags.of(TAG_CHANNEL, channel, TAG_GROUP, group),
                 supplier,
                 s -> s.get().doubleValue());
         log.debug("Registered pending count gauge for channel='{}' group='{}'", channel, group);

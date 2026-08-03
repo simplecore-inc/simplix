@@ -33,6 +33,7 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
         if (exception instanceof OAuth2AuthenticationException oauthEx) {
             errorCode = oauthEx.getErrorCode();
             log.warn("OAuth2 authentication failed: {} - {}", errorCode, exception.getMessage());
+        // Fully qualified: OAuth2AuthenticationException stands for dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationException in this file.
         } else if (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException oauth2Ex) {
             errorCode = oauth2Ex.getError().getErrorCode();
             log.warn("OAuth2 provider error: {} - {}", errorCode, oauth2Ex.getMessage());

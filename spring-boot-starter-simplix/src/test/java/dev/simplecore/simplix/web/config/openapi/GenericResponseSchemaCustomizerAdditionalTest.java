@@ -4,6 +4,7 @@ import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -128,6 +129,7 @@ class GenericResponseSchemaCustomizerAdditionalTest {
         @DisplayName("Should skip @ApiResponses container with 200 success and content definition")
         void skipApiResponsesContainer() throws Exception {
             Operation operation = new Operation();
+            // Fully qualified: ApiResponses stands for io.swagger.v3.oas.annotations.responses.ApiResponses in this file.
             operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
             Method method = AdditionalSampleApi.class.getMethod("getWithApiResponses");
 
@@ -210,12 +212,13 @@ class GenericResponseSchemaCustomizerAdditionalTest {
         void preserveExistingNamedExamples() throws Exception {
             Operation operation = new Operation();
             io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
+            // Fully qualified: ApiResponse stands for io.swagger.v3.oas.annotations.responses.ApiResponse in this file.
             io.swagger.v3.oas.models.responses.ApiResponse existing200 =
                     new io.swagger.v3.oas.models.responses.ApiResponse();
             Content existingContent = new Content();
             MediaType existingMediaType = new MediaType();
             existingMediaType.setExamples(Map.of("example1",
-                    new io.swagger.v3.oas.models.examples.Example().value("{\"test\":true}")));
+                    new Example().value("{\"test\":true}")));
             existingContent.addMediaType("application/json", existingMediaType);
             existing200.setContent(existingContent);
             responses.addApiResponse("200", existing200);
@@ -298,7 +301,9 @@ class GenericResponseSchemaCustomizerAdditionalTest {
 
         @ApiResponses({
                 @ApiResponse(responseCode = "200",
+                        // Fully qualified: a wildcard import already binds Content in this file.
                         content = @io.swagger.v3.oas.annotations.media.Content(
+                                // Fully qualified: a wildcard import already binds Schema in this file.
                                 schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = SampleDto.class)))
         })
         public SampleDto getWithApiResponses() { return null; }

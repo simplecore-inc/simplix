@@ -4,6 +4,7 @@ import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class StandardExcelExporterExtendedTest {
 
     static {
-        org.apache.poi.openxml4j.util.ZipSecureFile.setMinInflateRatio(0.001);
+        ZipSecureFile.setMinInflateRatio(0.001);
     }
 
     @Nested

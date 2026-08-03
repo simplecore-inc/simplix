@@ -3,6 +3,7 @@ package dev.simplecore.simplix.hibernate.cache.core;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Cache;
 import org.hibernate.SessionFactory;
 
 import java.util.Set;
@@ -23,6 +24,7 @@ public class HibernateCacheManager {
      */
     public void evictEntityCache(Class<?> entityClass) {
         try {
+            // Fully qualified: Cache stands for org.hibernate.Cache in this file.
             jakarta.persistence.Cache cache = entityManagerFactory.getCache();
             cache.evict(entityClass);
             log.trace("✔ Evicted entity cache for: {}", entityClass.getSimpleName());
@@ -53,7 +55,7 @@ public class HibernateCacheManager {
             cache.evictAll();
 
             // Also evict query cache
-            org.hibernate.Cache hibernateCache = getHibernateCache();
+            Cache hibernateCache = getHibernateCache();
             if (hibernateCache != null) {
                 hibernateCache.evictAllRegions();
             }
@@ -69,7 +71,7 @@ public class HibernateCacheManager {
      */
     public void evictRegion(String regionName) {
         try {
-            org.hibernate.Cache hibernateCache = getHibernateCache();
+            Cache hibernateCache = getHibernateCache();
             if (hibernateCache != null) {
                 hibernateCache.evictRegion(regionName);
                 log.trace("✔ Evicted cache region: {}", regionName);
@@ -84,7 +86,7 @@ public class HibernateCacheManager {
      */
     public void evictQueryRegion(String queryRegion) {
         try {
-            org.hibernate.Cache hibernateCache = getHibernateCache();
+            Cache hibernateCache = getHibernateCache();
             if (hibernateCache != null) {
                 hibernateCache.evictQueryRegion(queryRegion);
                 log.trace("✔ Evicted query cache region: {}", queryRegion);
@@ -126,13 +128,13 @@ public class HibernateCacheManager {
      * Get Hibernate Cache with null safety.
      * @return Hibernate Cache or null if not available
      */
-    private org.hibernate.Cache getHibernateCache() {
+    private Cache getHibernateCache() {
         SessionFactory sessionFactory = entityManagerFactory.unwrap(SessionFactory.class);
         if (sessionFactory == null) {
             log.warn("⚠ SessionFactory is null, cannot get Hibernate cache");
             return null;
         }
-        org.hibernate.Cache cache = sessionFactory.getCache();
+        Cache cache = sessionFactory.getCache();
         if (cache == null) {
             log.trace("Hibernate cache is not configured");
         }

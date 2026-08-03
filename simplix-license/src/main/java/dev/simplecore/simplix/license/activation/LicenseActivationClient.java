@@ -2,6 +2,7 @@ package dev.simplecore.simplix.license.activation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.accesscore.license.sdk.LicenseManager;
 import dev.accesscore.license.sdk.protocol.ActivationModel.ActivationError;
 import dev.accesscore.license.sdk.protocol.ActivationModel.ActivationOperation;
 import dev.accesscore.license.sdk.protocol.ActivationModel.ActivationOutcome;
@@ -54,7 +55,7 @@ public class LicenseActivationClient {
     private final String configuredServerUrl;
     private final ObjectProvider<ActivationServerDirectory> directory;
     private final ObjectProvider<ContactIdentity> contactIdentity;
-    private final dev.accesscore.license.sdk.LicenseManager sdk;
+    private final LicenseManager sdk;
 
     /**
      * @param serverUrl the configured address, used when the application registers none
@@ -68,7 +69,7 @@ public class LicenseActivationClient {
     public LicenseActivationClient(String serverUrl, ObjectMapper objectMapper,
                                    ObjectProvider<ActivationServerDirectory> directory,
                                    ObjectProvider<ContactIdentity> contactIdentity,
-                                   dev.accesscore.license.sdk.LicenseManager sdk) {
+                                   LicenseManager sdk) {
         this.configuredServerUrl = normalizeServerUrl(serverUrl);
         this.objectMapper = objectMapper;
         this.directory = directory;

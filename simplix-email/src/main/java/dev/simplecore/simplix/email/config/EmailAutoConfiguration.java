@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.email.config;
 
 import dev.simplecore.simplix.email.model.EmailAddress;
+import dev.simplecore.simplix.email.model.MailProviderType;
 import dev.simplecore.simplix.email.provider.ConsoleEmailProvider;
 import dev.simplecore.simplix.email.provider.EmailProvider;
 import dev.simplecore.simplix.email.provider.SmtpEmailProvider;
@@ -117,7 +118,7 @@ public class EmailAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ConsoleEmailProvider consoleEmailProvider(EmailProperties properties) {
-        boolean enabled = properties.getProvider() == dev.simplecore.simplix.email.model.MailProviderType.CONSOLE;
+        boolean enabled = properties.getProvider() == MailProviderType.CONSOLE;
         return new ConsoleEmailProvider(enabled);
     }
 

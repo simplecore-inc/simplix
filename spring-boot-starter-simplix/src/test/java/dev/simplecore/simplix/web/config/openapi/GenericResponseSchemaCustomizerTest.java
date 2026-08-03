@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -318,7 +319,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should set 200 response schema for String return type with auto-wrap")
         void autoWrapStringReturn() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getString");
             when(handlerMethod.getBeanType()).thenReturn((Class) SampleApi.class);
             when(handlerMethod.getMethod()).thenReturn(method);
@@ -335,7 +336,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should wrap void return type with empty body schema when autoWrap is enabled")
         void autoWrapVoidReturn() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("doVoid");
 
             HandlerMethod localHandlerMethod =
@@ -350,7 +351,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should skip customization for SseEmitter streaming type")
         void skipSseEmitter() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getSse");
 
             HandlerMethod localHandlerMethod =
@@ -366,7 +367,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should skip customization when explicit @ApiResponse is present")
         void skipExplicitApiResponse() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getWithExplicitResponse");
 
             HandlerMethod localHandlerMethod =
@@ -381,9 +382,10 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should skip auto-wrapping when operation declares a redirect (3xx) response")
         void skipRedirectResponse() throws Exception {
             Operation operation = new Operation();
-            io.swagger.v3.oas.models.responses.ApiResponses responses =
-                    new io.swagger.v3.oas.models.responses.ApiResponses();
+            ApiResponses responses =
+                    new ApiResponses();
             responses.addApiResponse("302",
+                    // Fully qualified: ApiResponse stands for io.swagger.v3.oas.annotations.responses.ApiResponse in this file.
                     new io.swagger.v3.oas.models.responses.ApiResponse().description("Redirect"));
             operation.setResponses(responses);
 
@@ -402,7 +404,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should handle generic wrapper return type")
         void handleGenericWrapper() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getWrapped");
 
             HandlerMethod localHandlerMethod =
@@ -417,7 +419,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should handle ResponseEntity<List<SampleDto>> return type")
         void handleResponseEntityList() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getResponseEntityList");
 
             HandlerMethod localHandlerMethod =
@@ -432,7 +434,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should preserve existing examples when setting schema")
         void preserveExistingExamples() throws Exception {
             Operation operation = new Operation();
-            io.swagger.v3.oas.models.responses.ApiResponses responses = new io.swagger.v3.oas.models.responses.ApiResponses();
+            ApiResponses responses = new ApiResponses();
             io.swagger.v3.oas.models.responses.ApiResponse existing200 =
                     new io.swagger.v3.oas.models.responses.ApiResponse();
             Content existingContent = new Content();
@@ -456,7 +458,7 @@ class GenericResponseSchemaCustomizerTest {
         @DisplayName("Should handle exception during customization gracefully")
         void handleExceptionGracefully() throws Exception {
             Operation operation = new Operation();
-            operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+            operation.setResponses(new ApiResponses());
             Method method = SampleApi.class.getMethod("getString");
 
             // The customize method catches exceptions in doCustomize
@@ -477,7 +479,7 @@ class GenericResponseSchemaCustomizerTest {
     void noAutoWrapWhenDisabled() throws Exception {
         GenericResponseSchemaCustomizer noAutoWrap = new GenericResponseSchemaCustomizer(false);
         Operation operation = new Operation();
-        operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+        operation.setResponses(new ApiResponses());
         Method method = SampleApi.class.getMethod("getString");
 
         HandlerMethod localHandlerMethod =
@@ -493,7 +495,7 @@ class GenericResponseSchemaCustomizerTest {
     void noAutoWrapVoidWhenDisabled() throws Exception {
         GenericResponseSchemaCustomizer noAutoWrap = new GenericResponseSchemaCustomizer(false);
         Operation operation = new Operation();
-        operation.setResponses(new io.swagger.v3.oas.models.responses.ApiResponses());
+        operation.setResponses(new ApiResponses());
         Method method = SampleApi.class.getMethod("doVoid");
 
         HandlerMethod localHandlerMethod =
@@ -524,7 +526,9 @@ class GenericResponseSchemaCustomizerTest {
         public ResponseEntity<List<SampleDto>> getResponseEntityList() { return null; }
 
         @ApiResponse(responseCode = "200",
+                // Fully qualified: Content stands for io.swagger.v3.oas.models.media.Content in this file.
                 content = @io.swagger.v3.oas.annotations.media.Content(
+                        // Fully qualified: Schema stands for io.swagger.v3.oas.models.media.Schema in this file.
                         schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = SampleDto.class)))
         public SampleDto getWithExplicitResponse() { return null; }
     }

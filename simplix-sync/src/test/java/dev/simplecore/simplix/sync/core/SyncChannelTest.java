@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ class SyncChannelTest {
     void shouldHandleDecodeErrors() {
         PayloadCodec<String> failingCodec = PayloadCodec.of(
                 msg -> msg.getBytes(StandardCharsets.UTF_8),
-                bytes -> { throw new java.io.IOException("bad data"); }
+                bytes -> { throw new IOException("bad data"); }
         );
         SyncChannel<String> failingChannel = new SyncChannel<>("fail-ch", failingCodec, broadcaster);
 

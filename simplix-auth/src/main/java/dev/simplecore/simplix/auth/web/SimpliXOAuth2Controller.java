@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -317,7 +318,7 @@ public class SimpliXOAuth2Controller {
         }
 
         // Fallback to username as ID for standard UserDetails
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
+        if (principal instanceof UserDetails userDetails) {
             log.warn("Using username as user ID for linking - consider implementing getId() in your UserDetails");
             return userDetails.getUsername();
         }

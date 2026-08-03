@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.encryption.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -27,7 +28,7 @@ public class SimpliXEncryptionAutoConfiguration {
     /**
      * Initialize encryption module
      */
-    @jakarta.annotation.PostConstruct
+    @PostConstruct
     public void init() {
         log.info("✔ SimpliX Encryption module initialized");
         log.debug("Encryption configuration: enabled={}, provider={}",

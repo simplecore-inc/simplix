@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,7 +98,7 @@ class S3FileStorageServiceTest {
                 .thenReturn(CreateBucketResponse.builder().build());
 
             // Call ensureBucketExists via reflection
-            java.lang.reflect.Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
+            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
             method.setAccessible(true);
             method.invoke(service);
 
@@ -110,7 +111,7 @@ class S3FileStorageServiceTest {
             when(s3Client.headBucket(any(HeadBucketRequest.class)))
                 .thenReturn(HeadBucketResponse.builder().build());
 
-            java.lang.reflect.Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
+            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
             method.setAccessible(true);
             method.invoke(service);
 
@@ -133,7 +134,7 @@ class S3FileStorageServiceTest {
                     .statusCode(403)
                     .build());
 
-            java.lang.reflect.Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
+            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
             method.setAccessible(true);
             // Should not throw, just log warning
             method.invoke(service);

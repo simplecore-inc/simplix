@@ -17,6 +17,7 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.core.env.Environment;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -393,7 +394,7 @@ public class MessageHandlerRegistrar
      */
     private Object decodeWireProtobuf(Class<?> protoClass, byte[] bytes) {
         try {
-            java.lang.reflect.Field adapterField = protoClass.getField("ADAPTER");
+            Field adapterField = protoClass.getField("ADAPTER");
             Object adapter = adapterField.get(null);
             Method decodeMethod = adapter.getClass().getMethod("decode", byte[].class);
             return decodeMethod.invoke(adapter, (Object) bytes);

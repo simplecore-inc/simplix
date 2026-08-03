@@ -11,6 +11,7 @@ import dev.simplecore.simplix.stream.core.model.Subscription;
 import dev.simplecore.simplix.stream.core.model.SubscriptionKey;
 import dev.simplecore.simplix.stream.core.session.SessionManager;
 import dev.simplecore.simplix.stream.core.subscription.SubscriptionManager;
+import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
 import dev.simplecore.simplix.stream.security.SessionValidator;
 import dev.simplecore.simplix.stream.security.StreamAuthorizationService;
 import dev.simplecore.simplix.stream.transport.dto.SubscriptionRequest;
@@ -93,7 +94,7 @@ public class WebSocketStreamHandler {
         simpSessionToStreamSession.put(simpSessionId, streamSessionId);
 
         // Register sender for broadcasting
-        if (broadcastService instanceof dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster localBroadcaster) {
+        if (broadcastService instanceof LocalBroadcaster localBroadcaster) {
             localBroadcaster.registerSender(streamSessionId, wsSession);
         }
 
@@ -137,7 +138,7 @@ public class WebSocketStreamHandler {
         }
 
         // Unregister sender from broadcaster
-        if (broadcastService instanceof dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster localBroadcaster) {
+        if (broadcastService instanceof LocalBroadcaster localBroadcaster) {
             localBroadcaster.unregisterSender(streamSessionId);
         }
     }
@@ -313,7 +314,7 @@ public class WebSocketStreamHandler {
         cancelHeartbeat(sessionId);
         wsSession.close();
 
-        if (broadcastService instanceof dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster localBroadcaster) {
+        if (broadcastService instanceof LocalBroadcaster localBroadcaster) {
             localBroadcaster.unregisterSender(sessionId);
         }
         subscriptionManager.clearSubscriptions(sessionId);

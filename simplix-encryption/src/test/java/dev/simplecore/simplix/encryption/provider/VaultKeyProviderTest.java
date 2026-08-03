@@ -14,6 +14,7 @@ import org.springframework.vault.support.VaultResponse;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HashMap;
@@ -136,7 +137,7 @@ class VaultKeyProviderTest {
                 VaultResponse keyResp = new VaultResponse();
                 Map<String, Object> data = new HashMap<>();
                 byte[] keyBytes = new byte[32];
-                new java.security.SecureRandom().nextBytes(keyBytes);
+                new SecureRandom().nextBytes(keyBytes);
                 data.put("key", Base64.getEncoder().encodeToString(keyBytes));
                 keyResp.setData(data);
                 return keyResp;

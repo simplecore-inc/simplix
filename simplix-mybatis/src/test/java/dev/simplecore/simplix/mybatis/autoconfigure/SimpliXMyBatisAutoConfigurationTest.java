@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 
 import javax.sql.DataSource;
 
@@ -24,8 +25,8 @@ class SimpliXMyBatisAutoConfigurationTest {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private DataSourceProperties createMockDataSourceProperties(DataSource dataSource) {
         DataSourceProperties dsProps = mock(DataSourceProperties.class);
-        org.springframework.boot.jdbc.DataSourceBuilder builder =
-                mock(org.springframework.boot.jdbc.DataSourceBuilder.class);
+        DataSourceBuilder builder =
+                mock(DataSourceBuilder.class);
         when(dsProps.initializeDataSourceBuilder()).thenReturn(builder);
         when(builder.build()).thenReturn(dataSource);
         return dsProps;

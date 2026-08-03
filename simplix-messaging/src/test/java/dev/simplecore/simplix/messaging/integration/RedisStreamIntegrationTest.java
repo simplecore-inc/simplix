@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.stream.StreamOffset;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.nio.charset.StandardCharsets;
@@ -169,7 +170,7 @@ class RedisStreamIntegrationTest {
 
             // Read back from Redis directly to verify fields
             var records = redisTemplate.opsForStream()
-                    .read(org.springframework.data.redis.connection.stream.StreamOffset
+                    .read(StreamOffset
                             .fromStart(KEY_PREFIX + channel));
             assertThat(records).hasSize(1);
 

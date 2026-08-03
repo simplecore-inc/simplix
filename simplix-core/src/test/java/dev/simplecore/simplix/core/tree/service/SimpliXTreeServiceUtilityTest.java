@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,7 +39,7 @@ class SimpliXTreeServiceUtilityTest {
         }
 
         public <X extends RuntimeException> void callValidateNoCircularReferenceWithSupplier(
-                Long nodeId, Long newParentId, java.util.function.Supplier<X> supplier) throws X {
+                Long nodeId, Long newParentId, Supplier<X> supplier) throws X {
             validateNoCircularReference(nodeId, newParentId, supplier);
         }
 
@@ -45,7 +48,7 @@ class SimpliXTreeServiceUtilityTest {
         }
 
         public <X extends RuntimeException> void callValidateNoChildrenWithSupplier(
-                Long id, java.util.function.Supplier<X> supplier) throws X {
+                Long id, Supplier<X> supplier) throws X {
             validateNoChildren(id, supplier);
         }
 
@@ -55,16 +58,16 @@ class SimpliXTreeServiceUtilityTest {
 
         public <D> List<D> callMapToTreeDto(
                 List<CodeItem> entities,
-                java.util.function.Function<CodeItem, D> mapper,
-                java.util.function.Function<CodeItem, List<CodeItem>> childrenGetter,
-                java.util.function.BiConsumer<D, List<D>> childrenSetter) {
+                Function<CodeItem, D> mapper,
+                Function<CodeItem, List<CodeItem>> childrenGetter,
+                BiConsumer<D, List<D>> childrenSetter) {
             return mapToTreeDto(entities, mapper, childrenGetter, childrenSetter);
         }
 
         public <D> List<D> callMapToTreeDtoWithChildInfo(
                 List<CodeItem> entities,
-                java.util.function.Function<CodeItem, D> mapper,
-                java.util.function.Function<CodeItem, List<CodeItem>> childrenGetter,
+                Function<CodeItem, D> mapper,
+                Function<CodeItem, List<CodeItem>> childrenGetter,
                 ChildrenWithCountSetter<D> childrenWithCountSetter) {
             return mapToTreeDtoWithChildInfo(entities, mapper, childrenGetter, childrenWithCountSetter);
         }

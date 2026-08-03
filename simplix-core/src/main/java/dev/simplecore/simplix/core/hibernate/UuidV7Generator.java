@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <p>
  * Usage: @UuidV7Generator
  */
-@IdGeneratorType(dev.simplecore.simplix.core.hibernate.UuidV7GeneratorImpl.class)
+@IdGeneratorType(UuidV7GeneratorImpl.class)
 @Retention(RUNTIME)
 @Target({FIELD, METHOD})
 public @interface UuidV7Generator {

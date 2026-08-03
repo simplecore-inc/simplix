@@ -2,6 +2,7 @@ package dev.simplecore.simplix.core.util;
 
 import jakarta.persistence.Id;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
 
 import java.lang.reflect.Field;
@@ -21,7 +22,7 @@ public class EntityUtils {
             ModelMapper mapper = new ModelMapper();
             mapper.getConfiguration()
                 .setFieldMatchingEnabled(true)
-                .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
                 .setPropertyCondition(ctx -> ctx.getSource() != null)
                 .setMatchingStrategy(MatchingStrategies.STRICT);
                 

@@ -18,6 +18,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -1149,7 +1150,7 @@ public class SimpliXTreeBaseService<T extends TreeEntity<T, ID>, ID> implements 
             List<T> entities,
             Function<T, D> mapper,
             Function<T, List<T>> childrenGetter,
-            java.util.function.BiConsumer<D, List<D>> childrenSetter) {
+            BiConsumer<D, List<D>> childrenSetter) {
 
         if (entities == null || entities.isEmpty()) {
             return new ArrayList<>();

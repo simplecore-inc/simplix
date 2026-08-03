@@ -11,6 +11,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -104,7 +105,7 @@ public class SimpleKeyProvider extends AbstractKeyProvider {
 
     @Override
     public Map<String, Object> getKeyStatistics() {
-        Map<String, Object> stats = new java.util.HashMap<>(super.getKeyStatistics());
+        Map<String, Object> stats = new HashMap<>(super.getKeyStatistics());
         stats.put("warning", "Development only - No rotation support");
         stats.put("staticKey", "****" + staticKey.substring(Math.max(0, staticKey.length() - 4)));
         return stats;

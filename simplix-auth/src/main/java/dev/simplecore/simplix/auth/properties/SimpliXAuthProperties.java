@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.auth.properties;
 
 import dev.simplecore.simplix.auth.oauth2.properties.SimpliXOAuth2Properties;
+import java.time.Duration;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -183,7 +184,7 @@ public class SimpliXAuthProperties {
          * be greater than or equal to the longest token lifetime that may be
          * blacklisted.
          */
-        private java.time.Duration blacklistNatsMaxRetention = java.time.Duration.ofDays(7);
+        private Duration blacklistNatsMaxRetention = Duration.ofDays(7);
 
         /**
          * Failure mode when the blacklist service (e.g., Redis) is unavailable.

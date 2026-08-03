@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
@@ -209,9 +210,9 @@ class SwaggerSchemaEnhancerAdditionalTest {
             ReflectionTestUtils.setField(enhancer, "schemaClassCache", cache);
 
             when(messageSource.getMessage(anyString(), isNull(), eq(Locale.KOREAN)))
-                    .thenThrow(new org.springframework.context.NoSuchMessageException("not found"));
+                    .thenThrow(new NoSuchMessageException("not found"));
             when(messageSource.getMessage(anyString(), isNull(), eq(Locale.ENGLISH)))
-                    .thenThrow(new org.springframework.context.NoSuchMessageException("not found"));
+                    .thenThrow(new NoSuchMessageException("not found"));
 
             OpenAPI openApi = buildOpenApi("NotNullDto", "requiredField");
             enhancer.customise(openApi);

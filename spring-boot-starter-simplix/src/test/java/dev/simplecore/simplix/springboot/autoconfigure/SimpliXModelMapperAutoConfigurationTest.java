@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -131,10 +134,10 @@ class SimpliXModelMapperAutoConfigurationTest {
         void mapToLinkedHashMap() {
             ModelMapper mapper = config.modelMapper();
 
-            java.util.Map<String, String> source = new java.util.HashMap<>();
+            Map<String, String> source = new HashMap<>();
             source.put("key", "value");
 
-            java.util.LinkedHashMap<String, String> result = mapper.map(source, java.util.LinkedHashMap.class);
+            LinkedHashMap<String, String> result = mapper.map(source, LinkedHashMap.class);
 
             assertThat(result.get("key")).isEqualTo("value");
         }
@@ -145,10 +148,10 @@ class SimpliXModelMapperAutoConfigurationTest {
         void linkedHashMapToMap() {
             ModelMapper mapper = config.modelMapper();
 
-            java.util.LinkedHashMap<String, String> source = new java.util.LinkedHashMap<>();
+            LinkedHashMap<String, String> source = new LinkedHashMap<>();
             source.put("key", "value");
 
-            java.util.Map<String, String> result = mapper.map(source, java.util.Map.class);
+            Map<String, String> result = mapper.map(source, Map.class);
 
             assertThat(result.get("key")).isEqualTo("value");
         }

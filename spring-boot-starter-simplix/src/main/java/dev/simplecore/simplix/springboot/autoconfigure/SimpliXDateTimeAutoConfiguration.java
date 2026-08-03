@@ -1,5 +1,7 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
+import dev.simplecore.simplix.springboot.converter.SimpliXLocalDateTimeConverter;
+import dev.simplecore.simplix.springboot.converter.SimpliXOffsetDateTimeConverter;
 import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +11,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.TimeZone;
@@ -86,7 +91,7 @@ public class SimpliXDateTimeAutoConfiguration {
     @Bean
     public ZoneOffset applicationZoneOffset() {
         ZoneId zoneId = resolveApplicationZoneId();
-        return ZoneOffset.from(zoneId.getRules().getOffset(java.time.Instant.now()));
+        return ZoneOffset.from(zoneId.getRules().getOffset(Instant.now()));
     }
 
     /**
@@ -105,16 +110,16 @@ public class SimpliXDateTimeAutoConfiguration {
      * Provides JPA AttributeConverter for automatic OffsetDateTime timezone conversion.
      */
     @Bean
-    public dev.simplecore.simplix.springboot.converter.SimpliXOffsetDateTimeConverter offsetDateTimeConverter() {
-        return new dev.simplecore.simplix.springboot.converter.SimpliXOffsetDateTimeConverter();
+    public SimpliXOffsetDateTimeConverter offsetDateTimeConverter() {
+        return new SimpliXOffsetDateTimeConverter();
     }
 
     /**
      * Provides JPA AttributeConverter for automatic LocalDateTime to OffsetDateTime conversion.
      */
     @Bean
-    public dev.simplecore.simplix.springboot.converter.SimpliXLocalDateTimeConverter localDateTimeConverter() {
-        return new dev.simplecore.simplix.springboot.converter.SimpliXLocalDateTimeConverter();
+    public SimpliXLocalDateTimeConverter localDateTimeConverter() {
+        return new SimpliXLocalDateTimeConverter();
     }
 
     private ZoneId resolveApplicationZoneId() {
@@ -132,7 +137,7 @@ public class SimpliXDateTimeAutoConfiguration {
 
         public SimpliXTimezoneService(ZoneId applicationZoneId, boolean useUtcForDatabase, boolean normalizeTimezone) {
             this.applicationZoneId = applicationZoneId;
-            this.applicationZoneOffset = ZoneOffset.from(applicationZoneId.getRules().getOffset(java.time.Instant.now()));
+            this.applicationZoneOffset = ZoneOffset.from(applicationZoneId.getRules().getOffset(Instant.now()));
             this.useUtcForDatabase = useUtcForDatabase;
             this.normalizeTimezone = normalizeTimezone;
         }
@@ -157,7 +162,7 @@ public class SimpliXDateTimeAutoConfiguration {
          * Converts LocalDateTime to OffsetDateTime using application timezone.
          * Used when timezone information is not available.
          */
-        public java.time.OffsetDateTime normalizeToApplicationTimezone(java.time.LocalDateTime localDateTime) {
+        public OffsetDateTime normalizeToApplicationTimezone(LocalDateTime localDateTime) {
             if (localDateTime == null) {
                 return null;
             }
@@ -168,7 +173,7 @@ public class SimpliXDateTimeAutoConfiguration {
          * Converts OffsetDateTime to UTC for database storage.
          * Used when useUtcForDatabase is true.
          */
-        public java.time.OffsetDateTime normalizeForDatabase(java.time.OffsetDateTime offsetDateTime) {
+        public OffsetDateTime normalizeForDatabase(OffsetDateTime offsetDateTime) {
             if (offsetDateTime == null) {
                 return null;
             }
@@ -179,7 +184,7 @@ public class SimpliXDateTimeAutoConfiguration {
          * Converts UTC OffsetDateTime from database to application timezone.
          * Used when reading from database and useUtcForDatabase is true.
          */
-        public java.time.OffsetDateTime normalizeFromDatabase(java.time.OffsetDateTime offsetDateTime) {
+        public OffsetDateTime normalizeFromDatabase(OffsetDateTime offsetDateTime) {
             if (offsetDateTime == null) {
                 return null;
             }

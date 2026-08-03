@@ -5,6 +5,7 @@ import dev.simplecore.simplix.auth.oauth2.OAuth2UserInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
@@ -65,8 +66,8 @@ class OAuth2UserInfoExtractorTest {
     @Test
     @DisplayName("should throw for non-OAuth2 authentication")
     void shouldThrowForNonOAuth2Auth() {
-        org.springframework.security.authentication.UsernamePasswordAuthenticationToken auth =
-                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
                         "user", "pass");
 
         assertThatThrownBy(() -> extractor.extract(auth))

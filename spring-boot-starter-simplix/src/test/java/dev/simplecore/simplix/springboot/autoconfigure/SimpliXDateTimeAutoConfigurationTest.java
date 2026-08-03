@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -204,7 +205,7 @@ class SimpliXDateTimeAutoConfigurationTest {
                     new SimpliXDateTimeAutoConfiguration.SimpliXTimezoneService(
                             ZoneId.of("Asia/Seoul"), true, true);
 
-            java.time.LocalDateTime local = java.time.LocalDateTime.of(2024, 6, 15, 12, 0, 0);
+            LocalDateTime local = LocalDateTime.of(2024, 6, 15, 12, 0, 0);
             OffsetDateTime result = service.normalizeToApplicationTimezone(local);
 
             assertThat(result).isNotNull();

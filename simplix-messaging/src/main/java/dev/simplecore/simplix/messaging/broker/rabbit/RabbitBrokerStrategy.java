@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.messaging.broker.rabbit;
 
+import com.rabbitmq.client.Channel;
 import dev.simplecore.simplix.messaging.broker.BrokerCapabilities;
 import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import dev.simplecore.simplix.messaging.broker.SubscribeRequest;
@@ -9,6 +10,9 @@ import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.Queue;
@@ -17,6 +21,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 
 import java.time.Instant;
 import java.util.Date;
@@ -72,7 +77,7 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
         String messageId = headers.get(MessageHeaders.MESSAGE_ID).orElse(UUID.randomUUID().toString());
         String contentType = headers.get(MessageHeaders.CONTENT_TYPE).orElse("application/octet-stream");
 
-        org.springframework.amqp.core.MessageProperties properties = new MessageProperties();
+        MessageProperties properties = new MessageProperties();
         properties.setMessageId(messageId);
         properties.setContentType(contentType);
         properties.setTimestamp(new Date());
@@ -80,6 +85,7 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
         // Copy all message headers into AMQP headers
         headers.toMap().forEach(properties::setHeader);
 
+        // Fully qualified: Message stands for dev.simplecore.simplix.messaging.core.Message in this file.
         org.springframework.amqp.core.Message amqpMessage =
                 new org.springframework.amqp.core.Message(payload, properties);
 
@@ -100,13 +106,13 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
 
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(connectionFactory);
         container.setQueueNames(queueName);
-        container.setAcknowledgeMode(org.springframework.amqp.core.AcknowledgeMode.MANUAL);
+        container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         container.setPrefetchCount(request.batchSize());
 
-        container.setMessageListener(new org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener() {
+        container.setMessageListener(new ChannelAwareMessageListener() {
             @Override
             public void onMessage(org.springframework.amqp.core.Message amqpMessage,
-                                  com.rabbitmq.client.Channel rabbitChannel) {
+                                  Channel rabbitChannel) {
                 dispatchMessage(amqpMessage, rabbitChannel, request);
             }
         });
@@ -215,7 +221,7 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
     }
 
     private void dispatchMessage(org.springframework.amqp.core.Message amqpMessage,
-                                 com.rabbitmq.client.Channel rabbitChannel,
+                                 Channel rabbitChannel,
                                  SubscribeRequest request) {
         byte[] payload = amqpMessage.getBody() != null ? amqpMessage.getBody() : new byte[0];
         MessageProperties properties = amqpMessage.getMessageProperties();
@@ -254,10 +260,10 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
      */
     private static class RabbitMessageAcknowledgment implements MessageAcknowledgment {
 
-        private final com.rabbitmq.client.Channel rabbitChannel;
+        private final Channel rabbitChannel;
         private final long deliveryTag;
 
-        RabbitMessageAcknowledgment(com.rabbitmq.client.Channel rabbitChannel, long deliveryTag) {
+        RabbitMessageAcknowledgment(Channel rabbitChannel, long deliveryTag) {
             this.rabbitChannel = rabbitChannel;
             this.deliveryTag = deliveryTag;
         }
@@ -293,8 +299,8 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
             }
         }
 
-        private static final org.slf4j.Logger log =
-                org.slf4j.LoggerFactory.getLogger(RabbitMessageAcknowledgment.class);
+        private static final Logger log =
+                LoggerFactory.getLogger(RabbitMessageAcknowledgment.class);
     }
 
     /**

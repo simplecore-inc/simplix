@@ -23,6 +23,7 @@ import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
+import java.util.Collections;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
@@ -137,7 +138,7 @@ public class SimpliXThymeleafAutoConfiguration implements WebMvcConfigurer {
         resolver.setCheckExistence(true);
         resolver.setOrder(1);
         resolver.setName("Error Template Resolver");
-        resolver.setResolvablePatterns(java.util.Collections.singleton("error*"));
+        resolver.setResolvablePatterns(Collections.singleton("error*"));
         return resolver;
     }
 

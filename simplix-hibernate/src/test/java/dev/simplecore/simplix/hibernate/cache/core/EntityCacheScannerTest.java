@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.hibernate.cache.core;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -78,7 +79,7 @@ class EntityCacheScannerTest {
             var entities = scanner.getCachedEntities();
             assertThat(entities).isNotNull();
             // Returned set should be a copy (unmodifiable)
-            org.junit.jupiter.api.Assertions.assertThrows(
+            Assertions.assertThrows(
                     UnsupportedOperationException.class,
                     () -> entities.add(Object.class)
             );
@@ -94,7 +95,7 @@ class EntityCacheScannerTest {
         void shouldReturnUnmodifiableSet() {
             var regions = scanner.getCacheRegions();
             assertThat(regions).isNotNull();
-            org.junit.jupiter.api.Assertions.assertThrows(
+            Assertions.assertThrows(
                     UnsupportedOperationException.class,
                     () -> regions.add("test-region")
             );

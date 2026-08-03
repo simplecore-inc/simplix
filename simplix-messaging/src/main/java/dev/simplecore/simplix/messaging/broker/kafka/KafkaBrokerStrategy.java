@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
@@ -48,7 +51,7 @@ public class KafkaBrokerStrategy implements BrokerStrategy {
     private static final long SEND_TIMEOUT_SECONDS = 30;
 
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
-    private final org.springframework.kafka.core.ConsumerFactory<String, byte[]> consumerFactory;
+    private final ConsumerFactory<String, byte[]> consumerFactory;
     private final String defaultTopic;
     private final ConcurrentHashMap<String, ConcurrentMessageListenerContainer<String, byte[]>> activeContainers =
             new ConcurrentHashMap<>();
@@ -62,7 +65,7 @@ public class KafkaBrokerStrategy implements BrokerStrategy {
      * @param defaultTopic    optional default topic (used when channel is null or empty)
      */
     public KafkaBrokerStrategy(KafkaTemplate<String, byte[]> kafkaTemplate,
-                                org.springframework.kafka.core.ConsumerFactory<String, byte[]> consumerFactory,
+                                ConsumerFactory<String, byte[]> consumerFactory,
                                 String defaultTopic) {
         this.kafkaTemplate = kafkaTemplate;
         this.consumerFactory = consumerFactory;
@@ -76,7 +79,7 @@ public class KafkaBrokerStrategy implements BrokerStrategy {
      * @param consumerFactory the consumer factory for creating listener containers
      */
     public KafkaBrokerStrategy(KafkaTemplate<String, byte[]> kafkaTemplate,
-                                org.springframework.kafka.core.ConsumerFactory<String, byte[]> consumerFactory) {
+                                ConsumerFactory<String, byte[]> consumerFactory) {
         this(kafkaTemplate, consumerFactory, null);
     }
 
@@ -279,8 +282,8 @@ public class KafkaBrokerStrategy implements BrokerStrategy {
             }
         }
 
-        private static final org.slf4j.Logger log =
-                org.slf4j.LoggerFactory.getLogger(KafkaMessageAcknowledgment.class);
+        private static final Logger log =
+                LoggerFactory.getLogger(KafkaMessageAcknowledgment.class);
     }
 
     /**

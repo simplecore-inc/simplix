@@ -7,6 +7,7 @@ import dev.simplecore.simplix.messaging.broker.Subscription;
 import dev.simplecore.simplix.messaging.core.Message;
 import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
+import dev.simplecore.simplix.messaging.core.MessageListener;
 import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
 
@@ -180,7 +181,7 @@ public class LocalBrokerStrategy implements BrokerStrategy {
         }
     }
 
-    private void deliverToListener(dev.simplecore.simplix.messaging.core.MessageListener<byte[]> listener,
+    private void deliverToListener(MessageListener<byte[]> listener,
                                    Message<byte[]> message) {
         try {
             listener.onMessage(message, MessageAcknowledgment.NOOP);

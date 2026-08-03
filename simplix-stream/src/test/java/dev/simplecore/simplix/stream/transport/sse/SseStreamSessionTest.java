@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -26,6 +27,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -234,7 +236,7 @@ class SseStreamSessionTest {
             // While the write is stuck, every producer send must return
             // immediately. Filling the whole queue is bounded to prove no call
             // ever waits on the blocked socket.
-            assertTimeoutPreemptively(java.time.Duration.ofSeconds(2), () -> {
+            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
                 for (int i = 0; i < QUEUE_CAPACITY; i++) {
                     assertThat(session.send(StreamMessage.heartbeat())).isTrue();
                 }
@@ -461,8 +463,8 @@ class SseStreamSessionTest {
         @Test
         @DisplayName("should deactivate session on error callback")
         void shouldDeactivateOnError() {
-            ArgumentCaptor<java.util.function.Consumer<Throwable>> captor =
-                    ArgumentCaptor.forClass(java.util.function.Consumer.class);
+            ArgumentCaptor<Consumer<Throwable>> captor =
+                    ArgumentCaptor.forClass(Consumer.class);
             verify(emitter).onError(captor.capture());
 
             captor.getValue().accept(new RuntimeException("test error"));

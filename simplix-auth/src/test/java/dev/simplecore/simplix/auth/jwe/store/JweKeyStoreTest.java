@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,13 +21,13 @@ class JweKeyStoreTest {
         }
 
         @Override
-        public java.util.Optional<JweKeyData> findByVersion(String version) {
-            return java.util.Optional.empty();
+        public Optional<JweKeyData> findByVersion(String version) {
+            return Optional.empty();
         }
 
         @Override
-        public java.util.Optional<JweKeyData> findCurrent() {
-            return java.util.Optional.empty();
+        public Optional<JweKeyData> findCurrent() {
+            return Optional.empty();
         }
 
         @Override
@@ -67,9 +68,9 @@ class JweKeyStoreTest {
             @Override
             public JweKeyData save(JweKeyData keyData) { return keyData; }
             @Override
-            public java.util.Optional<JweKeyData> findByVersion(String version) { return java.util.Optional.empty(); }
+            public Optional<JweKeyData> findByVersion(String version) { return Optional.empty(); }
             @Override
-            public java.util.Optional<JweKeyData> findCurrent() { return java.util.Optional.empty(); }
+            public Optional<JweKeyData> findCurrent() { return Optional.empty(); }
             @Override
             public List<JweKeyData> findAll() { return List.of(); }
             @Override
@@ -100,9 +101,9 @@ class JweKeyStoreTest {
             @Override
             public JweKeyData save(JweKeyData keyData) { return keyData; }
             @Override
-            public java.util.Optional<JweKeyData> findByVersion(String version) { return java.util.Optional.empty(); }
+            public Optional<JweKeyData> findByVersion(String version) { return Optional.empty(); }
             @Override
-            public java.util.Optional<JweKeyData> findCurrent() { return java.util.Optional.empty(); }
+            public Optional<JweKeyData> findCurrent() { return Optional.empty(); }
             @Override
             public List<JweKeyData> findAll() { return List.of(); }
             @Override

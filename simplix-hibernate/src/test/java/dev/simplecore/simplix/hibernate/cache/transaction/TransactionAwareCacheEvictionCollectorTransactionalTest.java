@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -385,11 +386,11 @@ class TransactionAwareCacheEvictionCollectorTransactionalTest {
                     .getDeclaredField("PENDING_EVICTIONS");
             pendingEvictionsField.setAccessible(true);
             @SuppressWarnings("unchecked")
-            ThreadLocal<java.util.List<PendingEviction>> pendingEvictions =
-                    (ThreadLocal<java.util.List<PendingEviction>>) pendingEvictionsField.get(null);
+            ThreadLocal<List<PendingEviction>> pendingEvictions =
+                    (ThreadLocal<List<PendingEviction>>) pendingEvictionsField.get(null);
 
             // Initialize the list with MAX_PENDING_EVICTIONS items
-            java.util.List<PendingEviction> list = new java.util.ArrayList<>();
+            List<PendingEviction> list = new ArrayList<>();
             for (int i = 0; i < 10000; i++) {
                 list.add(PendingEviction.of(TestEntity.class, (long) i, null,
                         PendingEviction.EvictionOperation.UPDATE));
@@ -413,7 +414,7 @@ class TransactionAwareCacheEvictionCollectorTransactionalTest {
             // Then - the collected eviction should have been converted to BULK_UPDATE
             // with null entityId
             assertThat(collector.getPendingCount()).isEqualTo(10001);
-            java.util.List<PendingEviction> currentList = pendingEvictions.get();
+            List<PendingEviction> currentList = pendingEvictions.get();
             PendingEviction lastEviction = currentList.get(currentList.size() - 1);
             assertThat(lastEviction.getOperation()).isEqualTo(PendingEviction.EvictionOperation.BULK_UPDATE);
             assertThat(lastEviction.getEntityId()).isNull();

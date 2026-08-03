@@ -2,6 +2,7 @@ package dev.simplecore.simplix.web.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Pageable;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -40,7 +41,7 @@ class SimpliXServiceTest {
     @Test
     @DisplayName("Should define findAll with pageable method")
     void hasFindAllPageableMethod() {
-        boolean hasMethod = hasMethod("findAll", org.springframework.data.domain.Pageable.class);
+        boolean hasMethod = hasMethod("findAll", Pageable.class);
 
         assertThat(hasMethod).isTrue();
     }

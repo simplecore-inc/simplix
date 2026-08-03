@@ -1,7 +1,9 @@
 package dev.simplecore.simplix.auth.security;
 
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
+import dev.simplecore.simplix.auth.exception.TokenValidationException;
 import dev.simplecore.simplix.auth.jwe.provider.JweKeyProvider;
 import dev.simplecore.simplix.auth.jwe.provider.StaticJweKeyProvider;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
@@ -21,11 +23,17 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 import dev.simplecore.simplix.auth.audit.TokenAuditEventPublisher;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Collections;
+import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -165,7 +173,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "192.168.1.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
 
         @Test
@@ -183,7 +191,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "127.0.0.1", "Firefox"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
     }
 
@@ -260,7 +268,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
 
         @Test
@@ -346,7 +354,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.refreshTokens("invalid-token", "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
 
         @Test
@@ -364,7 +372,7 @@ class SimpliXJweTokenProviderTest {
             // Refresh from a different IP
             assertThatThrownBy(() ->
                     tokenProvider.refreshTokens(originalTokens.getRefreshToken(), "10.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
     }
 
@@ -515,9 +523,9 @@ class SimpliXJweTokenProviderTest {
         @DisplayName("should init with encryption key from properties")
         void shouldInitWithEncryptionKeyFromProperties() throws Exception {
             // Generate a JWK JSON key
-            com.nimbusds.jose.jwk.RSAKey rsaJwk = new com.nimbusds.jose.jwk.RSAKey.Builder(
-                    (java.security.interfaces.RSAPublicKey) testKeyPair.getPublic())
-                    .privateKey((java.security.interfaces.RSAPrivateKey) testKeyPair.getPrivate())
+            RSAKey rsaJwk = new RSAKey.Builder(
+                    (RSAPublicKey) testKeyPair.getPublic())
+                    .privateKey((RSAPrivateKey) testKeyPair.getPrivate())
                     .build();
             String jwkJson = rsaJwk.toJSONString();
 
@@ -537,9 +545,9 @@ class SimpliXJweTokenProviderTest {
         @Test
         @DisplayName("should init with encryption key from StaticJweKeyProvider")
         void shouldInitializeStaticJweKeyProvider() throws Exception {
-            com.nimbusds.jose.jwk.RSAKey rsaJwk = new com.nimbusds.jose.jwk.RSAKey.Builder(
-                    (java.security.interfaces.RSAPublicKey) testKeyPair.getPublic())
-                    .privateKey((java.security.interfaces.RSAPrivateKey) testKeyPair.getPrivate())
+            RSAKey rsaJwk = new RSAKey.Builder(
+                    (RSAPublicKey) testKeyPair.getPublic())
+                    .privateKey((RSAPrivateKey) testKeyPair.getPrivate())
                     .build();
             String jwkJson = rsaJwk.toJSONString();
 
@@ -567,16 +575,16 @@ class SimpliXJweTokenProviderTest {
         @DisplayName("should init with encryption key from classpath location")
         void shouldInitWithKeyFromLocation() throws Exception {
             // Generate JWK JSON
-            com.nimbusds.jose.jwk.RSAKey rsaJwk = new com.nimbusds.jose.jwk.RSAKey.Builder(
-                    (java.security.interfaces.RSAPublicKey) testKeyPair.getPublic())
-                    .privateKey((java.security.interfaces.RSAPrivateKey) testKeyPair.getPrivate())
+            RSAKey rsaJwk = new RSAKey.Builder(
+                    (RSAPublicKey) testKeyPair.getPublic())
+                    .privateKey((RSAPrivateKey) testKeyPair.getPrivate())
                     .build();
             String jwkJson = rsaJwk.toJSONString();
 
             // Write to temp file
-            java.io.File tempFile = java.io.File.createTempFile("test-jwe-key", ".json");
+            File tempFile = File.createTempFile("test-jwe-key", ".json");
             tempFile.deleteOnExit();
-            java.nio.file.Files.writeString(tempFile.toPath(), jwkJson);
+            Files.writeString(tempFile.toPath(), jwkJson);
 
             properties.getJwe().setEncryptionKey(null);
             properties.getJwe().setEncryptionKeyLocation("file:" + tempFile.getAbsolutePath());
@@ -635,7 +643,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
     }
 
@@ -690,9 +698,9 @@ class SimpliXJweTokenProviderTest {
         @DisplayName("should use default decrypter for token without kid")
         void shouldUseDefaultDecrypterForNoKid() throws Exception {
             // Create provider without JweKeyProvider (null)
-            com.nimbusds.jose.jwk.RSAKey rsaJwk = new com.nimbusds.jose.jwk.RSAKey.Builder(
-                    (java.security.interfaces.RSAPublicKey) testKeyPair.getPublic())
-                    .privateKey((java.security.interfaces.RSAPrivateKey) testKeyPair.getPrivate())
+            RSAKey rsaJwk = new RSAKey.Builder(
+                    (RSAPublicKey) testKeyPair.getPublic())
+                    .privateKey((RSAPrivateKey) testKeyPair.getPrivate())
                     .build();
             properties.getJwe().setEncryptionKey(rsaJwk.toJSONString());
 
@@ -843,7 +851,7 @@ class SimpliXJweTokenProviderTest {
             // Invalid token will cause refresh to fail
             assertThatThrownBy(() ->
                     tokenProvider.refreshTokens("invalid-token", "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
 
         @Test
@@ -903,7 +911,7 @@ class SimpliXJweTokenProviderTest {
             // Should still throw validation exception even if audit fails
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "10.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
     }
 
@@ -933,7 +941,7 @@ class SimpliXJweTokenProviderTest {
 
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
 
             verify(auditPublisher).publishBlacklistedTokenUsed(eq(claims.getJWTID()), eq("testuser"), eq("127.0.0.1"));
             verify(auditPublisher).publishTokenValidationFailed(any());
@@ -968,7 +976,7 @@ class SimpliXJweTokenProviderTest {
             // Should still throw TokenValidationException even if audit fails
             assertThatThrownBy(() ->
                     tokenProvider.validateToken(tokens.getAccessToken(), "127.0.0.1", "Agent"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.exception.TokenValidationException.class);
+                    .isInstanceOf(TokenValidationException.class);
         }
     }
 
@@ -979,8 +987,8 @@ class SimpliXJweTokenProviderTest {
         @Test
         @DisplayName("should create with Date constructor")
         void shouldCreateWithDateConstructor() {
-            java.util.Date now = new java.util.Date();
-            java.util.Date later = new java.util.Date(now.getTime() + 3600000);
+            Date now = new Date();
+            Date later = new Date(now.getTime() + 3600000);
 
             SimpliXJweTokenProvider.TokenResponse response =
                     new SimpliXJweTokenProvider.TokenResponse("access", "refresh", now, later);
@@ -994,8 +1002,8 @@ class SimpliXJweTokenProviderTest {
         @Test
         @DisplayName("should create with ZonedDateTime constructor")
         void shouldCreateWithZonedDateTimeConstructor() {
-            java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
-            java.time.ZonedDateTime later = now.plusHours(1);
+            ZonedDateTime now = ZonedDateTime.now();
+            ZonedDateTime later = now.plusHours(1);
 
             SimpliXJweTokenProvider.TokenResponse response =
                     new SimpliXJweTokenProvider.TokenResponse("access", "refresh", now, later);

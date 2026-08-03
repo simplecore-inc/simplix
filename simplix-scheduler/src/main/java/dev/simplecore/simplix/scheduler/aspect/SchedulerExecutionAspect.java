@@ -20,6 +20,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.time.Instant;
 
 /**
@@ -118,14 +119,14 @@ public class SchedulerExecutionAspect {
 
         try {
             Object result = joinPoint.proceed();
-            long durationMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+            long durationMs = Duration.between(startTime, Instant.now()).toMillis();
 
             loggingService.saveExecutionResult(context, SchedulerExecutionResult.success(durationMs));
 
             log.debug("Scheduler [{}] completed successfully in {}ms", schedulerName, durationMs);
             return result;
         } catch (Exception e) {
-            long durationMs = java.time.Duration.between(startTime, Instant.now()).toMillis();
+            long durationMs = Duration.between(startTime, Instant.now()).toMillis();
 
             loggingService.saveExecutionResult(context,
                 SchedulerExecutionResult.failure(durationMs, e.getMessage()));

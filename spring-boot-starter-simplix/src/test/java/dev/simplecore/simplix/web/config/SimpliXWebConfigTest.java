@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -71,7 +72,7 @@ class SimpliXWebConfigTest {
     void cleanupMdcOnException() throws Exception {
         OncePerRequestFilter filter = config.traceIdFilter();
 
-        org.mockito.Mockito.doThrow(new RuntimeException("test error"))
+        Mockito.doThrow(new RuntimeException("test error"))
                 .when(filterChain).doFilter(request, response);
 
         try {

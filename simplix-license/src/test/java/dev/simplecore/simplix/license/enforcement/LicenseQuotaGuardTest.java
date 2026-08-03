@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.license.enforcement;
 
+import dev.accesscore.license.sdk.spi.LicenseSpi;
 import dev.simplecore.simplix.license.RecordingLicenseAuditRecorder;
 import dev.simplecore.simplix.license.core.LicenseAuditTrail;
 import dev.accesscore.license.sdk.gate.LicenseGate;
@@ -69,12 +70,12 @@ class LicenseQuotaGuardTest {
         return new LicenseQuotaGuard(gate, List.of(counter),
                 new LicenseAuditTrail(new ObjectProvider<>() {
                     @Override
-                    public dev.accesscore.license.sdk.spi.LicenseSpi.AuditRecorder getObject() {
+                    public LicenseSpi.AuditRecorder getObject() {
                         return recorder;
                     }
 
                     @Override
-                    public dev.accesscore.license.sdk.spi.LicenseSpi.AuditRecorder getIfAvailable() {
+                    public LicenseSpi.AuditRecorder getIfAvailable() {
                         return recorder;
                     }
                 }));

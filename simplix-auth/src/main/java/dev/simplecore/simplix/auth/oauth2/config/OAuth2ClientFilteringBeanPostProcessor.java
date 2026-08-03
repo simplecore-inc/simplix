@@ -9,7 +9,9 @@ import org.springframework.core.Ordered;
 import org.springframework.core.PriorityOrdered;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -57,7 +59,7 @@ public class OAuth2ClientFilteringBeanPostProcessor implements BeanPostProcessor
         }
 
         // Find registrations to remove (don't modify during iteration)
-        java.util.List<String> toRemove = new java.util.ArrayList<>();
+        List<String> toRemove = new ArrayList<>();
         for (Map.Entry<String, OAuth2ClientProperties.Registration> entry : registrations.entrySet()) {
             String registrationId = entry.getKey();
             OAuth2ClientProperties.Registration registration = entry.getValue();

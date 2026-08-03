@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.AbstractCollection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 /**
@@ -88,7 +89,7 @@ public class StreamingCollection<T> extends AbstractCollection<T> {
         @Override
         public T next() {
             if (!hasNext()) {
-                throw new java.util.NoSuchElementException();
+                throw new NoSuchElementException();
             }
             
             currentIndex++;

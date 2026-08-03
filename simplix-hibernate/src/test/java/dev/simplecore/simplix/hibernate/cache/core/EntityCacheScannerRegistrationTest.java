@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.hibernate.cache.core;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,14 +99,14 @@ class EntityCacheScannerRegistrationTest {
     @Entity
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "custom-region")
     static class CachedEntityWithRegion {
-        @jakarta.persistence.Id
+        @Id
         Long id;
     }
 
     @Entity
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     static class CachedEntityDefaultRegion {
-        @jakarta.persistence.Id
+        @Id
         Long id;
     }
 }

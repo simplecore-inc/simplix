@@ -2,6 +2,7 @@ package dev.simplecore.simplix.license.enforcement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dev.accesscore.license.sdk.model.LicenseModel;
 import dev.simplecore.simplix.license.LicenseTestFixture;
 import dev.simplecore.simplix.license.config.LicenseProperties;
 import dev.simplecore.simplix.license.config.VerificationKey;
@@ -67,6 +68,7 @@ class LicenseEnforcementFilterTest {
 
         EmptyLicenseStore store = new EmptyLicenseStore();
         manager = new LicenseManager(properties,
+                // Fully qualified: LicenseManager stands for dev.simplecore.simplix.license.core.LicenseManager in this file.
                 dev.accesscore.license.sdk.LicenseManager
                         .builder(store, LicenseTestFixture.identity(),
                                 LicenseTestFixture.keys())
@@ -91,7 +93,7 @@ class LicenseEnforcementFilterTest {
      */
     private void publish(LicenseStatus status) {
         gate.refresh(new EvaluationResponse(status, status.isUsable(), status.errorCode(),
-                status.isUsable() ? null : new dev.accesscore.license.sdk.model.LicenseModel
+                status.isUsable() ? null : new LicenseModel
                         .Denial("error.license.notValid", List.of()),
                 null, List.of(), Map.of(), null, null, null));
     }

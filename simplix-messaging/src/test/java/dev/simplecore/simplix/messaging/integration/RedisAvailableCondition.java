@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
@@ -33,7 +34,7 @@ public class RedisAvailableCondition implements ExecutionCondition {
 
     private static boolean isRedisAvailable() {
         try (Socket socket = new Socket()) {
-            socket.connect(new java.net.InetSocketAddress(HOST, PORT), TIMEOUT_MS);
+            socket.connect(new InetSocketAddress(HOST, PORT), TIMEOUT_MS);
             return true;
         } catch (IOException e) {
             return false;

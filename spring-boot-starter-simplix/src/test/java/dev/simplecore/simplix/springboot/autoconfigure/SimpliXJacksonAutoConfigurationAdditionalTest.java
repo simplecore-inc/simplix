@@ -10,7 +10,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
+import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,9 +96,9 @@ class SimpliXJacksonAutoConfigurationAdditionalTest {
             config.configureMessageConverters(converters);
 
             assertThat(converters).hasSize(3);
-            assertThat(converters.get(0)).isInstanceOf(org.springframework.http.converter.ByteArrayHttpMessageConverter.class);
-            assertThat(converters.get(1)).isInstanceOf(org.springframework.http.converter.StringHttpMessageConverter.class);
-            assertThat(converters.get(2)).isInstanceOf(org.springframework.http.converter.json.MappingJackson2HttpMessageConverter.class);
+            assertThat(converters.get(0)).isInstanceOf(ByteArrayHttpMessageConverter.class);
+            assertThat(converters.get(1)).isInstanceOf(StringHttpMessageConverter.class);
+            assertThat(converters.get(2)).isInstanceOf(MappingJackson2HttpMessageConverter.class);
         }
     }
 }

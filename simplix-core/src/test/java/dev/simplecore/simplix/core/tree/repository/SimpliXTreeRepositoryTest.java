@@ -2,13 +2,16 @@ package dev.simplecore.simplix.core.tree.repository;
 
 import dev.simplecore.simplix.core.tree.entity.CodeGroup;
 import dev.simplecore.simplix.core.tree.entity.CodeItem;
+import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -21,11 +24,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 // Test configuration for JPA testing
-@org.springframework.boot.autoconfigure.SpringBootApplication
+@SpringBootApplication
 @EntityScan(basePackages = "dev.simplecore.simplix.core.tree.entity")
 @EnableJpaRepositories(
     basePackages = "dev.simplecore.simplix.core.tree.repository",
-    repositoryFactoryBeanClass = dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean.class
+    repositoryFactoryBeanClass = SimpliXRepositoryFactoryBean.class
 )
 class TestApplication {
     
@@ -35,7 +38,7 @@ class TestApplication {
     }
 }
 
-@org.springframework.boot.test.context.SpringBootTest(classes = TestApplication.class)
+@SpringBootTest(classes = TestApplication.class)
 @ActiveProfiles("test")
 @Transactional
 @DisplayName("Tree Repository Test")

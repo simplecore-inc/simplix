@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.jackson;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,7 +79,7 @@ class SimpliXBooleanDeserializerTest {
         void shouldThrowForInvalidBoolean() {
             assertThatThrownBy(() ->
                 objectMapper.readValue("{\"active\":\"maybe\"}", BooleanHolder.class)
-            ).isInstanceOf(com.fasterxml.jackson.databind.JsonMappingException.class);
+            ).isInstanceOf(JsonMappingException.class);
         }
     }
 }

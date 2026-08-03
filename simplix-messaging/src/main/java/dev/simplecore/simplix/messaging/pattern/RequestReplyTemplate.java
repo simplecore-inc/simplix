@@ -8,6 +8,7 @@ import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -140,7 +141,7 @@ public class RequestReplyTemplate {
         Object payload = message.getPayload();
         if (payload == null) return new byte[0];
         if (payload instanceof byte[] bytes) return bytes;
-        if (payload instanceof String str) return str.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (payload instanceof String str) return str.getBytes(StandardCharsets.UTF_8);
         throw new IllegalArgumentException("Unsupported payload type: " + payload.getClass().getName());
     }
 }

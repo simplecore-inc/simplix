@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafProperties;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.Ordered;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -126,7 +127,7 @@ class SimpliXThymeleafAutoConfigurationTest {
             assertThat(resolver).isNotNull();
             assertThat(resolver).isInstanceOf(ThymeleafViewResolver.class);
             ThymeleafViewResolver tvr = (ThymeleafViewResolver) resolver;
-            assertThat(tvr.getOrder()).isEqualTo(org.springframework.core.Ordered.HIGHEST_PRECEDENCE);
+            assertThat(tvr.getOrder()).isEqualTo(Ordered.HIGHEST_PRECEDENCE);
         }
     }
 

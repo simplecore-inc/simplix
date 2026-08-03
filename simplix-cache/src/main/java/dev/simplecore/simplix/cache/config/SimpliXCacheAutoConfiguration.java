@@ -1,12 +1,21 @@
 package dev.simplecore.simplix.cache.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.simplecore.simplix.cache.provider.CoreCacheProviderImpl;
 import dev.simplecore.simplix.cache.service.CacheService;
 import dev.simplecore.simplix.cache.strategy.CacheStrategy;
 import dev.simplecore.simplix.cache.strategy.LocalCacheStrategy;
+import dev.simplecore.simplix.cache.strategy.NatsCacheStrategy;
+import dev.simplecore.simplix.cache.strategy.RedisCacheStrategy;
+import dev.simplecore.simplix.core.cache.CacheProvider;
+import io.nats.client.Connection;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,6 +25,14 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -72,7 +89,7 @@ public class SimpliXCacheAutoConfiguration {
      */
     @Bean
     @ConditionalOnClass(name = "dev.simplecore.simplix.core.cache.CacheProvider")
-    public dev.simplecore.simplix.core.cache.CacheProvider coreCacheProvider(CacheService cacheService) {
+    public CacheProvider coreCacheProvider(CacheService cacheService) {
         return new CoreCacheProviderImpl(cacheService);
     }
 
@@ -99,37 +116,37 @@ public class SimpliXCacheAutoConfiguration {
          * Redis Cache Manager for Spring Cache abstraction
          */
         @Bean
-        @org.springframework.context.annotation.Primary
-        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(
+        @Primary
+        @ConditionalOnBean(
             type = "org.springframework.data.redis.connection.RedisConnectionFactory"
         )
         public CacheManager redisCacheManager(
-                org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory,
+                RedisConnectionFactory connectionFactory,
                 CacheProperties properties) {
             log.info("Configuring Redis cache manager");
 
-            org.springframework.data.redis.cache.RedisCacheConfiguration defaultConfig =
-                org.springframework.data.redis.cache.RedisCacheConfiguration.defaultCacheConfig()
-                    .entryTtl(java.time.Duration.ofSeconds(properties.getDefaultTtlSeconds()))
-                    .serializeKeysWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
-                        .fromSerializer(new org.springframework.data.redis.serializer.StringRedisSerializer()))
-                    .serializeValuesWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
-                        .fromSerializer(new org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer()));
+            RedisCacheConfiguration defaultConfig =
+                RedisCacheConfiguration.defaultCacheConfig()
+                    .entryTtl(Duration.ofSeconds(properties.getDefaultTtlSeconds()))
+                    .serializeKeysWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new StringRedisSerializer()))
+                    .serializeValuesWith(RedisSerializationContext.SerializationPair
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
             if (!properties.isCacheNullValues()) {
                 defaultConfig = defaultConfig.disableCachingNullValues();
             }
 
-            org.springframework.data.redis.cache.RedisCacheManager.RedisCacheManagerBuilder builder =
-                org.springframework.data.redis.cache.RedisCacheManager.RedisCacheManagerBuilder
+            RedisCacheManager.RedisCacheManagerBuilder builder =
+                RedisCacheManager.RedisCacheManagerBuilder
                     .fromConnectionFactory(connectionFactory)
                     .cacheDefaults(defaultConfig);
 
             // Configure specific caches with custom TTLs
-            final org.springframework.data.redis.cache.RedisCacheConfiguration finalConfig = defaultConfig;
+            final RedisCacheConfiguration finalConfig = defaultConfig;
             properties.getCacheConfigs().forEach((cacheName, cacheConfig) -> {
-                org.springframework.data.redis.cache.RedisCacheConfiguration customConfig = finalConfig
-                    .entryTtl(java.time.Duration.ofSeconds(cacheConfig.getTtlSeconds()));
+                RedisCacheConfiguration customConfig = finalConfig
+                    .entryTtl(Duration.ofSeconds(cacheConfig.getTtlSeconds()));
                 builder.withCacheConfiguration(cacheName, customConfig);
             });
 
@@ -140,13 +157,13 @@ public class SimpliXCacheAutoConfiguration {
          * String Redis Template for Redis strategy
          */
         @Bean
-        @ConditionalOnMissingBean(org.springframework.data.redis.core.StringRedisTemplate.class)
-        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(
+        @ConditionalOnMissingBean(StringRedisTemplate.class)
+        @ConditionalOnBean(
             type = "org.springframework.data.redis.connection.RedisConnectionFactory"
         )
-        public org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate(
-                org.springframework.data.redis.connection.RedisConnectionFactory connectionFactory) {
-            return new org.springframework.data.redis.core.StringRedisTemplate(connectionFactory);
+        public StringRedisTemplate stringRedisTemplate(
+                RedisConnectionFactory connectionFactory) {
+            return new StringRedisTemplate(connectionFactory);
         }
 
         /**
@@ -154,15 +171,15 @@ public class SimpliXCacheAutoConfiguration {
          */
         @Bean
         @ConditionalOnMissingBean(CacheStrategy.class)
-        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(
-            org.springframework.data.redis.core.StringRedisTemplate.class
+        @ConditionalOnBean(
+            StringRedisTemplate.class
         )
         public CacheStrategy redisCacheStrategy(
-                org.springframework.data.redis.core.StringRedisTemplate redisTemplate,
+                StringRedisTemplate redisTemplate,
                 CacheProperties properties) {
             log.info("Using Redis cache strategy");
-            dev.simplecore.simplix.cache.strategy.RedisCacheStrategy strategy =
-                new dev.simplecore.simplix.cache.strategy.RedisCacheStrategy(redisTemplate, properties);
+            RedisCacheStrategy strategy =
+                new RedisCacheStrategy(redisTemplate, properties);
             // Initialize lazily to support testing with mocks
             try {
                 strategy.initialize();
@@ -187,20 +204,20 @@ public class SimpliXCacheAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean(CacheStrategy.class)
-        @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(io.nats.client.Connection.class)
-        public CacheStrategy natsCacheStrategy(io.nats.client.Connection connection,
+        @ConditionalOnBean(Connection.class)
+        public CacheStrategy natsCacheStrategy(Connection connection,
                                                 CacheProperties properties,
-                                                org.springframework.beans.factory.ObjectProvider<com.fasterxml.jackson.databind.ObjectMapper> objectMapperProvider) {
+                                                ObjectProvider<ObjectMapper> objectMapperProvider) {
             log.info("Using NATS KV cache strategy");
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper = objectMapperProvider
+            ObjectMapper objectMapper = objectMapperProvider
                     .getIfAvailable(() -> {
-                        com.fasterxml.jackson.databind.ObjectMapper fallback =
-                                new com.fasterxml.jackson.databind.ObjectMapper();
-                        fallback.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                        ObjectMapper fallback =
+                                new ObjectMapper();
+                        fallback.registerModule(new JavaTimeModule());
                         return fallback;
                     });
-            dev.simplecore.simplix.cache.strategy.NatsCacheStrategy strategy =
-                    new dev.simplecore.simplix.cache.strategy.NatsCacheStrategy(connection, properties, objectMapper);
+            NatsCacheStrategy strategy =
+                    new NatsCacheStrategy(connection, properties, objectMapper);
             try {
                 strategy.initialize();
             } catch (Exception e) {

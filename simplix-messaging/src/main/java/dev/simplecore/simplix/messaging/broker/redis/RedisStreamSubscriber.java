@@ -150,6 +150,7 @@ public class RedisStreamSubscriber {
                 };
 
         Consumer consumer = Consumer.from(request.groupName(), request.consumerName());
+        // Fully qualified: Subscription stands for dev.simplecore.simplix.messaging.broker.Subscription in this file.
         org.springframework.data.redis.stream.Subscription springSubscription = container.register(
                 StreamMessageListenerContainer.StreamReadRequest
                         .builder(StreamOffset.create(streamKey, ReadOffset.lastConsumed()))
@@ -634,8 +635,8 @@ public class RedisStreamSubscriber {
             redisTemplate.opsForStream().acknowledge(streamKey, groupName, recordId);
         }
 
-        private static final org.slf4j.Logger log =
-                org.slf4j.LoggerFactory.getLogger(RedisMessageAcknowledgment.class);
+        private static final Logger log =
+                LoggerFactory.getLogger(RedisMessageAcknowledgment.class);
     }
 
     /**
@@ -694,7 +695,7 @@ public class RedisStreamSubscriber {
             }
         }
 
-        private static final org.slf4j.Logger log =
-                org.slf4j.LoggerFactory.getLogger(RedisSubscription.class);
+        private static final Logger log =
+                LoggerFactory.getLogger(RedisSubscription.class);
     }
 }

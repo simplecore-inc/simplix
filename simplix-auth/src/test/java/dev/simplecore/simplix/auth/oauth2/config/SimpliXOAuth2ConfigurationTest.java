@@ -8,6 +8,7 @@ import dev.simplecore.simplix.auth.oauth2.filter.OAuth2IntentFilter;
 import dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationService;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ class SimpliXOAuth2ConfigurationTest {
     @Test
     @DisplayName("extractPath should remove query parameters")
     void shouldExtractPath() throws Exception {
-        java.lang.reflect.Method method = SimpliXOAuth2Configuration.class.getDeclaredMethod("extractPath", String.class);
+        Method method = SimpliXOAuth2Configuration.class.getDeclaredMethod("extractPath", String.class);
         method.setAccessible(true);
 
         assertThat(method.invoke(configuration, "/settings?tab=social")).isEqualTo("/settings");

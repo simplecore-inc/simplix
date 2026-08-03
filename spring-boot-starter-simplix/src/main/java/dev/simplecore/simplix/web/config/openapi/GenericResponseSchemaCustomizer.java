@@ -188,6 +188,7 @@ public class GenericResponseSchemaCustomizer implements OperationCustomizer, Ord
         if (apiResponse.content().length == 0) {
             return false;
         }
+        // Fully qualified: a wildcard import already binds Content in this file.
         for (io.swagger.v3.oas.annotations.media.Content content : apiResponse.content()) {
             if (content.schema().implementation() != Void.class) {
                 return true;
@@ -436,6 +437,7 @@ public class GenericResponseSchemaCustomizer implements OperationCustomizer, Ord
         }
 
         // Preserve existing examples from annotations like @SimpliXStandardApi
+        // Fully qualified: ApiResponse stands for io.swagger.v3.oas.annotations.responses.ApiResponse in this file.
         io.swagger.v3.oas.models.responses.ApiResponse existingResponse =
                 operation.getResponses().get("200");
 

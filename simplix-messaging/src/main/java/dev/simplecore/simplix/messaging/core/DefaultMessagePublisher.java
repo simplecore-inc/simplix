@@ -4,6 +4,7 @@ import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
@@ -47,7 +48,7 @@ public class DefaultMessagePublisher implements MessagePublisher {
             return bytes;
         }
         if (payload instanceof String str) {
-            return str.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            return str.getBytes(StandardCharsets.UTF_8);
         }
         throw new IllegalArgumentException(
                 "Unsupported payload type: " + payload.getClass().getName()

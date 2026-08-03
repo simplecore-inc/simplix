@@ -1,8 +1,10 @@
 package dev.simplecore.simplix.messaging.broker.rabbit;
 
+import com.rabbitmq.client.Channel;
 import dev.simplecore.simplix.messaging.broker.BrokerCapabilities;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.PublishResult;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,7 +47,7 @@ class RabbitBrokerStrategyTest {
         // Mock the connection factory to support RabbitAdmin initialization
         Connection mockConnection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(mockConnection);
-        com.rabbitmq.client.Channel mockChannel = mock(com.rabbitmq.client.Channel.class);
+        Channel mockChannel = mock(Channel.class);
         when(mockConnection.createChannel(any(Boolean.class))).thenReturn(mockChannel);
 
         strategy = new RabbitBrokerStrategy(rabbitTemplate, connectionFactory);
@@ -195,7 +197,7 @@ class RabbitBrokerStrategyTest {
         @Test
         @DisplayName("should not throw for per-consumer ack")
         void shouldNotThrow() {
-            org.junit.jupiter.api.Assertions.assertDoesNotThrow(
+            Assertions.assertDoesNotThrow(
                     () -> strategy.acknowledge("queue", "group", "msg-1"));
         }
     }

@@ -7,7 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
@@ -143,7 +145,7 @@ class PoisonMessageHandlerTest {
                     .build();
             IOException exception = new IOException("bad data");
 
-            org.mockito.Mockito.doThrow(new RuntimeException("DLQ unavailable"))
+            Mockito.doThrow(new RuntimeException("DLQ unavailable"))
                     .when(deadLetterStrategy).send(any(), anyString());
 
             poisonMessageHandler.handle(message, exception, deadLetterStrategy, acknowledgment);
@@ -162,8 +164,8 @@ class PoisonMessageHandlerTest {
 
             poisonMessageHandler.handle(message, exception, deadLetterStrategy, acknowledgment);
 
-            org.mockito.ArgumentCaptor<String> reasonCaptor =
-                    org.mockito.ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<String> reasonCaptor =
+                    ArgumentCaptor.forClass(String.class);
             verify(deadLetterStrategy).send(any(), reasonCaptor.capture());
 
             String reason = reasonCaptor.getValue();

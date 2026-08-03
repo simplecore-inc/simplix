@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -56,8 +59,8 @@ class SimpliXModelMapperAutoConfigurationAdditionalTest {
             SimpliXModelMapperAutoConfiguration config = new SimpliXModelMapperAutoConfiguration();
             ModelMapper mapper = config.modelMapper();
 
-            java.util.Map<String, String> source = new java.util.HashMap<>();
-            java.util.LinkedHashMap<String, String> result = mapper.map(source, java.util.LinkedHashMap.class);
+            Map<String, String> source = new HashMap<>();
+            LinkedHashMap<String, String> result = mapper.map(source, LinkedHashMap.class);
             assertThat(result).isEmpty();
         }
 
@@ -68,8 +71,8 @@ class SimpliXModelMapperAutoConfigurationAdditionalTest {
             SimpliXModelMapperAutoConfiguration config = new SimpliXModelMapperAutoConfiguration();
             ModelMapper mapper = config.modelMapper();
 
-            java.util.LinkedHashMap<String, String> source = new java.util.LinkedHashMap<>();
-            java.util.Map<String, String> result = mapper.map(source, java.util.Map.class);
+            LinkedHashMap<String, String> source = new LinkedHashMap<>();
+            Map<String, String> result = mapper.map(source, Map.class);
             assertThat(result).isEmpty();
         }
     }

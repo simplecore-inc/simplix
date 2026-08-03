@@ -8,6 +8,7 @@ import dev.simplecore.simplix.hibernate.cache.strategy.CacheEvictionStrategy;
 import dev.simplecore.simplix.hibernate.cache.transaction.TransactionAwareCacheEvictionCollector;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Cache;
 import org.hibernate.SessionFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -41,7 +42,7 @@ import org.springframework.context.event.EventListener;
  */
 @Slf4j
 @AutoConfiguration(after = HibernateJpaAutoConfiguration.class)
-@ConditionalOnClass({EntityManagerFactory.class, org.hibernate.Cache.class})
+@ConditionalOnClass({EntityManagerFactory.class, Cache.class})
 @ConditionalOnBean(EntityManagerFactory.class)
 @ConditionalOnProperty(prefix = "simplix.hibernate.cache", name = "disabled", havingValue = "false", matchIfMissing = true)
 @EnableConfigurationProperties(HibernateCacheProperties.class)

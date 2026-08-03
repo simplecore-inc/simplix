@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.time.Instant;
@@ -19,6 +20,8 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -261,7 +264,7 @@ class DatabaseJweKeyProviderTest {
             when(keyStore.findByVersion("unknown")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> provider.getKeyPair("unknown"))
-                    .isInstanceOf(dev.simplecore.simplix.auth.jwe.exception.JweKeyException.class);
+                    .isInstanceOf(JweKeyException.class);
         }
     }
 
@@ -291,17 +294,17 @@ class DatabaseJweKeyProviderTest {
             provider.initialize();
 
             // Get the internal lock
-            java.lang.reflect.Field lockField = DatabaseJweKeyProvider.class.getDeclaredField("refreshLock");
+            Field lockField = DatabaseJweKeyProvider.class.getDeclaredField("refreshLock");
             lockField.setAccessible(true);
-            java.util.concurrent.locks.ReentrantLock lock =
-                    (java.util.concurrent.locks.ReentrantLock) lockField.get(provider);
+            ReentrantLock lock =
+                    (ReentrantLock) lockField.get(provider);
 
             // Reset invocations so we only count calls during the concurrent test
             reset(keyStore);
 
             // Hold lock from a different thread (simulating concurrent refresh)
-            java.util.concurrent.CountDownLatch lockHeld = new java.util.concurrent.CountDownLatch(1);
-            java.util.concurrent.CountDownLatch testDone = new java.util.concurrent.CountDownLatch(1);
+            CountDownLatch lockHeld = new CountDownLatch(1);
+            CountDownLatch testDone = new CountDownLatch(1);
 
             Thread lockingThread = new Thread(() -> {
                 lock.lock();

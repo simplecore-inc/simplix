@@ -2,6 +2,7 @@ package dev.simplecore.simplix.core.entity;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,7 +64,7 @@ public interface SimpliXCompositeKey extends Serializable {
             List<Object> values = new ArrayList<>();
             
             for (Field field : fields) {
-                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                if (Modifier.isStatic(field.getModifiers())) {
                     continue; // Skip static fields
                 }
                 

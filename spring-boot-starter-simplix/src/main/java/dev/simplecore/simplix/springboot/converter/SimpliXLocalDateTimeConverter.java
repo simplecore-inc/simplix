@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 /**
  * JPA AttributeConverter for automatic LocalDateTime to OffsetDateTime conversion.
@@ -49,7 +50,7 @@ public class SimpliXLocalDateTimeConverter implements AttributeConverter<LocalDa
         // Fallback: use system default timezone
         return attribute.atOffset(timezoneService != null ? 
             timezoneService.getApplicationZoneOffset() : 
-            java.time.ZoneOffset.systemDefault().getRules().getOffset(attribute));
+            ZoneOffset.systemDefault().getRules().getOffset(attribute));
     }
 
     @Override

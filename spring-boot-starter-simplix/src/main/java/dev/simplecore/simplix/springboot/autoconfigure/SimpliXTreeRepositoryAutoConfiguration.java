@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfig
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -180,13 +181,13 @@ public class SimpliXTreeRepositoryAutoConfiguration {
          * Specifies which types are eligible for component scanning.
          */
         @AliasFor(annotation = EnableJpaRepositories.class, attribute = "includeFilters")
-        org.springframework.context.annotation.ComponentScan.Filter[] includeFilters() default {};
+        ComponentScan.Filter[] includeFilters() default {};
         
         /**
          * Specifies which types are not eligible for component scanning.
          */
         @AliasFor(annotation = EnableJpaRepositories.class, attribute = "excludeFilters")
-        org.springframework.context.annotation.ComponentScan.Filter[] excludeFilters() default {};
+        ComponentScan.Filter[] excludeFilters() default {};
         
         /**
          * Returns the postfix to be used when looking up custom repository implementations.

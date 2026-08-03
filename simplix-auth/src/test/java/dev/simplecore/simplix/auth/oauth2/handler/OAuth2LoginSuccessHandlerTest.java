@@ -2,10 +2,13 @@ package dev.simplecore.simplix.auth.oauth2.handler;
 
 import dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationException;
 import dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationService;
+import dev.simplecore.simplix.auth.oauth2.OAuth2Intent;
 import dev.simplecore.simplix.auth.oauth2.OAuth2ProviderType;
 import dev.simplecore.simplix.auth.oauth2.OAuth2UserInfo;
 import dev.simplecore.simplix.auth.oauth2.extractor.OAuth2UserInfoExtractor;
+import dev.simplecore.simplix.auth.oauth2.filter.OAuth2IntentFilter;
 import dev.simplecore.simplix.auth.oauth2.properties.SimpliXOAuth2Properties;
+import dev.simplecore.simplix.auth.oauth2.session.PendingSocialRegistration;
 import dev.simplecore.simplix.auth.security.SimpliXJweTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -423,8 +426,8 @@ class OAuth2LoginSuccessHandlerTest {
             // to extract provider/email/name. Since getProvider() returns OAuth2ProviderType (not String),
             // the cast will fail and provider/email/name will remain null.
             // However, the handler still produces valid HTML with null values.
-            dev.simplecore.simplix.auth.oauth2.session.PendingSocialRegistration pending =
-                    dev.simplecore.simplix.auth.oauth2.session.PendingSocialRegistration.builder()
+            PendingSocialRegistration pending =
+                    PendingSocialRegistration.builder()
                             .provider(OAuth2ProviderType.GOOGLE)
                             .providerId("google-123")
                             .email("test@example.com")
@@ -502,13 +505,13 @@ class OAuth2LoginSuccessHandlerTest {
             when(tokenProvider.createTokenPair(anyString(), anyString(), any())).thenReturn(tokens);
 
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.getSession(true).setAttribute(dev.simplecore.simplix.auth.oauth2.filter.OAuth2IntentFilter.OAUTH2_INTENT_ATTR, "login");
+            request.getSession(true).setAttribute(OAuth2IntentFilter.OAUTH2_INTENT_ATTR, "login");
             MockHttpServletResponse response = new MockHttpServletResponse();
 
             handler.onAuthenticationSuccess(request, response, authentication);
 
             verify(authService).authenticateOAuth2User(eq(userInfo),
-                    eq(dev.simplecore.simplix.auth.oauth2.OAuth2Intent.LOGIN));
+                    eq(OAuth2Intent.LOGIN));
         }
 
         @Test
@@ -533,13 +536,13 @@ class OAuth2LoginSuccessHandlerTest {
             when(tokenProvider.createTokenPair(anyString(), anyString(), any())).thenReturn(tokens);
 
             MockHttpServletRequest request = new MockHttpServletRequest();
-            request.getSession(true).setAttribute(dev.simplecore.simplix.auth.oauth2.filter.OAuth2IntentFilter.OAUTH2_INTENT_ATTR, "register");
+            request.getSession(true).setAttribute(OAuth2IntentFilter.OAUTH2_INTENT_ATTR, "register");
             MockHttpServletResponse response = new MockHttpServletResponse();
 
             handler.onAuthenticationSuccess(request, response, authentication);
 
             verify(authService).authenticateOAuth2User(eq(userInfo),
-                    eq(dev.simplecore.simplix.auth.oauth2.OAuth2Intent.REGISTER));
+                    eq(OAuth2Intent.REGISTER));
         }
 
         @Test
@@ -569,7 +572,7 @@ class OAuth2LoginSuccessHandlerTest {
             handler.onAuthenticationSuccess(request, response, authentication);
 
             verify(authService).authenticateOAuth2User(eq(userInfo),
-                    eq(dev.simplecore.simplix.auth.oauth2.OAuth2Intent.AUTO));
+                    eq(OAuth2Intent.AUTO));
         }
     }
 

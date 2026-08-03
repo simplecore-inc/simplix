@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -95,7 +96,7 @@ class SimpliXAuthenticationEntryPointTest {
         when(messageSource.getMessage(eq("error.authenticationFailed.detail"), any(), anyString(), any(Locale.class)))
                 .thenReturn("Login required");
 
-        org.slf4j.MDC.put("traceId", "test-trace-456");
+        MDC.put("traceId", "test-trace-456");
         try {
             MockHttpServletRequest request = new MockHttpServletRequest();
             MockHttpServletResponse response = new MockHttpServletResponse();
@@ -104,7 +105,7 @@ class SimpliXAuthenticationEntryPointTest {
 
             assertThat(response.getHeader("X-Trace-Id")).isEqualTo("test-trace-456");
         } finally {
-            org.slf4j.MDC.remove("traceId");
+            MDC.remove("traceId");
         }
     }
 
@@ -116,7 +117,7 @@ class SimpliXAuthenticationEntryPointTest {
         when(messageSource.getMessage(eq("error.authenticationFailed.detail"), any(), anyString(), any(Locale.class)))
                 .thenReturn("Login required");
 
-        org.slf4j.MDC.clear();
+        MDC.clear();
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

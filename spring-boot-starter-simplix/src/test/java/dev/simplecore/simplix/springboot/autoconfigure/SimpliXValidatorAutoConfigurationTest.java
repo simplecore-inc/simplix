@@ -2,6 +2,7 @@ package dev.simplecore.simplix.springboot.autoconfigure;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.MessageInterpolator;
+import jakarta.validation.NoProviderFoundException;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
@@ -46,8 +47,8 @@ class SimpliXValidatorAutoConfigurationTest {
         try {
             LocalValidatorFactoryBean validator = config.validator(messageSource);
             assertThat(validator).isNotNull();
-        } catch (jakarta.validation.NoProviderFoundException e) {
-            assertThat(e).isInstanceOf(jakarta.validation.NoProviderFoundException.class);
+        } catch (NoProviderFoundException e) {
+            assertThat(e).isInstanceOf(NoProviderFoundException.class);
         }
     }
 

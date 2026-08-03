@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.mybatis.autoconfigure;
 
+import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -44,7 +45,7 @@ public class SimpliXMyBatisAutoConfiguration {
                     new PathMatchingResourcePatternResolver().getResource(mybatisProperties.getConfigLocation()));
         }
 
-        org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
+        Configuration configuration = new Configuration();
         configuration.setMapUnderscoreToCamelCase(true);
         configuration.setCallSettersOnNulls(true);
         sessionFactory.setConfiguration(configuration);

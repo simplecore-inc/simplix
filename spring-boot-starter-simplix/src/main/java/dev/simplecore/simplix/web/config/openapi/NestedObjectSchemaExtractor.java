@@ -8,7 +8,10 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.core.Ordered;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * OpenAPI customizer that extracts inline nested objects to separate reusable schemas.
@@ -62,7 +65,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                                               String parentName, String contextPath,
                                               Map<String, String> schemaHashToName) {
         processSchemaForNestedObjects(schema, extractedSchemas, existingSchemas,
-            parentName, contextPath, schemaHashToName, new java.util.HashSet<>());
+            parentName, contextPath, schemaHashToName, new HashSet<>());
     }
 
     /**
@@ -73,7 +76,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
                                               Map<String, Schema> existingSchemas,
                                               String parentName, String contextPath,
                                               Map<String, String> schemaHashToName,
-                                              java.util.Set<String> processingStack) {
+                                              Set<String> processingStack) {
         if (schema == null || schema.get$ref() != null) {
             return;
         }
@@ -224,7 +227,7 @@ public class NestedObjectSchemaExtractor implements OpenApiCustomizer, Ordered {
      * Process composed schemas (allOf, oneOf, anyOf).
      */
     @SuppressWarnings("rawtypes")
-    private void processComposedSchemas(java.util.List schemas,
+    private void processComposedSchemas(List schemas,
                                        Map<String, Schema> extractedSchemas,
                                        Map<String, Schema> existingSchemas,
                                        String parentName, String contextPath,

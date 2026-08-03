@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.jackson;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -58,7 +59,7 @@ class SimpliXDateTimeDeserializerTest {
         void shouldThrowForInvalidDatetime() {
             assertThatThrownBy(() ->
                 objectMapper.readValue("{\"dateTime\":\"not-a-date\"}", DateTimeHolder.class)
-            ).isInstanceOf(com.fasterxml.jackson.databind.JsonMappingException.class);
+            ).isInstanceOf(JsonMappingException.class);
         }
     }
 }

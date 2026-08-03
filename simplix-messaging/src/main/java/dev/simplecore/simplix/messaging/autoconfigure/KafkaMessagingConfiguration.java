@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
 /**
@@ -24,7 +25,7 @@ public class KafkaMessagingConfiguration {
     @Bean
     public KafkaBrokerStrategy kafkaBrokerStrategy(
             KafkaTemplate<String, byte[]> kafkaTemplate,
-            org.springframework.kafka.core.ConsumerFactory<String, byte[]> consumerFactory) {
+            ConsumerFactory<String, byte[]> consumerFactory) {
         log.info("Activating Kafka broker strategy");
         KafkaBrokerStrategy strategy = new KafkaBrokerStrategy(kafkaTemplate, consumerFactory);
         strategy.initialize();

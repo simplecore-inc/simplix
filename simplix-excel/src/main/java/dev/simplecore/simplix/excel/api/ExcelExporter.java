@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URLEncoder;
 import java.util.Collection;
 
 /**
@@ -80,7 +81,7 @@ public interface ExcelExporter<T> {
      */
     default void export(Collection<T> items, HttpServletResponse response, String filename) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        String encodedFilename = java.net.URLEncoder.encode(filename, "UTF-8").replaceAll("\\+", "%20");
+        String encodedFilename = URLEncoder.encode(filename, "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedFilename + "\"");
         export(items, response.getOutputStream());
     }

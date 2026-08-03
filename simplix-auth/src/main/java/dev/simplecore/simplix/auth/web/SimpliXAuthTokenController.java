@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Tag(name = "Auth Token", description = "Token management endpoints")
@@ -387,7 +388,7 @@ public class SimpliXAuthTokenController {
             // Extract and decode base64 credentials
             String base64Credentials = header.substring("Basic ".length()).trim();
             byte[] decodedBytes = Base64.getDecoder().decode(base64Credentials);
-            String credentials = new String(decodedBytes, java.nio.charset.StandardCharsets.UTF_8);
+            String credentials = new String(decodedBytes, StandardCharsets.UTF_8);
 
             // Split username:password
             return credentials.split(":", 2);

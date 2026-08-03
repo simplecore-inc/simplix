@@ -7,6 +7,7 @@ package dev.simplecore.simplix.excel.convert;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -251,10 +252,10 @@ public final class TypeConverter {
     private static Object[] toObjectArray(Object array) {
         Class<?> componentType = array.getClass().getComponentType();
         if (componentType.isPrimitive()) {
-            int length = java.lang.reflect.Array.getLength(array);
+            int length = Array.getLength(array);
             Object[] result = new Object[length];
             for (int i = 0; i < length; i++) {
-                result[i] = java.lang.reflect.Array.get(array, i);
+                result[i] = Array.get(array, i);
             }
             return result;
         }

@@ -335,6 +335,7 @@ public class LicenseAutoConfiguration {
      * @return the SDK manager
      */
     @Bean
+    // Fully qualified: LicenseManager stands for dev.simplecore.simplix.license.core.LicenseManager in this file.
     public dev.accesscore.license.sdk.LicenseManager sdkLicenseManager(
             LicenseGate gate,
             LicenseStore store,

@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.egov.config;
 
 import org.egovframe.rte.fdl.cmmn.trace.LeaveaTrace;
+import org.egovframe.rte.fdl.cmmn.trace.handler.TraceHandler;
 import org.egovframe.rte.fdl.cmmn.trace.manager.DefaultTraceHandleManager;
 import org.egovframe.rte.fdl.cmmn.trace.manager.TraceHandlerService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -32,7 +33,7 @@ public class SimpliXEgovConfiguration {
         manager.setReqExpMatcher(antPathMatcher);
         manager.setPatterns(new String[] {"*"});
         manager.setHandlers(
-            new org.egovframe.rte.fdl.cmmn.trace.handler.TraceHandler[] {simplixTraceHandler}
+            new TraceHandler[] {simplixTraceHandler}
         );
         return manager;
     }

@@ -1,7 +1,10 @@
 package dev.simplecore.simplix.hibernate.cache.config;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import org.hibernate.Cache;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -137,15 +140,15 @@ class HibernateCacheHolderTest {
         @DisplayName("should throw UnsupportedOperationException when instantiated via reflection")
         void shouldThrowWhenInstantiatedViaReflection() {
             try {
-                java.lang.reflect.Constructor<HibernateCacheHolder> constructor =
+                Constructor<HibernateCacheHolder> constructor =
                         HibernateCacheHolder.class.getDeclaredConstructor();
                 constructor.setAccessible(true);
-                org.junit.jupiter.api.Assertions.assertThrows(
-                        java.lang.reflect.InvocationTargetException.class,
+                Assertions.assertThrows(
+                        InvocationTargetException.class,
                         constructor::newInstance
                 );
             } catch (NoSuchMethodException e) {
-                org.junit.jupiter.api.Assertions.fail("Constructor should exist");
+                Assertions.fail("Constructor should exist");
             }
         }
     }

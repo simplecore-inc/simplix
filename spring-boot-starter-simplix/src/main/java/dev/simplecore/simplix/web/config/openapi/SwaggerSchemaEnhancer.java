@@ -17,6 +17,7 @@ import org.springframework.context.MessageSource;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,7 +119,7 @@ public class SwaggerSchemaEnhancer implements OpenApiCustomizer {
                     // Also cache inner static classes
                     Class<?>[] innerClasses = clazz.getDeclaredClasses();
                     for (Class<?> innerClass : innerClasses) {
-                        if (java.lang.reflect.Modifier.isStatic(innerClass.getModifiers())) {
+                        if (Modifier.isStatic(innerClass.getModifiers())) {
                             String innerSimpleName = innerClass.getSimpleName();
                             schemaClassCache.put(innerSimpleName, innerClass);
                             log.info("Cached inner class: {} -> {}", innerSimpleName, innerClass.getName());

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -94,7 +95,7 @@ class SimpliXAccessDeniedHandlerTest {
         when(messageSource.getMessage(eq("error.insufficientPermissions.detail"), any(), anyString(), any(Locale.class)))
                 .thenReturn("Insufficient permissions");
 
-        org.slf4j.MDC.put("traceId", "test-trace-123");
+        MDC.put("traceId", "test-trace-123");
         try {
             MockHttpServletRequest request = new MockHttpServletRequest();
             MockHttpServletResponse response = new MockHttpServletResponse();
@@ -103,7 +104,7 @@ class SimpliXAccessDeniedHandlerTest {
 
             assertThat(response.getHeader("X-Trace-Id")).isEqualTo("test-trace-123");
         } finally {
-            org.slf4j.MDC.remove("traceId");
+            MDC.remove("traceId");
         }
     }
 
@@ -115,7 +116,7 @@ class SimpliXAccessDeniedHandlerTest {
         when(messageSource.getMessage(eq("error.insufficientPermissions.detail"), any(), anyString(), any(Locale.class)))
                 .thenReturn("Insufficient permissions");
 
-        org.slf4j.MDC.clear();
+        MDC.clear();
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();

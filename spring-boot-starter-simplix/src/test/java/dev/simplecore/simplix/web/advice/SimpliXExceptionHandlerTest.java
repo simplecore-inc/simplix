@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -299,7 +300,7 @@ class SimpliXExceptionHandlerTest {
                     eq("Resource not found"), any(Locale.class))).thenReturn("Not found");
 
             NoResourceFoundException ex = new NoResourceFoundException(
-                    org.springframework.http.HttpMethod.GET, "/missing");
+                    HttpMethod.GET, "/missing");
 
             SimpliXApiResponse<Object> response = handler.handleNoResourceFoundException(ex, request);
 

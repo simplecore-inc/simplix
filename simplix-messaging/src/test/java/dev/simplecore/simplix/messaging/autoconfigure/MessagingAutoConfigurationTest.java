@@ -14,6 +14,7 @@ import dev.simplecore.simplix.messaging.error.PoisonMessageHandler;
 import dev.simplecore.simplix.messaging.replay.ReplayService;
 import dev.simplecore.simplix.messaging.scheduler.MessageScheduler;
 import dev.simplecore.simplix.messaging.subscriber.MessageHandlerRegistrar;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 
 import java.time.Duration;
@@ -170,12 +172,12 @@ class MessagingAutoConfigurationTest {
                 // Use ctx.hasFailed() and inspect the failure trigger to verify NatsMessagingConfiguration
                 // contributed beans.
                 // Simpler: assert the config class itself is on the import list via reflection.
-                org.springframework.context.annotation.Import importAnno =
-                    dev.simplecore.simplix.messaging.autoconfigure.MessagingAutoConfiguration.class
-                        .getAnnotation(org.springframework.context.annotation.Import.class);
-                org.assertj.core.api.Assertions.assertThat(importAnno).isNotNull();
-                org.assertj.core.api.Assertions.assertThat(importAnno.value())
-                    .contains(dev.simplecore.simplix.messaging.autoconfigure.NatsMessagingConfiguration.class);
+                Import importAnno =
+                    MessagingAutoConfiguration.class
+                        .getAnnotation(Import.class);
+                Assertions.assertThat(importAnno).isNotNull();
+                Assertions.assertThat(importAnno.value())
+                    .contains(NatsMessagingConfiguration.class);
             });
     }
 }

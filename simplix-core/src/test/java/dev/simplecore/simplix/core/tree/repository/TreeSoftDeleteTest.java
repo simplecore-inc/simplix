@@ -20,6 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -355,7 +356,7 @@ class TreeSoftDeleteTest {
         }
         return nodes.stream()
             .flatMap(node -> {
-                List<String> names = new java.util.ArrayList<>();
+                List<String> names = new ArrayList<>();
                 names.add(node.getName());
                 names.addAll(flattenNames(node.getChildren()));
                 return names.stream();

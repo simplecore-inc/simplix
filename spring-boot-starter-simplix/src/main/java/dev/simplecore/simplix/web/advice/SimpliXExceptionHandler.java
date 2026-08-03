@@ -24,13 +24,19 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.SocketTimeoutException;
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Generic exception handler that can be extended to use custom response types and handle additional exceptions.
@@ -121,8 +127,8 @@ public class SimpliXExceptionHandler<T> {
         
         // Set HTTP status code and trace ID header
         try {
-            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            HttpServletResponse response = ((ServletRequestAttributes) 
+                RequestContextHolder.currentRequestAttributes()).getResponse();
             if (response != null) {
                 response.setStatus(ex.getStatusCode().value());
                 
@@ -195,7 +201,7 @@ public class SimpliXExceptionHandler<T> {
                         Object[] messageArguments = ValidationArgumentProcessor.processArguments(error);
 
                         // Use MessageFormat to replace {0}, {1} placeholders
-                        message = java.text.MessageFormat.format(message, messageArguments);
+                        message = MessageFormat.format(message, messageArguments);
                         log.trace("Substituted numeric placeholders to: '{}'", message);
                     } catch (Exception e) {
                         log.trace("Failed to substitute numeric placeholders: {}", e.getMessage());
@@ -251,7 +257,7 @@ public class SimpliXExceptionHandler<T> {
         if (traceId != null && !traceId.isEmpty()) {
             log.warn("Validation failed - TraceId: {}, Path: {}, Fields: {}",
                 traceId, request.getRequestURI(),
-                errors.stream().map(ValidationFieldError::getField).collect(java.util.stream.Collectors.toList()));
+                errors.stream().map(ValidationFieldError::getField).collect(Collectors.toList()));
         }
         
         return errorResponse;
@@ -530,8 +536,8 @@ public class SimpliXExceptionHandler<T> {
 
         // Set HTTP status and trace ID
         try {
-            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes)
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            HttpServletResponse response = ((ServletRequestAttributes)
+                RequestContextHolder.currentRequestAttributes()).getResponse();
             if (response != null) {
                 response.setStatus(status.value());
                 String traceId = MDC.get("traceId");
@@ -711,8 +717,8 @@ public class SimpliXExceptionHandler<T> {
      */
     private boolean isResponseCommitted() {
         try {
-            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes)
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            HttpServletResponse response = ((ServletRequestAttributes)
+                RequestContextHolder.currentRequestAttributes()).getResponse();
             return response != null && response.isCommitted();
         } catch (Exception e) {
             return false;
@@ -727,8 +733,8 @@ public class SimpliXExceptionHandler<T> {
     private boolean isConnectionException(Exception ex) {
         Throwable current = ex;
         while (current != null) {
-            if (current instanceof java.net.SocketTimeoutException
-                    || current instanceof java.io.IOException) {
+            if (current instanceof SocketTimeoutException
+                    || current instanceof IOException) {
                 String message = current.getMessage();
                 if (message != null) {
                     String lower = message.toLowerCase();
@@ -739,7 +745,7 @@ public class SimpliXExceptionHandler<T> {
                         return true;
                     }
                 }
-                if (current instanceof java.net.SocketTimeoutException) {
+                if (current instanceof SocketTimeoutException) {
                     return true;
                 }
             }
@@ -762,8 +768,8 @@ public class SimpliXExceptionHandler<T> {
      */
     private void addTraceIdToResponse(T errorResponse, HttpServletRequest request) {
         try {
-            HttpServletResponse response = ((org.springframework.web.context.request.ServletRequestAttributes) 
-                org.springframework.web.context.request.RequestContextHolder.currentRequestAttributes()).getResponse();
+            HttpServletResponse response = ((ServletRequestAttributes) 
+                RequestContextHolder.currentRequestAttributes()).getResponse();
             if (response != null) {
                 String traceId = MDC.get("traceId");
                 if (traceId != null && !traceId.isEmpty()) {

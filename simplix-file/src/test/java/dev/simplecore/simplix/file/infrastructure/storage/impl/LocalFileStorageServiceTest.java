@@ -2,6 +2,7 @@ package dev.simplecore.simplix.file.infrastructure.storage.impl;
 
 import dev.simplecore.simplix.file.config.FileProperties;
 import dev.simplecore.simplix.file.config.StorageProperties;
+import dev.simplecore.simplix.file.infrastructure.exception.ImageProcessingException;
 import dev.simplecore.simplix.file.infrastructure.exception.StorageException;
 import dev.simplecore.simplix.file.infrastructure.image.ImageProcessingService;
 import dev.simplecore.simplix.file.infrastructure.image.ProcessedImage;
@@ -498,13 +499,13 @@ class LocalFileStorageServiceTest {
 
             // Mock thumbnail generation to throw ImageProcessingException
             when(imageProcessingService.generateThumbnail(any(InputStream.class), anyInt(), anyInt()))
-                .thenThrow(new dev.simplecore.simplix.file.infrastructure.exception.ImageProcessingException(
-                    dev.simplecore.simplix.file.infrastructure.exception.ImageProcessingException.ImageErrorCode.THUMBNAIL_GENERATION_FAILED,
+                .thenThrow(new ImageProcessingException(
+                    ImageProcessingException.ImageErrorCode.THUMBNAIL_GENERATION_FAILED,
                     "Failed to generate thumbnail"
                 ));
 
             assertThatThrownBy(() -> service.getThumbnail(info.storedPath(), 64, 64))
-                .isInstanceOf(dev.simplecore.simplix.file.infrastructure.exception.ImageProcessingException.class);
+                .isInstanceOf(ImageProcessingException.class);
         }
     }
 

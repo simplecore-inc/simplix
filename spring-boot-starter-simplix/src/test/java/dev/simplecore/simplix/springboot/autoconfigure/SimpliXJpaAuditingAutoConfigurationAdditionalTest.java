@@ -9,9 +9,12 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -111,10 +114,10 @@ class SimpliXJpaAuditingAutoConfigurationAdditionalTest {
         @DisplayName("Should return SYSTEM when authentication principal throws exception")
         void principalThrowsException() {
             // Create an authentication that throws when getPrincipal is called
-            org.springframework.security.core.Authentication badAuth =
-                    new org.springframework.security.core.Authentication() {
+            Authentication badAuth =
+                    new Authentication() {
                         @Override
-                        public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
+                        public Collection<? extends GrantedAuthority> getAuthorities() {
                             return Collections.emptyList();
                         }
                         @Override

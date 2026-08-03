@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -70,7 +71,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             String encodedPayload = Base64.getEncoder().encodeToString("claimed-data".getBytes());
             Map<Object, Object> fields = new LinkedHashMap<>();
@@ -108,7 +109,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             when(redisTemplate.opsForStream()).thenReturn(streamOps);
             when(streamOps.pending(anyString(), anyString(), any(Range.class), anyLong()))
@@ -136,7 +137,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             when(redisTemplate.opsForStream()).thenReturn(streamOps);
             when(streamOps.pending(anyString(), anyString(), any(Range.class), anyLong()))
@@ -187,7 +188,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             // Invalid base64 to trigger decode error
             Map<Object, Object> fields = new LinkedHashMap<>();
@@ -257,7 +258,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             when(redisTemplate.opsForStream()).thenReturn(streamOps);
             when(streamOps.pending(anyString(), anyString(), any(Range.class), anyLong()))
@@ -285,7 +286,7 @@ class RedisStreamSubscriberInnerClassTest {
 
             PendingMessages pendingMessages = mock(PendingMessages.class);
             when(pendingMessages.isEmpty()).thenReturn(false);
-            when(pendingMessages.stream()).thenReturn(java.util.stream.Stream.of(pm));
+            when(pendingMessages.stream()).thenReturn(Stream.of(pm));
 
             when(redisTemplate.opsForStream()).thenReturn(streamOps);
             when(streamOps.pending(anyString(), anyString(), any(Range.class), anyLong()))

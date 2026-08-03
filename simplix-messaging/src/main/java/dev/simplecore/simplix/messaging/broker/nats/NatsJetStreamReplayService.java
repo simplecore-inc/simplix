@@ -105,6 +105,7 @@ public class NatsJetStreamReplayService implements ReplayService {
         long count = 0;
         try {
             while (true) {
+                // Fully qualified: Message stands for dev.simplecore.simplix.messaging.core.Message in this file.
                 io.nats.client.Message m;
                 try {
                     m = sub.nextMessage(NEXT_MESSAGE_TIMEOUT);

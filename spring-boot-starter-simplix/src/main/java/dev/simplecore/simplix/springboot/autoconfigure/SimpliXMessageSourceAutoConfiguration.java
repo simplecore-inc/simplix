@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.MessageSourceProperties;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +46,7 @@ import java.util.*;
  * </pre>
  */
 @Slf4j
-@AutoConfiguration(before = {MessageSourceAutoConfiguration.class, org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration.class})
+@AutoConfiguration(before = {MessageSourceAutoConfiguration.class, WebMvcAutoConfiguration.class})
 @Order(0)
 @ConditionalOnProperty(prefix = "simplix.message-source", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXMessageSourceAutoConfiguration implements WebMvcConfigurer {

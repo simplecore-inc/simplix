@@ -8,6 +8,7 @@ import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Message to be sent to stream clients.
@@ -205,7 +206,7 @@ public class StreamMessage {
      * @param restoredSubscriptionKeys the restored subscription keys
      * @return the message
      */
-    public static StreamMessage reconnected(String sessionId, java.util.List<String> restoredSubscriptionKeys) {
+    public static StreamMessage reconnected(String sessionId, List<String> restoredSubscriptionKeys) {
         return StreamMessage.builder()
                 .type(MessageType.RECONNECTED)
                 .payload(new ReconnectedPayload(sessionId, restoredSubscriptionKeys, Instant.now()))
@@ -236,6 +237,6 @@ public class StreamMessage {
     /**
      * Payload for reconnected message
      */
-    public record ReconnectedPayload(String sessionId, java.util.List<String> restoredSubscriptions, Instant serverTime) {
+    public record ReconnectedPayload(String sessionId, List<String> restoredSubscriptions, Instant serverTime) {
     }
 }

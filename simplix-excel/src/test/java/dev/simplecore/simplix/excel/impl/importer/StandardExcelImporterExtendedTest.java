@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,7 +52,7 @@ class StandardExcelImporterExtendedTest {
             List<FloatEntity> result = importer.importFromExcel(file);
 
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getValue()).isCloseTo(3.14f, org.assertj.core.api.Assertions.within(0.01f));
+            assertThat(result.get(0).getValue()).isCloseTo(3.14f, Assertions.within(0.01f));
         }
 
         @Test
@@ -151,7 +152,7 @@ class StandardExcelImporterExtendedTest {
             List<FloatEntity> result = importer.importFromCsv(file);
 
             assertThat(result).hasSize(1);
-            assertThat(result.get(0).getValue()).isCloseTo(3.14f, org.assertj.core.api.Assertions.within(0.01f));
+            assertThat(result.get(0).getValue()).isCloseTo(3.14f, Assertions.within(0.01f));
         }
 
         @Test

@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -230,8 +231,8 @@ class UnifiedCsvExporterInternalTest {
         @DisplayName("should set response headers")
         void shouldSetHeaders() {
             UnifiedCsvExporter<Object> exporter = new UnifiedCsvExporter<>(Object.class);
-            org.springframework.mock.web.MockHttpServletResponse response =
-                    new org.springframework.mock.web.MockHttpServletResponse();
+            MockHttpServletResponse response =
+                    new MockHttpServletResponse();
             exporter.setResponseHeaders(response, "test.csv");
 
             assertThat(response.getContentType()).isEqualTo("text/csv");

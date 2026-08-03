@@ -22,6 +22,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -267,7 +268,7 @@ class RedisBrokerStrategyRecoveryTest {
             when(c2.pendingCount()).thenReturn(0L);
             when(c2.idleTime()).thenReturn(Duration.ofSeconds(1));
 
-            when(consumers.iterator()).thenReturn(java.util.List.of(c1, c2).iterator());
+            when(consumers.iterator()).thenReturn(List.of(c1, c2).iterator());
 
             when(streamOps.consumers("test:ch", "grp")).thenReturn(consumers);
 

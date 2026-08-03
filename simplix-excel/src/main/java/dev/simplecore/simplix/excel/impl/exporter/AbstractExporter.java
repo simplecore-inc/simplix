@@ -124,7 +124,7 @@ public abstract class AbstractExporter<T> {
         
         int totalItems = items.size();
         List<T> batch = new ArrayList<>(batchSize);
-        java.util.Iterator<T> iterator = items.iterator();
+        Iterator<T> iterator = items.iterator();
         int processed = 0;
         
         while (iterator.hasNext()) {

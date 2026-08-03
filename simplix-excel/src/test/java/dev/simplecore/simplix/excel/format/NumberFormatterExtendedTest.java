@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.excel.format;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,7 +37,7 @@ class NumberFormatterExtendedTest {
         void shouldConvertDoubleWithDecimal() {
             Number result = formatter.parse("3.14", "#,##0.###");
             assertThat(result).isNotNull();
-            assertThat(result.doubleValue()).isCloseTo(3.14, org.assertj.core.api.Assertions.within(0.01));
+            assertThat(result.doubleValue()).isCloseTo(3.14, Assertions.within(0.01));
         }
 
         @Test

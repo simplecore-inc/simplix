@@ -9,6 +9,7 @@ import dev.simplecore.simplix.stream.infrastructure.distributed.NatsLeaderElecti
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisBroadcaster;
 import dev.simplecore.simplix.stream.infrastructure.distributed.RedisLeaderElection;
 import dev.simplecore.simplix.stream.infrastructure.local.LocalBroadcaster;
+import io.nats.client.Connection;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -175,9 +176,9 @@ public class SimpliXStreamDistributedConfiguration {
         @Bean
         @Primary
         @ConditionalOnMissingBean(BroadcastService.class)
-        @ConditionalOnBean(io.nats.client.Connection.class)
+        @ConditionalOnBean(Connection.class)
         public NatsBroadcaster natsBroadcaster(
-                io.nats.client.Connection connection,
+                Connection connection,
                 ObjectMapper objectMapper,
                 StreamProperties properties,
                 String streamInstanceId,
@@ -194,9 +195,9 @@ public class SimpliXStreamDistributedConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
-        @ConditionalOnBean(io.nats.client.Connection.class)
+        @ConditionalOnBean(Connection.class)
         public NatsLeaderElection natsLeaderElection(
-                io.nats.client.Connection connection,
+                Connection connection,
                 ScheduledExecutorService streamScheduledExecutor,
                 String streamInstanceId,
                 StreamProperties properties) {

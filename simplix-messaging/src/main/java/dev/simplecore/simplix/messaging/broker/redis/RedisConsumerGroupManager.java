@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.stream.PendingMessagesSummary;
 import org.springframework.data.redis.connection.stream.ReadOffset;
+import org.springframework.data.redis.connection.stream.StreamInfo;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -75,7 +76,7 @@ public class RedisConsumerGroupManager {
      * @param channel the logical channel name
      * @return the group info from XINFO GROUPS
      */
-    public org.springframework.data.redis.connection.stream.StreamInfo.XInfoGroups getGroupInfo(String channel) {
+    public StreamInfo.XInfoGroups getGroupInfo(String channel) {
         String streamKey = resolveKey(channel);
         return redisTemplate.opsForStream().groups(streamKey);
     }

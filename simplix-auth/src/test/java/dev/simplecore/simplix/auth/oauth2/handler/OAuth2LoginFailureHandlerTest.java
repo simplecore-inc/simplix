@@ -42,6 +42,7 @@ class OAuth2LoginFailureHandlerTest {
     void shouldRedirectWithSpringOAuth2ErrorCode() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
+        // Fully qualified: OAuth2AuthenticationException stands for dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationException in this file.
         org.springframework.security.oauth2.core.OAuth2AuthenticationException exception =
                 new org.springframework.security.oauth2.core.OAuth2AuthenticationException("invalid_token");
 

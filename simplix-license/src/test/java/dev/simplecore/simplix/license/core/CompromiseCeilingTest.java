@@ -292,6 +292,7 @@ class CompromiseCeilingTest {
             properties.setTokenPath(workingDirectory.resolve("license.key").toString());
             properties.setStatePath(workingDirectory.resolve("license-state.json").toString());
 
+            // Fully qualified: LicenseManager stands for dev.simplecore.simplix.license.core.LicenseManager in this file.
             dev.accesscore.license.sdk.LicenseManager sdk =
                     dev.accesscore.license.sdk.LicenseManager
                             .builder(store, LicenseTestFixture.identity(), keys.materials())

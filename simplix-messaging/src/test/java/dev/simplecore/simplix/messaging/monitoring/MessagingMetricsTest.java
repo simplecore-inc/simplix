@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -199,7 +200,7 @@ class MessagingMetricsTest {
         @Test
         @DisplayName("should register pending count gauge with supplier")
         void shouldRegisterPendingGauge() {
-            java.util.concurrent.atomic.AtomicInteger pendingCount = new java.util.concurrent.atomic.AtomicInteger(5);
+            AtomicInteger pendingCount = new AtomicInteger(5);
             metrics.registerPendingGauge("orders", "order-service", pendingCount::get);
 
             Double gaugeValue = registry.find("simplix.messaging.pending.count")

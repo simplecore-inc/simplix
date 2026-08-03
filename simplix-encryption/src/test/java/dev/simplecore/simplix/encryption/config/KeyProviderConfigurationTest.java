@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.Environment;
 import org.springframework.vault.core.VaultTemplate;
 
+import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -189,7 +190,7 @@ class KeyProviderConfigurationTest {
             SimpliXEncryptionProperties.Configurable.KeyConfig keyConfig =
                 new SimpliXEncryptionProperties.Configurable.KeyConfig();
             byte[] keyBytes = new byte[32];
-            new java.security.SecureRandom().nextBytes(keyBytes);
+            new SecureRandom().nextBytes(keyBytes);
             keyConfig.setKey(Base64.getEncoder().encodeToString(keyBytes));
             keyConfig.setDeprecated(false);
             keys.put("v1", keyConfig);

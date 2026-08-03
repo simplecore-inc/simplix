@@ -11,6 +11,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -257,7 +258,7 @@ public class LocalFileStorageService implements FileStorageService {
             }
 
             // Return as in-memory resource
-            return new org.springframework.core.io.ByteArrayResource(thumbnail.data());
+            return new ByteArrayResource(thumbnail.data());
         } catch (IOException e) {
             throw new StorageException(
                 StorageException.StorageErrorCode.READ_FAILED,

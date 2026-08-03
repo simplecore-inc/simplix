@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.messaging.core;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -85,7 +86,7 @@ class MessageHeadersTest {
         Map<String, String> map = headers.toMap();
         assertThat(map).hasSize(1);
 
-        org.junit.jupiter.api.Assertions.assertThrows(
+        Assertions.assertThrows(
                 UnsupportedOperationException.class,
                 () -> map.put("new", "entry")
         );

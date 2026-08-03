@@ -296,8 +296,8 @@ class SimpliXAuthTokenControllerTest {
         @Test
         @DisplayName("should publish audit event when refresh token header missing")
         void shouldPublishAuditWhenRefreshTokenMissing() {
-            dev.simplecore.simplix.auth.audit.TokenAuditEventPublisher auditPublisher =
-                    mock(dev.simplecore.simplix.auth.audit.TokenAuditEventPublisher.class);
+            TokenAuditEventPublisher auditPublisher =
+                    mock(TokenAuditEventPublisher.class);
             when(auditPublisherProvider.getIfAvailable()).thenReturn(auditPublisher);
 
             MockHttpServletRequest request = new MockHttpServletRequest();

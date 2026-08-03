@@ -5,6 +5,7 @@ import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.util.Set;
 
 /**
@@ -20,7 +21,7 @@ import java.util.Set;
 public class PoisonMessageHandler {
 
     private static final Set<Class<? extends Exception>> POISON_EXCEPTION_TYPES = Set.of(
-            java.net.ProtocolException.class,
+            ProtocolException.class,
             IOException.class,
             ClassCastException.class,
             IllegalArgumentException.class

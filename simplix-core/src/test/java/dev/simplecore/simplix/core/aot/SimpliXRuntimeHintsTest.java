@@ -1,5 +1,9 @@
 package dev.simplecore.simplix.core.aot;
 
+import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
+import dev.simplecore.simplix.core.tree.entity.TreeEntity;
+import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +40,7 @@ class SimpliXRuntimeHintsTest {
         registrar.registerHints(hints, getClass().getClassLoader());
 
         TypeHint typeHint = hints.reflection().getTypeHint(
-            dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean.class
+            SimpliXRepositoryFactoryBean.class
         );
         assertThat(typeHint).isNotNull();
         assertThat(typeHint.getMemberCategories())
@@ -49,7 +53,7 @@ class SimpliXRuntimeHintsTest {
         registrar.registerHints(hints, getClass().getClassLoader());
 
         TypeHint typeHint = hints.reflection().getTypeHint(
-            dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepositoryImpl.class
+            SimpliXTreeRepositoryImpl.class
         );
         assertThat(typeHint).isNotNull();
     }
@@ -60,7 +64,7 @@ class SimpliXRuntimeHintsTest {
         registrar.registerHints(hints, getClass().getClassLoader());
 
         TypeHint typeHint = hints.reflection().getTypeHint(
-            dev.simplecore.simplix.core.tree.entity.TreeEntity.class
+            TreeEntity.class
         );
         assertThat(typeHint).isNotNull();
         assertThat(typeHint.getMemberCategories())
@@ -73,7 +77,7 @@ class SimpliXRuntimeHintsTest {
         registrar.registerHints(hints, getClass().getClassLoader());
 
         TypeHint typeHint = hints.reflection().getTypeHint(
-            dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes.class
+            TreeEntityAttributes.class
         );
         assertThat(typeHint).isNotNull();
     }

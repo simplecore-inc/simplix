@@ -24,6 +24,7 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -60,7 +61,7 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
 
         TimeZone timeZone = TimeZone.getTimeZone(zoneId);
         objectMapper.setTimeZone(timeZone);
-        objectMapper.setDateFormat(new java.text.SimpleDateFormat(datetimeFormat));
+        objectMapper.setDateFormat(new SimpleDateFormat(datetimeFormat));
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.enable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE);

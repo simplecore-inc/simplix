@@ -9,6 +9,7 @@ import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
 import dev.simplecore.simplix.messaging.core.MessageHeaders;
 import dev.simplecore.simplix.messaging.core.MessageListener;
 import dev.simplecore.simplix.messaging.dedup.IdempotencyStore;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -327,7 +328,7 @@ class MessageHandlerRegistrarDeserializationTest {
 
             MessageAcknowledgment ack = mock(MessageAcknowledgment.class);
 
-            org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class,
+            Assertions.assertThrows(RuntimeException.class,
                     () -> listener.onMessage(rawMessage, ack));
         }
     }

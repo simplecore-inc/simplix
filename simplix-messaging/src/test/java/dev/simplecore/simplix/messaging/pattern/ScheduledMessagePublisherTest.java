@@ -18,6 +18,7 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -194,7 +195,7 @@ class ScheduledMessagePublisherTest {
         void shouldDeliverDueMessages() {
             // Construct a valid scheduled message value
             String channel = "my-channel";
-            String encodedPayload = java.util.Base64.getEncoder().encodeToString("hello".getBytes());
+            String encodedPayload = Base64.getEncoder().encodeToString("hello".getBytes());
             String value = "sched-id||" + channel + "||" + encodedPayload + "||";
 
             when(redisTemplate.execute(any(DefaultRedisScript.class), anyList(), any(), any()))

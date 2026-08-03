@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.messaging.broker.rabbit;
 
+import com.rabbitmq.client.Channel;
 import dev.simplecore.simplix.messaging.broker.SubscribeRequest;
 import dev.simplecore.simplix.messaging.core.Message;
 import dev.simplecore.simplix.messaging.core.MessageAcknowledgment;
@@ -45,7 +46,7 @@ class RabbitBrokerStrategyInternalsTest {
     void setUp() {
         Connection mockConnection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(mockConnection);
-        com.rabbitmq.client.Channel mockChannel = mock(com.rabbitmq.client.Channel.class);
+        Channel mockChannel = mock(Channel.class);
         when(mockConnection.createChannel(any(Boolean.class))).thenReturn(mockChannel);
 
         strategy = new RabbitBrokerStrategy(rabbitTemplate, connectionFactory);
@@ -68,10 +69,11 @@ class RabbitBrokerStrategyInternalsTest {
             properties.setDeliveryTag(42L);
             properties.setHeader("x-custom", "value");
 
+            // Fully qualified: Message stands for dev.simplecore.simplix.messaging.core.Message in this file.
             org.springframework.amqp.core.Message amqpMessage =
                     new org.springframework.amqp.core.Message(payload, properties);
 
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             SubscribeRequest request = SubscribeRequest.builder()
                     .channel("my-queue")
@@ -86,7 +88,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMessage, rabbitChannel, request);
@@ -109,7 +111,7 @@ class RabbitBrokerStrategyInternalsTest {
             org.springframework.amqp.core.Message amqpMessage =
                     new org.springframework.amqp.core.Message(new byte[0], properties);
 
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             SubscribeRequest request = SubscribeRequest.builder()
                     .channel("q")
@@ -121,7 +123,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMessage, rabbitChannel, request);
@@ -141,7 +143,7 @@ class RabbitBrokerStrategyInternalsTest {
             org.springframework.amqp.core.Message amqpMessage =
                     new org.springframework.amqp.core.Message("data".getBytes(), properties);
 
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             SubscribeRequest request = SubscribeRequest.builder()
                     .channel("q")
@@ -153,7 +155,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMessage, rabbitChannel, request);
@@ -173,7 +175,7 @@ class RabbitBrokerStrategyInternalsTest {
             org.springframework.amqp.core.Message amqpMessage =
                     new org.springframework.amqp.core.Message("data".getBytes(), properties);
 
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             SubscribeRequest request = SubscribeRequest.builder()
                     .channel("q")
@@ -185,7 +187,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMessage, rabbitChannel, request);
@@ -201,7 +203,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should ack via RabbitMQ channel")
         void shouldAck() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
 
@@ -220,7 +222,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);
@@ -232,7 +234,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should nack via RabbitMQ channel")
         void shouldNack() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
 
@@ -251,7 +253,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);
@@ -263,7 +265,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should reject via RabbitMQ channel")
         void shouldReject() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
 
@@ -282,7 +284,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);
@@ -294,7 +296,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should handle ack exception gracefully")
         void shouldHandleAckException() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
             doThrow(new IOException("Channel closed")).when(rabbitChannel).basicAck(anyLong(), anyBoolean());
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
@@ -314,7 +316,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);
@@ -325,7 +327,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should handle nack exception gracefully")
         void shouldHandleNackException() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
             doThrow(new IOException("Channel closed")).when(rabbitChannel).basicNack(anyLong(), anyBoolean(), anyBoolean());
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
@@ -345,7 +347,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);
@@ -356,7 +358,7 @@ class RabbitBrokerStrategyInternalsTest {
         @Test
         @DisplayName("should handle reject exception gracefully")
         void shouldHandleRejectException() throws Exception {
-            com.rabbitmq.client.Channel rabbitChannel = mock(com.rabbitmq.client.Channel.class);
+            Channel rabbitChannel = mock(Channel.class);
             doThrow(new IOException("Channel closed")).when(rabbitChannel).basicReject(anyLong(), anyBoolean());
 
             AtomicReference<MessageAcknowledgment> receivedAck = new AtomicReference<>();
@@ -376,7 +378,7 @@ class RabbitBrokerStrategyInternalsTest {
             Method dispatchMethod = RabbitBrokerStrategy.class.getDeclaredMethod(
                     "dispatchMessage",
                     org.springframework.amqp.core.Message.class,
-                    com.rabbitmq.client.Channel.class,
+                    Channel.class,
                     SubscribeRequest.class);
             dispatchMethod.setAccessible(true);
             dispatchMethod.invoke(strategy, amqpMsg, rabbitChannel, request);

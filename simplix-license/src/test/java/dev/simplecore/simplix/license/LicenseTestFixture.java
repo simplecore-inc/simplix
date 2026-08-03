@@ -178,7 +178,7 @@ public final class LicenseTestFixture {
      * @return what the core concluded
      */
     public static EvaluationResponse judge(String token, Instant now) {
-        return dev.accesscore.license.sdk.ffi.AclicCore.shared().evaluate(
+        return AclicCore.shared().evaluate(
                 new EvaluationRequest(token, keys(), null, null, now, true, PRODUCT_CODE,
                         RELEASE, List.of(FINGERPRINT)),
                 EvaluationResponse.class);

@@ -45,6 +45,7 @@ public class LicenseActivationService {
     private final ProductKeys productKeys;
     private final String productKeyPrefix;
     private final LicenseAuditTrail auditTrail;
+    // Fully qualified: LicenseManager stands for dev.simplecore.simplix.license.core.LicenseManager in this file.
     private final dev.accesscore.license.sdk.LicenseManager sdk;
 
     /**

@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -349,7 +351,7 @@ class SimpliXOAuth2ControllerTest {
     /**
      * Custom UserDetails with getId() method for testing extractUserId reflection.
      */
-    private static class UserDetailsWithId implements org.springframework.security.core.userdetails.UserDetails {
+    private static class UserDetailsWithId implements UserDetails {
         private final String id;
         private final String username;
 
@@ -361,7 +363,7 @@ class SimpliXOAuth2ControllerTest {
         public String getId() { return id; }
         @Override public String getUsername() { return username; }
         @Override public String getPassword() { return "pass"; }
-        @Override public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
+        @Override public Collection<? extends GrantedAuthority> getAuthorities() {
             return Collections.emptyList();
         }
     }
@@ -369,7 +371,7 @@ class SimpliXOAuth2ControllerTest {
     /**
      * Custom UserDetails with getUserId() method (but no getId()).
      */
-    private static class UserDetailsWithGetUserId implements org.springframework.security.core.userdetails.UserDetails {
+    private static class UserDetailsWithGetUserId implements UserDetails {
         private final String userId;
         private final String username;
 
@@ -381,7 +383,7 @@ class SimpliXOAuth2ControllerTest {
         public String getUserId() { return userId; }
         @Override public String getUsername() { return username; }
         @Override public String getPassword() { return "pass"; }
-        @Override public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {
+        @Override public Collection<? extends GrantedAuthority> getAuthorities() {
             return Collections.emptyList();
         }
     }

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * Email template resolver that loads templates from database.
@@ -29,7 +30,7 @@ public class DatabaseEmailTemplateResolver implements EmailTemplateResolver {
     /**
      * Current tenant ID provider (can be null for system templates).
      */
-    private final java.util.function.Supplier<String> tenantIdProvider;
+    private final Supplier<String> tenantIdProvider;
 
     @Override
     public Optional<ResolvedTemplate> resolve(String templateCode, Locale locale) {

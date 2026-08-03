@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.messaging.broker.rabbit;
 
+import com.rabbitmq.client.Channel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ class RabbitSubscriptionTest {
     void shouldExposeChannelAndGroup() throws Exception {
         Connection mockConnection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(mockConnection);
-        com.rabbitmq.client.Channel mockChannel = mock(com.rabbitmq.client.Channel.class);
+        Channel mockChannel = mock(Channel.class);
         when(mockConnection.createChannel(any(Boolean.class))).thenReturn(mockChannel);
 
         RabbitBrokerStrategy strategy = new RabbitBrokerStrategy(rabbitTemplate, connectionFactory);
@@ -73,7 +74,7 @@ class RabbitSubscriptionTest {
     void shouldReturnInactiveWhenContainerNotRunning() throws Exception {
         Connection mockConnection = mock(Connection.class);
         when(connectionFactory.createConnection()).thenReturn(mockConnection);
-        com.rabbitmq.client.Channel mockChannel = mock(com.rabbitmq.client.Channel.class);
+        Channel mockChannel = mock(Channel.class);
         when(mockConnection.createChannel(any(Boolean.class))).thenReturn(mockChannel);
 
         RabbitBrokerStrategy strategy = new RabbitBrokerStrategy(rabbitTemplate, connectionFactory);

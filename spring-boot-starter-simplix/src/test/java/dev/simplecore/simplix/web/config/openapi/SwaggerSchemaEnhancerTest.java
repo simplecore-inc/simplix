@@ -3,6 +3,7 @@ package dev.simplecore.simplix.web.config.openapi;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
@@ -324,7 +326,7 @@ class SwaggerSchemaEnhancerTest {
             ReflectionTestUtils.setField(enhancer, "schemaClassCache", cache);
 
             when(messageSource.getMessage(anyString(), isNull(), any(Locale.class)))
-                    .thenThrow(new org.springframework.context.NoSuchMessageException("not found"));
+                    .thenThrow(new NoSuchMessageException("not found"));
 
             OpenAPI openApi = new OpenAPI();
             Components components = new Components();
@@ -357,7 +359,7 @@ class SwaggerSchemaEnhancerTest {
     }
 
     static class ValidatedDto {
-        @jakarta.validation.constraints.NotBlank
+        @NotBlank
         public String name;
     }
 }

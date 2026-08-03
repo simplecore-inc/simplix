@@ -2,6 +2,7 @@ package dev.simplecore.simplix.auth.oauth2;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.AuthenticationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +55,6 @@ class OAuth2AuthenticationExceptionTest {
         OAuth2AuthenticationException exception = new OAuth2AuthenticationException(
                 "TEST", "test message");
 
-        assertThat(exception).isInstanceOf(org.springframework.security.core.AuthenticationException.class);
+        assertThat(exception).isInstanceOf(AuthenticationException.class);
     }
 }
