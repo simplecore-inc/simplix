@@ -19,7 +19,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -73,7 +75,7 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
         org.springframework.amqp.core.MessageProperties properties = new MessageProperties();
         properties.setMessageId(messageId);
         properties.setContentType(contentType);
-        properties.setTimestamp(new java.util.Date());
+        properties.setTimestamp(new Date());
 
         // Copy all message headers into AMQP headers
         headers.toMap().forEach(properties::setHeader);
@@ -219,7 +221,7 @@ public class RabbitBrokerStrategy implements BrokerStrategy {
         MessageProperties properties = amqpMessage.getMessageProperties();
 
         // Extract headers from AMQP message properties
-        Map<String, String> headerMap = new java.util.LinkedHashMap<>();
+        Map<String, String> headerMap = new LinkedHashMap<>();
         if (properties.getHeaders() != null) {
             properties.getHeaders().forEach((key, value) ->
                     headerMap.put(key, value != null ? value.toString() : ""));

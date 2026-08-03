@@ -20,6 +20,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.SendResult;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -264,7 +265,7 @@ public class KafkaBrokerStrategy implements BrokerStrategy {
         public void nack(boolean requeue) {
             if (kafkaAcknowledgment != null) {
                 // nack with sleep 0 to trigger immediate redelivery
-                kafkaAcknowledgment.nack(java.time.Duration.ZERO);
+                kafkaAcknowledgment.nack(Duration.ZERO);
             }
         }
 
