@@ -1,6 +1,8 @@
 package dev.simplecore.simplix.hibernate.transaction.config;
 
 import dev.simplecore.simplix.hibernate.transaction.SimpliXJpaTransactionManager;
+import dev.simplecore.simplix.hibernate.transaction.WriteLockRetryAspect;
+import dev.simplecore.simplix.hibernate.transaction.WriteLockRetryProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -11,6 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionManagerCustomizers;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -34,12 +37,21 @@ import java.util.List;
 @ConditionalOnClass(name = "org.springframework.orm.jpa.JpaTransactionManager")
 @ConditionalOnProperty(prefix = "simplix.transaction", name = "enabled",
         havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(WriteLockRetryProperties.class)
 public class SimpliXTransactionAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(SimpliXTransactionAutoConfiguration.class);
 
     /** Property that escalates the startup validation ERROR into a startup failure. */
     public static final String FAIL_FAST_PROPERTY = "simplix.transaction.fail-fast";
+
+    @Bean
+    @ConditionalOnClass(name = "org.aspectj.lang.ProceedingJoinPoint")
+    @ConditionalOnProperty(prefix = WriteLockRetryProperties.PREFIX, name = "enabled",
+            havingValue = "true", matchIfMissing = true)
+    public WriteLockRetryAspect simplixWriteLockRetryAspect(WriteLockRetryProperties properties) {
+        return new WriteLockRetryAspect(properties);
+    }
 
     @Bean
     @ConditionalOnMissingBean(TransactionManager.class)
