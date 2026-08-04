@@ -46,7 +46,6 @@ public class SimpliXTransactionAutoConfiguration {
     public static final String FAIL_FAST_PROPERTY = "simplix.transaction.fail-fast";
 
     @Bean
-    @ConditionalOnClass(name = "org.aspectj.lang.ProceedingJoinPoint")
     @ConditionalOnProperty(prefix = WriteLockRetryProperties.PREFIX, name = "enabled",
             havingValue = "true", matchIfMissing = true)
     public WriteLockRetryAspect simplixWriteLockRetryAspect(WriteLockRetryProperties properties) {
