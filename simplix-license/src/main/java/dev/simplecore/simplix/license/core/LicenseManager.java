@@ -4,9 +4,11 @@ import dev.simplecore.simplix.license.config.LicenseProperties;
 import dev.simplecore.simplix.license.config.VerificationKeys;
 import dev.simplecore.simplix.license.integrity.RuntimeIntegrityChecker;
 import dev.simplecore.simplix.license.model.LicenseState;
+import dev.accesscore.license.sdk.LicenseKeys;
 import dev.accesscore.license.sdk.issuing.ReleaseVersions;
 import dev.accesscore.license.sdk.model.LicenseModel.Denial;
 import dev.accesscore.license.sdk.model.LicenseModel.EvaluationResponse;
+import dev.accesscore.license.sdk.model.LicenseModel.KeyMaterial;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.LicenseModel.RegistrationRecord;
 import dev.accesscore.license.sdk.model.LicenseStatus;
@@ -19,9 +21,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * What this deployment does about its license.
@@ -191,6 +196,27 @@ public class LicenseManager {
      */
     public String getPublicKeyFingerprint() {
         return publicKeyFingerprint;
+    }
+
+    /**
+     * The fingerprint of every key this deployment can verify a token against.
+     *
+     * <p>{@link #getPublicKeyFingerprint()} answers ONE — the first key, which is what the
+     * startup line and the status screen print. Deciding whether an issuing server is one this
+     * deployment can accept tokens from needs the whole set instead: a deployment that was given
+     * an issuer certificate trusts the delegated key that certificate vouches for, and that is
+     * the key such a server signs with. Comparing against the first key alone refuses the very
+     * arrangement the certificate exists to permit.
+     *
+     * @return the fingerprints, in the order the keys are carried
+     */
+    public Set<String> verificationKeyFingerprints() {
+        LicenseKeys keys = new LicenseKeys();
+        Set<String> fingerprints = new LinkedHashSet<>();
+        for (KeyMaterial material : verificationKeys.materials()) {
+            fingerprints.add(keys.fingerprintOf(material.publicKey()));
+        }
+        return Collections.unmodifiableSet(fingerprints);
     }
 
     /**

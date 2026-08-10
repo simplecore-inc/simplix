@@ -93,6 +93,12 @@ public class LicenseSetupController {
      * prevents is silent otherwise: a server that answers while signing with another key hands
      * back a token this build refuses, long after the address was accepted.
      *
+     * <p>The key it signs with is checked against EVERY key this deployment verifies with, not
+     * against the first one. An issuing server that signs with a delegated key is exactly what an
+     * issuer certificate makes acceptable, and comparing against the built-in key alone refuses
+     * the arrangement the certificate exists to permit — while the activation path a step later
+     * accepts it, so the wizard is the only place that says no.
+     *
      * @param dto the candidate address
      * @return the installer's view, now reporting online activation as available
      */
@@ -110,7 +116,7 @@ public class LicenseSetupController {
             throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
                     "{error.license.activationServerUnconfirmed}", null);
         }
-        if (!probe.signingKeyFingerprint().equals(licenseManager.getPublicKeyFingerprint())) {
+        if (!licenseManager.verificationKeyFingerprints().contains(probe.signingKeyFingerprint())) {
             throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
                     "{error.license.activationServerKeyMismatch}", null);
         }
