@@ -10,6 +10,7 @@ import dev.simplecore.simplix.license.controller.dto.LicenseDTOs.ActivationReque
 import dev.simplecore.simplix.license.controller.dto.LicenseDTOs.LicenseServerRequestDTO;
 import dev.simplecore.simplix.license.controller.dto.LicenseDTOs.OfflineResponseDTO;
 import dev.simplecore.simplix.license.core.LicenseManager;
+import dev.accesscore.license.sdk.model.LicenseModel.CollectedIdentifiers;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.simplecore.simplix.license.model.LicenseState;
 import dev.accesscore.license.sdk.issuing.ProductKeys;
@@ -203,6 +204,7 @@ public class LicenseSetupController {
     private SetupLicenseDTO buildStatus() {
         LicenseState.Snapshot snapshot = licenseManager.getState().snapshot();
         LicensePayload payload = snapshot.payload();
+        CollectedIdentifiers collected = licenseManager.collectedIdentifiers();
 
         return SetupLicenseDTO.builder()
                 .registered(payload != null)
@@ -210,7 +212,9 @@ public class LicenseSetupController {
                 .customer(payload == null ? null : payload.customer())
                 .features(payload == null ? List.of() : licenseManager.availableFeatures())
                 .onlineActivationAvailable(activationService.isOnlineActivationAvailable())
-                .machineFingerprints(licenseManager.machineFingerprints())
+                .machineFingerprints(collected.fingerprintsOrEmpty())
+                .machineIdentifierSources(collected.sources())
+                .machineIdentifierSourcesUnavailable(collected.unavailableSources())
                 .build();
     }
 

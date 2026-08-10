@@ -38,4 +38,18 @@ public class SetupLicenseDTO {
      * one fewer keeps working.
      */
     private List<String> machineFingerprints;
+
+    /**
+     * Which kinds of identifier answered, and which were consulted and gave nothing.
+     *
+     * <p>Reported here for the same reason as on the licence screen, and more urgently: the
+     * installer is where a token cut for another machine is first refused, and the operator
+     * refused there has no console to go and look in. The fingerprints alone cannot separate a
+     * mount the container never received from a token minted against a different host, and the
+     * two want opposite fixes.
+     */
+    private List<String> machineIdentifierSources;
+
+    /** The kinds consulted that gave nothing, which is what an operator can still mount. */
+    private List<String> machineIdentifierSourcesUnavailable;
 }
