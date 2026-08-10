@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.license.config;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
  * <pre>{@code
  * application:
  *   license:
+ *     product-key-prefix: <FAMILY>   # required; no default
  *     token-path: ./license.key
  *     state-path: ./license-state.json
  *     re-verification-interval-minutes: 30
@@ -65,8 +67,24 @@ public class LicenseProperties {
      * <p>Part of a product key's checksum, so a key issued under another family does not
      * validate here. It names what this product is sold as, which is a fact about the product
      * rather than something the SDK could know.
+     *
+     * <p><b>No default, deliberately.</b> A default here is a family name the SDK invented, and
+     * every product that forgets to set this inherits it — so two unrelated products issue keys
+     * under one family, a key from one validates in the other, and nothing says so. The failure
+     * is worse than it looks from the property: the screen that shows the operator which family
+     * to expect reads this value, so an unset prefix does not produce an empty field, it
+     * produces a confident wrong answer that the activation endpoint then refuses. The start
+     * fails instead, naming the property and what to put in it.
      */
-    private String productKeyPrefix = "ACPS";
+    @NotBlank(message = "application.license.product-key-prefix is not set. Set it to the family "
+            + "this product's keys are issued under — the same value the issuing side signs with, "
+            + "in application.yml:\n"
+            + "  application:\n"
+            + "    license:\n"
+            + "      product-key-prefix: <FAMILY>\n"
+            + "There is no default: a name the SDK chose would be shared by every product that "
+            + "forgot to set it, and a key issued for one would validate in another.")
+    private String productKeyPrefix;
 
     /** Online activation settings. */
     private Activation activation = new Activation();
