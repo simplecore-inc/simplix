@@ -37,6 +37,25 @@ public class LicenseDTOs {
         private Boolean machineFingerprintAvailable;
 
         /**
+         * Which kinds of identifier answered, and which were consulted and gave nothing.
+         *
+         * <p>Reported because the fingerprints alone cannot be acted on. A deployment whose
+         * license is refused as belonging to another machine is looking at two opaque digests
+         * and has no way to tell a lost mount from a token cut for a different host — the two
+         * demand opposite fixes, and the screen says the same sentence for both. What was read
+         * and what came back empty is the difference, and the SDK collects it already.
+         *
+         * <p>They name a KIND rather than a path — {@code IO_PLATFORM_UUID}, and its siblings on
+         * other systems — so this tells an operator what to mount without publishing a recipe
+         * for forging one. What a container has to be handed is in the deployment's own compose
+         * file either way; what it actually received is only here.
+         */
+        private List<String> machineIdentifierSources;
+
+        /** The kinds consulted that gave nothing, which is what an operator can still mount. */
+        private List<String> machineIdentifierSourcesUnavailable;
+
+        /**
          * Identifies the license key pair this deployment accepts tokens from. It is reported
          * so an operator can compare it with the fingerprint the license server logs for its
          * signing key: two different values are why an otherwise correct license is refused as

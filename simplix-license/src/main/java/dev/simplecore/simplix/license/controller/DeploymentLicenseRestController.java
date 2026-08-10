@@ -12,6 +12,7 @@ import dev.simplecore.simplix.license.enforcement.FeatureAccess;
 import dev.simplecore.simplix.license.enforcement.LicenseQuotaGuard;
 import dev.simplecore.simplix.license.model.LicenseState;
 import dev.accesscore.license.sdk.issuing.ProductKeys;
+import dev.accesscore.license.sdk.model.LicenseModel.CollectedIdentifiers;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.LicenseModel.RegistrationRecord;
 import dev.accesscore.license.sdk.protocol.ActivationModel.PreparedRequest;
@@ -201,7 +202,8 @@ public class DeploymentLicenseRestController {
      */
     private LicenseStatusDTO buildStatus() {
         LicenseState.Snapshot snapshot = licenseManager.getState().snapshot();
-        List<String> fingerprints = licenseManager.machineFingerprints();
+        CollectedIdentifiers collected = licenseManager.collectedIdentifiers();
+        List<String> fingerprints = collected.fingerprintsOrEmpty();
         Optional<RegistrationRecord> record = licenseManager.currentRecord();
 
         LicenseStatusDTO.LicenseStatusDTOBuilder builder = LicenseStatusDTO.builder()
@@ -211,6 +213,8 @@ public class DeploymentLicenseRestController {
                 .onlineActivationAvailable(activationService.isOnlineActivationAvailable())
                 .machineFingerprintAvailable(!fingerprints.isEmpty())
                 .machineFingerprints(fingerprints)
+                .machineIdentifierSources(collected.sources())
+                .machineIdentifierSourcesUnavailable(collected.unavailableSources())
                 .publicKeyFingerprint(licenseManager.getPublicKeyFingerprint())
                 .maskedProductKey(record.map(RegistrationRecord::productKey)
                         .map(key -> productKeys.masked(productKeyPrefix, key))

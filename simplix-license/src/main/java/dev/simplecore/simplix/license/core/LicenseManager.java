@@ -8,6 +8,7 @@ import dev.accesscore.license.sdk.LicenseKeys;
 import dev.accesscore.license.sdk.issuing.ReleaseVersions;
 import dev.accesscore.license.sdk.model.LicenseModel.Denial;
 import dev.accesscore.license.sdk.model.LicenseModel.EvaluationResponse;
+import dev.accesscore.license.sdk.model.LicenseModel.CollectedIdentifiers;
 import dev.accesscore.license.sdk.model.LicenseModel.KeyMaterial;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.LicenseModel.RegistrationRecord;
@@ -188,6 +189,20 @@ public class LicenseManager {
      */
     public List<String> machineFingerprints() {
         return sdk.fingerprint().fingerprintsOrEmpty();
+    }
+
+    /**
+     * What this machine reported about itself, sources included.
+     *
+     * <p>Answered beside {@link #machineFingerprints()} rather than folded into it because the
+     * two are read for different reasons: the fingerprints are what a license binds to, and the
+     * sources are what an operator acts on when the binding does not match. A digest alone
+     * cannot tell a lost mount from a token cut for another host, and those want opposite fixes.
+     *
+     * @return the collected identifiers, never null
+     */
+    public CollectedIdentifiers collectedIdentifiers() {
+        return sdk.fingerprint();
     }
 
     /**
