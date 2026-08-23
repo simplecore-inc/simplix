@@ -23,6 +23,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -193,24 +195,47 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     }
 
     /**
-     * Deliver tokens via redirect URL query parameters.
-     * <p>
-     * Warning: Tokens may be logged in browser history.
+     * Deliver tokens in the redirect address's fragment.
+     *
+     * <p><b>The fragment rather than the query string, because a query string is part of the
+     * GET.</b> It is written to the receiving server's access log, to every proxy in front of it,
+     * and into {@code Referer} on the first resource the landing page asks for — all of it before
+     * any code on that page exists, which is why rewriting the address afterwards does not help.
+     * A fragment is never transmitted.
+     *
+     * <p><b>Form encoding, because the reader is form decoding.</b> The landing page parses this
+     * with {@code URLSearchParams}, which reads {@code +} as a space wherever it came from — so an
+     * ISO offset expiry written raw arrives as {@code 2026-08-23T18:30:00 09:00}, which no date
+     * parser accepts. That failure is worse than an absent token: the sign-in succeeds, the
+     * session opens, and the refresh scheduler silently never fires. {@link URLEncoder} is the
+     * matching half of {@code URLSearchParams}, so the pair round-trips.
+     *
+     * <p>The token itself survives either encoding — a JWE is base64url and dots — which is
+     * exactly why this is worth a comment rather than a test somebody deletes.
      */
     private void deliverTokensViaRedirect(
             HttpServletResponse response,
             SimpliXJweTokenProvider.TokenResponse tokens) throws IOException {
 
+        String fragment = "accessToken=" + formEncoded(tokens.getAccessToken())
+                + "&refreshToken=" + formEncoded(tokens.getRefreshToken())
+                + "&accessTokenExpiry=" + formEncoded(onTheWire(tokens.getAccessTokenExpiry()))
+                + "&refreshTokenExpiry=" + formEncoded(onTheWire(tokens.getRefreshTokenExpiry()));
+
         String redirectUrl = UriComponentsBuilder
                 .fromUriString(properties.getSuccessUrl())
-                .queryParam("accessToken", tokens.getAccessToken())
-                .queryParam("refreshToken", tokens.getRefreshToken())
-                .queryParam("accessTokenExpiry", onTheWire(tokens.getAccessTokenExpiry()))
-                .queryParam("refreshTokenExpiry", onTheWire(tokens.getRefreshTokenExpiry()))
                 .build()
-                .toUriString();
+                .toUriString() + "#" + fragment;
 
         response.sendRedirect(redirectUrl);
+    }
+
+    /**
+     * @param value a value bound for the fragment, or null
+     * @return it encoded the way {@code URLSearchParams} decodes
+     */
+    private static String formEncoded(String value) {
+        return URLEncoder.encode(value == null ? "" : value, StandardCharsets.UTF_8);
     }
 
     /**
