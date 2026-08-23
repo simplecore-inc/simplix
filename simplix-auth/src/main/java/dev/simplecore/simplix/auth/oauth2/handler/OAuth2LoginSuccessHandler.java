@@ -23,6 +23,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Handles successful OAuth2 authentication.
@@ -36,6 +38,16 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
      * Session attribute key for storing user ID during account linking flow.
      */
     public static final String LINKING_USER_ID_ATTR = "oauth2_linking_user_id";
+
+    /**
+     * How an expiry is written when it is handed to a browser.
+     *
+     * <p>{@code ZonedDateTime.toString()} appends the zone in brackets — {@code
+     * 2026-08-23T14:30:00+09:00[Asia/Seoul]} — and no JavaScript date parser accepts that, so a
+     * client reading either delivery below got NaN and no expiry at all. Both deliveries have a
+     * browser as their only consumer, so both write the offset form the platform can read.
+     */
+    private static final DateTimeFormatter WIRE_EXPIRY = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     private final OAuth2AuthenticationService authService;
     private final OAuth2UserInfoExtractor extractor;
@@ -193,8 +205,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 .fromUriString(properties.getSuccessUrl())
                 .queryParam("accessToken", tokens.getAccessToken())
                 .queryParam("refreshToken", tokens.getRefreshToken())
-                .queryParam("accessTokenExpiry", tokens.getAccessTokenExpiry().toString())
-                .queryParam("refreshTokenExpiry", tokens.getRefreshTokenExpiry().toString())
+                .queryParam("accessTokenExpiry", onTheWire(tokens.getAccessTokenExpiry()))
+                .queryParam("refreshTokenExpiry", onTheWire(tokens.getRefreshTokenExpiry()))
                 .build()
                 .toUriString();
 
@@ -239,13 +251,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 """.formatted(
                 tokens.getAccessToken(),
                 tokens.getRefreshToken(),
-                tokens.getAccessTokenExpiry().toString(),
-                tokens.getRefreshTokenExpiry().toString(),
+                onTheWire(tokens.getAccessTokenExpiry()),
+                onTheWire(tokens.getRefreshTokenExpiry()),
                 properties.getPostMessageOrigin()
         );
 
         writer.write(html);
         writer.flush();
+    }
+
+    /**
+     * @param expiry an expiry, or null
+     * @return it written the way a browser can parse, or an empty string
+     */
+    private static String onTheWire(ZonedDateTime expiry) {
+        return expiry == null ? "" : expiry.format(WIRE_EXPIRY);
     }
 
     private void handleLinking(

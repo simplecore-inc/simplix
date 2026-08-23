@@ -8,9 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +99,68 @@ class OAuth2UserInfoExtractorTest {
         extractor.registerExtractor(customStrategy);
 
         assertThat(extractor.hasExtractor(OAuth2ProviderType.GOOGLE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("should read a registration the enum does not name as a generic OIDC provider")
+    void shouldReadUnnamedRegistrationAsOidc() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", "9f1c-keycloak-subject");
+        claims.put("email", "sso.manager@example.test");
+        claims.put("email_verified", true);
+        claims.put("name", "\uc5f0\uacc4 \uad00\ub9ac\uc790");
+        claims.put("groups", List.of("SG-Safety-Admin", "SG-IT"));
+
+        OidcIdToken idToken = new OidcIdToken("id-token-value",
+                Instant.now(), Instant.now().plusSeconds(300), claims);
+        OAuth2User oidcUser = new DefaultOidcUser(
+                List.of(new SimpleGrantedAuthority("ROLE_USER")), idToken);
+
+        OAuth2AuthenticationToken authToken = new OAuth2AuthenticationToken(
+                oidcUser,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")),
+                "keycloak");
+
+        OAuth2UserInfo info = extractor.extract(authToken);
+
+        assertThat(info.getProvider()).isEqualTo(OAuth2ProviderType.OIDC);
+        assertThat(info.getRegistrationId()).isEqualTo("keycloak");
+        assertThat(info.getProviderId()).isEqualTo("9f1c-keycloak-subject");
+        assertThat(info.getEmail()).isEqualTo("sso.manager@example.test");
+        assertThat(info.isEmailVerified()).isTrue();
+        // Everything the directory sent survives, because the roles a deployment maps come from
+        // claims no framework can enumerate.
+        assertThat(info.getAttributes()).containsEntry("groups", List.of("SG-Safety-Admin", "SG-IT"));
+    }
+
+    @Test
+    @DisplayName("should stamp the registration id onto a named provider too")
+    void shouldStampRegistrationIdOnNamedProvider() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("id", 12345);
+
+        OAuth2User oauth2User = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("ROLE_USER")), attributes, "id");
+        OAuth2AuthenticationToken authToken = new OAuth2AuthenticationToken(
+                oauth2User, List.of(new SimpleGrantedAuthority("ROLE_USER")), "github");
+
+        assertThat(extractor.extract(authToken).getRegistrationId()).isEqualTo("github");
+    }
+
+    @Test
+    @DisplayName("should refuse an unnamed registration that issued no ID token")
+    void shouldRefuseUnnamedNonOidcRegistration() {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("id", "1");
+
+        OAuth2User oauth2User = new DefaultOAuth2User(
+                List.of(new SimpleGrantedAuthority("ROLE_USER")), attributes, "id");
+        OAuth2AuthenticationToken authToken = new OAuth2AuthenticationToken(
+                oauth2User, List.of(new SimpleGrantedAuthority("ROLE_USER")), "some-plain-oauth2");
+
+        assertThatThrownBy(() -> extractor.extract(authToken))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("registerExtractor");
     }
 
     @Test

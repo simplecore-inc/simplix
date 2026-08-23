@@ -25,7 +25,13 @@ import java.util.Map;
  *   <li>GitHub (OAuth2)</li>
  *   <li>Facebook (OAuth2)</li>
  *   <li>Apple (OIDC)</li>
+ *   <li>Any other registration id, read as a standards-compliant OIDC provider</li>
  * </ul>
+ * <p>
+ * The last entry is why a registration id this framework has never heard of is not an error. An
+ * enterprise IdP is registered under a name the deployment chooses, and what a consumer provider
+ * needs an extractor for — where it hides the email, what it calls the subject — the discovery
+ * document and the ID token answer for a compliant one.
  */
 @Slf4j
 public class OAuth2UserInfoExtractor {
@@ -42,7 +48,8 @@ public class OAuth2UserInfoExtractor {
                 new NaverUserInfoExtractor(),
                 new GitHubUserInfoExtractor(),
                 new FacebookUserInfoExtractor(),
-                new AppleUserInfoExtractor()
+                new AppleUserInfoExtractor(),
+                new StandardOidcUserInfoExtractor()
         ));
     }
 
@@ -74,11 +81,14 @@ public class OAuth2UserInfoExtractor {
         }
 
         String registrationId = token.getAuthorizedClientRegistrationId();
-        OAuth2ProviderType provider = OAuth2ProviderType.fromRegistrationId(registrationId);
+        // Resolved rather than looked up, so a registration this enum does not name reads as a
+        // generic OIDC provider instead of throwing. That refusal is what kept every enterprise
+        // IdP off this path.
+        OAuth2ProviderType provider = OAuth2ProviderType.resolve(registrationId);
         OAuth2User oauth2User = token.getPrincipal();
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        log.trace("Extracting user info from provider: {}", provider);
+        log.trace("Extracting user info from registration {} as provider {}", registrationId, provider);
 
         OAuth2UserInfoExtractorStrategy strategy = extractors.get(provider);
         if (strategy == null) {
@@ -86,7 +96,12 @@ public class OAuth2UserInfoExtractor {
                     "No extractor registered for provider: " + provider);
         }
 
-        return strategy.extract(attributes, oauth2User);
+        // The extractor is handed the attributes and knows nothing of which registration they
+        // came from; stamping it here is what lets two directories of the same type be told
+        // apart without every strategy taking an extra argument.
+        return strategy.extract(attributes, oauth2User).toBuilder()
+                .registrationId(registrationId)
+                .build();
     }
 
     /**

@@ -3,6 +3,7 @@ package dev.simplecore.simplix.auth.oauth2.config;
 import dev.simplecore.simplix.auth.oauth2.OAuth2AuthenticationService;
 import dev.simplecore.simplix.auth.oauth2.extractor.OAuth2UserInfoExtractor;
 import dev.simplecore.simplix.auth.oauth2.filter.OAuth2IntentFilter;
+import dev.simplecore.simplix.auth.oauth2.filter.OAuth2UnknownRegistrationFilter;
 import dev.simplecore.simplix.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import dev.simplecore.simplix.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import dev.simplecore.simplix.auth.oauth2.properties.SimpliXOAuth2Properties;
@@ -21,6 +22,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.session.web.http.SessionRepositoryFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -127,7 +130,8 @@ public class SimpliXOAuth2Configuration {
             SimpliXOAuth2UserService oauth2UserService,
             SimpliXOidcUserService oidcUserService,
             OAuth2LoginSuccessHandler successHandler,
-            OAuth2LoginFailureHandler failureHandler) throws Exception {
+            OAuth2LoginFailureHandler failureHandler,
+            ClientRegistrationRepository clientRegistrations) throws Exception {
 
         SimpliXOAuth2Properties oauth2Props = authProperties.getOauth2();
 
@@ -160,6 +164,11 @@ public class SimpliXOAuth2Configuration {
                         .requestMatchers(oauth2Props.getLinkBaseUrl() + "/**").authenticated()
                         .anyRequest().authenticated()
                 )
+                // Ahead of the login filters, so an id no registration answers to comes back as
+                // the sign-in screen rather than as a 500. An application whose providers are
+                // configured at runtime reaches that case in the ordinary course of things.
+                .addFilterBefore(new OAuth2UnknownRegistrationFilter(oauth2Props, clientRegistrations),
+                        OAuth2AuthorizationRequestRedirectFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(endpoint -> endpoint
                                 .baseUri(oauth2Props.getAuthorizationBaseUrl())

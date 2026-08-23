@@ -11,13 +11,24 @@ import java.util.Map;
  * regardless of the OAuth2/OIDC provider.
  */
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class OAuth2UserInfo {
 
     /**
      * The OAuth2 provider type.
      */
     private final OAuth2ProviderType provider;
+
+    /**
+     * The client registration ID this identity arrived on.
+     *
+     * <p><b>What tells two providers of the same type apart.</b> {@link #provider} is
+     * {@link OAuth2ProviderType#OIDC} for every provider the enum does not name, so a deployment
+     * federating with two directories has one value there and two here. Stamped by
+     * {@code OAuth2UserInfoExtractor} from the authentication token, so an extractor does not
+     * have to know it.
+     */
+    private final String registrationId;
 
     /**
      * The unique user ID from the provider.

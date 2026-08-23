@@ -16,7 +16,7 @@ class OAuth2ProviderTypeTest {
     @Test
     @DisplayName("should have all expected providers")
     void shouldHaveAllExpectedProviders() {
-        assertThat(OAuth2ProviderType.values()).hasSize(6);
+        assertThat(OAuth2ProviderType.values()).hasSize(7);
     }
 
     @ParameterizedTest
@@ -26,7 +26,8 @@ class OAuth2ProviderTypeTest {
             "naver, NAVER, Naver, false",
             "github, GITHUB, GitHub, false",
             "facebook, FACEBOOK, Facebook, false",
-            "apple, APPLE, Apple, true"
+            "apple, APPLE, Apple, true",
+            "oidc, OIDC, OIDC, true"
     })
     @DisplayName("should have correct properties for each provider")
     void shouldHaveCorrectProperties(String registrationId, String name,
@@ -66,6 +67,29 @@ class OAuth2ProviderTypeTest {
             assertThatThrownBy(() -> OAuth2ProviderType.fromRegistrationId("unknown"))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Unknown OAuth2 provider");
+        }
+    }
+
+    @Nested
+    @DisplayName("resolve")
+    class Resolve {
+
+        @Test
+        @DisplayName("should find provider by registration ID")
+        void shouldFindByRegistrationId() {
+            assertThat(OAuth2ProviderType.resolve("google"))
+                    .isEqualTo(OAuth2ProviderType.GOOGLE);
+            assertThat(OAuth2ProviderType.resolve("APPLE"))
+                    .isEqualTo(OAuth2ProviderType.APPLE);
+        }
+
+        @Test
+        @DisplayName("should read an unnamed registration as a generic OIDC provider")
+        void shouldReadUnnamedAsOidc() {
+            assertThat(OAuth2ProviderType.resolve("keycloak"))
+                    .isEqualTo(OAuth2ProviderType.OIDC);
+            assertThat(OAuth2ProviderType.resolve("entra-id"))
+                    .isEqualTo(OAuth2ProviderType.OIDC);
         }
     }
 
