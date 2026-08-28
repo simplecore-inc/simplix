@@ -13,3 +13,4 @@ dev.simplecore.simplix.springboot.autoconfigure.SimpliXJpaAuditingAutoConfigurat
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXSecurityAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXJacksonAutoConfiguration
 dev.simplecore.simplix.springboot.autoconfigure.SimpliXTimezoneWebAutoConfiguration
+dev.simplecore.simplix.springboot.autoconfigure.SimpliXDevMetaAutoConfiguration
