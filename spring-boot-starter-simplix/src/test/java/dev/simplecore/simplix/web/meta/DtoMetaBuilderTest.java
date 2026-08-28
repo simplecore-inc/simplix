@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
@@ -66,6 +67,12 @@ class DtoMetaBuilderTest {
         @PatchMapping
         public SimpliXApiResponse<AreaListDTO> multiUpdate(
                 @RequestBody Set<AreaCreateDTO> dtos) { return null; }
+
+        // An upload's form-field name is what a client appends the file under, so it has to reach
+        // the IR; without it the operation says "multipart" and nothing else.
+        @PostMapping("/plan")
+        public SimpliXApiResponse<AreaListDTO> upload(
+                @RequestParam("file") MultipartFile file) { return null; }
     }
 
     // Plain "Controller" suffix, pinned alongside AreaRestController's "RestController" suffix
@@ -92,6 +99,8 @@ class DtoMetaBuilderTest {
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("list", String.class)));
         map.put(RequestMappingInfo.paths("/areas").methods(org.springframework.web.bind.annotation.RequestMethod.PATCH).options(config).build(),
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("multiUpdate", Set.class)));
+        map.put(RequestMappingInfo.paths("/areas/plan").methods(org.springframework.web.bind.annotation.RequestMethod.POST).options(config).build(),
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("upload", MultipartFile.class)));
         map.put(RequestMappingInfo.paths("/sites/{siteId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
                 new HandlerMethod(siteController, SiteController.class.getMethod("get", String.class)));
         return map;
@@ -151,6 +160,16 @@ class DtoMetaBuilderTest {
         assertThat(body.args()).hasSize(1);
         assertThat(body.args().get(0).name()).isEqualTo("AreaCreateDTO");
         assertThat(meta.types()).containsKey("AreaCreateDTO");
+    }
+
+    @Test
+    void multipartRecordsItsPartName() throws Exception {
+        DtoMeta meta = build(List.of());
+        OperationMeta upload = operation(meta, "AreaRest_upload");
+        assertThat(upload.request().contentType()).isEqualTo("multipart");
+        assertThat(upload.request().query()).hasSize(1);
+        assertThat(upload.request().query().get(0).name()).isEqualTo("file");
+        assertThat(upload.request().query().get(0).type().kind()).isEqualTo("file");
     }
 
     @Test

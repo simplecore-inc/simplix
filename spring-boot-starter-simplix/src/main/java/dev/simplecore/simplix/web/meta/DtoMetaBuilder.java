@@ -156,6 +156,17 @@ public class DtoMetaBuilder {
             }
             if (MultipartFile.class.isAssignableFrom(parameterType)) {
                 contentType = "multipart";
+                // Record the part under its form-field name. A client has to build a FormData and
+                // append the file under exactly this name, and dropping the parameter left the
+                // whole upload unrepresentable — TypeRef.file() exists for this.
+                RequestParam filePart = parameter.getParameterAnnotation(RequestParam.class);
+                String partName = filePart != null
+                        ? firstNonEmpty(filePart.name(), filePart.value(), parameter.getParameterName())
+                        : parameter.getParameterName();
+                if (partName != null) {
+                    query.add(new ParamMeta(partName, TypeRef.file(),
+                            filePart == null || filePart.required(), null));
+                }
                 continue;
             }
             PathVariable pathVariable = parameter.getParameterAnnotation(PathVariable.class);
