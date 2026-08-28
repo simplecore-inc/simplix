@@ -7,6 +7,18 @@ import java.util.List;
 /**
  * Discriminated type reference. {@code kind} selects the shape; members not used by a
  * kind stay {@code null} and vanish from JSON via NON_NULL.
+ *
+ * <p>Component usage by kind:
+ * <ul>
+ *     <li>{@code string}, {@code boolean}, {@code unknown}, {@code instant}, {@code date},
+ *         {@code file}, {@code binary} — {@code kind} only</li>
+ *     <li>{@code number} — {@code kind} + {@code integral}</li>
+ *     <li>{@code time} — {@code kind} + {@code pattern}</li>
+ *     <li>{@code enum}, {@code param} — {@code kind} + {@code name}</li>
+ *     <li>{@code ref} — {@code kind} + {@code name}, optionally + {@code args}</li>
+ *     <li>{@code container} — {@code kind} + {@code name} + {@code args}</li>
+ *     <li>{@code pick} — {@code kind} + {@code of} + {@code fields}</li>
+ * </ul>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record TypeRef(
