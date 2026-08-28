@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TypeRefMapperTest {
 
@@ -95,25 +96,21 @@ class TypeRefMapperTest {
     }
 
     @Test
-    void duplicateSimpleNamesAreReported() {
+    void duplicateSimpleNamesAreRejected() {
         MetaTypeRegistry reg = new MetaTypeRegistry();
         reg.register(Outer1.Shared.class);
-        reg.register(Outer2.Shared.class);
-        assertThat(reg.warnings()).hasSize(1);
-        assertThat(reg.warnings().get(0))
-                .contains("Shared")
-                .contains(Outer1.Shared.class.getName())
-                .contains(Outer2.Shared.class.getName());
-        // both classes still queue — the registry keys by Class, not by name
-        assertThat(reg.pendingTypes()).hasSize(2);
+        assertThatThrownBy(() -> reg.register(Outer2.Shared.class))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Shared")
+                .hasMessageContaining(Outer1.Shared.class.getName())
+                .hasMessageContaining(Outer2.Shared.class.getName());
     }
 
     @Test
-    void registeringTheSameClassTwiceDoesNotWarn() {
+    void registeringTheSameClassTwiceIsFine() {
         MetaTypeRegistry reg = new MetaTypeRegistry();
-        reg.register(SiteListDTO.class);
-        reg.register(SiteListDTO.class);
-        assertThat(reg.warnings()).isEmpty();
+        assertThat(reg.register(SiteListDTO.class)).isEqualTo("SiteListDTO");
+        assertThat(reg.register(SiteListDTO.class)).isEqualTo("SiteListDTO");
         assertThat(reg.pendingTypes()).hasSize(1);
     }
 }
