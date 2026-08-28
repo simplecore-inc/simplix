@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.enums.LabeledEnum;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
+import dev.simplecore.simplix.web.meta.model.TypeRef;
 import dev.simplecore.simplix.web.meta.model.OperationMeta;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,6 +25,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,6 +60,12 @@ class DtoMetaBuilderTest {
         @GetMapping
         public SimpliXApiResponse<Page<AreaListDTO>> list(
                 @RequestParam(name = "keyword", required = false) String keyword) { return null; }
+
+        // A multi-update takes a collection body. Its element type is the whole payload contract,
+        // so this pins that the body is mapped rather than resolved to a raw "Set".
+        @PatchMapping
+        public SimpliXApiResponse<AreaListDTO> multiUpdate(
+                @RequestBody Set<AreaCreateDTO> dtos) { return null; }
     }
 
     // Plain "Controller" suffix, pinned alongside AreaRestController's "RestController" suffix
@@ -81,6 +90,8 @@ class DtoMetaBuilderTest {
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("create", AreaCreateDTO.class)));
         map.put(RequestMappingInfo.paths("/areas").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("list", String.class)));
+        map.put(RequestMappingInfo.paths("/areas").methods(org.springframework.web.bind.annotation.RequestMethod.PATCH).options(config).build(),
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("multiUpdate", Set.class)));
         map.put(RequestMappingInfo.paths("/sites/{siteId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
                 new HandlerMethod(siteController, SiteController.class.getMethod("get", String.class)));
         return map;
@@ -120,11 +131,26 @@ class DtoMetaBuilderTest {
     @Test
     void bodyTypeAndReachableTypesRegister() throws Exception {
         DtoMeta meta = build(List.of());
-        assertThat(operation(meta, "AreaRest_create").request().body()).isEqualTo("AreaCreateDTO");
+        TypeRef createBody = operation(meta, "AreaRest_create").request().body();
+        assertThat(createBody.kind()).isEqualTo("ref");
+        assertThat(createBody.name()).isEqualTo("AreaCreateDTO");
         assertThat(meta.types()).containsKeys("AreaCreateDTO", "AreaListDTO");
         assertThat(meta.enums().get("AreaKind").labeled()).isTrue();
         assertThat(meta.enums().get("AreaKind").values())
             .extracting(v -> v.name()).containsExactly("AREA", "ZONE");
+    }
+
+    @Test
+    void collectionBodyKeepsItsElementType() throws Exception {
+        // resolve() on Set<AreaCreateDTO> yields the raw Set and erases the element, leaving a
+        // client generator with no payload type for every multi-update and reorder endpoint.
+        DtoMeta meta = build(List.of());
+        TypeRef body = operation(meta, "AreaRest_multiUpdate").request().body();
+        assertThat(body.kind()).isEqualTo("container");
+        assertThat(body.name()).isEqualTo("List");
+        assertThat(body.args()).hasSize(1);
+        assertThat(body.args().get(0).name()).isEqualTo("AreaCreateDTO");
+        assertThat(meta.types()).containsKey("AreaCreateDTO");
     }
 
     @Test

@@ -124,7 +124,7 @@ public class DtoMetaBuilder {
         if (pre == null) pre = AnnotatedElementUtils.findMergedAnnotation(beanType, PreAuthorize.class);
         AccessMeta access = AccessExpressionParser.parse(pre != null ? pre.value() : null);
 
-        String body = null;
+        TypeRef body = null;
         String contentType = null;
         String searchDto = null;
         List<ParamMeta> query = new ArrayList<>();
@@ -148,7 +148,9 @@ public class DtoMetaBuilder {
             if (parameter.hasParameterAnnotation(RequestBody.class)) {
                 Class<?> bodyClass = resolvable.resolve();
                 if (bodyClass != null && !Map.class.isAssignableFrom(bodyClass)) {
-                    body = registry.register(bodyClass);
+                    // map(), not register(): a body is often Set<XUpdateDTO> or List<XOrderDTO>,
+                    // and resolve() would erase the element type the client has to send.
+                    body = typeRefMapper.map(resolvable);
                 }
                 continue;
             }
