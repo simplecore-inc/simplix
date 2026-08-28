@@ -36,6 +36,7 @@ class ConstraintExtractorTest {
         @Positive Integer count;
         @Unique String serial;
         String plain;
+        @Pattern.List({@Pattern(regexp = "^[A-Z]+$"), @Pattern(regexp = ".{3,}")}) String multiPattern;
     }
 
     private List<ConstraintMeta> extract(String field) throws Exception {
@@ -76,5 +77,10 @@ class ConstraintExtractorTest {
     @Test
     void unconstrainedFieldYieldsEmptyList() throws Exception {
         assertThat(extract("plain")).isEmpty();
+    }
+
+    @Test
+    void repeatedConstraintContainerBecomesCustom() throws Exception {
+        assertThat(extract("multiPattern")).containsExactly(ConstraintMeta.custom("Pattern.List"));
     }
 }

@@ -60,6 +60,8 @@ public final class ConstraintExtractor {
             else if (annotation instanceof NotNull) { /* feeds required, not a constraint entry */ }
             else if (annotation.annotationType().isAnnotationPresent(Constraint.class)) {
                 result.add(ConstraintMeta.custom(annotation.annotationType().getSimpleName()));
+            } else if (isConstraintContainer(annotation.annotationType())) {
+                result.add(ConstraintMeta.custom(containerName(annotation.annotationType())));
             }
         }
         return result;
@@ -70,5 +72,33 @@ public final class ConstraintExtractor {
         String maxKind = stringLike ? "maxLength" : "maxItems";
         if (min > 0) result.add(ConstraintMeta.of(minKind, min));
         if (max != Integer.MAX_VALUE) result.add(ConstraintMeta.of(maxKind, max));
+    }
+
+    /**
+     * Whether this annotation is a repeatable-constraint container — the jakarta convention where
+     * {@code @Pattern.List} wraps an array of {@code @Pattern}. Reflection surfaces the container as
+     * one annotation, not the constraints inside it, so without this check the wrapped constraints
+     * would leave no trace at all.
+     */
+    private static boolean isConstraintContainer(Class<? extends Annotation> type) {
+        try {
+            Class<?> returnType = type.getMethod("value").getReturnType();
+            return returnType.isArray()
+                    && returnType.getComponentType().isAnnotation()
+                    && returnType.getComponentType().isAnnotationPresent(Constraint.class);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * A readable name for a constraint container. The container is a nested type
+     * ({@code Pattern.List} inside {@code Pattern}), and its bare {@link Class#getSimpleName()}
+     * is just {@code "List"} — ambiguous on its own — so this qualifies it with the enclosing
+     * constraint's simple name to read as {@code "Pattern.List"}.
+     */
+    private static String containerName(Class<? extends Annotation> type) {
+        Class<?> enclosing = type.getEnclosingClass();
+        return enclosing == null ? type.getSimpleName() : enclosing.getSimpleName() + "." + type.getSimpleName();
     }
 }
