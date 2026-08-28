@@ -21,6 +21,9 @@ class TypeRefMapperTest {
 
     enum PlainKind { A, B }
 
+    static class Outer1 { static class Shared { String a; } }
+    static class Outer2 { static class Shared { String b; } }
+
     @SuppressWarnings("unused")
     static class Holder {
         String text;
@@ -89,5 +92,28 @@ class TypeRefMapperTest {
     @Test
     void multipartIsFile() throws Exception {
         assertThat(map("upload")).isEqualTo(TypeRef.file());
+    }
+
+    @Test
+    void duplicateSimpleNamesAreReported() {
+        MetaTypeRegistry reg = new MetaTypeRegistry();
+        reg.register(Outer1.Shared.class);
+        reg.register(Outer2.Shared.class);
+        assertThat(reg.warnings()).hasSize(1);
+        assertThat(reg.warnings().get(0))
+                .contains("Shared")
+                .contains(Outer1.Shared.class.getName())
+                .contains(Outer2.Shared.class.getName());
+        // both classes still queue — the registry keys by Class, not by name
+        assertThat(reg.pendingTypes()).hasSize(2);
+    }
+
+    @Test
+    void registeringTheSameClassTwiceDoesNotWarn() {
+        MetaTypeRegistry reg = new MetaTypeRegistry();
+        reg.register(SiteListDTO.class);
+        reg.register(SiteListDTO.class);
+        assertThat(reg.warnings()).isEmpty();
+        assertThat(reg.pendingTypes()).hasSize(1);
     }
 }
