@@ -1,7 +1,10 @@
 package dev.simplecore.simplix.core.enums;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,10 +18,13 @@ class LabeledEnumSerdeTest {
 
     @Test
     void serializesAsValueLabelObject() throws Exception {
-        String json = mapper.writeValueAsString(TestKind.ACTIVE);
-        // value comes from name(); label resolves via EnumMessageResolver (falls back without bundles)
-        assertThat(json).contains("\"value\":\"ACTIVE\"");
-        assertThat(json).contains("\"label\":");
+        // value comes from name(); label resolves via EnumMessageResolver (falls back without bundles).
+        // The wire contract is exactly these two properties, nothing more.
+        JsonNode node = mapper.readTree(mapper.writeValueAsString(TestKind.ACTIVE));
+        assertThat(node.properties()).extracting(Map.Entry::getKey)
+                .containsExactlyInAnyOrder("value", "label");
+        assertThat(node.get("value").asText()).isEqualTo("ACTIVE");
+        assertThat(node.get("label").asText()).isNotBlank();
     }
 
     @Test
