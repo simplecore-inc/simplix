@@ -37,7 +37,7 @@ public class StreamStatisticsService {
      * @return the statistics
      */
     @Transactional(readOnly = true)
-    public StreamStats getStats() {
+    public GlobalStreamStats getStats() {
         long connectedSessions = sessionRepository.countByState(SessionState.CONNECTED);
         long disconnectedSessions = sessionRepository.countByState(SessionState.DISCONNECTED);
         long activeSubscriptions = subscriptionRepository.countByActiveTrue();
@@ -46,7 +46,7 @@ public class StreamStatisticsService {
         List<ResourceStats> topResources = getTopResources(10);
         List<ServerStats> serverStats = getServerStats();
 
-        return StreamStats.builder()
+        return GlobalStreamStats.builder()
                 .connectedSessions(connectedSessions)
                 .disconnectedSessions(disconnectedSessions)
                 .totalActiveSessions(connectedSessions + disconnectedSessions)
@@ -204,7 +204,7 @@ public class StreamStatisticsService {
      */
     @Data
     @Builder
-    public static class StreamStats {
+    public static class GlobalStreamStats {
         private long connectedSessions;
         private long disconnectedSessions;
         private long totalActiveSessions;
