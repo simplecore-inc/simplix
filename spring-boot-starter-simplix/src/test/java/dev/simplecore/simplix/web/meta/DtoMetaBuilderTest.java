@@ -59,17 +59,30 @@ class DtoMetaBuilderTest {
                 @RequestParam(name = "keyword", required = false) String keyword) { return null; }
     }
 
+    // Plain "Controller" suffix, pinned alongside AreaRestController's "RestController" suffix
+    // to prove the two strips run in the order OperationIdCustomizer uses.
+    @RestController
+    @RequestMapping("/sites")
+    static class SiteController {
+
+        @GetMapping("/{siteId}")
+        public SimpliXApiResponse<AreaListDTO> get(@PathVariable("siteId") String siteId) { return null; }
+    }
+
     private Map<RequestMappingInfo, HandlerMethod> handlerMethods() throws Exception {
-        AreaRestController controller = new AreaRestController();
+        AreaRestController areaController = new AreaRestController();
+        SiteController siteController = new SiteController();
         RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
         config.setPatternParser(new PathPatternParser());
         Map<RequestMappingInfo, HandlerMethod> map = new LinkedHashMap<>();
         map.put(RequestMappingInfo.paths("/areas/{areaId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
-                new HandlerMethod(controller, AreaRestController.class.getMethod("get", String.class)));
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("get", String.class)));
         map.put(RequestMappingInfo.paths("/areas").methods(org.springframework.web.bind.annotation.RequestMethod.POST).options(config).build(),
-                new HandlerMethod(controller, AreaRestController.class.getMethod("create", AreaCreateDTO.class)));
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("create", AreaCreateDTO.class)));
         map.put(RequestMappingInfo.paths("/areas").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
-                new HandlerMethod(controller, AreaRestController.class.getMethod("list", String.class)));
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("list", String.class)));
+        map.put(RequestMappingInfo.paths("/sites/{siteId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
+                new HandlerMethod(siteController, SiteController.class.getMethod("get", String.class)));
         return map;
     }
 
@@ -84,7 +97,7 @@ class DtoMetaBuilderTest {
     @Test
     void operationIdTagAccessAndResponse() throws Exception {
         DtoMeta meta = build(List.of());
-        OperationMeta get = operation(meta, "Area_get");
+        OperationMeta get = operation(meta, "AreaRest_get");
         assertThat(get.method()).isEqualTo("GET");
         assertThat(get.path()).isEqualTo("/areas/{areaId}");
         assertThat(get.tag()).isEqualTo("site.Area");
@@ -95,9 +108,19 @@ class DtoMetaBuilderTest {
     }
 
     @Test
+    void operationIdStripsControllerBeforeRestController() throws Exception {
+        // Pins the strip order against OperationIdCustomizer: "Controller" comes off first, so a
+        // *RestController* keeps its "Rest" while a plain *Controller* loses the whole suffix.
+        // A swapped or single-step strip collapses AreaRest_get back to Area_get and fails this lookup.
+        DtoMeta meta = build(List.of());
+        assertThat(operation(meta, "AreaRest_get").method()).isEqualTo("GET");
+        assertThat(operation(meta, "Site_get").method()).isEqualTo("GET");
+    }
+
+    @Test
     void bodyTypeAndReachableTypesRegister() throws Exception {
         DtoMeta meta = build(List.of());
-        assertThat(operation(meta, "Area_create").request().body()).isEqualTo("AreaCreateDTO");
+        assertThat(operation(meta, "AreaRest_create").request().body()).isEqualTo("AreaCreateDTO");
         assertThat(meta.types()).containsKeys("AreaCreateDTO", "AreaListDTO");
         assertThat(meta.enums().get("AreaKind").labeled()).isTrue();
         assertThat(meta.enums().get("AreaKind").values())
@@ -107,7 +130,7 @@ class DtoMetaBuilderTest {
     @Test
     void queryParamsAndDefaultAccess() throws Exception {
         DtoMeta meta = build(List.of());
-        OperationMeta list = operation(meta, "Area_list");
+        OperationMeta list = operation(meta, "AreaRest_list");
         assertThat(list.request().query()).extracting(p -> p.name()).containsExactly("keyword");
         assertThat(list.access().kind()).isEqualTo("authenticated");
     }
@@ -122,6 +145,6 @@ class DtoMetaBuilderTest {
             }
         };
         DtoMeta meta = build(List.of(contributor));
-        assertThat(meta.extensions()).containsKey("op:Area_get");
+        assertThat(meta.extensions()).containsKey("op:AreaRest_get");
     }
 }

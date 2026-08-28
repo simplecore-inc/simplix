@@ -106,9 +106,12 @@ public class DtoMetaBuilder {
 
     private OperationMeta toOperation(String path, String httpMethod, HandlerMethod handler) {
         Class<?> beanType = handler.getBeanType();
+        // Same order as OperationIdCustomizer: stripping "Controller" first leaves "…Rest" on a
+        // *RestController, which is what the OpenAPI operationId carries. Reversing these two lines
+        // silently desynchronises every id from the published document.
         String controller = beanType.getSimpleName()
-                .replaceFirst("RestController$", "")
-                .replaceFirst("Controller$", "");
+                .replaceFirst("Controller$", "")
+                .replaceFirst("RestController$", "");
         String id = controller + "_" + handler.getMethod().getName();
 
         Tag tag = AnnotatedElementUtils.findMergedAnnotation(beanType, Tag.class);
