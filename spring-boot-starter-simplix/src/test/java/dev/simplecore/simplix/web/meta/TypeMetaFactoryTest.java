@@ -50,6 +50,16 @@ class TypeMetaFactoryTest {
         public void setId(String id) { this.id = id; }
     }
 
+    /** A setter-only property has no field and no getter — {@code getAccessor()} returns null. */
+    static class WriteOnlyDTO {
+        private String name;
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+
+        public void setHidden(String hidden) { /* stored elsewhere, never read back */ }
+    }
+
     static class DetailDTO {
         private long version;             // primitive → required without any annotation
 
@@ -99,6 +109,12 @@ class TypeMetaFactoryTest {
         assertThat(name.required()).isTrue();
         assertThat(name.constraints()).extracting(c -> c.kind())
             .containsExactlyInAnyOrder("notBlank", "maxLength");
+    }
+
+    @Test
+    void writeOnlyPropertyIsSkippedRatherThanThrown() {
+        TypeMeta meta = factory.create(WriteOnlyDTO.class);
+        assertThat(meta.fields()).extracting(FieldMeta::name).containsExactly("name");
     }
 
     @Test

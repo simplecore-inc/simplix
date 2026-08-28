@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.web.meta.model.ConstraintMeta;
@@ -58,7 +59,8 @@ public class TypeMetaFactory {
             Class<?> declaring = backing != null ? backing.getDeclaringClass()
                     : property.getAccessor() != null ? property.getAccessor().getDeclaringClass() : type;
             if (!declaring.equals(type)) continue; // inherited — lives on the parent TypeMeta
-            fields.add(toFieldMeta(property, backing, type));
+            FieldMeta field = toFieldMeta(property, backing, type);
+            if (field != null) fields.add(field);
         }
 
         String extendsType = null;
@@ -77,10 +79,17 @@ public class TypeMetaFactory {
         return new TypeMeta(type.getName(), extendsType, typeParams, description, fields);
     }
 
+    /**
+     * Returns {@code null} when the property cannot be described — e.g. a write-only setter
+     * or a creator parameter never re-exposed through a getter or field, so there is nothing
+     * to read a type from. The caller drops nulls rather than emit a {@link FieldMeta} with no type.
+     */
     private FieldMeta toFieldMeta(BeanPropertyDefinition property, Field backing, Class<?> owner) {
-        ResolvableType resolvable = backing != null
-                ? ResolvableType.forField(backing, owner)
-                : ResolvableType.forMethodReturnType((Method) property.getAccessor().getAnnotated());
+        AnnotatedMember member = property.getAccessor() != null
+                ? property.getAccessor() : property.getPrimaryMember();
+        if (backing == null && member == null) return null;
+
+        ResolvableType resolvable = resolvableType(backing, member, owner);
         TypeRef type = typeRefMapper.map(resolvable);
 
         String description = null;
@@ -120,6 +129,18 @@ public class TypeMetaFactory {
         return new FieldMeta(property.getName(), type, required, nullable,
                 description, labelKey, label,
                 constraints.isEmpty() ? null : constraints, searchable);
+    }
+
+    /**
+     * A backing field resolves generics against the owner class; a getter resolves them against
+     * its own return type. Anything else (an {@link AnnotatedField} reached only through
+     * {@link BeanPropertyDefinition#getPrimaryMember()}, or a constructor parameter) carries no
+     * generic-aware {@link ResolvableType} constructor, so it falls back to the raw type.
+     */
+    private ResolvableType resolvableType(Field backing, AnnotatedMember member, Class<?> owner) {
+        if (backing != null) return ResolvableType.forField(backing, owner);
+        if (member.getAnnotated() instanceof Method method) return ResolvableType.forMethodReturnType(method);
+        return ResolvableType.forClass(member.getRawType());
     }
 
     private Field backingField(BeanPropertyDefinition property) {
