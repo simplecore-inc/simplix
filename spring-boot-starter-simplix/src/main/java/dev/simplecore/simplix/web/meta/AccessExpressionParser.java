@@ -6,9 +6,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Turns the three {@code @PreAuthorize} shapes this convention uses into structured
- * {@link AccessMeta}; anything else travels as a raw expression so the frontend can refuse to
- * guess instead of misreading it as "no permission required".
+ * Turns the three {@code @PreAuthorize} shapes this convention uses —
+ * {@code hasPermission('GROUP','action')} (single-quoted), {@code isAuthenticated()}, and
+ * {@code permitAll()} — into structured {@link AccessMeta}; anything else travels as a raw
+ * expression so the frontend can refuse to guess instead of misreading it as "no permission
+ * required".
  */
 public final class AccessExpressionParser {
 
@@ -18,6 +20,7 @@ public final class AccessExpressionParser {
     private AccessExpressionParser() {}
 
     public static AccessMeta parse(String expression) {
+        // No @PreAuthorize under an authenticated-by-default filter chain → authenticated access.
         if (expression == null || expression.isBlank()) {
             return AccessMeta.authenticated();
         }
