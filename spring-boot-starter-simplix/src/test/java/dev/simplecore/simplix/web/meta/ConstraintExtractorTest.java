@@ -37,6 +37,8 @@ class ConstraintExtractorTest {
         @Unique String serial;
         String plain;
         @Pattern.List({@Pattern(regexp = "^[A-Z]+$"), @Pattern(regexp = ".{3,}")}) String multiPattern;
+        @Size(max = 50) String capped;
+        @Size(min = 2) List<String> atLeastTwo;
     }
 
     private List<ConstraintMeta> extract(String field) throws Exception {
@@ -82,5 +84,11 @@ class ConstraintExtractorTest {
     @Test
     void repeatedConstraintContainerBecomesCustom() throws Exception {
         assertThat(extract("multiPattern")).containsExactly(ConstraintMeta.custom("Pattern.List"));
+    }
+
+    @Test
+    void defaultedBoundsAreOmitted() throws Exception {
+        assertThat(extract("capped")).containsExactly(ConstraintMeta.of("maxLength", 50));
+        assertThat(extract("atLeastTwo")).containsExactly(ConstraintMeta.of("minItems", 2));
     }
 }

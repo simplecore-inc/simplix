@@ -30,7 +30,10 @@ import java.util.List;
  *
  * <p>{@code @NotNull} is deliberately NOT emitted here — it feeds the {@code required} flag.
  * Unknown {@code @Constraint}-meta-annotated annotations become {@code custom} entries, which
- * the generator surfaces as server-only checks instead of silently dropping.
+ * the generator surfaces as server-only checks instead of silently dropping. A repeated
+ * constraint's container (e.g. {@code @Pattern.List}) is likewise reported as {@code custom}
+ * rather than dropped, since reflection surfaces the container as one annotation and never the
+ * constraints wrapped inside it.
  */
 public final class ConstraintExtractor {
 
@@ -45,6 +48,9 @@ public final class ConstraintExtractor {
             else if (annotation instanceof NotEmpty) result.add(ConstraintMeta.of("notEmpty"));
             else if (annotation instanceof Size size) addBounds(result, stringLike, size.min(), size.max());
             else if (annotation instanceof Length length) addBounds(result, true, length.min(), length.max());
+            // @Min/@Max carry long; @DecimalMin/@DecimalMax carry String. Both land on the same
+            // "min"/"max" kind, so the IR's value is a JSON number or a JSON string depending on
+            // which annotation was used, and the zod generator must read the JSON type at runtime.
             else if (annotation instanceof Min min) result.add(ConstraintMeta.of("min", min.value()));
             else if (annotation instanceof Max max) result.add(ConstraintMeta.of("max", max.value()));
             else if (annotation instanceof DecimalMin min) result.add(ConstraintMeta.of("min", min.value()));
@@ -87,6 +93,7 @@ public final class ConstraintExtractor {
                     && returnType.getComponentType().isAnnotation()
                     && returnType.getComponentType().isAnnotationPresent(Constraint.class);
         } catch (NoSuchMethodException e) {
+            // A non-container annotation has no value() method; that is the normal case.
             return false;
         }
     }
