@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * </ol>
  *
  * <p>Consumed by validation error enhancement and by the dev meta endpoint
- * (message-key mode becomes {@code labelKey}, direct mode becomes {@code label} in the IR).
+ * (message-key mode becomes {@code labelKey}, direct mode becomes {@code label} in SimpliX Meta).
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)

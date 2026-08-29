@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Collects DTO classes and enums discovered while mapping types. DTOs queue into a worklist so
  * the builder can process them iteratively — recursion-safe for self-referencing trees. Refuses
- * a duplicate DTO simple name rather than letting one silently overwrite the other — the IR keys
+ * a duplicate DTO simple name rather than letting one silently overwrite the other — SimpliX Meta keys
  * types by simple name, so two distinct classes sharing one would collide downstream.
  */
 public class MetaTypeRegistry {
@@ -20,7 +20,7 @@ public class MetaTypeRegistry {
     private final Map<Class<?>, String> enums = new LinkedHashMap<>();
     private final Map<String, Class<?>> byName = new LinkedHashMap<>();
 
-    /** Registers a DTO class (idempotent) and returns its IR type name. */
+    /** Registers a DTO class (idempotent) and returns its SimpliX Meta type name. */
     public String register(Class<?> type) {
         String name = typeName(type);
         if (seen.add(type)) {
@@ -30,14 +30,14 @@ public class MetaTypeRegistry {
                 throw new IllegalStateException(
                         "Duplicate DTO simple name '" + name + "': "
                         + incumbent.getName() + " and " + type.getName()
-                        + ". The IR keys types by simple name, so one would overwrite the other."
+                        + ". SimpliX Meta keys types by simple name, so one would overwrite the other."
                         + " Rename one of them.");
             }
         }
         return name;
     }
 
-    /** Registers an enum (idempotent) and returns its IR name. */
+    /** Registers an enum (idempotent) and returns its SimpliX Meta name. */
     public String registerEnum(Class<?> enumType) {
         return enums.computeIfAbsent(enumType, MetaTypeRegistry::typeName);
     }

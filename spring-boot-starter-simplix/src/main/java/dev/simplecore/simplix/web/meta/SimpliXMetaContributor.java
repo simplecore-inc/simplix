@@ -6,9 +6,9 @@ import org.springframework.web.method.HandlerMethod;
 import java.util.Map;
 
 /**
- * Extension point for applications to add their own annotation data to the IR.
+ * Extension point for applications to add their own annotation data to SimpliX Meta.
  * Implementations register as Spring beans; whatever they put into {@code extensions} is served
- * under the IR's top-level {@code extensions} object.
+ * under SimpliX Meta's top-level {@code extensions} object.
  */
 public interface SimpliXMetaContributor {
 

@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Maps a {@link ResolvableType} to an IR {@link TypeRef}. Container names are the
+ * Maps a {@link ResolvableType} to a SimpliX Meta {@link TypeRef}. Container names are the
  * JAVA names — the CLI profile owns the TypeScript mapping.
  */
 public class TypeRefMapper {

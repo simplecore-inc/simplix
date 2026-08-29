@@ -28,12 +28,14 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * Assembles the whole IR: walks handler methods for operations, drains the type registry for
+ * Assembles the whole document: walks handler methods for operations, drains the type registry for
  * DTOs, registers enums, and lets contributors extend the result.
  */
 public class DtoMetaBuilder {
@@ -84,12 +86,19 @@ public class DtoMetaBuilder {
         Map<String, EnumMeta> enums = new LinkedHashMap<>();
         registry.enums().forEach((enumClass, name) -> enums.put(name, toEnumMeta(enumClass)));
 
-        return new DtoMeta(1, enums, types, operations,
+        // Handler mappings arrive in hash order, and the type registry is drained in the order
+        // those operations seeded it, so two runs of the same application emit the same document
+        // with its three collections shuffled. A generator reading it then makes a different
+        // choice wherever it has to pick between candidates, and a snapshot diff is noise from
+        // end to end. Sorting here is what makes the document a function of the application.
+        operations.sort(Comparator.comparing(OperationMeta::path).thenComparing(OperationMeta::method));
+
+        return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
                 extensions.isEmpty() ? null : extensions);
     }
 
     /**
-     * The framework's own dev controllers and infrastructure endpoints stay out of the IR.
+     * The framework's own dev controllers and infrastructure endpoints stay out of SimpliX Meta.
      * Matched by class NAME rather than by class literal, because the dev controllers are
      * created in a later task and by package prefix would also exclude this package's own
      * test fixtures.

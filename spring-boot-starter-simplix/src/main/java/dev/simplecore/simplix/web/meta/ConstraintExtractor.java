@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Maps jakarta/hibernate validation annotations to IR constraints.
+ * Maps jakarta/hibernate validation annotations to SimpliX Meta constraints.
  *
  * <p>{@code @NotNull} is deliberately NOT emitted here — it feeds the {@code required} flag.
  * Unknown {@code @Constraint}-meta-annotated annotations become {@code custom} entries, which
@@ -49,7 +49,7 @@ public final class ConstraintExtractor {
             else if (annotation instanceof Size size) addBounds(result, stringLike, size.min(), size.max());
             else if (annotation instanceof Length length) addBounds(result, true, length.min(), length.max());
             // @Min/@Max carry long; @DecimalMin/@DecimalMax carry String. Both land on the same
-            // "min"/"max" kind, so the IR's value is a JSON number or a JSON string depending on
+            // "min"/"max" kind, so SimpliX Meta's value is a JSON number or a JSON string depending on
             // which annotation was used, and the zod generator must read the JSON type at runtime.
             else if (annotation instanceof Min min) result.add(ConstraintMeta.of("min", min.value()));
             else if (annotation instanceof Max max) result.add(ConstraintMeta.of("max", max.value()));

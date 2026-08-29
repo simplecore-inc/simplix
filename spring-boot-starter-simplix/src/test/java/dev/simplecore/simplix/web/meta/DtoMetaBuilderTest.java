@@ -24,6 +24,8 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -69,7 +71,7 @@ class DtoMetaBuilderTest {
                 @RequestBody Set<AreaCreateDTO> dtos) { return null; }
 
         // An upload's form-field name is what a client appends the file under, so it has to reach
-        // the IR; without it the operation says "multipart" and nothing else.
+        // SimpliX Meta; without it the operation says "multipart" and nothing else.
         @PostMapping("/plan")
         public SimpliXApiResponse<AreaListDTO> upload(
                 @RequestParam("file") MultipartFile file) { return null; }
@@ -103,6 +105,16 @@ class DtoMetaBuilderTest {
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("upload", MultipartFile.class)));
         map.put(RequestMappingInfo.paths("/sites/{siteId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
                 new HandlerMethod(siteController, SiteController.class.getMethod("get", String.class)));
+        return map;
+    }
+
+    /** The same mappings, handed over in whatever order the map iterates. */
+    private Map<RequestMappingInfo, HandlerMethod> shuffledHandlerMethods() throws Exception {
+        List<Map.Entry<RequestMappingInfo, HandlerMethod>> entries =
+                new ArrayList<>(handlerMethods().entrySet());
+        Collections.reverse(entries);
+        Map<RequestMappingInfo, HandlerMethod> map = new LinkedHashMap<>();
+        entries.forEach(entry -> map.put(entry.getKey(), entry.getValue()));
         return map;
     }
 
@@ -192,4 +204,22 @@ class DtoMetaBuilderTest {
         DtoMeta meta = build(List.of(contributor));
         assertThat(meta.extensions()).containsKey("op:AreaRest_get");
     }
+
+    @Test
+    void deterministicOrder() throws Exception {
+        // Spring hands these over from a hash map, so the order changes between runs of the same
+        // application. Left unsorted, a generator picking between two candidate DTOs picks a
+        // different one after a restart, and every snapshot diff is noise.
+        DtoMeta first = new DtoMetaBuilder(new ObjectMapper(), List.of()).build(handlerMethods());
+        DtoMeta second = new DtoMetaBuilder(new ObjectMapper(), List.of()).build(shuffledHandlerMethods());
+
+        assertThat(second.operations().stream().map(o -> o.method() + " " + o.path()).toList())
+                .isEqualTo(first.operations().stream().map(o -> o.method() + " " + o.path()).toList());
+        assertThat(List.copyOf(second.types().keySet())).isEqualTo(List.copyOf(first.types().keySet()));
+        assertThat(List.copyOf(second.enums().keySet())).isEqualTo(List.copyOf(first.enums().keySet()));
+
+        ObjectMapper mapper = new ObjectMapper();
+        assertThat(mapper.writeValueAsString(second)).isEqualTo(mapper.writeValueAsString(first));
+    }
+
 }

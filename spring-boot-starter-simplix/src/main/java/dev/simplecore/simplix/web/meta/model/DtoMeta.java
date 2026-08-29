@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 
-/** Root IR document served by {@code GET /dev/meta/dto}. */
+/** Root SimpliX Meta document served by {@code GET /dev/meta/dto}. */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record DtoMeta(
         int version,

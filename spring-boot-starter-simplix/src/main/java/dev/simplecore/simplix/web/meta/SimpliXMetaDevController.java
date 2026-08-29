@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Serves the DTO metadata IR for frontend code generation. Registered only by
+ * Serves the SimpliX Meta document for frontend code generation. Registered only by
  * {@code SimpliXDevMetaAutoConfiguration} — property-gated, never under a production profile.
  * The mapped path sits under the same {@code /dev/**} convention as the i18n dev endpoint, so an
  * application's existing dev-profile permit rule covers it.
