@@ -37,8 +37,8 @@ class SimpliXAutoConfigurationTest {
         assertThat(annotation.basePackages())
                 .contains("dev.simplecore.simplix.web", "dev.simplecore.simplix.springboot");
 
-        // Should have exclude filter for autoconfigure package
-        assertThat(annotation.excludeFilters()).hasSize(1);
+        // Should have exclude filters for the autoconfigure package and the dev endpoints
+        assertThat(annotation.excludeFilters()).hasSize(2);
     }
 
     @Test

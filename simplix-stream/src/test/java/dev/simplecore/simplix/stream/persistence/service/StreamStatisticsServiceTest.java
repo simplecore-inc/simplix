@@ -61,7 +61,7 @@ class StreamStatisticsServiceTest {
             when(subscriptionRepository.getResourceSubscriptionCounts()).thenReturn(List.of());
             when(serverRepository.findActive()).thenReturn(List.of());
 
-            StreamStatisticsService.StreamStats stats = service.getStats();
+            StreamStatisticsService.GlobalStreamStats stats = service.getStats();
 
             assertThat(stats.getConnectedSessions()).isEqualTo(10);
             assertThat(stats.getDisconnectedSessions()).isEqualTo(2);
@@ -86,7 +86,7 @@ class StreamStatisticsServiceTest {
                     ));
             when(serverRepository.findActive()).thenReturn(List.of());
 
-            StreamStatisticsService.StreamStats stats = service.getStats();
+            StreamStatisticsService.GlobalStreamStats stats = service.getStats();
 
             assertThat(stats.getTopResources()).hasSize(2);
             assertThat(stats.getTopResources().get(0).getResource()).isEqualTo("stock");
@@ -114,7 +114,7 @@ class StreamStatisticsServiceTest {
             when(subscriptionRepository.getResourceSubscriptionCounts()).thenReturn(List.of());
             when(serverRepository.findActive()).thenReturn(List.of(server));
 
-            StreamStatisticsService.StreamStats stats = service.getStats();
+            StreamStatisticsService.GlobalStreamStats stats = service.getStats();
 
             assertThat(stats.getServerInstances()).hasSize(1);
             assertThat(stats.getServerInstances().get(0).getInstanceId()).isEqualTo("inst-1");

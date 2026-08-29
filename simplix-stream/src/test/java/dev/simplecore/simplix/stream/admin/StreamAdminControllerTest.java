@@ -137,7 +137,7 @@ class StreamAdminControllerTest {
         void shouldReturn404WhenStatisticsServiceNotAvailable() {
             controller = createController(false, false);
 
-            ResponseEntity<StreamStatisticsService.StreamStats> response = controller.getGlobalStats();
+            ResponseEntity<StreamStatisticsService.GlobalStreamStats> response = controller.getGlobalStats();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
@@ -146,10 +146,10 @@ class StreamAdminControllerTest {
         @DisplayName("should return global stats when service is available")
         void shouldReturnGlobalStatsWhenServiceAvailable() {
             controller = createController(false, true);
-            StreamStatisticsService.StreamStats stats = mock(StreamStatisticsService.StreamStats.class);
+            StreamStatisticsService.GlobalStreamStats stats = mock(StreamStatisticsService.GlobalStreamStats.class);
             when(statisticsService.getStats()).thenReturn(stats);
 
-            ResponseEntity<StreamStatisticsService.StreamStats> response = controller.getGlobalStats();
+            ResponseEntity<StreamStatisticsService.GlobalStreamStats> response = controller.getGlobalStats();
 
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isEqualTo(stats);

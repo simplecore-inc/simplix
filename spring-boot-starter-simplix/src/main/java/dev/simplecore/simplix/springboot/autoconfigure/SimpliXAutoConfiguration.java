@@ -21,10 +21,19 @@ import org.springframework.core.annotation.Order;
 @EnableConfigurationProperties(SimpliXProperties.class)
 @ComponentScan(
         basePackages = {"dev.simplecore.simplix.web", "dev.simplecore.simplix.springboot"},
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.REGEX,
-                pattern = "dev\\.simplecore\\.simplix\\.springboot\\.autoconfigure\\..*"
-        )
+        excludeFilters = {
+                @ComponentScan.Filter(
+                        type = FilterType.REGEX,
+                        pattern = "dev\\.simplecore\\.simplix\\.springboot\\.autoconfigure\\..*"
+                ),
+                // The dev endpoints are registered by their own property-gated
+                // auto-configurations. Scanning them here would create the controllers
+                // without their gated collaborators, so the context could not start.
+                @ComponentScan.Filter(
+                        type = FilterType.REGEX,
+                        pattern = "dev\\.simplecore\\.simplix\\.web\\.(meta|i18n)\\..*"
+                )
+        }
 )
 @Order(0)
 public class SimpliXAutoConfiguration {

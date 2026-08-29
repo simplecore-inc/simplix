@@ -99,7 +99,7 @@ public class StreamAdminController {
      * @return global statistics or 404 if DB persistence not available
      */
     @GetMapping("/stats/global")
-    public ResponseEntity<StreamStatisticsService.StreamStats> getGlobalStats() {
+    public ResponseEntity<StreamStatisticsService.GlobalStreamStats> getGlobalStats() {
         if (statisticsService == null) {
             return ResponseEntity.notFound().build();
         }
