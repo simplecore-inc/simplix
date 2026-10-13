@@ -205,8 +205,8 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(),
                 payload.expiresAt(), payload.gracePeriodDays(),
                 LicenseTestFixture.machineFingerprints(), payload.nonce(), payload.features(),
-                payload.limits(), payload.heartbeatRequired(), payload.heartbeatIntervalDays(),
-                payload.heartbeatToleranceDays(), payload.metadata());
+                payload.limits(), payload.heartbeatRequired(), payload.heartbeatIntervalHours(),
+                payload.heartbeatToleranceHours(), payload.metadata());
     }
 
     private static LicensePayload withSeats(LicensePayload payload, long seats) {
@@ -220,8 +220,8 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(),
                 payload.expiresAt(), payload.gracePeriodDays(), payload.machineFingerprints(),
                 payload.nonce(), payload.features(), limits,
-                payload.heartbeatRequired(), payload.heartbeatIntervalDays(),
-                payload.heartbeatToleranceDays(), payload.metadata());
+                payload.heartbeatRequired(), payload.heartbeatIntervalHours(),
+                payload.heartbeatToleranceHours(), payload.metadata());
     }
 
     private static LicensePayload withFeatures(LicensePayload payload, List<String> features) {
@@ -231,7 +231,7 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(),
                 payload.expiresAt(), payload.gracePeriodDays(), payload.machineFingerprints(),
                 payload.nonce(), features, payload.limits(), payload.heartbeatRequired(),
-                payload.heartbeatIntervalDays(), payload.heartbeatToleranceDays(),
+                payload.heartbeatIntervalHours(), payload.heartbeatToleranceHours(),
                 payload.metadata());
     }
 
@@ -242,7 +242,7 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(), expiresAt,
                 payload.gracePeriodDays(), payload.machineFingerprints(), payload.nonce(),
                 payload.features(), payload.limits(), payload.heartbeatRequired(),
-                payload.heartbeatIntervalDays(), payload.heartbeatToleranceDays(),
+                payload.heartbeatIntervalHours(), payload.heartbeatToleranceHours(),
                 payload.metadata());
     }
 
@@ -253,8 +253,8 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(),
                 payload.expiresAt(), payload.gracePeriodDays(), payload.machineFingerprints(),
                 payload.nonce(), payload.features(), payload.limits(),
-                payload.heartbeatRequired(), payload.heartbeatIntervalDays(),
-                payload.heartbeatToleranceDays(), payload.metadata());
+                payload.heartbeatRequired(), payload.heartbeatIntervalHours(),
+                payload.heartbeatToleranceHours(), payload.metadata());
     }
 
     private static LicensePayload withKeyId(LicensePayload payload, String keyId) {
@@ -264,8 +264,8 @@ class CompromiseCeilingTest {
                 payload.tierLabel(), payload.issuedAt(), payload.activatedAt(),
                 payload.expiresAt(), payload.gracePeriodDays(), payload.machineFingerprints(),
                 payload.nonce(), payload.features(), payload.limits(),
-                payload.heartbeatRequired(), payload.heartbeatIntervalDays(),
-                payload.heartbeatToleranceDays(), payload.metadata());
+                payload.heartbeatRequired(), payload.heartbeatIntervalHours(),
+                payload.heartbeatToleranceHours(), payload.metadata());
     }
 
     /**

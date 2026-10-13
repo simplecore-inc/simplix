@@ -74,12 +74,18 @@ application:
     activation:
       server-url: https://license.example.com
       heartbeat-enabled: true
+      heartbeat-check-interval: 5m
+      heartbeat-retry-interval: 10m
 ```
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
 | `application.license.activation.server-url` | String | 없음 | 라이선스 서버 주소. 비우면 파일·오프라인 등록만 가능 |
 | `application.license.activation.heartbeat-enabled` | boolean | `true` | 하트비트 전송 여부. 라이선스가 하트비트를 요구할 때만 실제로 전송 |
+| `application.license.activation.heartbeat-check-interval` | Duration | `5m` | 하트비트를 보낼 때가 됐는지 확인하는 간격. 기동 후 첫 확인도 이 간격 뒤에 한다. 스케줄러가 속성 문자열을 직접 읽으므로 `5m` · `PT5M`처럼 단위를 붙여 쓴다 |
+| `application.license.activation.heartbeat-retry-interval` | Duration | `10m` | 하트비트가 실패한 뒤 다음 시도까지 기다리는 간격. 서버에 연결하지 못한 경우와 서버가 거절한 경우에 같이 적용한다. 실패 시각은 메모리에만 보관하므로 재기동하면 첫 확인에서 바로 다시 시도한다 |
+
+하트비트 주기는 라이선스 토큰이 시간 단위로 정합니다. 토큰에 주기가 없거나 0이면 1시간으로 둡니다. SDK가 0을 읽는 방식과 같습니다.
 
 애플리케이션이 `ActivationServerDirectory` 빈을 등록하면 그 값이 설정보다 우선합니다. 설치 단계에서 확인한 주소를 그대로 쓰는 경로입니다.
 
@@ -142,6 +148,8 @@ Spring Boot의 완화된 바인딩 규칙이 적용됩니다.
 | `application.license.product-key-prefix` | `APPLICATION_LICENSE_PRODUCTKEYPREFIX` |
 | `application.license.activation.server-url` | `APPLICATION_LICENSE_ACTIVATION_SERVERURL` |
 | `application.license.activation.heartbeat-enabled` | `APPLICATION_LICENSE_ACTIVATION_HEARTBEATENABLED` |
+| `application.license.activation.heartbeat-check-interval` | `APPLICATION_LICENSE_ACTIVATION_HEARTBEATCHECKINTERVAL` |
+| `application.license.activation.heartbeat-retry-interval` | `APPLICATION_LICENSE_ACTIVATION_HEARTBEATRETRYINTERVAL` |
 | `application.license.enforcement.http-filter-enabled` | `APPLICATION_LICENSE_ENFORCEMENT_HTTPFILTERENABLED` |
 
 ---

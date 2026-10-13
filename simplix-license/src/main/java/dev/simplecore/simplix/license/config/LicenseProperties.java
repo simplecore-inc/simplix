@@ -7,6 +7,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.Duration;
+
 /**
  * Type-safe configuration properties for the license system.
  *
@@ -27,6 +29,8 @@ import org.springframework.validation.annotation.Validated;
  *     activation:
  *       server-url: https://license.accesscore.dev
  *       heartbeat-enabled: true
+ *       heartbeat-check-interval: 5m
+ *       heartbeat-retry-interval: 10m
  * }</pre>
  */
 @Getter
@@ -105,5 +109,27 @@ public class LicenseProperties {
 
         /** Whether the deployment sends periodic heartbeats when the license asks for them. */
         private boolean heartbeatEnabled = true;
+
+        /**
+         * How often the deployment checks whether a heartbeat is due; the first check also
+         * waits this long after startup.
+         *
+         * <p>Finer than the shortest interval a license signs (one hour), so a heartbeat goes
+         * out within this much of falling due rather than up to a whole interval late. Read
+         * by the scheduling annotation from the raw property as well, so write it in a form
+         * both read: {@code 5m} or {@code PT5M}.
+         */
+        private Duration heartbeatCheckInterval = Duration.ofMinutes(5);
+
+        /**
+         * How long the deployment waits after a failed heartbeat before trying again, whether
+         * the server was unreachable or refused it.
+         *
+         * <p>Separate from the check interval so that shortening the check does not make a
+         * failing deployment ask the server that much more often. A revoked or ended
+         * installation keeps asking and keeps being refused. The failure time is held in
+         * memory only, so a restart tries again on its first check.
+         */
+        private Duration heartbeatRetryInterval = Duration.ofMinutes(10);
     }
 }
