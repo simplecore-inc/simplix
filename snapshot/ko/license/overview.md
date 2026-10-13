@@ -253,6 +253,8 @@ application:
     activation:
       server-url: https://license.example.com
       heartbeat-enabled: true
+      heartbeat-check-interval: 5m
+      heartbeat-retry-interval: 10m
 
     # 강제 지점
     enforcement:
@@ -270,6 +272,8 @@ application:
 | `product-key-prefix` | String | `ACPS` | 제품 키 접두사 |
 | `activation.server-url` | String | 없음 | 라이선스 서버 주소 |
 | `activation.heartbeat-enabled` | boolean | `true` | 하트비트 전송 여부 |
+| `activation.heartbeat-check-interval` | Duration | `5m` | 하트비트를 보낼 때가 됐는지 확인하는 간격 |
+| `activation.heartbeat-retry-interval` | Duration | `10m` | 하트비트가 실패한 뒤 다시 보내기까지 기다리는 간격 |
 | `enforcement.http-filter-enabled` | boolean | `true` | 요청 필터 등록 여부 |
 
 전체 목록은 [설정 레퍼런스](ko/license/configuration.md)를 참고하세요.

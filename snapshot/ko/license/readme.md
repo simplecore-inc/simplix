@@ -112,6 +112,8 @@ application:
     activation:
       server-url: https://license.example.com
       heartbeat-enabled: true
+      heartbeat-check-interval: 5m
+      heartbeat-retry-interval: 10m
 ```
 
 재검증과 하트비트는 Spring 스케줄링으로 동작하므로 애플리케이션에 `@EnableScheduling`이 필요합니다.
@@ -157,6 +159,8 @@ public class VisitorAnalyticsService {
 | `application.license.product-key-prefix` | `ACPS` | 제품 키 접두사 (체크섬 계산에 포함) |
 | `application.license.activation.server-url` | 없음 | 라이선스 서버 주소, 비우면 파일 등록만 가능 |
 | `application.license.activation.heartbeat-enabled` | `true` | 하트비트 전송 여부 |
+| `application.license.activation.heartbeat-check-interval` | `5m` | 하트비트를 보낼 때가 됐는지 확인하는 간격 |
+| `application.license.activation.heartbeat-retry-interval` | `10m` | 하트비트가 실패한 뒤 다시 보내기까지 기다리는 간격 |
 | `application.license.enforcement.http-filter-enabled` | `true` | 요청 단위 강제 필터 등록 여부 |
 | `api.version.prefix` | `/api/v1` | 필터가 예외 경로를 계산할 때 쓰는 API 접두사 |
 | `simplix.license.setup.token` | 없음 | 설치 마법사의 상태 변경 경로를 여는 부트스트랩 토큰. 비우면 루프백 요청만 허용 (같은 호스트의 프록시 뒤에서는 외부 요청도 루프백으로 보이므로 반드시 설정) |
