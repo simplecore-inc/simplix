@@ -402,6 +402,9 @@ public class LicenseAutoConfiguration {
      * @param properties the license configuration
      * @param objectMapper the mapper the envelope is read with
      * @param directory where the activation server address is kept
+     * @param contactIdentity where the address this deployment answers at is read
+     * @param installationDiscriminator where what tells this installation apart on its host is
+     *        read
      * @param sdk the SDK manager that writes the bodies and reads the answers
      * @return the activation transport
      */
@@ -411,9 +414,10 @@ public class LicenseAutoConfiguration {
             ObjectMapper objectMapper,
             ObjectProvider<ActivationServerDirectory> directory,
             ObjectProvider<ContactIdentity> contactIdentity,
+            ObjectProvider<InstallationDiscriminator> installationDiscriminator,
             dev.accesscore.license.sdk.LicenseManager sdk) {
         return new LicenseActivationClient(properties.getActivation().getServerUrl(),
-                objectMapper, directory, contactIdentity, sdk);
+                objectMapper, directory, contactIdentity, installationDiscriminator, sdk);
     }
 
     /**

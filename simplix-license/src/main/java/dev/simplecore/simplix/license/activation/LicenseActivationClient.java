@@ -9,6 +9,7 @@ import dev.accesscore.license.sdk.protocol.ActivationModel.ActivationOutcome;
 import dev.accesscore.license.sdk.protocol.ActivationModel.PreparedRequest;
 import dev.accesscore.license.sdk.spi.LicenseSpi.ActivationServerDirectory;
 import dev.simplecore.simplix.license.config.ContactIdentity;
+import dev.simplecore.simplix.license.config.InstallationDiscriminator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,6 +35,11 @@ import java.util.Map;
  * and what it guards is a key reaching the wrong installation — a mistake rather than an attack,
  * since whoever holds the key almost certainly knows the address it was sold under. The licence
  * server refuses a claim that names an address its customer record does not carry.
+ *
+ * <p>A second value rides the same way: what tells this installation apart from another on the
+ * same host, sent on the claim and on every refresh. The refresh is the point of it — the value
+ * is meant to be watched for changing, and two copies of one installation refreshing in turn is
+ * what the licence server looks for.
  */
 public class LicenseActivationClient {
 
@@ -45,6 +51,9 @@ public class LicenseActivationClient {
     /** Header the address this deployment answers at is reported under. */
     private static final String CONTACT_HEADER = "X-Activation-Contact";
 
+    /** Header what tells this installation apart on its host is reported under. */
+    private static final String INSTALLATION_HEADER = "X-Activation-Installation";
+
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(20);
 
     /** The status a host reports when it never reached the server at all. */
@@ -55,6 +64,7 @@ public class LicenseActivationClient {
     private final String configuredServerUrl;
     private final ObjectProvider<ActivationServerDirectory> directory;
     private final ObjectProvider<ContactIdentity> contactIdentity;
+    private final ObjectProvider<InstallationDiscriminator> installationDiscriminator;
     private final LicenseManager sdk;
 
     /**
@@ -64,16 +74,20 @@ public class LicenseActivationClient {
      *        licensing works in a context that contributes none
      * @param contactIdentity where the address this deployment answers at is read, absent in an
      *        application that reports none
+     * @param installationDiscriminator where what tells this installation apart on its host is
+     *        read, absent in an application that reports none
      * @param sdk the SDK manager that writes the bodies and reads the answers
      */
     public LicenseActivationClient(String serverUrl, ObjectMapper objectMapper,
                                    ObjectProvider<ActivationServerDirectory> directory,
                                    ObjectProvider<ContactIdentity> contactIdentity,
+                                   ObjectProvider<InstallationDiscriminator> installationDiscriminator,
                                    LicenseManager sdk) {
         this.configuredServerUrl = normalizeServerUrl(serverUrl);
         this.objectMapper = objectMapper;
         this.directory = directory;
         this.contactIdentity = contactIdentity;
+        this.installationDiscriminator = installationDiscriminator;
         this.sdk = sdk;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -201,6 +215,16 @@ public class LicenseActivationClient {
                 builder.header(CONTACT_HEADER, contact);
             }
         }
+        // On the claim and on every refresh, unlike the address above: this value is not one the
+        // deployment may restate but one the licence server watches for changing, so a refresh
+        // that left it out would hide exactly the change it is sent to show.
+        if (operation == ActivationOperation.ACTIVATE
+                || operation == ActivationOperation.HEARTBEAT) {
+            String installation = reportedInstallation();
+            if (installation != null) {
+                builder.header(INSTALLATION_HEADER, installation);
+            }
+        }
 
         HttpResponse<String> response;
         try {
@@ -227,6 +251,18 @@ public class LicenseActivationClient {
         }
         String contact = identity.contactEmail();
         return contact == null || contact.isBlank() ? null : contact.trim();
+    }
+
+    /**
+     * @return what tells this installation apart on its host, or null when it reports none
+     */
+    private String reportedInstallation() {
+        InstallationDiscriminator discriminator = installationDiscriminator.getIfAvailable();
+        if (discriminator == null) {
+            return null;
+        }
+        String value = discriminator.installationDiscriminator();
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     /**
