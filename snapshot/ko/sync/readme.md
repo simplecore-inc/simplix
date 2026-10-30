@@ -166,7 +166,7 @@ public interface InstanceSyncBroadcaster {
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - (Optional) Spring Data Redis - Redis 백엔드 사용 시
 - (Optional) jnats client - NATS 백엔드 사용 시
 

@@ -108,7 +108,7 @@ simplix-core는 Auto-Configuration이 없는 순수 라이브러리 모듈입니
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.x
+- Spring Boot 4.1+
 - Spring Data JPA
 
 ## License

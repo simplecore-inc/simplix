@@ -179,8 +179,8 @@ simplix:
 
 ## Requirements
 
-- Spring Boot 3.x
-- Hibernate 6.x
+- Spring Boot 4.1+
+- Hibernate 7.x
 - Java 17+
 
 ## License

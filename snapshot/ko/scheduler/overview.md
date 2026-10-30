@@ -383,7 +383,7 @@ dependencies {
     api project(':simplix-core')
 
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-aspectj'
 
     // Optional: ShedLock (분산 환경)
     compileOnly 'net.javacrumbs.shedlock:shedlock-spring'

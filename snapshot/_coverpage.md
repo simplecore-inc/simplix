@@ -2,11 +2,11 @@
 
 # SimpliX Framework
 
-![version](https://img.shields.io/badge/version-1.2.5--SNAPSHOT-blue)
+![version](https://img.shields.io/badge/version-2.0.0--SNAPSHOT-blue)
 
 > Modular Spring Boot Starter Library for Enterprise Applications
 
-- Java 17+ / Spring Boot 3.5+
+- Java 17+ / Spring Boot 4.1+
 - JWE Token Authentication & OAuth2
 - Multi-Provider Caching, Email, File Storage
 - Data Encryption with Key Rotation

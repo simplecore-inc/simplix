@@ -104,7 +104,7 @@ public class CustomEgovConfig {
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - eGovFrame 5.0.0 (모듈에 포함)
 
 ## License

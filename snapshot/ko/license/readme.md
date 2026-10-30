@@ -34,7 +34,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // Optional: @RequiresFeature 기능 게이팅
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-aspectj'
 
     // Optional: Health Indicator, 메트릭
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -418,7 +418,7 @@ curl http://localhost:8080/actuator/health/license
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - spring-boot-starter-simplix
 - 라이선스 SDK 저장소 접근 자격 증명
 - (Optional) Spring Data JPA - DB 저장소 사용 시

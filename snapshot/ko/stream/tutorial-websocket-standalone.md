@@ -35,7 +35,7 @@
 ## 사전 요구사항
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - Gradle 또는 Maven
 
 ---
