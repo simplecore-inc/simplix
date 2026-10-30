@@ -397,7 +397,7 @@ SendGrid는 Rate Limit 초과 시 HTTP 429를 반환합니다. SimpliX Email은 
 
 ```gradle
 dependencies {
-    implementation 'com.resend:resend-java:3.x.x'
+    implementation 'com.resend:resend-java:4.x.x'
 }
 ```
 

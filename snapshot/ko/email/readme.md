@@ -23,7 +23,7 @@ dependencies {
     // Optional: Provider별 의존성
     implementation 'software.amazon.awssdk:ses:2.x.x'      // AWS SES
     implementation 'com.sendgrid:sendgrid-java:4.x.x'      // SendGrid
-    implementation 'com.resend:resend-java:3.x.x'          // Resend
+    implementation 'com.resend:resend-java:4.x.x'          // Resend
 }
 ```
 
