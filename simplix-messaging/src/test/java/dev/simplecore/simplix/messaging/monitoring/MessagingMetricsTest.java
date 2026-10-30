@@ -202,6 +202,8 @@ class MessagingMetricsTest {
         void shouldRegisterPendingGauge() {
             AtomicInteger pendingCount = new AtomicInteger(5);
             metrics.registerPendingGauge("orders", "order-service", pendingCount::get);
+            // The supplier is referenced by nothing but the gauge; a collection must not lose it
+            System.gc();
 
             Double gaugeValue = registry.find("simplix.messaging.pending.count")
                     .tag("channel", "orders")
