@@ -62,7 +62,7 @@
 ## 사전 요구사항
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - Database (H2, MySQL, PostgreSQL 등) - 세션/구독 저장
 - Redis 6.0+ (Cluster 또는 Standalone) - 리더 선출 및 브로드캐스트
 - Gradle 또는 Maven
@@ -268,7 +268,7 @@ stream:data:direct:{sessionId} -> 특정 세션 직접 메시지
 
 ## 리더 선출
 
-동일한 리소스를 구독하는 여러 인스턴스가 있을 때, 하나의 인스턴스만 스케줄러를 실행합니다.
+동일한 리소스를 구독하는 여러 인스턴스가 있을 때, 인스턴스 하나만 스케줄러를 실행합니다.
 
 ### 리더 선출 원리
 

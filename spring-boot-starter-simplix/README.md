@@ -243,7 +243,7 @@ spring-boot-starter-simplix (umbrella)
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5.x
+- Spring Boot 4.1.x
 - Spring Data JPA
 
 ## License

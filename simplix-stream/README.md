@@ -665,7 +665,7 @@ CREATE INDEX idx_stream_server_heartbeat ON stream_server_instances(last_heartbe
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - Spring WebFlux (SSE 지원)
 - Spring Security
 - (Optional) Spring WebSocket

@@ -3,7 +3,7 @@
 # SimpliX Framework
 
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-green.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-SCL--1.0-blue.svg)](../../LICENSE)
 
 빠른 엔터프라이즈 애플리케이션 개발을 위한 모듈형 Spring Boot 스타터 라이브러리입니다.
@@ -247,8 +247,8 @@ SimpliX는 엔터프라이즈 보안을 고려하여 설계되었습니다:
 ## 요구 사항
 
 - Java 17+
-- Spring Boot 3.5.x
-- Gradle 8.5+
+- Spring Boot 4.1.x (Spring Boot 3.5.x는 `spring-boot-3x` 브랜치의 1.x 버전)
+- Gradle 8.14+
 
 ## 소스에서 빌드
 

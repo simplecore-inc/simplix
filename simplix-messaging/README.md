@@ -248,7 +248,7 @@ curl http://localhost:8080/actuator/health/messaging
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - (택 1) NATS 2.10+, Redis 6+, Kafka 3.x, RabbitMQ 3.x
 - (Optional) Wire 5.x - Protobuf 자동 직렬화
 - (Optional) Spring Boot Actuator + Micrometer - 모니터링

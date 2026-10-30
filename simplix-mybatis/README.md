@@ -86,7 +86,7 @@ mybatis:
 
 ## Requirements
 
-- Spring Boot 3.x
+- Spring Boot 4.1+
 - Java 17+
 
 ## License

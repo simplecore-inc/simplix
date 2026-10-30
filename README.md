@@ -3,7 +3,7 @@
 # SimpliX Framework
 
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-green.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-SCL--1.0-blue.svg)](LICENSE)
 
 A modular Spring Boot starter library providing common enterprise features for rapid application development.
@@ -221,8 +221,8 @@ SimpliX is built with enterprise security in mind:
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5.x
-- Gradle 8.5+
+- Spring Boot 4.1.x (Spring Boot 3.5.x: the 1.x line on the `spring-boot-3x` branch)
+- Gradle 8.14+
 
 ## Building from Source
 

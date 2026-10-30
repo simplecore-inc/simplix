@@ -165,7 +165,7 @@ public interface SchedulerExecutionLogProvider<T> {
 ## Requirements
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - Spring AOP
 - (Optional) Spring Data JPA - Database 전략 사용 시
 - (Optional) ShedLock - 분산 환경 락 통합 시

@@ -16,7 +16,7 @@ simplix-sync 모듈을 처음 도입할 때 따라할 수 있는 단계별 통�
 ## 전제 조건
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - 분산 모드 사용 시: Redis 6+ 또는 NATS 2.10+
 
 ---

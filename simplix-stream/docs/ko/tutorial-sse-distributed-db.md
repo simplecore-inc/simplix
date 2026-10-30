@@ -60,7 +60,7 @@ DB Admin 모드는 Redis 없이 다중 인스턴스 환경에서 관리 작업�
 ## 사전 요구사항
 
 - Java 17+
-- Spring Boot 3.5+
+- Spring Boot 4.1+
 - JPA 지원 데이터베이스 (MySQL, PostgreSQL 등)
 - Gradle 또는 Maven
 

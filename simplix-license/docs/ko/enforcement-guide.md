@@ -120,7 +120,7 @@ public class SubscriptionService {
 }
 ```
 
-> ℹ 이 설정은 판정을 없애지 않습니다. 판정을 묻는 위치를 요청 필터에서 애플리케이션 코드로 옮길 뿐입니다.
+> ℹ 이 설정을 켜도 판정은 그대로 이루어집니다. 요청 필터 대신 애플리케이션 코드가 판정을 요청합니다.
 
 ---
 
@@ -139,7 +139,7 @@ public class VisitorAnalyticsRestController extends SimpliXBaseController<Visito
 }
 ```
 
-메서드 어노테이션이 클래스 어노테이션보다 우선합니다. 컨트롤러 전체를 하나의 기능으로 묶고, 그중 한 엔드포인트만 다른 기능을 요구하도록 지정할 수 있습니다.
+메서드 어노테이션이 클래스 어노테이션보다 우선합니다. 컨트롤러 전체를 한 기능으로 묶고, 그중 한 엔드포인트만 다른 기능을 요구하도록 지정할 수 있습니다.
 
 ```java
 @RestController
@@ -154,7 +154,7 @@ public class VisitorAnalyticsRestController {
 }
 ```
 
-기능 키는 문자열 리터럴이 아니라 상수로 관리합니다. 리터럴 오타는 조용히 게이트를 여는 방향으로 실패합니다.
+기능 키는 문자열 리터럴 대신 상수로 관리합니다. 리터럴에 오타가 있으면 경고 없이 기능 게이트가 요청을 통과시킵니다.
 
 ```java
 public final class PortalFeatures {
@@ -194,7 +194,7 @@ public class AnalyticsAggregationScheduler {
 }
 ```
 
-`isAllowed()`는 라이선스 부여와 관리자 활성화를 함께 확인합니다. 관리자가 끈 기능의 배치 작업이 계속 도는 일을 막는 지점이 여기입니다.
+`isAllowed()`는 라이선스 부여와 관리자 활성화를 함께 확인합니다. 관리자가 끈 기능의 배치 작업은 이 검사에서 실행을 멈춥니다.
 
 ### 기능 카탈로그 보고
 
@@ -258,8 +258,8 @@ public class ModuleActivationChecker implements FeatureActivationChecker {
 | 라이선스 부여 | 관리자 활성화 | 결과 |
 |-------------|-------------|------|
 | 예 | 예 | 허용 |
-| 예 | 아니오 | `featureNotActive` 거부 |
-| 아니오 | 무관 | `featureNotLicensed` 거부 |
+| 예 | 아니요 | `featureNotActive` 거부 |
+| 아니요 | 무관 | `featureNotLicensed` 거부 |
 
 ---
 
@@ -342,7 +342,7 @@ public class DeviceService extends SimpliXBaseService<Device, String> {
 
 ## 감사 기록
 
-`AuditRecorder`를 등록하면 라이선스 관련 사건이 애플리케이션의 감사 체계로 들어갑니다.
+`AuditRecorder`를 등록하면 라이선스 관련 사건을 애플리케이션의 감사 기록에 남깁니다.
 
 ```java
 @Component
@@ -411,7 +411,7 @@ SDK 1.1.0부터 토큰의 하트비트 주기와 허용 오차가 시간 단위�
 
 증상: `@RequiresFeature`가 붙었는데 라이선스가 없어도 호출됩니다.
 
-원인: Spring AOP가 클래스패스에 없거나, 프록시를 거치지 않는 자기 호출(self-invocation)입니다. `spring-boot-starter-aop`를 추가하고, 같은 빈 내부에서 직접 호출하는 대신 `FeatureAccess`를 호출합니다.
+원인: Spring AOP가 클래스패스에 없거나, 프록시를 거치지 않는 자기 호출(self-invocation)입니다. `spring-boot-starter-aspectj`를 추가하고, 같은 빈 내부에서 직접 호출하는 대신 `FeatureAccess`를 호출합니다.
 
 ### 상한이 강제되지 않습니다
 
@@ -435,7 +435,7 @@ SDK 1.1.0부터 토큰의 하트비트 주기와 허용 오차가 시간 단위�
 
 원인: 토큰을 서명한 키가 이 빌드의 검증 키 목록에서 유출로 표시되어 있고, 토큰이 고정된 천장보다 많은 것을 요구합니다. 기능·수량 한도·만료·릴리스 상한 중 하나라도 올라가면 토큰 전체가 거절됩니다.
 
-기동 로그에 거절된 토큰의 키 이름이 남습니다. 현재 서명 키를 담은 릴리스로 올린 뒤 그 키로 발급된 토큰을 등록하면 풀립니다. 유출 키로 서명된 토큰을 다시 발급받아도 결과는 같습니다.
+기동 로그에 거절된 토큰의 키 이름이 남습니다. 현재 서명 키를 담은 릴리스로 올린 뒤 그 키로 발급된 토큰을 등록하면 정상으로 등록됩니다. 유출 키로 서명된 토큰을 다시 발급받아도 결과는 같습니다.
 
 아무것도 등록되지 않은 배포본은 천장이 "보유한 것 없음"으로 고정되므로, 유출 키로 서명된 토큰으로는 어떤 것도 등록할 수 없습니다.
 

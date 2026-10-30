@@ -16,7 +16,7 @@
 
 ## 사전 요구사항
 
-- Spring Boot 3.x
+- Spring Boot 4.x
 - simplix-auth 모듈
 - simplix-encryption 모듈
 - 데이터베이스 (JPA 사용 시 Hibernate 지원 DB)
