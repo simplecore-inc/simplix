@@ -8,6 +8,12 @@ package dev.simplecore.simplix.excel.impl.exporter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.poi.ss.usermodel.ClientAnchor;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.CreationHelper;
+import org.apache.poi.ss.usermodel.Drawing;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -117,10 +124,58 @@ class JxlsExporterImplTest {
         assertTrue(outputStream.toByteArray().length > 0);
     }
     
+    @Test
+    void fillsEachRowAndParameterIntoTheTemplate() throws IOException {
+        File commandTemplate = tempDir.resolve("command-template.xlsx").toFile();
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Data");
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("${title}");
+            Row row = sheet.createRow(1);
+            row.createCell(0).setCellValue("${user.name}");
+            row.createCell(1).setCellValue("${user.email}");
+            addComment(workbook, sheet, 0, 0, "jx:area(lastCell=\"B2\")");
+            addComment(workbook, sheet, 1, 0, "jx:each(items=\"items\" var=\"user\" lastCell=\"B2\")");
+            try (FileOutputStream fos = new FileOutputStream(commandTemplate)) {
+                workbook.write(fos);
+            }
+        }
+
+        List<TestUser> users = Arrays.asList(
+            new TestUser(1L, "John Doe", "user1@example.com", LocalDate.of(2023, 1, 15)),
+            new TestUser(2L, "Jane Smith", "user2@example.com", LocalDate.of(2023, 2, 20))
+        );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        new JxlsExporterImpl<>(TestUser.class)
+                .template(commandTemplate.getAbsolutePath())
+                .parameter("title", "Users")
+                .export(users, outputStream);
+
+        try (Workbook result = new XSSFWorkbook(new ByteArrayInputStream(outputStream.toByteArray()))) {
+            Sheet sheet = result.getSheet("Data");
+            assertEquals("Users", sheet.getRow(0).getCell(0).getStringCellValue());
+            assertEquals("John Doe", sheet.getRow(1).getCell(0).getStringCellValue());
+            assertEquals("user1@example.com", sheet.getRow(1).getCell(1).getStringCellValue());
+            assertEquals("Jane Smith", sheet.getRow(2).getCell(0).getStringCellValue());
+            assertEquals("user2@example.com", sheet.getRow(2).getCell(1).getStringCellValue());
+        }
+    }
+
+    private static void addComment(Workbook workbook, Sheet sheet, int rowIndex, int columnIndex, String text) {
+        CreationHelper helper = workbook.getCreationHelper();
+        Drawing<?> drawing = sheet.createDrawingPatriarch();
+        ClientAnchor anchor = helper.createClientAnchor();
+        anchor.setRow1(rowIndex);
+        anchor.setCol1(columnIndex);
+        Comment comment = drawing.createCellComment(anchor);
+        comment.setString(helper.createRichTextString(text));
+        sheet.getRow(rowIndex).getCell(columnIndex).setCellComment(comment);
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    static class TestUser {
+    public static class TestUser {
         private Long id;
         private String name;
         private String email;
