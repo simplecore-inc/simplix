@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.messaging.monitoring;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
@@ -174,10 +175,12 @@ public class MessagingMetrics {
         if (registry == null) {
             return;
         }
-        registry.gauge(METRIC_PENDING_COUNT,
-                Tags.of(TAG_CHANNEL, channel, TAG_GROUP, group),
-                supplier,
-                s -> s.get().doubleValue());
+        // A strong reference: the registry otherwise holds the supplier weakly, and a supplier
+        // nothing else references is collected, after which the gauge reads NaN.
+        Gauge.builder(METRIC_PENDING_COUNT, supplier, s -> s.get().doubleValue())
+                .tags(Tags.of(TAG_CHANNEL, channel, TAG_GROUP, group))
+                .strongReference(true)
+                .register(registry);
         log.debug("Registered pending count gauge for channel='{}' group='{}'", channel, group);
     }
 
