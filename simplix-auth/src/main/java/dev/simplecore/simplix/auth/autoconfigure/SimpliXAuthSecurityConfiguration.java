@@ -3,6 +3,7 @@ package dev.simplecore.simplix.auth.autoconfigure;
 import dev.simplecore.simplix.auth.properties.SimpliXAuthProperties;
 import dev.simplecore.simplix.auth.security.SimpliXAccessDeniedHandler;
 import dev.simplecore.simplix.auth.security.SimpliXAuthenticationEntryPoint;
+import dev.simplecore.simplix.auth.security.SimpliXCorsConfigurations;
 import dev.simplecore.simplix.auth.security.SimpliXTokenAuthenticationFilter;
 import dev.simplecore.simplix.auth.security.SimpliXUserDetailsService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -32,9 +33,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
@@ -268,51 +267,7 @@ public class SimpliXAuthSecurityConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "simplix.auth.security", name = "enable-cors", havingValue = "true", matchIfMissing = true)
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        configuration.applyPermitDefaultValues();
-        
-        // Origin patterns take precedence over exact origins
-        // Patterns support wildcards (e.g., "https://*.example.com", "*")
-        // and work with allowCredentials=true (unlike allowedOrigins=["*"])
-        String[] allowedOriginPatterns = properties.getCors().getAllowedOriginPatterns();
-        if (allowedOriginPatterns != null && allowedOriginPatterns.length > 0) {
-            configuration.setAllowedOriginPatterns(Arrays.asList(allowedOriginPatterns));
-        } else {
-            String[] allowedOrigins = properties.getCors().getAllowedOrigins();
-            if (allowedOrigins != null && allowedOrigins.length > 0) {
-                configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-            }
-        }
-        
-        String[] allowedMethods = properties.getCors().getAllowedMethods();
-        if (allowedMethods != null && allowedMethods.length > 0) {
-            configuration.setAllowedMethods(Arrays.asList(allowedMethods));
-        }
-        
-        String[] allowedHeaders = properties.getCors().getAllowedHeaders();
-        if (allowedHeaders != null && allowedHeaders.length > 0) {
-            configuration.setAllowedHeaders(Arrays.asList(allowedHeaders));
-        }
-        
-        String[] exposedHeaders = properties.getCors().getExposedHeaders();
-        if (exposedHeaders != null && exposedHeaders.length > 0) {
-            configuration.setExposedHeaders(Arrays.asList(exposedHeaders));
-        }
-        
-        Boolean allowCredentials = properties.getCors().getAllowCredentials();
-        if (allowCredentials != null) {
-            configuration.setAllowCredentials(allowCredentials);
-        }
-        
-        Long maxAge = properties.getCors().getMaxAge();
-        if (maxAge != null) {
-            configuration.setMaxAge(maxAge);
-        }
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+        return SimpliXCorsConfigurations.source(properties.getCors());
     }
 
     @Bean

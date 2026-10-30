@@ -2,6 +2,8 @@ package dev.simplecore.simplix.auth.properties;
 
 import dev.simplecore.simplix.auth.oauth2.properties.SimpliXOAuth2Properties;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -16,6 +18,43 @@ public class SimpliXAuthProperties {
     private Security security = new Security();
     private CorsProperties cors = new CorsProperties();
     private SimpliXOAuth2Properties oauth2 = new SimpliXOAuth2Properties();
+    private ResourceServer resourceServer = new ResourceServer();
+
+    /**
+     * Resource-server mode: the application issues no tokens of its own and accepts bearer JWTs
+     * signed by one or more external OpenID Connect issuers. When enabled, the token endpoints,
+     * the form login chain and the JWE token filter are expected to be switched off
+     * ({@code security.enable-token-endpoints=false}, {@code security.enable-web-security=false}).
+     */
+    @Getter
+    @Setter
+    public static class ResourceServer {
+        private boolean enabled = false;
+        /** Request patterns the bearer-token chain secures. */
+        private String[] pathPatterns = new String[]{"/api/**"};
+        /** The issuers whose tokens are accepted; a token from any other issuer is refused. */
+        private List<TrustedIssuer> issuers = new ArrayList<>();
+    }
+
+    /**
+     * One issuer the resource server trusts.
+     */
+    @Getter
+    @Setter
+    public static class TrustedIssuer {
+        /** A short name the application uses to tell issuers apart, such as a realm name. */
+        private String name;
+        /** The {@code iss} value tokens from this issuer carry, matched exactly. */
+        private String issuerUri;
+        /**
+         * Where the signing keys are fetched. Optional; when empty the keys are found through the
+         * issuer's discovery document. Set it when the server reaches the issuer at a different
+         * address from the one in {@code iss}, such as an internal container host.
+         */
+        private String jwkSetUri;
+        /** Accepted {@code aud} values; a token must name at least one. Empty accepts any audience. */
+        private List<String> audiences = new ArrayList<>();
+    }
 
     @Getter
     @Setter
