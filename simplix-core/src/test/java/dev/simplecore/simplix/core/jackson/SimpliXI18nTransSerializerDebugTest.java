@@ -39,7 +39,7 @@ class SimpliXI18nTransSerializerDebugTest {
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-        // Note: Hibernate6Module is registered in production via SimpliXJacksonAutoConfiguration
+        // Note: Hibernate7Module is registered in production via SimpliXJacksonAutoConfiguration
         // For this test, we test without it to verify the serializer works independently
 
         originalLocale = LocaleContextHolder.getLocale();
