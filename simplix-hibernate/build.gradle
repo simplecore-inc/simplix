@@ -39,25 +39,25 @@ dependencies {
     implementation 'org.hibernate.orm:hibernate-jcache'
 
     // Default cache provider - Ehcache
-    implementation 'org.ehcache:ehcache:3.10.8'
-    implementation 'javax.cache:cache-api:1.1.1'
+    implementation 'org.ehcache:ehcache'
+    implementation 'javax.cache:cache-api'
 
     // Distributed cache providers (optional)
     compileOnly 'org.springframework.boot:spring-boot-starter-data-redis'
-    compileOnly 'org.redisson:redisson-hibernate-6:3.25.0'
+    compileOnly "org.redisson:redisson-hibernate-7:${redissonVersion}"
 
     // Hazelcast support (optional)
-    compileOnly 'com.hazelcast:hazelcast:5.3.6'
-    compileOnly 'com.hazelcast:hazelcast-spring:5.3.6'
+    compileOnly 'com.hazelcast:hazelcast'
+    compileOnly 'com.hazelcast:hazelcast-spring'
 
     // Infinispan support (optional)
-    compileOnly 'org.infinispan:infinispan-core:15.0.0.Dev07'
-    compileOnly 'org.infinispan:infinispan-spring-boot3-starter-embedded:14.0.21.Final'
-    compileOnly 'org.infinispan:infinispan-commons:15.0.0.Dev07'
+    compileOnly 'org.infinispan:infinispan-core'
+    compileOnly 'org.infinispan:infinispan-spring-boot4-starter-embedded'
+    compileOnly 'org.infinispan:infinispan-commons'
 
     // Utilities
-    implementation 'org.apache.commons:commons-lang3:3.18.0'
-    implementation 'com.google.guava:guava:32.1.3-jre'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'com.google.guava:guava'
 
     // Logging
     implementation 'org.slf4j:slf4j-api'

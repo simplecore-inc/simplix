@@ -32,11 +32,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
 
     // Spring Cloud Vault for production key management
-    compileOnly 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
+    compileOnly "org.springframework.cloud:spring-cloud-starter-vault-config:${springCloudVaultVersion}"
+
+    // ManagedKeyProvider reads its key store with Jackson 2
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     // ShedLock for distributed locking in key rotation
-    compileOnly 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
-    compileOnly 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0'
+    compileOnly "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
+    compileOnly "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${shedlockVersion}"
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'
@@ -47,8 +50,8 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
-    testImplementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
+    testImplementation "org.springframework.cloud:spring-cloud-starter-vault-config:${springCloudVaultVersion}"
+    testImplementation "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
 }
 
 bootJar {

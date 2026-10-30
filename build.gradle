@@ -32,39 +32,38 @@ ext {
     // ============================================================
     // Excel & Document Processing
     // ============================================================
-    poiVersion = '5.2.4'
-    jxlsVersion = '2.14.0'
-    jxlsJexcelVersion = '1.0.9'
-    commonsCsvVersion = '1.10.0'
+    poiVersion = '6.0.0'
+    jxlsVersion = '3.2.0'
+    commonsCsvVersion = '1.14.1'
 
     // ============================================================
     // Event & Messaging
     // ============================================================
-    jnatsVersion = '2.16.14'
+    jnatsVersion = '2.26.4'
 
     // ============================================================
     // Utilities
     // ============================================================
-    modelMapperVersion = '3.2.0'
-    guavaVersion = '31.1-jre'
+    modelMapperVersion = '3.2.8'
+    guavaVersion = '33.7.2-jre'
     jsr305Version = '3.0.2'
     uuidCreatorVersion = '6.1.1'
-    javaparserVersion = '3.25.4'
+    javaparserVersion = '3.28.2'
 
     // ============================================================
     // Testing
     // ============================================================
-    datafakerVersion = '2.0.2'
+    datafakerVersion = '2.7.0'
 
     // ============================================================
     // API Documentation
     // ============================================================
-    scalarVersion = '0.3.11'
+    scalarVersion = '0.4.4'
 
     // ============================================================
     // File Processing
     // ============================================================
-    webpImageIoVersion = '0.8.0'
+    webpImageIoVersion = '0.11.0'
 
     // ============================================================
     // Licensing
@@ -77,10 +76,16 @@ ext {
     // ============================================================
     // Email Providers
     // ============================================================
-    awsSdkVersion = '2.29.26'
+    awsSdkVersion = '2.57.7'
     sendGridVersion = '4.10.3'
-    resendVersion = '3.1.0'
-    greenMailVersion = '2.0.1'
+    resendVersion = '4.29.0'
+    greenMailVersion = '2.1.15'
+    nimbusJoseVersion = '10.10'
+    owaspHtmlSanitizerVersion = '20261011.1'
+    springCloudVaultVersion = '5.0.3'
+    shedlockVersion = '7.10.1'
+    redissonVersion = '4.8.0'
+    wireVersion = '7.1.2'
 }
 
 allprojects {
@@ -98,7 +103,7 @@ subprojects {
     apply plugin: 'jacoco'
 
     jacoco {
-        toolVersion = '0.8.12'
+        toolVersion = '0.8.16'
     }
 
     jacocoTestReport {
@@ -137,7 +142,6 @@ subprojects {
             dependency "org.apache.poi:poi-ooxml:${poiVersion}"
             dependency "org.jxls:jxls:${jxlsVersion}"
             dependency "org.jxls:jxls-poi:${jxlsVersion}"
-            dependency "org.jxls:jxls-jexcel:${jxlsJexcelVersion}"
             dependency "org.apache.commons:commons-csv:${commonsCsvVersion}"
 
             // Java Parser (not managed by Spring Boot BOM)

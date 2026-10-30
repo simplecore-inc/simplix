@@ -28,7 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-json'
-    implementation 'org.hibernate.validator:hibernate-validator:8.0.2.Final'
+    implementation 'org.hibernate.validator:hibernate-validator'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.modelmapper:modelmapper'
     implementation 'com.github.f4b6a3:uuid-creator'
@@ -38,14 +38,14 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api'
 
     // Security Support - OWASP HTML Sanitizer for XSS prevention
-    implementation 'com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1'
+    implementation "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:${owaspHtmlSanitizerVersion}"
 
     // Optional: Spring Cloud Vault for production key management
-    compileOnly 'org.springframework.cloud:spring-cloud-starter-vault-config:4.1.0'
+    compileOnly "org.springframework.cloud:spring-cloud-starter-vault-config:${springCloudVaultVersion}"
 
     // Optional: ShedLock for distributed locking in key rotation
-    compileOnly 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
-    compileOnly 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0'
+    compileOnly "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
+    compileOnly "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${shedlockVersion}"
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

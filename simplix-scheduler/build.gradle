@@ -32,8 +32,8 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // ShedLock integration (optional)
-    compileOnly 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
-    compileOnly 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.0'
+    compileOnly "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
+    compileOnly "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:${shedlockVersion}"
 
     // JPA (optional - for database strategy)
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -58,7 +58,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     testImplementation 'com.h2database:h2'
-    testImplementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.0'
+    testImplementation "net.javacrumbs.shedlock:shedlock-spring:${shedlockVersion}"
 
     // Lombok for tests
     testCompileOnly 'org.projectlombok:lombok'

@@ -10,7 +10,6 @@ java {
 }
 
 ext {
-    set('nimbusJoseVersion', '9.37')
 }
 
 sourceSets {
@@ -37,7 +36,6 @@ dependencies {
     api 'org.apache.poi:poi-ooxml'
     api 'org.jxls:jxls'
     api 'org.jxls:jxls-poi'
-    implementation 'org.jxls:jxls-jexcel'
     
     // CSV
     implementation 'org.apache.commons:commons-csv'

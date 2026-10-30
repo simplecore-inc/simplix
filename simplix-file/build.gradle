@@ -30,7 +30,7 @@ dependencies {
     implementation 'org.springframework:spring-web'
 
     // AWS S3 SDK (for MinIO, RustFS, AWS S3 compatible storage)
-    implementation platform('software.amazon.awssdk:bom:2.29.26')
+    implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
     implementation 'software.amazon.awssdk:s3'
 
     // WebP support for ImageIO (with Apple Silicon arm64 support)

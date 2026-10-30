@@ -8,8 +8,7 @@ package dev.simplecore.simplix.excel.impl.exporter;
 import dev.simplecore.simplix.excel.api.JxlsExporter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.jxls.common.Context;
-import org.jxls.util.JxlsHelper;
+import org.jxls.transform.poi.JxlsPoiTemplateFillerBuilder;
 
 import java.io.*;
 import java.time.Instant;
@@ -206,17 +205,15 @@ public class JxlsExporterImpl<T> extends AbstractExporter<T> implements JxlsExpo
      * Process JXLS template
      */
     private void processTemplate(InputStream templateStream, Collection<?> items, OutputStream outputStream) throws IOException {
-        Context context = new Context();
-        context.putVar("items", items);
+        Map<String, Object> data = new HashMap<>(parameters);
+        data.put("items", items);
 
-        // Add all parameters to context
-        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-            context.putVar(entry.getKey(), entry.getValue());
+        JxlsPoiTemplateFillerBuilder builder = JxlsPoiTemplateFillerBuilder.newInstance()
+            .withTemplate(templateStream);
+        if (enableFormulaProcessor) {
+            builder.withFastFormulaProcessor();
         }
-
-        JxlsHelper.getInstance()
-            .setUseFastFormulaProcessor(enableFormulaProcessor)
-            .processTemplate(templateStream, outputStream, context);
+        builder.buildAndFill(data, () -> outputStream);
     }
     
     @Override

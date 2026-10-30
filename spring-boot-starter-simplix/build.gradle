@@ -12,7 +12,6 @@ java {
 }
 
 ext {
-    set('nimbusJoseVersion', '9.37')
 }
 
 sourceSets {
