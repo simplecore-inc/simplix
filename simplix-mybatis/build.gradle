@@ -10,7 +10,6 @@ java {
 }
 
 ext {
-    set('springBootVersion', '3.5.7')
     set('nimbusJoseVersion', '9.37')
 }
 

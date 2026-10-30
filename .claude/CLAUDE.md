@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-SimpliX is a modular Spring Boot starter library that provides common enterprise features. It's built as a multi-module Gradle project with Spring Boot 3.5.7 and Java 17.
+SimpliX is a modular Spring Boot starter library that provides common enterprise features. It's built as a multi-module Gradle project with Spring Boot 3.5.16 and Java 17.
 
 ## License
 
@@ -123,7 +123,7 @@ Combines application and library message sources with proper locale fallback han
 
 ### Dependency Management
 Uses Spring Boot BOM for managed dependencies. Additional versions are defined in root `build.gradle`:
-- Spring Boot: 3.5.7
+- Spring Boot: 3.5.16
 - SpringDoc OpenAPI: 2.7.0
 - Apache POI: 5.2.4
 - ModelMapper: 3.2.0

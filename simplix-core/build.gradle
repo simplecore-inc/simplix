@@ -9,10 +9,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-ext {
-    set('springBootVersion', '3.5.7')
-}
-
 sourceSets {
     main {
         java {
