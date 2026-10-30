@@ -3,9 +3,9 @@ package dev.simplecore.simplix.license.health;
 import dev.simplecore.simplix.license.model.LicenseState;
 import dev.accesscore.license.sdk.model.LicenseModel.LicensePayload;
 import dev.accesscore.license.sdk.model.LicenseStatus;
-import org.springframework.boot.actuate.health.AbstractHealthIndicator;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.Status;
+import org.springframework.boot.health.contributor.AbstractHealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.Status;
 
 /**
  * Actuator health indicator that reports license status.

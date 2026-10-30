@@ -44,7 +44,7 @@ dependencies {
     implementation 'org.springframework:spring-webmvc'
 
     compileOnly 'org.springframework.boot:spring-boot-starter-web'
-    compileOnly 'org.springframework.boot:spring-boot-starter-aop'
+    compileOnly 'org.springframework.boot:spring-boot-starter-aspectj'
     compileOnly 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.springframework.boot:spring-boot-starter-security'
     compileOnly 'jakarta.servlet:jakarta.servlet-api'

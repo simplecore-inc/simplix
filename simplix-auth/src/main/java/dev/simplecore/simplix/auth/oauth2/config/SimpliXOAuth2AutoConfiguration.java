@@ -14,7 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
+import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
 
@@ -32,8 +32,8 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.cli
  * OAuth2 authentication. This interface handles user lookup, creation, and
  * social account management.</p>
  */
-@AutoConfiguration(afterName = "org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration")
-@AutoConfigureAfter(JpaRepositoriesAutoConfiguration.class)
+@AutoConfiguration(afterName = "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration")
+@AutoConfigureAfter(DataJpaRepositoriesAutoConfiguration.class)
 @ConditionalOnProperty(
         prefix = "simplix.auth.oauth2",
         name = "enabled",

@@ -299,8 +299,7 @@ class SimpliXExceptionHandlerTest {
             when(messageSource.getMessage(eq("error.resource.not.found"), isNull(),
                     eq("Resource not found"), any(Locale.class))).thenReturn("Not found");
 
-            NoResourceFoundException ex = new NoResourceFoundException(
-                    HttpMethod.GET, "/missing");
+            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing", "/missing");
 
             SimpliXApiResponse<Object> response = handler.handleNoResourceFoundException(ex, request);
 

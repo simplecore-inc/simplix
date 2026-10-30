@@ -211,7 +211,7 @@ public class MessagingAutoConfiguration {
      * Activated when Spring Boot Actuator is on the classpath.
      */
     @Configuration
-    @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+    @ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
     @Slf4j
     static class HealthIndicatorConfiguration {
 

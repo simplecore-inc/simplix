@@ -3,7 +3,7 @@ package dev.simplecore.simplix.auth.oauth2.config;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties;
+import org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientProperties;
 import org.springframework.core.Ordered;
 
 import static org.assertj.core.api.Assertions.assertThat;

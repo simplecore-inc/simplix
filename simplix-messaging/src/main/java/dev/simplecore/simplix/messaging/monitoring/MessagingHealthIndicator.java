@@ -3,8 +3,8 @@ package dev.simplecore.simplix.messaging.monitoring;
 import dev.simplecore.simplix.messaging.broker.BrokerCapabilities;
 import dev.simplecore.simplix.messaging.broker.BrokerStrategy;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 
 /**
  * Spring Boot Actuator health indicator for the messaging broker.

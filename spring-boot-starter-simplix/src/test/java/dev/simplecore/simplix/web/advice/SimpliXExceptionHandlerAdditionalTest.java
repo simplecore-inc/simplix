@@ -244,7 +244,7 @@ class SimpliXExceptionHandlerAdditionalTest {
             when(messageSource.getMessage(eq("error.resource.not.found"), isNull(), anyString(), any(Locale.class)))
                     .thenReturn("Resource not found");
 
-            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/nonexistent");
+            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/nonexistent", "/nonexistent");
 
             SimpliXApiResponse<Object> result = handler.handleNoResourceFoundException(ex, request);
 

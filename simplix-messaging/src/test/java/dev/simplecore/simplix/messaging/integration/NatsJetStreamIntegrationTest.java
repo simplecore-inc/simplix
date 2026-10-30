@@ -12,8 +12,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
@@ -37,9 +35,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RequiresNats
 class NatsJetStreamIntegrationTest {
 
-    @SpringBootApplication(exclude = {
-            DataSourceAutoConfiguration.class,
-            HibernateJpaAutoConfiguration.class,
+    @SpringBootApplication(excludeName = {
+            // Named rather than referenced: Spring Boot ships these in modules this test
+            // classpath need not carry.
+            "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
+            "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
+    }, exclude = {
             // Contributes a bean taking an EntityManager with no guard for JPA being
             // absent, which a broker test running without a database cannot satisfy.
             SearchableJpaConfiguration.class

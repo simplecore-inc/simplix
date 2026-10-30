@@ -4,8 +4,8 @@ import dev.simplecore.simplix.stream.config.StreamProperties;
 import dev.simplecore.simplix.stream.core.broadcast.BroadcastService;
 import dev.simplecore.simplix.stream.core.scheduler.SchedulerManager;
 import dev.simplecore.simplix.stream.core.session.SessionRegistry;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 
 /**
  * Health indicator for stream module.

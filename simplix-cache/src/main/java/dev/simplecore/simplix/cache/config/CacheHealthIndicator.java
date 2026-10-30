@@ -1,8 +1,8 @@
 package dev.simplecore.simplix.cache.config;
 
 import dev.simplecore.simplix.cache.strategy.CacheStrategy;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 
 /**
  * Cache Health Indicator

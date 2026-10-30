@@ -4,6 +4,7 @@ import dev.simplecore.simplix.springboot.properties.SimpliXProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
@@ -18,7 +19,7 @@ import org.springframework.core.annotation.Order;
  * like {@code @AutoConfiguration(before = ...)} to be ignored for the component-scanned instance.
  */
 @AutoConfiguration
-@EnableConfigurationProperties(SimpliXProperties.class)
+@EnableConfigurationProperties({SimpliXProperties.class, WebProperties.class})
 @ComponentScan(
         basePackages = {"dev.simplecore.simplix.web", "dev.simplecore.simplix.springboot"},
         excludeFilters = {

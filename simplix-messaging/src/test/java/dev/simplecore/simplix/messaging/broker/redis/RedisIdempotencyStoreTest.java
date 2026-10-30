@@ -20,7 +20,7 @@ class RedisIdempotencyStoreTest {
         StringRedisTemplate tpl = mock(StringRedisTemplate.class);
         ValueOperations<String, String> ops = mock(ValueOperations.class);
         when(tpl.opsForValue()).thenReturn(ops);
-        when(ops.setIfAbsent(any(), eq("1"), any())).thenReturn(true).thenReturn(false);
+        when(ops.setIfAbsent(any(), eq("1"), any(Duration.class))).thenReturn(true).thenReturn(false);
 
         RedisIdempotencyStore s = new RedisIdempotencyStore(tpl, Duration.ofMinutes(1));
         assertThat(s.tryAcquire("ch", "g", "m1")).isTrue();

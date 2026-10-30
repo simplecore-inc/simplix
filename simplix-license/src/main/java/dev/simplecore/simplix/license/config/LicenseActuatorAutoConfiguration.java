@@ -4,7 +4,7 @@ import dev.simplecore.simplix.license.health.LicenseHealthIndicator;
 import dev.simplecore.simplix.license.health.LicenseMetrics;
 import dev.simplecore.simplix.license.model.LicenseState;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

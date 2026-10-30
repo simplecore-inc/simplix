@@ -15,8 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.web.ErrorProperties;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.autoconfigure.web.WebProperties;
+import org.springframework.boot.webmvc.error.ErrorAttributes;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -47,7 +47,7 @@ class SimpliXErrorControllerTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private ServerProperties serverProperties;
+    private WebProperties webProperties;
 
     @Mock
     private MessageSource messageSource;
@@ -63,7 +63,7 @@ class SimpliXErrorControllerTest {
     @BeforeEach
     void setUp() {
         controller = new SimpliXErrorController(
-                errorAttributes, exceptionHandler, objectMapper, serverProperties, messageSource);
+                errorAttributes, exceptionHandler, objectMapper, webProperties, messageSource);
         MDC.clear();
         // handleErrorJson now reads ERROR_REQUEST_URI unconditionally (for logging the real
         // originating path instead of the "/error" forward target), so every test's request
@@ -116,7 +116,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.NEVER);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -138,7 +138,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.ALWAYS);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -157,7 +157,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.ON_PARAM);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -175,7 +175,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.ON_PARAM);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -215,7 +215,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.NEVER);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -234,7 +234,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.NEVER);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 
@@ -255,7 +255,7 @@ class SimpliXErrorControllerTest {
 
             ErrorProperties errorProperties = new ErrorProperties();
             errorProperties.setIncludeStacktrace(ErrorProperties.IncludeAttribute.NEVER);
-            when(serverProperties.getError()).thenReturn(errorProperties);
+            when(webProperties.getError()).thenReturn(errorProperties);
 
             ModelAndView mav = controller.handleErrorHtml(request, response);
 

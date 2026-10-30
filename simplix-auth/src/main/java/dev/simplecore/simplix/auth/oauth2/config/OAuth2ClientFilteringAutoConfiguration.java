@@ -20,7 +20,7 @@ import org.springframework.security.config.annotation.web.configurers.oauth2.cli
  * @see OAuth2ClientFilteringBeanPostProcessor
  */
 @AutoConfiguration(
-        beforeName = "org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration"
+        beforeName = "org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration"
 )
 @ConditionalOnClass(OAuth2LoginConfigurer.class)
 public class OAuth2ClientFilteringAutoConfiguration {

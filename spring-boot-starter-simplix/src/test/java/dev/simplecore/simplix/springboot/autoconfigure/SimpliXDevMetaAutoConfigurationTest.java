@@ -6,9 +6,8 @@ import dev.simplecore.simplix.web.advice.SimpliXExceptionHandler;
 import dev.simplecore.simplix.web.meta.SimpliXMetaDevController;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
-import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.webmvc.error.ErrorAttributes;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -66,7 +65,6 @@ class SimpliXDevMetaAutoConfigurationTest {
     @Configuration
     static class UmbrellaStubs {
         @Bean MessageSource messageSource() { return mock(MessageSource.class); }
-        @Bean ServerProperties serverProperties() { return mock(ServerProperties.class); }
         @Bean ErrorAttributes errorAttributes() { return mock(ErrorAttributes.class); }
         @Primary
         @Bean SimpliXExceptionHandler<SimpliXApiResponse<Object>> simpliXExceptionHandler(

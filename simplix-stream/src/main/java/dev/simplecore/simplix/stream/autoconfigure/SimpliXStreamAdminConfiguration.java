@@ -12,7 +12,7 @@ import dev.simplecore.simplix.stream.monitoring.StreamMetrics;
 import dev.simplecore.simplix.stream.persistence.service.StreamStatisticsService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -71,7 +71,7 @@ public class SimpliXStreamAdminConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(name = "streamHealthIndicator")
-    @ConditionalOnClass(name = "org.springframework.boot.actuate.health.HealthIndicator")
+    @ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
     public HealthIndicator streamHealthIndicator(
             SessionRegistry sessionRegistry,
             SchedulerManager schedulerManager,

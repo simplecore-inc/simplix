@@ -9,9 +9,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.boot.autoconfigure.web.ServerProperties;
-import org.springframework.boot.autoconfigure.web.servlet.error.AbstractErrorController;
-import org.springframework.boot.web.servlet.error.ErrorAttributes;
+import org.springframework.boot.autoconfigure.web.WebProperties;
+import org.springframework.boot.webmvc.autoconfigure.error.AbstractErrorController;
+import org.springframework.boot.webmvc.error.ErrorAttributes;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -31,27 +31,27 @@ import java.util.List;
 import java.util.Set;
 
 @Controller
-@RequestMapping("${server.error.path:/error}")
+@RequestMapping("${spring.web.error.path:/error}")
 public class SimpliXErrorController extends AbstractErrorController {
 
     private static final Logger log = LoggerFactory.getLogger(SimpliXErrorController.class);
 
     private final SimpliXExceptionHandler<SimpliXApiResponse<Object>> exceptionHandler;
     private final ObjectMapper objectMapper;
-    private final ServerProperties serverProperties;
+    private final WebProperties webProperties;
     private final MessageSource messageSource;
 
     public SimpliXErrorController(
         ErrorAttributes errorAttributes,
         SimpliXExceptionHandler<SimpliXApiResponse<Object>> exceptionHandler,
         ObjectMapper objectMapper,
-        ServerProperties serverProperties,
+        WebProperties webProperties,
         MessageSource messageSource
     ) {
         super(errorAttributes);
         this.exceptionHandler = exceptionHandler;
         this.objectMapper = objectMapper;
-        this.serverProperties = serverProperties;
+        this.webProperties = webProperties;
         this.messageSource = messageSource;
     }
 
@@ -122,7 +122,7 @@ public class SimpliXErrorController extends AbstractErrorController {
     }
 
     private boolean isIncludeStackTrace(HttpServletRequest request) {
-        switch (serverProperties.getError().getIncludeStacktrace()) {
+        switch (webProperties.getError().getIncludeStacktrace()) {
             case ALWAYS:
                 return true;
             case ON_PARAM:

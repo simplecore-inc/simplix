@@ -305,7 +305,7 @@ class ExceptionHandlerMessageResolutionTest {
         @DisplayName("EN locale: resolves English message from simplix_core")
         void enLocale() {
             LocaleContextHolder.setLocale(Locale.ENGLISH);
-            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing");
+            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing", "/missing");
 
             SimpliXApiResponse<Object> response = handler.handleNoResourceFoundException(ex, request);
 
@@ -318,7 +318,7 @@ class ExceptionHandlerMessageResolutionTest {
         @DisplayName("KO locale: resolves Korean message from simplix_core_ko")
         void koLocale() {
             LocaleContextHolder.setLocale(Locale.KOREAN);
-            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing");
+            NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "/missing", "/missing");
 
             SimpliXApiResponse<Object> response = handler.handleNoResourceFoundException(ex, request);
 

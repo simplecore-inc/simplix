@@ -2,8 +2,8 @@ package dev.simplecore.simplix.auth.health;
 
 import dev.simplecore.simplix.auth.service.TokenBlacklistService;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

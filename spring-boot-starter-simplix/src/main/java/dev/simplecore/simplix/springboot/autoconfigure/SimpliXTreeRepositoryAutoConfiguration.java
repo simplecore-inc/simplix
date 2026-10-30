@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -91,7 +91,7 @@ import java.lang.annotation.*;
  * </ul>
  */
 @Configuration
-@AutoConfiguration(after = JpaRepositoriesAutoConfiguration.class)
+@AutoConfiguration(after = DataJpaRepositoriesAutoConfiguration.class)
 @ConditionalOnClass({SimpliXRepositoryFactoryBean.class, SimpliXTreeRepository.class, TreeEntity.class})
 @ConditionalOnProperty(prefix = "simplix.tree-repository", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SimpliXTreeRepositoryAutoConfiguration {
