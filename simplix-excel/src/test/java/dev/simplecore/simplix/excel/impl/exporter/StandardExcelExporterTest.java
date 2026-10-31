@@ -19,10 +19,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -784,6 +789,30 @@ class StandardExcelExporterTest {
         private String nullValue;
     }
     
+    @Test
+    void xlsxNamesTheNormalCellStyle() throws IOException {
+        List<TestUser> users = List.of(new TestUser(1L, "John Doe", "user1@example.com", LocalDate.of(2023, 1, 15)));
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        new StandardExcelExporter<>(TestUser.class).export(users, outputStream);
+
+        String styles = null;
+        Path file = Files.createTempFile("standard-export", ".xlsx");
+        try {
+            Files.write(file, outputStream.toByteArray());
+            try (ZipFile zip = new ZipFile(file.toFile())) {
+                ZipEntry entry = zip.getEntry("xl/styles.xml");
+                if (entry != null) {
+                    styles = new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
+                }
+            }
+        } finally {
+            Files.deleteIfExists(file);
+        }
+        assertNotNull(styles, "styles part");
+        assertTrue(styles.contains("<cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/>"));
+        assertTrue(styles.indexOf("<cellStyles") > styles.indexOf("</cellXfs>"));
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

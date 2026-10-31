@@ -5,6 +5,7 @@
  */
 package dev.simplecore.simplix.excel.template;
 
+import dev.simplecore.simplix.excel.style.DefaultCellStyle;
 import dev.simplecore.simplix.core.util.UuidUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -144,6 +145,7 @@ public final class ExcelTemplateManager {
             
             // Save template
             try (OutputStream os = new FileOutputStream(outputPath)) {
+                DefaultCellStyle.ensure(workbook);
                 workbook.write(os);
             }
             

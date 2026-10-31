@@ -5,6 +5,7 @@
  */
 package dev.simplecore.simplix.excel.template;
 
+import dev.simplecore.simplix.excel.style.DefaultCellStyle;
 import dev.simplecore.simplix.core.util.UuidUtils;
 import lombok.Builder;
 import lombok.Getter;
@@ -140,6 +141,7 @@ public class ExcelTemplateGenerator {
             headerCell.setCellComment(comment);
             
             // Save file
+            DefaultCellStyle.ensure(workbook);
             workbook.write(outputStream);
             log.info("Default Excel template generated successfully");
         }
@@ -211,6 +213,7 @@ public class ExcelTemplateGenerator {
             addTemplateComments(workbook, sheet);
             
             // Save workbook
+            DefaultCellStyle.ensure(workbook);
             workbook.write(outputStream);
             log.debug("Generated Excel template with options: {}", options);
         }
