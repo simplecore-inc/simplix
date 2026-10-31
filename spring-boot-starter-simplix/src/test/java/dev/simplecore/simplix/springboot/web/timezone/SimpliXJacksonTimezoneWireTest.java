@@ -34,11 +34,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Wire-level acceptance test proving that per-request {@code X-Timezone} timezone
  * display reaches the MVC message converter built by
- * {@link SimpliXJacksonAutoConfiguration#configureMessageConverters(List)}, and that
+ * {@link SimpliXJacksonAutoConfiguration#extendMessageConverters(List)}, and that
  * {@code LocalDate}/{@code LocalTime} serialize per the REST contract.
  *
  * <p>Assertions parse the raw HTTP response body (not an injected {@code ObjectMapper}),
- * so they exercise the exact converter MVC uses — the {@code configureMessageConverters}
+ * so they exercise the exact converter MVC uses — the {@code extendMessageConverters}
  * fresh-instance path.
  */
 @DisplayName("SimpliXJacksonTimezoneWireTest - X-Timezone reaches the MVC mapper")
@@ -59,7 +59,7 @@ class SimpliXJacksonTimezoneWireTest {
                 new SimpliXTimezoneWebAutoConfiguration(ZoneId.of(APP_ZONE));
 
         List<HttpMessageConverter<?>> converters = new ArrayList<>();
-        jacksonConfig.configureMessageConverters(converters);
+        jacksonConfig.extendMessageConverters(converters);
 
         mockMvc = MockMvcBuilders.standaloneSetup(new WireController())
                 .setMessageConverters(converters.toArray(new HttpMessageConverter[0]))
