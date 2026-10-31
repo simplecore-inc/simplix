@@ -221,13 +221,13 @@ class EntityContractMetaTest {
     @Test
     void entityPublishesTheFieldItIsNamedBy() throws Exception {
         // gradeCode is declared first and is a plain string, so a guess would pick it
-        assertThat(build().entities().get("Grade").nameField()).isEqualTo("gradeName");
+        assertThat(build().entities().get("Grade").nameFields()).containsExactly("gradeName");
     }
 
     @Test
     void entityThatMarksNoNameFieldOmitsIt() throws Exception {
-        assertThat(build().entities().get("Member").nameField()).isNull();
-        assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Member"))).doesNotContain("nameField");
+        assertThat(build().entities().get("Member").nameFields()).isNull();
+        assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Member"))).doesNotContain("nameFields");
     }
 
     @Test

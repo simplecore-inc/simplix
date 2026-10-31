@@ -111,22 +111,27 @@ final class EntityReferences {
     }
 
     /**
-     * The field marked {@link NameField}, or {@code null} when the entity names none. Two marks in
-     * one hierarchy leave a client with two answers to one question, so they are refused rather
-     * than resolved by field order.
+     * The fields marked {@link NameField}, ordered by {@link NameField#order()}, or {@code null} when
+     * the entity names none. Two marks with the same order leave a client two answers for one
+     * position, so they are refused rather than resolved by field order.
      */
-    static String nameFieldOf(Class<?> entity) {
-        List<String> named = new ArrayList<>();
+    static List<String> nameFieldsOf(Class<?> entity) {
+        Map<Integer, List<String>> byOrder = new TreeMap<>();
         for (Class<?> c = entity; c != null && c != Object.class; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {
-                if (field.isAnnotationPresent(NameField.class)) named.add(field.getName());
+                NameField mark = field.getAnnotation(NameField.class);
+                if (mark != null) byOrder.computeIfAbsent(mark.order(), k -> new ArrayList<>()).add(field.getName());
             }
         }
-        if (named.size() > 1) {
-            throw new IllegalStateException(entity.getName() + " marks more than one field with @NameField: "
-                    + String.join(", ", named));
+        List<String> named = new ArrayList<>();
+        for (Map.Entry<Integer, List<String>> position : byOrder.entrySet()) {
+            if (position.getValue().size() > 1) {
+                throw new IllegalStateException(entity.getName() + " marks more than one field with @NameField(order = "
+                        + position.getKey() + "): " + String.join(", ", position.getValue()));
+            }
+            named.add(position.getValue().get(0));
         }
-        return named.isEmpty() ? null : named.get(0);
+        return named.isEmpty() ? null : List.copyOf(named);
     }
 
     private static boolean isToOne(Field field) {

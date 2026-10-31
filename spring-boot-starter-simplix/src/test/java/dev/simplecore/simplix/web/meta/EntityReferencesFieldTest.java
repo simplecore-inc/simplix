@@ -47,24 +47,45 @@ class EntityReferencesFieldTest {
         @NameField String doubledName;
     }
 
+    static class Composite {
+        @Id String compositeId;
+        @NameField(order = 1) String compositeVersion;
+        @NameField String compositeName;
+    }
+
+    static class Extended extends Base {
+        @Id String extendedId;
+        @NameField(order = 1) String extendedPart;
+    }
+
     @Test
     void nameFieldIsTheMarkedFieldWhateverComesFirst() {
-        assertThat(EntityReferences.nameFieldOf(Titled.class)).isEqualTo("titledName");
+        assertThat(EntityReferences.nameFieldsOf(Titled.class)).containsExactly("titledName");
     }
 
     @Test
     void nameFieldIsFoundOnASuperclass() {
-        assertThat(EntityReferences.nameFieldOf(Inherited.class)).isEqualTo("baseName");
+        assertThat(EntityReferences.nameFieldsOf(Inherited.class)).containsExactly("baseName");
     }
 
     @Test
     void nameFieldIsAbsentWhereNothingIsMarked() {
-        assertThat(EntityReferences.nameFieldOf(Voice.class)).isNull();
+        assertThat(EntityReferences.nameFieldsOf(Voice.class)).isNull();
     }
 
     @Test
-    void twoMarksInOneHierarchyAreRefusedNamingBothFields() {
-        assertThatThrownBy(() -> EntityReferences.nameFieldOf(Doubled.class))
+    void nameFieldsFollowTheirOrderNotTheirDeclaration() {
+        assertThat(EntityReferences.nameFieldsOf(Composite.class)).containsExactly("compositeName", "compositeVersion");
+    }
+
+    @Test
+    void nameFieldsJoinASuperclassMarkInOrder() {
+        assertThat(EntityReferences.nameFieldsOf(Extended.class)).containsExactly("baseName", "extendedPart");
+    }
+
+    @Test
+    void twoMarksWithOneOrderAreRefusedNamingBothFields() {
+        assertThatThrownBy(() -> EntityReferences.nameFieldsOf(Doubled.class))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("doubledName")
                 .hasMessageContaining("baseName");
