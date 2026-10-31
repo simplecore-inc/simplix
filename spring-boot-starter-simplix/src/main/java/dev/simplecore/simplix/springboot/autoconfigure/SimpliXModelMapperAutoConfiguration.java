@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.springboot.autoconfigure;
 
+import dev.simplecore.simplix.web.mapping.CreateRequestNullSkipCondition;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
@@ -53,6 +54,9 @@ public class SimpliXModelMapperAutoConfiguration {
         
         // Configure Map <-> LinkedHashMap conversion
         configureMapConverters(mapper);
+
+        // A field a create request leaves out keeps the entity's own default
+        CreateRequestNullSkipCondition.install(mapper);
 
         log.info("Configured ModelMapper with timezone-aware datetime conversion");
         return mapper;
