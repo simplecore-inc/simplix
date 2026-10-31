@@ -41,8 +41,8 @@ public final class TrustedIssuerAuthenticationManagers {
         }
         Map<String, AuthenticationManager> managers = new LinkedHashMap<>();
         for (TrustedIssuer issuer : issuers) {
-            if (!StringUtils.hasText(issuer.getIssuerUri())) {
-                throw new IllegalStateException("A trusted issuer is missing its issuer-uri");
+            if (!StringUtils.hasText(issuer.getName()) || !StringUtils.hasText(issuer.getIssuerUri())) {
+                throw new IllegalStateException("Every trusted issuer needs a name and an issuer-uri");
             }
             if (managers.containsKey(issuer.getIssuerUri())) {
                 throw new IllegalStateException("Trusted issuer listed twice: " + issuer.getIssuerUri());

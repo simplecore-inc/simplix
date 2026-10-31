@@ -136,6 +136,14 @@ class TrustedIssuerAuthenticationManagersTest {
     }
 
     @Test
+    void refusesToStartWithAnUnnamedIssuer() {
+        TrustedIssuer unnamed = issuer(null, USERS);
+        assertThatThrownBy(() -> TrustedIssuerAuthenticationManagers.resolver(List.of(unnamed), (jwt, issuer) -> null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("name");
+    }
+
+    @Test
     void refusesToStartWithoutATrustedIssuer() {
         assertThatThrownBy(() -> TrustedIssuerAuthenticationManagers.resolver(List.of(), (jwt, issuer) -> null))
                 .isInstanceOf(IllegalStateException.class);
