@@ -9,6 +9,7 @@ import dev.simplecore.simplix.excel.annotation.ExcelColumn;
 import dev.simplecore.simplix.excel.api.ExcelExporter;
 import dev.simplecore.simplix.excel.exception.ExcelExportException;
 import dev.simplecore.simplix.excel.i18n.ExcelLabels;
+import dev.simplecore.simplix.excel.style.DefaultCellStyle;
 import dev.simplecore.simplix.excel.style.ExcelStyleManager;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -199,6 +200,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             }
             
             // Save file
+            DefaultCellStyle.ensure(workbook);
             workbook.write(outputStream);
             
             // Clean up temporary files
@@ -258,6 +260,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             }
             
             // Save file
+            DefaultCellStyle.ensure(workbook);
             workbook.write(outputStream);
             
             // Clean up temporary files
@@ -341,6 +344,7 @@ public class StandardExcelExporter<T> extends AbstractExporter<T> implements Exc
             }
             
             // Save file
+            DefaultCellStyle.ensure(workbook);
             workbook.write(outputStream);
             
             // Clean up temporary files

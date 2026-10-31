@@ -20,9 +20,13 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -116,5 +120,28 @@ class SearchExportTest {
                     .containsEntry("size", String.valueOf(PAGE_SIZE))
                     .doesNotContainKey("format");
         }
+    }
+
+    @Test
+    void xlsxNamesTheNormalCellStyle() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        export().write(listParams(), ExportFormat.XLSX, response);
+
+        String styles = null;
+        Path file = Files.createTempFile("search-export", ".xlsx");
+        try {
+            Files.write(file, response.getContentAsByteArray());
+            try (ZipFile zip = new ZipFile(file.toFile())) {
+                ZipEntry entry = zip.getEntry("xl/styles.xml");
+                if (entry != null) {
+                    styles = new String(zip.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
+                }
+            }
+        } finally {
+            Files.deleteIfExists(file);
+        }
+        assertThat(styles).as("styles part").isNotNull();
+        assertThat(styles).contains("<cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/>");
+        assertThat(styles.indexOf("<cellStyles")).isGreaterThan(styles.indexOf("</cellXfs>"));
     }
 }

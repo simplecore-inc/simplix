@@ -5,6 +5,7 @@
  */
 package dev.simplecore.simplix.excel.template;
 
+import dev.simplecore.simplix.excel.style.DefaultCellStyle;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -29,6 +30,7 @@ public class DefaultTemplateInitializer {
             try (Workbook workbook = new XSSFWorkbook()) {
                 workbook.createSheet("Data");
                 try (FileOutputStream fos = new FileOutputStream(templateFile)) {
+                    DefaultCellStyle.ensure(workbook);
                     workbook.write(fos);
                 }
                 log.info("Default template created at: {}", templateFile.getAbsolutePath());
