@@ -21,6 +21,8 @@ audit:
 
 | 영어 | 한국어 | 금지 표기 | 비고 |
 | ---- | ------ | --------- | ---- |
+| SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** - a package, a config file or a skill name written in lowercase (`simplix-react`). This row looks only for the Hangul transliteration |
+| compromise ceiling | 허용 상한 | 천장 | the limit a token signed by a compromised key may not exceed (`CompromiseCeiling`) |
 
 등재 예시(위 표에 이런 행을 추가한다):
 
