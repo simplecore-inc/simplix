@@ -48,7 +48,8 @@ final class EntityReferences {
         References declared = field.getAnnotation(References.class);
         if (declared != null) {
             Class<?> target = declared.value();
-            return new ReferenceMeta(target.getSimpleName(), idFieldOf(target),
+            String matched = declared.field().isEmpty() ? idFieldOf(target) : declared.field();
+            return new ReferenceMeta(target.getSimpleName(), matched,
                     Collection.class.isAssignableFrom(field.getType()));
         }
 

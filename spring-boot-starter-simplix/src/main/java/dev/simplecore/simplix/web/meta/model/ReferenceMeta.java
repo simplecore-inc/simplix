@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * The entity a DTO field points at. {@code entity} is the target's simple name (a key of
- * {@link DtoMeta#entities()}), {@code idField} the target's identifier property, and {@code many}
+ * {@link DtoMeta#entities()}), {@code idField} the target's property the value matches (its
+ * identifier, unless {@code @References(field)} names another), and {@code many}
  * whether the field carries a collection of identifiers.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
