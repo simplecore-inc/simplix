@@ -53,6 +53,7 @@ public enum ErrorCode {
     BIZ_RESOURCE_LOCKED("BIZ_RESOURCE_LOCKED", "Resource is locked", HttpStatus.LOCKED, ErrorCategory.BUSINESS),
     BIZ_INVALID_STATE("BIZ_INVALID_STATE", "Invalid state transition", HttpStatus.UNPROCESSABLE_ENTITY, ErrorCategory.BUSINESS),
     BIZ_QUOTA_EXCEEDED("BIZ_QUOTA_EXCEEDED", "Quota exceeded", HttpStatus.TOO_MANY_REQUESTS, ErrorCategory.BUSINESS),
+    BIZ_PAYMENT_REQUIRED("BIZ_PAYMENT_REQUIRED", "Payment required", HttpStatus.PAYMENT_REQUIRED, ErrorCategory.BUSINESS),
     
     // Database errors (DB_) - 500
     DB_DATABASE_ERROR("DB_DATABASE_ERROR", "Database error", HttpStatus.INTERNAL_SERVER_ERROR, ErrorCategory.DATABASE),

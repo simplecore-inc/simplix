@@ -2,6 +2,8 @@ package dev.simplecore.simplix.web.advice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.exception.ErrorCode;
+import dev.simplecore.simplix.core.exception.RetryAfterHint;
+import dev.simplecore.simplix.core.i18n.EntityMessageResolver;
 import dev.simplecore.simplix.core.exception.SimpliXGeneralException;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +15,7 @@ import org.slf4j.MDC;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -120,7 +123,7 @@ public class SimpliXExceptionHandler<T> {
         T errorResponse = responseFactory.createErrorResponse(
                 ex.getStatusCode(),
                 ex.getErrorCode() != null ? ex.getErrorCode().getCode() : ErrorCode.GEN_INTERNAL_SERVER_ERROR.getCode(),
-                ex.getMessage(),
+                resolveMessage(ex.getMessage()),
                 ex.getDetail(),
                 request.getRequestURI()
         );
@@ -131,6 +134,9 @@ public class SimpliXExceptionHandler<T> {
                 RequestContextHolder.currentRequestAttributes()).getResponse();
             if (response != null) {
                 response.setStatus(ex.getStatusCode().value());
+                if (ex instanceof RetryAfterHint hint && hint.retryAfterSeconds() > 0) {
+                    response.setHeader(HttpHeaders.RETRY_AFTER, Integer.toString(hint.retryAfterSeconds()));
+                }
                 
                 // Add trace ID to response header from MDC
                 String traceId = MDC.get("traceId");
@@ -292,6 +298,29 @@ public class SimpliXExceptionHandler<T> {
         return originalMessage;
     }
 
+
+    /**
+     * Resolves a message thrown as a {@code {key}} placeholder to the request locale's text, from the
+     * entity label bundles and then the application's message source. A plain message, or a key
+     * neither declares, is returned unchanged.
+     *
+     * @param message the exception's message
+     * @return the text the response carries
+     */
+    protected String resolveMessage(String message) {
+        if (message == null || message.length() < 3
+                || message.charAt(0) != '{' || message.charAt(message.length() - 1) != '}') {
+            return message;
+        }
+        String key = message.substring(1, message.length() - 1);
+        Locale locale = LocaleContextHolder.getLocale();
+        String fromEntities = EntityMessageResolver.resolveMessage(key, locale);
+        if (fromEntities != null && !fromEntities.equals(key)) {
+            return fromEntities;
+        }
+        String fromSource = messageSource.getMessage(key, null, null, locale);
+        return fromSource != null && !fromSource.equals(key) ? fromSource : message;
+    }
 
     /**
      * Get localized message with fallback to English default
