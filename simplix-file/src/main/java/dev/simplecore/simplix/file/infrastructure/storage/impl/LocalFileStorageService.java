@@ -22,6 +22,8 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
@@ -80,6 +82,8 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public StoredFileInfo store(InputStream inputStream, String originalName, String mimeType, String directory) {
+        // Created before anything is written, so a platform without SHA-256 leaves no file behind
+        MessageDigest digest = newSha256Digest();
         try {
             // Generate unique filename
             String extension = StoredFileInfo.extractExtension(originalName);
@@ -94,11 +98,17 @@ public class LocalFileStorageService implements FileStorageService {
             Path targetPath = targetDir.resolve(storedName);
             String storedPath = fullDirectory + "/" + storedName;
 
-            // Copy file and calculate checksum
-            byte[] fileBytes = inputStream.readAllBytes();
-            String checksum = calculateChecksum(fileBytes);
-
-            Files.write(targetPath, fileBytes);
+            // Stream the upload to disk and hash it on the way, so memory holds one copy buffer
+            // however large the file is. The caller owns the stream, so the wrapper is not closed.
+            long size;
+            try {
+                size = Files.copy(
+                    new DigestInputStream(inputStream, digest), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException | RuntimeException e) {
+                discardPartialFile(targetPath);
+                throw e;
+            }
+            String checksum = HexFormat.of().formatHex(digest.digest());
 
             log.debug("Stored file: {} -> {}", originalName, storedPath);
 
@@ -107,7 +117,7 @@ public class LocalFileStorageService implements FileStorageService {
                 storedName,
                 storedPath,
                 mimeType,
-                (long) fileBytes.length,
+                size,
                 extension,
                 checksum
             );
@@ -288,11 +298,20 @@ public class LocalFileStorageService implements FileStorageService {
         return width + "x" + height + "/" + storedPath;
     }
 
-    private String calculateChecksum(byte[] data) {
+    /**
+     * Remove a file whose upload failed part way, so a failed store leaves nothing readable behind.
+     */
+    private void discardPartialFile(Path path) {
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(data);
-            return HexFormat.of().formatHex(hash);
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.warn("Failed to remove partially stored file: {}", path, e);
+        }
+    }
+
+    private MessageDigest newSha256Digest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new StorageException(
                 StorageException.StorageErrorCode.CHECKSUM_CALCULATION_FAILED,

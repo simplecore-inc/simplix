@@ -20,8 +20,12 @@ import org.springframework.core.io.Resource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -215,6 +219,75 @@ class LocalFileStorageServiceTest {
                 .isInstanceOf(StorageException.class)
                 .satisfies(ex -> assertThat(((StorageException) ex).getErrorCode())
                     .isEqualTo(StorageException.StorageErrorCode.WRITE_FAILED));
+            assertThat(storedFiles()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should remove the partly written file when the stream breaks part way")
+        void shouldRemovePartlyWrittenFileWhenStreamBreaksPartWay() {
+            InputStream input = new GeneratedStream(1024 * 1024, (byte) 0, true);
+
+            assertThatThrownBy(() -> service.store(input, "file.bin", "application/octet-stream", "docs"))
+                .isInstanceOf(StorageException.class)
+                .satisfies(ex -> assertThat(((StorageException) ex).getErrorCode())
+                    .isEqualTo(StorageException.StorageErrorCode.WRITE_FAILED));
+            assertThat(storedFiles()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Should report the SHA-256 of the stored bytes (FIPS 180-2 'abc' vector)")
+        void shouldReportKnownSha256OfAbc() {
+            InputStream input = new ByteArrayInputStream("abc".getBytes(StandardCharsets.US_ASCII));
+
+            StoredFileInfo result = service.store(input, "abc.txt", "text/plain", "docs");
+
+            assertThat(result.checksum())
+                .isEqualTo("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+        }
+
+        @Test
+        @DisplayName("Should report the SHA-256 of a stream longer than one copy buffer (one million 'a')")
+        void shouldReportKnownSha256OfOneMillionA() {
+            InputStream input = new GeneratedStream(1_000_000, (byte) 'a', false);
+
+            StoredFileInfo result = service.store(input, "a.txt", "text/plain", "docs");
+
+            assertThat(result.fileSize()).isEqualTo(1_000_000L);
+            assertThat(result.checksum())
+                .isEqualTo("cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0");
+        }
+
+        @Test
+        @DisplayName("Should store a large upload without reading it into one array")
+        void shouldStoreLargeUploadWithoutReadingItIntoOneArray() throws IOException {
+            long size = 64L * 1024 * 1024;
+            // GeneratedStream fails the test if the service asks for the whole stream at once
+            InputStream input = new GeneratedStream(size, (byte) 0, false);
+
+            StoredFileInfo result = service.store(input, "big.bin", "application/octet-stream", "docs");
+
+            assertThat(result.fileSize()).isEqualTo(size);
+            assertThat(Files.size(tempDir.resolve(result.storedPath()))).isEqualTo(size);
+            // head -c 67108864 /dev/zero | shasum -a 256
+            assertThat(result.checksum())
+                .isEqualTo("3b6a07d0d404fab4e23b6d34bc6696a6a312dd92821332385e5af7c01c421351");
+        }
+
+        @Test
+        @DisplayName("Should leave the caller's stream open")
+        void shouldLeaveCallersStreamOpen() {
+            boolean[] closed = {false};
+            InputStream input = new ByteArrayInputStream("data".getBytes()) {
+                @Override
+                public void close() throws IOException {
+                    closed[0] = true;
+                    super.close();
+                }
+            };
+
+            service.store(input, "keep.txt", "text/plain", "docs");
+
+            assertThat(closed[0]).isFalse();
         }
     }
 
@@ -539,6 +612,75 @@ class LocalFileStorageServiceTest {
             String url = service.getThumbnailUrl("images/photo.jpg", 256, 256);
 
             assertThat(url).isEqualTo("/assets/thumbnails/256x256/images/photo.jpg");
+        }
+    }
+
+    /** Every regular file under the storage root, in a stable order. */
+    private List<Path> storedFiles() {
+        try (Stream<Path> tree = Files.walk(tempDir)) {
+            return tree.filter(Files::isRegularFile).sorted().toList();
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not list " + tempDir, e);
+        }
+    }
+
+    /**
+     * Serves {@code length} copies of one byte without holding them, and refuses the bulk reads
+     * that would: {@code readAllBytes()} and {@code readNBytes(int)} fail the test, so a service
+     * that buffers the whole upload cannot pass. With {@code failAtEnd} the stream throws where
+     * it would otherwise report the end, which models an upload that breaks part way.
+     */
+    private static final class GeneratedStream extends InputStream {
+
+        private final long length;
+        private final byte value;
+        private final boolean failAtEnd;
+        private long served;
+
+        GeneratedStream(long length, byte value, boolean failAtEnd) {
+            this.length = length;
+            this.value = value;
+            this.failAtEnd = failAtEnd;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (served >= length) {
+                return end();
+            }
+            served++;
+            return value & 0xff;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int count) throws IOException {
+            if (count == 0) {
+                return 0;
+            }
+            if (served >= length) {
+                return end();
+            }
+            int chunk = (int) Math.min(count, length - served);
+            Arrays.fill(buffer, offset, offset + chunk, value);
+            served += chunk;
+            return chunk;
+        }
+
+        @Override
+        public byte[] readAllBytes() {
+            throw new AssertionError("The whole stream was read into one array");
+        }
+
+        @Override
+        public byte[] readNBytes(int len) {
+            throw new AssertionError("The stream was read into one array of " + len + " bytes");
+        }
+
+        private int end() throws IOException {
+            if (failAtEnd) {
+                throw new IOException("Stream broke after " + served + " bytes");
+            }
+            return -1;
         }
     }
 }
