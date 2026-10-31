@@ -15,7 +15,8 @@ import java.util.regex.Pattern;
  * {@code permitAll()}) into structured {@link AccessMeta}. Anything else travels as a raw
  * expression so the frontend can refuse to guess instead of misreading it as "no permission
  * required"; when that expression is a flat chain of one operator ({@code or} or {@code and}),
- * the {@code hasPermission} terms in the chain are published beside the raw text.
+ * the {@code hasPermission} terms in the chain are published beside the raw text, with
+ * {@code residual} saying whether any other term is left for the server to decide.
  */
 public final class AccessExpressionParser {
 
@@ -77,13 +78,16 @@ public final class AccessExpressionParser {
         terms.add(expression.substring(start).trim());
 
         List<PermissionTermMeta> permissions = new ArrayList<>();
+        boolean residual = false;
         for (String term : terms) {
             Matcher matcher = HAS_PERMISSION.matcher(term);
             if (matcher.matches()) {
                 permissions.add(new PermissionTermMeta(matcher.group(1), matcher.group(2)));
+            } else {
+                residual = true;
             }
         }
-        return AccessMeta.expression(expression, operator, permissions);
+        return AccessMeta.expression(expression, operator, permissions, residual);
     }
 
     /** {@code or} / {@code and} framed by whitespace at {@code index}, case-insensitive as SpEL is. */

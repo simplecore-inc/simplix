@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.web.meta.model.AccessMeta;
+import dev.simplecore.simplix.web.meta.model.PermissionTermMeta;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -84,6 +85,28 @@ class AccessExpressionParserTest {
             assertThat(meta.operator()).isEqualTo("or");
             assertThat(meta.permissions()).extracting(p -> p.group() + ":" + p.action())
                     .containsExactly("USER_ADMIN:view");
+            assertThat(meta.residual()).isTrue();
+        }
+
+        @Test
+        void orChainOfPermissionsOnlyLeavesNothingToTheServer() {
+            AccessMeta meta = AccessExpressionParser.parse(
+                    "hasPermission('A', 'edit') or hasPermission('B','edit')");
+            assertThat(meta.operator()).isEqualTo("or");
+            assertThat(meta.residual()).isFalse();
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "hasPermission('USER_ADMIN', 'edit') or @userAccountService.hasOwnerPermission('edit', #userId, #updateDto)",
+                "hasPermission('USER_ADMIN', 'view') or @userAccountService.hasOwnerPermission('edit', #userId, null)",
+                "hasPermission('USER_ADMIN', 'view') or @userAccountService.hasOwnerPermission('view', #userId, null)"
+        })
+        void ownerWidenedChainsCarryTheirPermissionAndAResidual(String expression) {
+            AccessMeta meta = AccessExpressionParser.parse(expression);
+            assertThat(meta.operator()).isEqualTo("or");
+            assertThat(meta.permissions()).extracting(PermissionTermMeta::group).containsExactly("USER_ADMIN");
+            assertThat(meta.residual()).isTrue();
         }
 
         @Test
@@ -92,6 +115,7 @@ class AccessExpressionParserTest {
                     "hasPermission('A', 'edit') and hasPermission('B','view')");
             assertThat(meta.operator()).isEqualTo("and");
             assertThat(meta.permissions()).extracting(p -> p.group()).containsExactly("A", "B");
+            assertThat(meta.residual()).isFalse();
         }
 
         @Test
@@ -107,6 +131,7 @@ class AccessExpressionParserTest {
             AccessMeta meta = AccessExpressionParser.parse("@svc.check('a or b') and (#x or #y)");
             assertThat(meta.operator()).isEqualTo("and");
             assertThat(meta.permissions()).isNull();
+            assertThat(meta.residual()).isTrue();
         }
     }
 }

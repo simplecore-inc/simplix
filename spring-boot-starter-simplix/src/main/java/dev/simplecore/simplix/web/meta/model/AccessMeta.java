@@ -12,13 +12,19 @@ import java.util.List;
  * ({@code or} / {@code and}) when the expression is a flat chain of one operator. With
  * {@code operator: or} any one permission term opens the operation, and the remaining
  * non-permission terms (an ownership check, say) can only widen it, never narrow it.
+ *
+ * <p>{@code residual} is {@code true} when the chain also holds a term that is not a
+ * {@code hasPermission} call (a bean call, a parameter comparison), which only the server can
+ * decide. A client reads an {@code or} chain as allowed when one permission term holds, and as
+ * possibly allowed when {@code residual} is set; an {@code and} chain needs every permission term,
+ * and a residual term there can only narrow, which the server decides.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AccessMeta(String kind, String group, String action, String raw,
-                         String operator, List<PermissionTermMeta> permissions) {
+                         String operator, List<PermissionTermMeta> permissions, Boolean residual) {
 
     public AccessMeta(String kind, String group, String action, String raw) {
-        this(kind, group, action, raw, null, null);
+        this(kind, group, action, raw, null, null, null);
     }
 
     public static AccessMeta permission(String group, String action) {
@@ -31,8 +37,9 @@ public record AccessMeta(String kind, String group, String action, String raw,
 
     public static AccessMeta expression(String raw) { return new AccessMeta("expression", null, null, raw); }
 
-    public static AccessMeta expression(String raw, String operator, List<PermissionTermMeta> permissions) {
+    public static AccessMeta expression(String raw, String operator, List<PermissionTermMeta> permissions,
+                                        boolean residual) {
         return new AccessMeta("expression", null, null, raw, operator,
-                permissions == null || permissions.isEmpty() ? null : List.copyOf(permissions));
+                permissions == null || permissions.isEmpty() ? null : List.copyOf(permissions), residual);
     }
 }
