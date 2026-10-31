@@ -59,6 +59,16 @@ public class User {
 }
 ```
 
+**지울 수 있어야 하는 비밀 값(서명 키 등):**
+
+`String`은 덮어쓸 수 없어 힙에 오래 남습니다. 필드를 `byte[]`로 두고 `AesEncryptionBytesConverter`를 지정하면 사용 직후 `AesEncryptionBytesConverter.erase(bytes)`로 지울 수 있습니다. 컬럼에는 `AesEncryptionConverter`와 같은 암호문 텍스트를 저장하므로, 기존 `String` 필드를 스키마 변경 없이 전환할 수 있습니다.
+
+```java
+@Convert(converter = AesEncryptionBytesConverter.class)
+@Column(name = "signing_key", length = 1000)
+private byte[] signingKey;
+```
+
 **Service에서 직접 사용:**
 
 ```java

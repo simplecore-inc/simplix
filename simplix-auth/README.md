@@ -148,6 +148,7 @@ public interface JweKeyStore {
 | `simplix.auth.token.enable-blacklist` | `false` | 블랙리스트 활성화 |
 | `simplix.auth.jwe.key-rolling.enabled` | `false` | 키 롤링 활성화 |
 | `simplix.auth.oauth2.enabled` | `true` | OAuth2 활성화 |
+| `simplix.auth.stateless-token.secret` | (부팅마다 임의 생성) | `SimpliXStatelessTokenSigner`의 HMAC-SHA256 키. 서명 링크처럼 저장하지 않는 짧은 토큰을 `sign` · `verify`로 발급하고 검증합니다. 비워 두면 재시작할 때 이전 토큰이 무효가 됩니다 |
 
 전체 설정은 [설정 레퍼런스](docs/ko/configuration-reference.md)를 참조하세요.
 

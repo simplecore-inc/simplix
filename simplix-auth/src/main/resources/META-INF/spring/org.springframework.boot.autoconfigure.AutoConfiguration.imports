@@ -11,3 +11,4 @@ dev.simplecore.simplix.auth.autoconfigure.SimpliXAuthMetricsAutoConfiguration
 dev.simplecore.simplix.auth.oauth2.config.OAuth2ClientFilteringAutoConfiguration
 dev.simplecore.simplix.auth.oauth2.config.SimpliXOAuth2AutoConfiguration
 dev.simplecore.simplix.auth.resourceserver.SimpliXResourceServerAutoConfiguration
+dev.simplecore.simplix.auth.autoconfigure.SimpliXStatelessTokenAutoConfiguration
