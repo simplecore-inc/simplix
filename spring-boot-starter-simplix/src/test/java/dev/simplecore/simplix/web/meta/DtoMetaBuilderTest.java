@@ -87,6 +87,18 @@ class DtoMetaBuilderTest {
         public SimpliXApiResponse<AreaListDTO> get(@PathVariable("siteId") String siteId) { return null; }
     }
 
+    // Two handlers on one path and method, told apart only by a request parameter.
+    @RestController
+    @RequestMapping("/lookups")
+    static class LookupController {
+
+        @GetMapping(params = "name")
+        public SimpliXApiResponse<AreaListDTO> byName(@RequestParam("name") String name) { return null; }
+
+        @GetMapping(params = "kind")
+        public SimpliXApiResponse<AreaListDTO> byKind(@RequestParam("kind") String kind) { return null; }
+    }
+
     private Map<RequestMappingInfo, HandlerMethod> handlerMethods() throws Exception {
         AreaRestController areaController = new AreaRestController();
         SiteController siteController = new SiteController();
@@ -220,6 +232,35 @@ class DtoMetaBuilderTest {
 
         ObjectMapper mapper = new ObjectMapper();
         assertThat(mapper.writeValueAsString(second)).isEqualTo(mapper.writeValueAsString(first));
+    }
+
+    @Test
+    void operationsOnTheSamePathAndMethodFollowTheirIdInEveryHandlerOrder() throws Exception {
+        // Path and method alone leave these two tied, and a stable sort keeps a tie in the order
+        // Spring handed it over, which is a hash order and moves between runs.
+        LookupController controller = new LookupController();
+        RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
+        config.setPatternParser(new PathPatternParser());
+        List<Map.Entry<RequestMappingInfo, HandlerMethod>> entries = List.of(
+                Map.entry(RequestMappingInfo.paths("/lookups").methods(org.springframework.web.bind.annotation.RequestMethod.GET)
+                                .params("name").options(config).build(),
+                        new HandlerMethod(controller, LookupController.class.getMethod("byName", String.class))),
+                Map.entry(RequestMappingInfo.paths("/lookups").methods(org.springframework.web.bind.annotation.RequestMethod.GET)
+                                .params("kind").options(config).build(),
+                        new HandlerMethod(controller, LookupController.class.getMethod("byKind", String.class))));
+
+        List<List<String>> ids = new ArrayList<>();
+        for (boolean reversed : new boolean[] {false, true}) {
+            List<Map.Entry<RequestMappingInfo, HandlerMethod>> ordered = new ArrayList<>(entries);
+            if (reversed) Collections.reverse(ordered);
+            Map<RequestMappingInfo, HandlerMethod> handlers = new LinkedHashMap<>();
+            ordered.forEach(entry -> handlers.put(entry.getKey(), entry.getValue()));
+            ids.add(new DtoMetaBuilder(new ObjectMapper(), List.of()).build(handlers).operations().stream()
+                    .map(OperationMeta::id).toList());
+        }
+
+        assertThat(ids.get(0)).containsExactly("Lookup_byKind", "Lookup_byName");
+        assertThat(ids.get(1)).isEqualTo(ids.get(0));
     }
 
 }
