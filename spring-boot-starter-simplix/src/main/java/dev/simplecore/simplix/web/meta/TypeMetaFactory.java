@@ -111,6 +111,8 @@ public class TypeMetaFactory {
             if (EntityReferences.isCode(type, field.name(), entityClass, path)) {
                 result = result.withFormat(FieldMeta.FORMAT_CODE);
             }
+            Object initial = FieldDefaults.of(type, field.name(), entityClass, path);
+            if (initial != null) result = result.withDefaultValue(initial);
             return result;
         });
         withLocaleSortAliases(fields);
