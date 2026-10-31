@@ -182,6 +182,7 @@ public class DtoMetaBuilder {
             Map<String, String> description = labelResolver.apply(descriptionKey);
             List<HolderMeta> held = holders.get(name);
             result.put(name, new EntityMeta(type.getName(), EntityReferences.idFieldOf(type),
+                    EntityReferences.nameFieldOf(type),
                     labelKey, pluralKey, descriptionKey,
                     label.isEmpty() ? null : label,
                     plural.isEmpty() ? null : plural,

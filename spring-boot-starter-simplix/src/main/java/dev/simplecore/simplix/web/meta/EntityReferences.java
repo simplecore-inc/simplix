@@ -2,6 +2,7 @@ package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Column;
@@ -11,7 +12,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -105,6 +108,25 @@ final class EntityReferences {
             }
         }
         return null;
+    }
+
+    /**
+     * The field marked {@link NameField}, or {@code null} when the entity names none. Two marks in
+     * one hierarchy leave a client with two answers to one question, so they are refused rather
+     * than resolved by field order.
+     */
+    static String nameFieldOf(Class<?> entity) {
+        List<String> named = new ArrayList<>();
+        for (Class<?> c = entity; c != null && c != Object.class; c = c.getSuperclass()) {
+            for (Field field : c.getDeclaredFields()) {
+                if (field.isAnnotationPresent(NameField.class)) named.add(field.getName());
+            }
+        }
+        if (named.size() > 1) {
+            throw new IllegalStateException(entity.getName() + " marks more than one field with @NameField: "
+                    + String.join(", ", named));
+        }
+        return named.isEmpty() ? null : named.get(0);
     }
 
     private static boolean isToOne(Field field) {

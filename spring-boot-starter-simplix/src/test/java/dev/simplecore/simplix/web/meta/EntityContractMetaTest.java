@@ -7,6 +7,7 @@ import dev.simplecore.searchable.core.condition.operator.SearchOperator;
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
+import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.core.annotation.Tone;
 import dev.simplecore.simplix.core.annotation.ToneKind;
@@ -47,7 +48,8 @@ class EntityContractMetaTest {
 
     static class Grade {
         @Id String gradeId;
-        String gradeName;
+        String gradeCode;
+        @NameField String gradeName;
     }
 
     static class Badge {
@@ -214,6 +216,18 @@ class EntityContractMetaTest {
         assertThat(member.descriptionKey()).isEqualTo("entities.Member._description");
         assertThat(member.description()).containsEntry("en", "People who belong").containsEntry("ko", "소속된 사람");
         assertThat(member.idField()).isEqualTo("memberId");
+    }
+
+    @Test
+    void entityPublishesTheFieldItIsNamedBy() throws Exception {
+        // gradeCode is declared first and is a plain string, so a guess would pick it
+        assertThat(build().entities().get("Grade").nameField()).isEqualTo("gradeName");
+    }
+
+    @Test
+    void entityThatMarksNoNameFieldOmitsIt() throws Exception {
+        assertThat(build().entities().get("Member").nameField()).isNull();
+        assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Member"))).doesNotContain("nameField");
     }
 
     @Test
