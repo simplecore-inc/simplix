@@ -7,6 +7,7 @@ import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.TypeRef;
 import dev.simplecore.simplix.web.meta.model.OperationMeta;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
@@ -75,6 +76,18 @@ class DtoMetaBuilderTest {
         @PostMapping("/plan")
         public SimpliXApiResponse<AreaListDTO> upload(
                 @RequestParam("file") MultipartFile file) { return null; }
+
+        // Writes the CSV into the servlet response and returns nothing.
+        @GetMapping("/export")
+        public void export(HttpServletResponse response) { }
+
+        // Declares a non-JSON media type while returning a body.
+        @GetMapping(value = "/report", produces = "text/csv")
+        public String report() { return null; }
+
+        // Returns nothing and takes no response: no body at all.
+        @PostMapping("/touch")
+        public void touch() { }
     }
 
     // Plain "Controller" suffix, pinned alongside AreaRestController's "RestController" suffix
@@ -103,6 +116,12 @@ class DtoMetaBuilderTest {
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("multiUpdate", Set.class)));
         map.put(RequestMappingInfo.paths("/areas/plan").methods(org.springframework.web.bind.annotation.RequestMethod.POST).options(config).build(),
                 new HandlerMethod(areaController, AreaRestController.class.getMethod("upload", MultipartFile.class)));
+        map.put(RequestMappingInfo.paths("/areas/export").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("export", HttpServletResponse.class)));
+        map.put(RequestMappingInfo.paths("/areas/report").methods(org.springframework.web.bind.annotation.RequestMethod.GET).produces("text/csv").options(config).build(),
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("report")));
+        map.put(RequestMappingInfo.paths("/areas/touch").methods(org.springframework.web.bind.annotation.RequestMethod.POST).options(config).build(),
+                new HandlerMethod(areaController, AreaRestController.class.getMethod("touch")));
         map.put(RequestMappingInfo.paths("/sites/{siteId}").methods(org.springframework.web.bind.annotation.RequestMethod.GET).options(config).build(),
                 new HandlerMethod(siteController, SiteController.class.getMethod("get", String.class)));
         return map;
@@ -182,6 +201,15 @@ class DtoMetaBuilderTest {
         assertThat(upload.request().query()).hasSize(1);
         assertThat(upload.request().query().get(0).name()).isEqualTo("file");
         assertThat(upload.request().query().get(0).type().kind()).isEqualTo("file");
+    }
+
+    @Test
+    void handlersWritingTheirOwnBodyPublishABinaryResponse() throws Exception {
+        DtoMeta meta = build(List.of());
+        assertThat(operation(meta, "AreaRest_export").response().kind()).isEqualTo("binary");
+        assertThat(operation(meta, "AreaRest_report").response().kind()).isEqualTo("binary");
+        assertThat(operation(meta, "AreaRest_touch").response()).isNull();
+        assertThat(operation(meta, "AreaRest_get").response().name()).isEqualTo("SimpliXApiResponse");
     }
 
     @Test

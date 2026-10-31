@@ -20,11 +20,13 @@ import dev.simplecore.simplix.web.meta.model.TypeMeta;
 import dev.simplecore.simplix.web.meta.model.TypeRef;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.ServletResponse;
 import org.springframework.context.MessageSource;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -42,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -95,7 +98,7 @@ public class DtoMetaBuilder {
                     : null;
             if (path == null) return;
             for (RequestMethod method : info.getMethodsCondition().getMethods()) {
-                OperationMeta operation = toOperation(path, method.name(), handler);
+                OperationMeta operation = toOperation(path, method.name(), handler, info);
                 operations.add(operation);
                 contributors.forEach(c -> c.contributeOperation(handler, operation, extensions));
             }
@@ -242,7 +245,8 @@ public class DtoMetaBuilder {
                 || pkg.startsWith("org.springframework");
     }
 
-    private OperationMeta toOperation(String path, String httpMethod, HandlerMethod handler) {
+    private OperationMeta toOperation(String path, String httpMethod, HandlerMethod handler,
+                                      RequestMappingInfo info) {
         Class<?> beanType = handler.getBeanType();
         // Same order as OperationIdCustomizer: stripping "Controller" first leaves "…Rest" on a
         // *RestController, which is what the OpenAPI operationId carries. Reversing these two lines
@@ -324,13 +328,34 @@ public class DtoMetaBuilder {
         }
         if (body != null && contentType == null) contentType = "json";
 
-        TypeRef response = typeRefMapper.map(
-                ResolvableType.forMethodReturnType(handler.getMethod()));
+        TypeRef response = writesItsOwnBody(handler, info)
+                ? TypeRef.binary()
+                : typeRefMapper.map(ResolvableType.forMethodReturnType(handler.getMethod()));
 
         RequestMeta request = new RequestMeta(body, contentType, query, pathParams, searchDto);
         Class<?> entity = entityOf(beanType);
         return new OperationMeta(id, httpMethod, path, tagName, summary, request, response, access,
                 entity != null ? entity.getSimpleName() : null);
+    }
+
+    /**
+     * Whether the handler answers with bytes rather than a JSON envelope: its mapping produces only
+     * non-JSON media types ({@code produces = "text/csv"}), or it returns nothing and writes the
+     * body into the {@link ServletResponse} it takes. A client unwrapping either as JSON fails on
+     * the first byte, so both are published as a {@code binary} response.
+     */
+    static boolean writesItsOwnBody(HandlerMethod handler, RequestMappingInfo info) {
+        Set<MediaType> produces = info.getProducesCondition().getProducibleMediaTypes();
+        if (!produces.isEmpty() && produces.stream().noneMatch(DtoMetaBuilder::isJson)) return true;
+        Class<?> returned = handler.getMethod().getReturnType();
+        if (returned != void.class && returned != Void.class) return false;
+        return Arrays.stream(handler.getMethod().getParameterTypes())
+                .anyMatch(ServletResponse.class::isAssignableFrom);
+    }
+
+    private static boolean isJson(MediaType type) {
+        return type.isCompatibleWith(MediaType.APPLICATION_JSON)
+                || (type.getSubtype() != null && type.getSubtype().endsWith("+json"));
     }
 
     /** Annotation name/value aliases are not merged on direct reads; check both, then bytecode names. */
