@@ -12,6 +12,8 @@ import org.mockito.quality.Strictness;
 import org.springframework.core.env.Environment;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.ResourceHttpMessageConverter;
+import org.springframework.http.converter.ResourceRegionHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 
@@ -84,21 +86,60 @@ class SimpliXJacksonAutoConfigurationAdditionalTest {
     }
 
     @Nested
-    @DisplayName("configureMessageConverters")
-    class ConfigureMessageConverters {
+    @DisplayName("extendMessageConverters")
+    class ExtendMessageConverters {
 
         @Test
-        @DisplayName("Should add ByteArray, String, and Jackson converters to converter list")
-        void configureConverters() {
+        @DisplayName("Should replace the default JSON converter in place and keep every other default")
+        void replacesJsonConverterInPlace() {
             SimpliXJacksonAutoConfiguration config = new SimpliXJacksonAutoConfiguration(environment);
-            List<HttpMessageConverter<?>> converters = new ArrayList<>();
+            MappingJackson2HttpMessageConverter defaultJson = new MappingJackson2HttpMessageConverter();
+            List<HttpMessageConverter<?>> converters = new ArrayList<>(List.of(
+                    new ByteArrayHttpMessageConverter(),
+                    new StringHttpMessageConverter(),
+                    new ResourceHttpMessageConverter(),
+                    new ResourceRegionHttpMessageConverter(),
+                    defaultJson));
 
-            config.configureMessageConverters(converters);
+            config.extendMessageConverters(converters);
 
-            assertThat(converters).hasSize(3);
+            assertThat(converters).hasSize(5);
+            assertThat(converters.get(0)).isInstanceOf(ByteArrayHttpMessageConverter.class);
+            assertThat(converters.get(1)).isInstanceOf(StringHttpMessageConverter.class);
+            assertThat(converters.get(2)).isInstanceOf(ResourceHttpMessageConverter.class);
+            assertThat(converters.get(3)).isInstanceOf(ResourceRegionHttpMessageConverter.class);
+            assertThat(converters.get(4)).isInstanceOf(MappingJackson2HttpMessageConverter.class).isNotSameAs(defaultJson);
+        }
+
+        @Test
+        @DisplayName("Should move the JSON converter after the byte array and string converters")
+        void placesJsonAfterStringConverters() {
+            SimpliXJacksonAutoConfiguration config = new SimpliXJacksonAutoConfiguration(environment);
+            List<HttpMessageConverter<?>> converters = new ArrayList<>(List.of(
+                    new MappingJackson2HttpMessageConverter(),
+                    new ByteArrayHttpMessageConverter(),
+                    new StringHttpMessageConverter(),
+                    new ResourceHttpMessageConverter()));
+
+            config.extendMessageConverters(converters);
+
+            assertThat(converters).hasSize(4);
             assertThat(converters.get(0)).isInstanceOf(ByteArrayHttpMessageConverter.class);
             assertThat(converters.get(1)).isInstanceOf(StringHttpMessageConverter.class);
             assertThat(converters.get(2)).isInstanceOf(MappingJackson2HttpMessageConverter.class);
+            assertThat(converters.get(3)).isInstanceOf(ResourceHttpMessageConverter.class);
+        }
+
+        @Test
+        @DisplayName("Should append the SimpliX JSON converter when no JSON converter is registered")
+        void appendsWhenNoJsonConverter() {
+            SimpliXJacksonAutoConfiguration config = new SimpliXJacksonAutoConfiguration(environment);
+            List<HttpMessageConverter<?>> converters = new ArrayList<>(List.of(new ByteArrayHttpMessageConverter()));
+
+            config.extendMessageConverters(converters);
+
+            assertThat(converters).hasSize(2);
+            assertThat(converters.get(1)).isInstanceOf(MappingJackson2HttpMessageConverter.class);
         }
     }
 }

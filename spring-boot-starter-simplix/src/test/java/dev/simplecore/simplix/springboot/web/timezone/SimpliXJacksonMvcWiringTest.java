@@ -12,14 +12,20 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -63,6 +69,47 @@ class SimpliXJacksonMvcWiringTest {
         });
     }
 
+    @Test
+    @DisplayName("A ResponseEntity<Resource> is written with its bytes")
+    void resourceIsWritten() {
+        runner.run(context -> {
+            MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+            byte[] body = mockMvc.perform(get("/wiring/file"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsByteArray();
+
+            assertThat(body).isEqualTo(FILE_BYTES);
+        });
+    }
+
+    @Test
+    @DisplayName("A Range request on a ResponseEntity<Resource> answers 206 with the requested bytes")
+    void resourceRangeIsPartial() {
+        runner.run(context -> {
+            MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+            byte[] body = mockMvc.perform(get("/wiring/file").header(HttpHeaders.RANGE, "bytes=2-5"))
+                    .andExpect(status().isPartialContent())
+                    .andReturn().getResponse().getContentAsByteArray();
+
+            assertThat(body).isEqualTo(Arrays.copyOfRange(FILE_BYTES, 2, 6));
+        });
+    }
+
+    @Test
+    @DisplayName("A String body is written as plain text, not as a JSON string")
+    void stringIsPlainText() {
+        runner.run(context -> {
+            MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+            String body = mockMvc.perform(get("/wiring/text"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            assertThat(body).isEqualTo("plain");
+        });
+    }
+
+    private static final byte[] FILE_BYTES = "0123456789".getBytes(StandardCharsets.US_ASCII);
+
     @Configuration
     @RestController
     static class WiringController {
@@ -73,6 +120,18 @@ class SimpliXJacksonMvcWiringTest {
             body.put("localDate", LocalDate.of(2026, 3, 4));
             body.put("absent", null);
             return body;
+        }
+
+        @GetMapping("/wiring/text")
+        String text() {
+            return "plain";
+        }
+
+        @GetMapping("/wiring/file")
+        ResponseEntity<Resource> file() {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(new ByteArrayResource(FILE_BYTES));
         }
     }
 }

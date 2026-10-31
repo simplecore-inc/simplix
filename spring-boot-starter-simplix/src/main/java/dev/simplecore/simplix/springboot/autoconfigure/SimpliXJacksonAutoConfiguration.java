@@ -20,6 +20,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -131,10 +132,39 @@ public class SimpliXJacksonAutoConfiguration implements WebMvcConfigurer {
         return converter;
     }
 
+    /**
+     * Puts the SimpliX JSON converter in place of the JSON converters Spring registers, and
+     * leaves every other default converter (byte array, string, resource, resource region,
+     * form, XML when present) where Spring put it. The JSON converter goes after the byte
+     * array and string converters, so a {@code String} or {@code byte[]} body is written as is
+     * rather than as a JSON string.
+     *
+     * <p>This extends the default list rather than replacing it: an override of
+     * {@code configureMessageConverters(List)} that adds anything makes Spring MVC skip its
+     * defaults, and a {@code ResponseEntity<Resource>} then has no converter to write it.
+     */
     @Override
-    public void configureMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
-        converters.add(0, new ByteArrayHttpMessageConverter());
-        converters.add(1, new StringHttpMessageConverter());
-        converters.add(2, mappingJackson2HttpMessageConverter(objectMapper()));
+    public void extendMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
+        int position = -1;
+        for (int i = converters.size() - 1; i >= 0; i--) {
+            HttpMessageConverter<?> converter = converters.get(i);
+            if (converter instanceof MappingJackson2HttpMessageConverter
+                    || converter instanceof JacksonJsonHttpMessageConverter) {
+                converters.remove(i);
+                position = i;
+            }
+        }
+        for (int i = 0; i < converters.size(); i++) {
+            HttpMessageConverter<?> converter = converters.get(i);
+            if (converter instanceof ByteArrayHttpMessageConverter || converter instanceof StringHttpMessageConverter) {
+                position = Math.max(position, i + 1);
+            }
+        }
+        MappingJackson2HttpMessageConverter simplixConverter = mappingJackson2HttpMessageConverter(objectMapper());
+        if (position < 0) {
+            converters.add(simplixConverter);
+        } else {
+            converters.add(position, simplixConverter);
+        }
     }
 }
