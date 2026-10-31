@@ -121,8 +121,12 @@ public class DtoMetaBuilder {
         // those operations seeded it, so two runs of the same application emit the same document
         // with its three collections shuffled. A generator reading it then makes a different
         // choice wherever it has to pick between candidates, and a snapshot diff is noise from
-        // end to end. Sorting here is what makes the document a function of the application.
-        operations.sort(Comparator.comparing(OperationMeta::path).thenComparing(OperationMeta::method));
+        // end to end. Sorting here is what makes the document a function of the application. Two
+        // handlers can share a path and a method when their mappings differ by a parameter or a
+        // media type, and the sort is stable, so the id decides where the path and method do not.
+        operations.sort(Comparator.comparing(OperationMeta::path)
+                .thenComparing(OperationMeta::method)
+                .thenComparing(OperationMeta::id));
 
         Map<String, EntityMeta> entities = entities(entityClasses, types, operations);
 
