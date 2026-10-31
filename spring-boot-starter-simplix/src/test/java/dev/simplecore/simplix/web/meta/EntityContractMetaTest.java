@@ -6,6 +6,7 @@ import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.operator.SearchOperator;
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.core.annotation.Tone;
 import dev.simplecore.simplix.core.annotation.ToneKind;
@@ -94,6 +95,9 @@ class EntityContractMetaTest {
             public String gradeId;
             public String memberCode;
             @CodeValue public String inviteToken;
+            @FieldLabel("{field.count}") public Long count;
+            @FieldLabel("{field.unknown}") public Long unknown;
+            @FieldLabel("Literal") public Long literal;
         }
     }
 
@@ -163,7 +167,8 @@ class EntityContractMetaTest {
             "entities.Member", Map.of("en", "Member", "ko", "구성원"),
             "entities.Member._plural", Map.of("en", "Members", "ko", "구성원 목록"),
             "entities.Member._description", Map.of("en", "People who belong", "ko", "소속된 사람"),
-            "entities.Grade", Map.of("en", "Grade"));
+            "entities.Grade", Map.of("en", "Grade"),
+            "field.count", Map.of("en", "Count", "ko", "건수"));
 
     private DtoMeta build() throws Exception {
         RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
@@ -186,6 +191,17 @@ class EntityContractMetaTest {
 
     private static FieldMeta field(TypeMeta type, String name) {
         return type.fields().stream().filter(f -> f.name().equals(name)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void fieldLabelledByKeyCarriesItsTextPerLanguage() throws Exception {
+        TypeMeta detail = build().types().get("MemberDetailDTO");
+        FieldMeta count = field(detail, "count");
+        assertThat(count.labelKey()).isEqualTo("field.count");
+        assertThat(count.labels()).containsEntry("en", "Count").containsEntry("ko", "건수");
+        assertThat(field(detail, "unknown").labels()).isNull();
+        assertThat(field(detail, "literal").labels()).isNull();
+        assertThat(field(detail, "memberId").labels()).isNull();
     }
 
     @Test

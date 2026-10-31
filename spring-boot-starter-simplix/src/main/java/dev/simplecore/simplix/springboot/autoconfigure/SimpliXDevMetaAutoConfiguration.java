@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -45,8 +46,9 @@ public class SimpliXDevMetaAutoConfiguration {
     public SimpliXMetaDevController simpliXMetaDevController(
             RequestMappingHandlerMapping requestMappingHandlerMapping,
             ObjectMapper objectMapper,
-            ObjectProvider<SimpliXMetaContributor> contributors) {
+            ObjectProvider<SimpliXMetaContributor> contributors,
+            MessageSource messageSource) {
         List<SimpliXMetaContributor> resolved = contributors.orderedStream().toList();
-        return new SimpliXMetaDevController(requestMappingHandlerMapping, objectMapper, resolved);
+        return new SimpliXMetaDevController(requestMappingHandlerMapping, objectMapper, resolved, messageSource);
     }
 }

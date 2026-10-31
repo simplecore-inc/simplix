@@ -3,6 +3,7 @@ package dev.simplecore.simplix.web.meta;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
+import org.springframework.context.MessageSource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,19 +27,23 @@ public class SimpliXMetaDevController {
     private final RequestMappingHandlerMapping handlerMapping;
     private final ObjectMapper objectMapper;
     private final List<SimpliXMetaContributor> contributors;
+    private final MessageSource messageSource;
 
     public SimpliXMetaDevController(RequestMappingHandlerMapping handlerMapping,
                                     ObjectMapper objectMapper,
-                                    List<SimpliXMetaContributor> contributors) {
+                                    List<SimpliXMetaContributor> contributors,
+                                    MessageSource messageSource) {
         this.handlerMapping = handlerMapping;
         this.objectMapper = objectMapper;
         this.contributors = contributors;
+        this.messageSource = messageSource;
     }
 
     @GetMapping("/dto")
     public SimpliXApiResponse<DtoMeta> dto() {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
-        DtoMeta meta = new DtoMetaBuilder(objectMapper, contributors).build(handlerMethods);
+        DtoMeta meta = new DtoMetaBuilder(objectMapper, contributors, DtoMetaBuilder.bundlesThen(messageSource))
+                .build(handlerMethods);
         return SimpliXApiResponse.success(meta);
     }
 }

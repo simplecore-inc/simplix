@@ -20,6 +20,7 @@ import dev.simplecore.simplix.web.meta.model.TypeMeta;
 import dev.simplecore.simplix.web.meta.model.TypeRef;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.context.MessageSource;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -105,7 +106,7 @@ public class DtoMetaBuilder {
         while (registry.hasPending()) {
             Class<?> type = registry.next();
             String name = MetaTypeRegistry.typeName(type);
-            TypeMeta meta = factory.create(type);
+            TypeMeta meta = withFieldLabels(factory.create(type));
             types.put(name, meta);
             contributors.forEach(c -> c.contributeType(type, name, extensions));
         }
@@ -184,6 +185,38 @@ public class DtoMetaBuilder {
     }
 
     /** Resolves a key in every language the entity and enum bundles ship. */
+    /**
+     * Resolves a key from the entity label bundles first and then from {@code messageSource}, so a
+     * field labelled through an application bundle ({@code {field.count}} in a bean validation
+     * bundle, say) carries its text in every language too.
+     *
+     * @param messageSource the application's message source
+     * @return a resolver for {@link #DtoMetaBuilder(ObjectMapper, List, Function)}
+     */
+    public static Function<String, Map<String, String>> bundlesThen(MessageSource messageSource) {
+        return key -> {
+            Map<String, String> resolved = resolveFromBundles(key);
+            for (String language : I18nMessagesService.detectSupportedLocales()) {
+                if (resolved.containsKey(language)) continue;
+                String text = messageSource.getMessage(key, null, null, Locale.forLanguageTag(language));
+                if (text != null && !text.equals(key)) resolved.put(language, text);
+            }
+            return resolved;
+        };
+    }
+
+    /** Each field whose {@code @FieldLabel} names a key gains the key's text per language. */
+    private TypeMeta withFieldLabels(TypeMeta type) {
+        if (type.fields() == null) return type;
+        List<FieldMeta> fields = type.fields().stream().map(field -> {
+            if (field.labelKey() == null) return field;
+            Map<String, String> labels = labelResolver.apply(field.labelKey());
+            return labels.isEmpty() ? field : field.withLabels(labels);
+        }).toList();
+        return new TypeMeta(type.javaClass(), type.extendsType(), type.typeParams(), type.description(),
+                fields, type.entity());
+    }
+
     private static Map<String, String> resolveFromBundles(String key) {
         Map<String, String> resolved = new TreeMap<>();
         for (String language : I18nMessagesService.detectSupportedLocales()) {
