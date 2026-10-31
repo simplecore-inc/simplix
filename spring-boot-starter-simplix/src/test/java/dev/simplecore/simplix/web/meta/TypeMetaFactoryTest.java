@@ -2,6 +2,7 @@ package dev.simplecore.simplix.web.meta;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
@@ -124,5 +125,27 @@ class TypeMetaFactoryTest {
         assertThat(field(detail, "siteId").required()).isTrue();      // @Schema REQUIRED
         assertThat(field(detail, "note").required()).isFalse();       // nothing declared
         assertThat(field(detail, "version").type()).isEqualTo(TypeRef.number(true));
+    }
+
+    /** Declared out of alphabetical order, with one property that has no field. */
+    public static class OrderDTO {
+        public String zone;
+        public String category;
+        public String details;
+
+        public String getLabel() { return zone + category; }
+    }
+
+    @Test
+    void fieldsArePublishedInDeclarationOrderWhateverOrderJacksonReports() {
+        // A mapper sorting properties alphabetically reports category, details, label, zone; the
+        // published order must not follow it.
+        ObjectMapper sorting = new ObjectMapper()
+                .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        MetaTypeRegistry own = new MetaTypeRegistry();
+        TypeMeta sorted = new TypeMetaFactory(sorting, new TypeRefMapper(own), own).create(OrderDTO.class);
+        TypeMeta plain = factory.create(OrderDTO.class);
+        assertThat(sorted.fields()).extracting(FieldMeta::name).containsExactly("zone", "category", "details", "label");
+        assertThat(plain.fields()).extracting(FieldMeta::name).containsExactly("zone", "category", "details", "label");
     }
 }

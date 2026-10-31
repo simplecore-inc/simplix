@@ -24,7 +24,10 @@ import java.lang.reflect.Method;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +65,8 @@ public class TypeMetaFactory {
             FieldMeta field = toFieldMeta(property, backing, type);
             if (field != null) fields.add(field);
         }
+
+        fields.sort(declarationOrder(type));
 
         String extendsType = null;
         Class<?> parent = type.getSuperclass();
@@ -141,6 +146,20 @@ public class TypeMetaFactory {
         if (backing != null) return ResolvableType.forField(backing, owner);
         if (member.getAnnotated() instanceof Method method) return ResolvableType.forMethodReturnType(method);
         return ResolvableType.forClass(member.getRawType());
+    }
+
+    /**
+     * The order a type's fields are published in: the order the class declares them, then any
+     * property with no field of its own (a getter), by name. Jackson's property order is not a
+     * contract and moved between two runs over the same classes, which rewrote every generated file
+     * that lists fields; this order depends only on the compiled class.
+     */
+    static Comparator<FieldMeta> declarationOrder(Class<?> type) {
+        Map<String, Integer> index = new HashMap<>();
+        Field[] declared = type.getDeclaredFields();
+        for (int i = 0; i < declared.length; i++) index.putIfAbsent(declared[i].getName(), i);
+        return Comparator.<FieldMeta>comparingInt(field -> index.getOrDefault(field.name(), Integer.MAX_VALUE))
+                .thenComparing(FieldMeta::name);
     }
 
     private Field backingField(BeanPropertyDefinition property) {
