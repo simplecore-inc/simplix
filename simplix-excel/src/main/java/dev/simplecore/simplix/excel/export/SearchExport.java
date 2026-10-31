@@ -24,7 +24,8 @@ import java.util.function.Function;
  *
  * <p>The caller hands over its own paged search over request parameters (the one its list
  * endpoint answers with). The {@code page} and {@code size} the request carried are dropped and
- * replaced by the export's own paging; every other parameter, sort included, reaches each page.
+ * replaced by the export's own paging, and the export's own {@code format} parameter is dropped;
+ * every other parameter, sort included, reaches each page.
  *
  * @param <T> the export row type, whose {@code @ExcelColumn} fields give the columns
  */
@@ -35,6 +36,9 @@ public final class SearchExport<T> {
 
     private static final String PAGE = "page";
     private static final String SIZE = "size";
+
+    /** The request parameter an export endpoint names its {@link ExportFormat} with. */
+    public static final String FORMAT_PARAM = "format";
 
     private final Class<T> rowType;
     private final Function<Map<String, String>, Page<T>> search;
@@ -74,7 +78,7 @@ public final class SearchExport<T> {
     /**
      * Writes the file to the response with its download headers.
      *
-     * @param params the list's search parameters; {@code page} and {@code size} are ignored
+     * @param params the list's search parameters; {@code page}, {@code size} and {@code format} are ignored
      * @param format the file kind
      * @param response where the file is written
      * @throws IOException when the response cannot be written
@@ -91,7 +95,7 @@ public final class SearchExport<T> {
     /**
      * Writes the file body alone, for a caller that sets its own headers or stores the file.
      *
-     * @param params the list's search parameters; {@code page} and {@code size} are ignored
+     * @param params the list's search parameters; {@code page}, {@code size} and {@code format} are ignored
      * @param format the file kind
      * @param out where the body is written
      * @throws IOException when the stream cannot be written
@@ -113,6 +117,7 @@ public final class SearchExport<T> {
         Map<String, String> filters = new LinkedHashMap<>(params == null ? Map.of() : params);
         filters.remove(PAGE);
         filters.remove(SIZE);
+        filters.remove(FORMAT_PARAM);
         return page -> {
             Map<String, String> paged = new LinkedHashMap<>(filters);
             paged.put(PAGE, String.valueOf(page.getPageNumber()));

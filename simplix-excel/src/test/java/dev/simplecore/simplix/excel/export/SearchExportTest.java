@@ -69,6 +69,7 @@ class SearchExportTest {
         params.put("sort", "number.desc");
         params.put("page", "3");
         params.put("size", "10");
+        params.put("format", "XLSX");
         return params;
     }
 
@@ -112,7 +113,8 @@ class SearchExportTest {
             assertThat(params).containsEntry("number.contains", "n")
                     .containsEntry("sort", "number.desc")
                     .containsEntry("page", String.valueOf(i))
-                    .containsEntry("size", String.valueOf(PAGE_SIZE));
+                    .containsEntry("size", String.valueOf(PAGE_SIZE))
+                    .doesNotContainKey("format");
         }
     }
 }
