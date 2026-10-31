@@ -33,6 +33,8 @@ public class I18nMessagesService {
     private static final String ENUM_MESSAGES_PATTERN = "classpath*:messages/enums/**/*-messages*.properties";
     private static final String ENTITY_KEY_PREFIX = "entities.";
     private static final String COMMON_LABEL_NAMESPACE = "common";
+    /** Prefix of an entity-level key below {@code entities.<Entity>}, such as {@code _plural}. */
+    public static final String ENTITY_ATTRIBUTE_PREFIX = "_";
     private static final String API_VERSION = "1.0.0";
 
     /** Base packages scanned for {@code @Entity} classes and {@link LabeledEnum} implementations. */
@@ -104,7 +106,7 @@ public class I18nMessagesService {
      *
      * @return Sorted list of unique locale codes
      */
-    private List<String> detectSupportedLocales() {
+    public static List<String> detectSupportedLocales() {
         Set<String> locales = new TreeSet<>();
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
@@ -136,7 +138,7 @@ public class I18nMessagesService {
      * @param resources Array of property file resources
      * @param locales Set to add detected locales to
      */
-    private void extractLocalesFromResources(Resource[] resources, Set<String> locales) {
+    private static void extractLocalesFromResources(Resource[] resources, Set<String> locales) {
         for (Resource resource : resources) {
             try {
                 String filename = resource.getFilename();
@@ -156,7 +158,7 @@ public class I18nMessagesService {
                     }
                 }
             } catch (Exception e) {
-                // intentionally ignored — invalid filename format
+                // intentionally ignored: invalid filename format
             }
         }
     }
@@ -197,7 +199,7 @@ public class I18nMessagesService {
      * <p>Reflection alone only reaches persisted entity fields, so labels for derived
      * DTO fields (a resolved FK name, a computed count) and for projection surfaces that
      * have no entity at all (check-in results, reports, import summaries) would never be
-     * emitted — the client then falls back to a prettified English field name. The bundle
+     * emitted; the client then falls back to a prettified English field name. The bundle
      * is therefore the source of truth: declaring a key is enough to label a field.
      *
      * @param entityMessagesMap The reflected messages, mutated in place
@@ -220,7 +222,10 @@ public class I18nMessagesService {
                 messages.setLabel(resolveLabel(ENTITY_KEY_PREFIX + entityName, supportedLocales));
                 entityMessagesMap.put(entityName, messages);
             }
-            if (fieldName == null || hasTranslation(messages.getFields().get(fieldName))) {
+            // `entities.<Entity>._<name>` keys describe the entity itself (its plural, say),
+            // never a field, so they stay out of the field labels.
+            if (fieldName == null || fieldName.startsWith(ENTITY_ATTRIBUTE_PREFIX)
+                    || hasTranslation(messages.getFields().get(fieldName))) {
                 continue;
             }
             messages.addField(fieldName, resolveLabel(key, supportedLocales));
@@ -325,7 +330,7 @@ public class I18nMessagesService {
                             entityClasses.add(clazz);
                         }
                     } catch (Exception e) {
-                        // intentionally ignored — non-loadable class in classpath scan
+                        // intentionally ignored: non-loadable class in classpath scan
                     }
                 }
             } catch (Exception e) {
@@ -361,7 +366,7 @@ public class I18nMessagesService {
                             enumClasses.add((Class<? extends Enum<?>>) clazz);
                         }
                     } catch (Exception e) {
-                        // intentionally ignored — non-loadable class in classpath scan
+                        // intentionally ignored: non-loadable class in classpath scan
                     }
                 }
             } catch (Exception e) {

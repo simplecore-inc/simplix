@@ -12,4 +12,11 @@ public record DtoMeta(
         Map<String, EnumMeta> enums,
         Map<String, TypeMeta> types,
         List<OperationMeta> operations,
-        Map<String, Object> extensions) {}
+        Map<String, Object> extensions,
+        Map<String, EntityMeta> entities) {
+
+    public DtoMeta(int version, Map<String, EnumMeta> enums, Map<String, TypeMeta> types,
+                   List<OperationMeta> operations, Map<String, Object> extensions) {
+        this(version, enums, types, operations, extensions, null);
+    }
+}

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.web.meta.model.ConstraintMeta;
+import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.SearchableMeta;
 import dev.simplecore.simplix.web.meta.model.TypeMeta;
@@ -24,15 +25,23 @@ import java.lang.reflect.Method;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * Builds a {@link TypeMeta} for one DTO class. Serialization membership and wire names come from
- * the APPLICATION's ObjectMapper — never a fresh one; declarations come from the backing field:
+ * the APPLICATION's ObjectMapper, never a fresh one; declarations come from the backing field:
  * constraints, {@code @FieldLabel}, {@code @SearchableField} (read reflectively, the library is
  * optional), {@code @Schema}, {@code @JsonFormat} patterns.
+ *
+ * <p>A type declared inside an {@code <Entity>DTOs} container whose entity is known to the
+ * builder is tied to that entity: its fields gain reference metadata from the entity mapping
+ * ({@link EntityReferences}), and a field sorted through locale siblings gains a sort alias.
  */
 public class TypeMetaFactory {
 
@@ -41,12 +50,32 @@ public class TypeMetaFactory {
 
     private final ObjectMapper mapper;
     private final TypeRefMapper typeRefMapper;
+    private static final String DTO_CONTAINER_SUFFIX = "DTOs";
+    private static final Pattern LOCALE_SORT_SIBLING = Pattern.compile("^(.+)Sort([A-Z][a-z])$");
+
     private final MetaTypeRegistry registry;
+    private final Map<String, Class<?>> entities;
 
     public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry) {
+        this(mapper, typeRefMapper, registry, Map.of());
+    }
+
+    public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry,
+                           Map<String, Class<?>> entities) {
         this.mapper = mapper;
         this.typeRefMapper = typeRefMapper;
         this.registry = registry;
+        this.entities = entities;
+    }
+
+    /** The entity whose {@code <Entity>DTOs} container declares {@code type}, when the builder knows it. */
+    String entityOf(Class<?> type) {
+        Class<?> container = type.getEnclosingClass();
+        if (container == null) return null;
+        String name = container.getSimpleName();
+        if (!name.endsWith(DTO_CONTAINER_SUFFIX)) return null;
+        String entity = name.substring(0, name.length() - DTO_CONTAINER_SUFFIX.length());
+        return entities.containsKey(entity) ? entity : null;
     }
 
     public TypeMeta create(Class<?> type) {
@@ -58,10 +87,29 @@ public class TypeMetaFactory {
             Field backing = backingField(property);
             Class<?> declaring = backing != null ? backing.getDeclaringClass()
                     : property.getAccessor() != null ? property.getAccessor().getDeclaringClass() : type;
-            if (!declaring.equals(type)) continue; // inherited — lives on the parent TypeMeta
+            if (!declaring.equals(type)) continue; // inherited: lives on the parent TypeMeta
             FieldMeta field = toFieldMeta(property, backing, type);
             if (field != null) fields.add(field);
         }
+
+        String entity = entityOf(type);
+        Class<?> entityClass = entity != null ? entities.get(entity) : null;
+        fields.replaceAll(field -> {
+            String path = field.searchable() != null && field.searchable().entityField() != null
+                    ? field.searchable().entityField() : field.name();
+            FieldMeta result = field;
+            if (entityClass != null) {
+                ReferenceMeta reference = EntityReferences.resolve(entityClass, path);
+                if (reference != null) result = result.withReference(reference);
+            }
+            Map<String, String> tones = EntityReferences.booleanTones(type, field.name(), entityClass, path);
+            if (tones != null) result = result.withTones(tones);
+            if (EntityReferences.isCode(type, field.name(), entityClass, path)) {
+                result = result.withFormat(FieldMeta.FORMAT_CODE);
+            }
+            return result;
+        });
+        withLocaleSortAliases(fields);
 
         String extendsType = null;
         Class<?> parent = type.getSuperclass();
@@ -76,11 +124,34 @@ public class TypeMetaFactory {
         String description = classSchema != null && !classSchema.description().isEmpty()
                 ? classSchema.description() : null;
 
-        return new TypeMeta(type.getName(), extendsType, typeParams, description, fields);
+        return new TypeMeta(type.getName(), extendsType, typeParams, description, fields, entity);
     }
 
     /**
-     * Returns {@code null} when the property cannot be described — e.g. a write-only setter
+     * A field that is not sortable itself but has sortable siblings named
+     * {@code <field>Sort<Xx>} (one per language, {@code Xx} a two-letter language code) is sorted
+     * through them; the siblings are published as the field's {@code sortAlias}, keyed by the
+     * lower-cased language code.
+     */
+    private static void withLocaleSortAliases(List<FieldMeta> fields) {
+        Map<String, Map<String, String>> aliases = new LinkedHashMap<>();
+        for (FieldMeta field : fields) {
+            if (field.searchable() == null || !field.searchable().sortable()) continue;
+            Matcher sibling = LOCALE_SORT_SIBLING.matcher(field.name());
+            if (!sibling.matches()) continue;
+            aliases.computeIfAbsent(sibling.group(1), k -> new LinkedHashMap<>())
+                    .put(sibling.group(2).toLowerCase(Locale.ROOT), field.name());
+        }
+        if (aliases.isEmpty()) return;
+        fields.replaceAll(field -> {
+            Map<String, String> alias = aliases.get(field.name());
+            if (alias == null || field.searchable() == null || field.searchable().sortable()) return field;
+            return field.withSearchable(field.searchable().withSortAlias(new TreeMap<>(alias)));
+        });
+    }
+
+    /**
+     * Returns {@code null} when the property cannot be described, e.g. a write-only setter
      * or a creator parameter never re-exposed through a getter or field, so there is nothing
      * to read a type from. The caller drops nulls rather than emit a {@link FieldMeta} with no type.
      */
@@ -148,7 +219,7 @@ public class TypeMetaFactory {
         return field != null ? (Field) field.getAnnotated() : null;
     }
 
-    /** searchable-jpa is optional on the classpath — read its annotation by name. */
+    /** searchable-jpa is optional on the classpath; read its annotation by name. */
     private SearchableMeta readSearchable(Field field) {
         for (Annotation annotation : field.getAnnotations()) {
             if (!annotation.annotationType().getName().equals(SEARCHABLE_FIELD)) continue;

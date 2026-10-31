@@ -1,7 +1,15 @@
 package dev.simplecore.simplix.web.meta;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.simplecore.simplix.core.annotation.Tone;
 import dev.simplecore.simplix.core.enums.SimpliXLabeledEnum;
+import dev.simplecore.simplix.core.i18n.EntityMessageResolver;
+import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.i18n.I18nMessagesService;
+import dev.simplecore.simplix.core.entity.annotation.MappingEntity;
+import dev.simplecore.simplix.web.meta.model.EntityMeta;
+import dev.simplecore.simplix.web.meta.model.FieldMeta;
+import dev.simplecore.simplix.web.meta.model.HolderMeta;
 import dev.simplecore.simplix.web.meta.model.AccessMeta;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.EnumMeta;
@@ -31,8 +39,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 /**
  * Assembles the whole document: walks handler methods for operations, drains the type registry for
@@ -49,15 +59,32 @@ public class DtoMetaBuilder {
     private final List<SimpliXMetaContributor> contributors;
     private final MetaTypeRegistry registry = new MetaTypeRegistry();
     private final TypeRefMapper typeRefMapper = new TypeRefMapper(registry);
+    private final Function<String, Map<String, String>> labelResolver;
 
     public DtoMetaBuilder(ObjectMapper mapper, List<SimpliXMetaContributor> contributors) {
+        this(mapper, contributors, DtoMetaBuilder::resolveFromBundles);
+    }
+
+    /**
+     * @param labelResolver resolves one message key to its text per language code, omitting the
+     *                      languages where the key is not declared
+     */
+    public DtoMetaBuilder(ObjectMapper mapper, List<SimpliXMetaContributor> contributors,
+                          Function<String, Map<String, String>> labelResolver) {
         this.mapper = mapper;
         this.contributors = contributors;
+        this.labelResolver = labelResolver;
     }
 
     public DtoMeta build(Map<RequestMappingInfo, HandlerMethod> handlerMethods) {
         Map<String, Object> extensions = new LinkedHashMap<>();
         List<OperationMeta> operations = new ArrayList<>();
+        Map<String, Class<?>> entityClasses = new TreeMap<>();
+        handlerMethods.values().forEach(handler -> {
+            if (skip(handler)) return;
+            Class<?> entity = entityOf(handler.getBeanType());
+            if (entity != null) entityClasses.put(entity.getSimpleName(), entity);
+        });
 
         handlerMethods.forEach((info, handler) -> {
             if (skip(handler)) return;
@@ -74,7 +101,7 @@ public class DtoMetaBuilder {
         });
 
         Map<String, TypeMeta> types = new LinkedHashMap<>();
-        TypeMetaFactory factory = new TypeMetaFactory(mapper, typeRefMapper, registry);
+        TypeMetaFactory factory = new TypeMetaFactory(mapper, typeRefMapper, registry, entityClasses);
         while (registry.hasPending()) {
             Class<?> type = registry.next();
             String name = MetaTypeRegistry.typeName(type);
@@ -93,8 +120,77 @@ public class DtoMetaBuilder {
         // end to end. Sorting here is what makes the document a function of the application.
         operations.sort(Comparator.comparing(OperationMeta::path).thenComparing(OperationMeta::method));
 
+        Map<String, EntityMeta> entities = entities(entityClasses, types, operations);
+
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
-                extensions.isEmpty() ? null : extensions);
+                extensions.isEmpty() ? null : extensions, entities.isEmpty() ? null : entities);
+    }
+
+    /** The entity a {@code SimpliXBaseController} subclass serves, or {@code null} for any other controller. */
+    static Class<?> entityOf(Class<?> controller) {
+        if (!SimpliXBaseController.class.isAssignableFrom(controller)) return null;
+        return ResolvableType.forClass(controller).as(SimpliXBaseController.class).getGeneric(0).resolve();
+    }
+
+    /**
+     * One {@link EntityMeta} per served entity, its holders derived from the references in the
+     * search DTOs: a search DTO of entity {@code H} whose field references entity {@code T} makes
+     * {@code H} a holder of {@code T}, listed by that operation filtered on the field.
+     */
+    private Map<String, EntityMeta> entities(Map<String, Class<?>> entityClasses,
+                                             Map<String, TypeMeta> types,
+                                             List<OperationMeta> operations) {
+        Map<String, List<HolderMeta>> holders = new TreeMap<>();
+        for (OperationMeta operation : operations) {
+            String searchDto = operation.request().searchDto();
+            if (searchDto == null || operation.entity() == null) continue;
+            Class<?> holderClass = entityClasses.get(operation.entity());
+            // A mapping row references both ends it joins; it is never an owner-like holder.
+            if (holderClass != null && holderClass.isAnnotationPresent(MappingEntity.class)) continue;
+            TypeMeta dto = types.get(searchDto);
+            if (dto == null) continue;
+            for (FieldMeta field : dto.fields()) {
+                if (field.reference() == null || field.searchable() == null
+                        || field.searchable().operators().isEmpty()) continue;
+                List<HolderMeta> list = holders.computeIfAbsent(field.reference().entity(), k -> new ArrayList<>());
+                boolean known = list.stream().anyMatch(h -> h.entity().equals(operation.entity())
+                        && h.field().equals(field.name()));
+                // One holder per (entity, field): the GET and POST search of one controller are the
+                // same listing, and operations are sorted, so the first one met is stable.
+                if (!known) {
+                    list.add(new HolderMeta(operation.entity(), field.name(),
+                            field.searchable().operators(), operation.id()));
+                }
+            }
+        }
+
+        Map<String, EntityMeta> result = new TreeMap<>();
+        entityClasses.forEach((name, type) -> {
+            String labelKey = "entities." + name;
+            String pluralKey = labelKey + "." + I18nMessagesService.ENTITY_ATTRIBUTE_PREFIX + "plural";
+            Map<String, String> label = labelResolver.apply(labelKey);
+            String descriptionKey = labelKey + "." + I18nMessagesService.ENTITY_ATTRIBUTE_PREFIX + "description";
+            Map<String, String> plural = labelResolver.apply(pluralKey);
+            Map<String, String> description = labelResolver.apply(descriptionKey);
+            List<HolderMeta> held = holders.get(name);
+            result.put(name, new EntityMeta(type.getName(), EntityReferences.idFieldOf(type),
+                    labelKey, pluralKey, descriptionKey,
+                    label.isEmpty() ? null : label,
+                    plural.isEmpty() ? null : plural,
+                    description.isEmpty() ? null : description,
+                    held == null ? null : List.copyOf(held)));
+        });
+        return result;
+    }
+
+    /** Resolves a key in every language the entity and enum bundles ship. */
+    private static Map<String, String> resolveFromBundles(String key) {
+        Map<String, String> resolved = new TreeMap<>();
+        for (String language : I18nMessagesService.detectSupportedLocales()) {
+            String text = EntityMessageResolver.resolveMessage(key, Locale.forLanguageTag(language));
+            if (text != null && !text.equals(key)) resolved.put(language, text);
+        }
+        return resolved;
     }
 
     /**
@@ -167,7 +263,7 @@ public class DtoMetaBuilder {
                 contentType = "multipart";
                 // Record the part under its form-field name. A client has to build a FormData and
                 // append the file under exactly this name, and dropping the parameter left the
-                // whole upload unrepresentable — TypeRef.file() exists for this.
+                // whole upload unrepresentable: TypeRef.file() exists for this.
                 RequestParam filePart = parameter.getParameterAnnotation(RequestParam.class);
                 String partName = filePart != null
                         ? firstNonEmpty(filePart.name(), filePart.value(), parameter.getParameterName())
@@ -199,10 +295,12 @@ public class DtoMetaBuilder {
                 ResolvableType.forMethodReturnType(handler.getMethod()));
 
         RequestMeta request = new RequestMeta(body, contentType, query, pathParams, searchDto);
-        return new OperationMeta(id, httpMethod, path, tagName, summary, request, response, access);
+        Class<?> entity = entityOf(beanType);
+        return new OperationMeta(id, httpMethod, path, tagName, summary, request, response, access,
+                entity != null ? entity.getSimpleName() : null);
     }
 
-    /** Annotation name/value aliases are not merged on direct reads — check both, then bytecode names. */
+    /** Annotation name/value aliases are not merged on direct reads; check both, then bytecode names. */
     private static String firstNonEmpty(String first, String second, String fallback) {
         if (first != null && !first.isEmpty()) return first;
         if (second != null && !second.isEmpty()) return second;
@@ -223,12 +321,23 @@ public class DtoMetaBuilder {
         return null;
     }
 
+    /** The {@code @Tone} on one constant, lower-cased, or {@code null} when it carries none. */
+    private static String toneOf(Class<?> enumClass, String constant) {
+        try {
+            Tone tone = enumClass.getField(constant).getAnnotation(Tone.class);
+            return tone != null ? tone.value().name().toLowerCase(Locale.ROOT) : null;
+        } catch (NoSuchFieldException impossible) {
+            throw new IllegalStateException("Enum constant without a field: " + constant, impossible);
+        }
+    }
+
     private EnumMeta toEnumMeta(Class<?> enumClass) {
         boolean labeled = SimpliXLabeledEnum.class.isAssignableFrom(enumClass);
         String simpleName = enumClass.getSimpleName();
         List<EnumMeta.Value> values = Arrays.stream(enumClass.getEnumConstants())
                 .map(constant -> new EnumMeta.Value(((Enum<?>) constant).name(),
-                        labeled ? "enums." + simpleName + "." + ((Enum<?>) constant).name() : null))
+                        labeled ? "enums." + simpleName + "." + ((Enum<?>) constant).name() : null,
+                        toneOf(enumClass, ((Enum<?>) constant).name())))
                 .toList();
         return new EnumMeta(labeled, values);
     }

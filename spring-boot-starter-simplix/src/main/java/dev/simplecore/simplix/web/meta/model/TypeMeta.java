@@ -5,11 +5,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
-/** One DTO type; carries ONLY its own fields — inherited ones live on {@code extends}. */
+/**
+ * One DTO type; carries ONLY its own fields (inherited ones live on {@code extends}).
+ * {@code entity} names the entity whose {@code <Entity>DTOs} container declares this type.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record TypeMeta(
         String javaClass,
         @JsonProperty("extends") String extendsType,
         List<String> typeParams,
         String description,
-        List<FieldMeta> fields) {}
+        List<FieldMeta> fields,
+        String entity) {
+
+    public TypeMeta(String javaClass, String extendsType, List<String> typeParams,
+                    String description, List<FieldMeta> fields) {
+        this(javaClass, extendsType, typeParams, description, fields, null);
+    }
+}

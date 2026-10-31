@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.web.meta.model.AccessMeta;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -70,5 +71,42 @@ class AccessExpressionParserTest {
         assertThat(meta.kind()).isEqualTo("expression");
         assertThat(meta.kind()).isNotEqualTo("public");
         assertThat(meta.raw()).isEqualTo(expression.trim());
+    }
+
+    @Nested
+    class Chains {
+        @Test
+        void orChainKeepsRawAndCarriesTerms() {
+            AccessMeta meta = AccessExpressionParser.parse(
+                    "hasPermission('USER_ADMIN', 'view') or @svc.hasOwnerPermission('edit', #id, null)");
+            assertThat(meta.kind()).isEqualTo("expression");
+            assertThat(meta.raw()).startsWith("hasPermission('USER_ADMIN'");
+            assertThat(meta.operator()).isEqualTo("or");
+            assertThat(meta.permissions()).extracting(p -> p.group() + ":" + p.action())
+                    .containsExactly("USER_ADMIN:view");
+        }
+
+        @Test
+        void andChainCarriesEveryTerm() {
+            AccessMeta meta = AccessExpressionParser.parse(
+                    "hasPermission('A', 'edit') and hasPermission('B','view')");
+            assertThat(meta.operator()).isEqualTo("and");
+            assertThat(meta.permissions()).extracting(p -> p.group()).containsExactly("A", "B");
+        }
+
+        @Test
+        void mixedOperatorsCarryNoTerms() {
+            AccessMeta meta = AccessExpressionParser.parse(
+                    "hasPermission('A', 'edit') or hasPermission('B','view') and #x != null");
+            assertThat(meta.operator()).isNull();
+            assertThat(meta.permissions()).isNull();
+        }
+
+        @Test
+        void operatorInsideParenthesesOrQuotesIsNotSplit() {
+            AccessMeta meta = AccessExpressionParser.parse("@svc.check('a or b') and (#x or #y)");
+            assertThat(meta.operator()).isEqualTo("and");
+            assertThat(meta.permissions()).isNull();
+        }
     }
 }
