@@ -219,6 +219,18 @@ public class TypeMetaFactory {
         return field != null ? (Field) field.getAnnotated() : null;
     }
 
+    /**
+     * Whether the field takes part in the keyword search. {@code keyword()} arrived in searchable-jpa
+     * 2.0.1, so an older library on the classpath has no such member and no keyword fields.
+     */
+    private static boolean readKeyword(Annotation annotation) throws ReflectiveOperationException {
+        try {
+            return (Boolean) annotation.annotationType().getMethod("keyword").invoke(annotation);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
     /** searchable-jpa is optional on the classpath; read its annotation by name. */
     private SearchableMeta readSearchable(Field field) {
         for (Annotation annotation : field.getAnnotations()) {
@@ -236,7 +248,8 @@ public class TypeMetaFactory {
                         .map(o -> ((Enum<?>) o).name()).toList();
                 return new SearchableMeta(operatorNames, sortable,
                         entityField.isEmpty() ? null : entityField,
-                        sortField.isEmpty() ? null : sortField);
+                        sortField.isEmpty() ? null : sortField)
+                        .withKeyword(readKeyword(annotation));
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException("Failed to read @SearchableField on " + field, e);
             }

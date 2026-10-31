@@ -12,16 +12,23 @@ import java.util.Map;
  * that language ({@code roleName} to {@code roleNameSortEn}, {@code roleNameSortKo}, ...). Its
  * presence says the visible field is sorted through those siblings: a client sorts by the
  * visible field's own name, and the server moves the order onto the reader's language.
+ *
+ * <p>{@code keyword} is {@code true} when the field takes part in the route's keyword search (the
+ * reserved {@code keyword} parameter), and absent otherwise.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SearchableMeta(List<String> operators, boolean sortable, String entityField, String sortField,
-                             Map<String, String> sortAlias) {
+                             Map<String, String> sortAlias, Boolean keyword) {
 
     public SearchableMeta(List<String> operators, boolean sortable, String entityField, String sortField) {
-        this(operators, sortable, entityField, sortField, null);
+        this(operators, sortable, entityField, sortField, null, null);
     }
 
     public SearchableMeta withSortAlias(Map<String, String> value) {
-        return new SearchableMeta(operators, sortable, entityField, sortField, value);
+        return new SearchableMeta(operators, sortable, entityField, sortField, value, keyword);
+    }
+
+    public SearchableMeta withKeyword(boolean value) {
+        return new SearchableMeta(operators, sortable, entityField, sortField, sortAlias, value ? Boolean.TRUE : null);
     }
 }

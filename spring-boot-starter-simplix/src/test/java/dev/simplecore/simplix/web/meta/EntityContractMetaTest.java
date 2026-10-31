@@ -271,6 +271,16 @@ class EntityContractMetaTest {
     }
 
     @Test
+    void keywordIsAbsentUnlessTheFieldOptsIn() throws Exception {
+        // The test classpath carries a searchable-jpa without keyword(), which reads as no opt-in.
+        FieldMeta name = field(build().types().get("MemberSearchDTO"), "memberName");
+        assertThat(name.searchable().keyword()).isNull();
+        assertThat(name.searchable().withKeyword(true).keyword()).isTrue();
+        assertThat(name.searchable().withKeyword(true).withSortAlias(Map.of()).keyword()).isTrue();
+        assertThat(name.searchable().withKeyword(false).keyword()).isNull();
+    }
+
+    @Test
     void orChainPublishesItsPermissionTerms() throws Exception {
         OperationMeta get = build().operations().stream()
                 .filter(o -> o.id().equals("MemberRest_get")).findFirst().orElseThrow();
