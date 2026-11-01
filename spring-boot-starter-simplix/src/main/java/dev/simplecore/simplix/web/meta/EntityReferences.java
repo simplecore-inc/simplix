@@ -3,6 +3,7 @@ package dev.simplecore.simplix.web.meta;
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
 import dev.simplecore.simplix.core.annotation.NameField;
+import dev.simplecore.simplix.core.annotation.NameFields;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Column;
@@ -111,11 +112,37 @@ final class EntityReferences {
     }
 
     /**
-     * The fields marked {@link NameField}, ordered by {@link NameField#order()}, or {@code null} when
-     * the entity names none. Two marks with the same order leave a client two answers for one
-     * position, so they are refused rather than resolved by field order.
+     * The fields the entity's {@link NameFields} lists, else the fields marked {@link NameField}
+     * ordered by {@link NameField#order()}, or {@code null} when the entity names none. Two marks
+     * with the same order leave a client two answers for one position, and a list beside marks
+     * leaves it two lists, so both are refused rather than resolved; a listed field the hierarchy
+     * does not declare is refused too.
      */
     static List<String> nameFieldsOf(Class<?> entity) {
+        List<String> marked = markedNameFieldsOf(entity);
+        NameFields listed = listedNameFieldsOf(entity);
+        if (listed == null) return marked;
+        if (marked != null) {
+            throw new IllegalStateException(entity.getName() + " declares @NameFields and marks @NameField on "
+                    + String.join(", ", marked));
+        }
+        for (String name : listed.value()) {
+            if (findField(entity, name) == null) {
+                throw new IllegalStateException(entity.getName() + " lists " + name + " in @NameFields, which it does not declare");
+            }
+        }
+        return listed.value().length == 0 ? null : List.of(listed.value());
+    }
+
+    private static NameFields listedNameFieldsOf(Class<?> entity) {
+        for (Class<?> c = entity; c != null && c != Object.class; c = c.getSuperclass()) {
+            NameFields listed = c.getAnnotation(NameFields.class);
+            if (listed != null) return listed;
+        }
+        return null;
+    }
+
+    private static List<String> markedNameFieldsOf(Class<?> entity) {
         Map<Integer, List<String>> byOrder = new TreeMap<>();
         for (Class<?> c = entity; c != null && c != Object.class; c = c.getSuperclass()) {
             for (Field field : c.getDeclaredFields()) {

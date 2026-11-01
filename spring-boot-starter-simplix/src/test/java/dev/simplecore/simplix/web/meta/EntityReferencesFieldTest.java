@@ -4,6 +4,7 @@ import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Id;
 import dev.simplecore.simplix.core.annotation.NameField;
+import dev.simplecore.simplix.core.annotation.NameFields;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +48,27 @@ class EntityReferencesFieldTest {
         @NameField String doubledName;
     }
 
+    static class Stamped {
+        String createdAt;
+    }
+
+    @NameFields({"jobKind", "createdAt"})
+    static class Listed extends Stamped {
+        @Id String listedId;
+        String jobKind;
+    }
+
+    @NameFields({"jobKind", "missing"})
+    static class ListedMissing extends Stamped {
+        String jobKind;
+    }
+
+    @NameFields({"jobKind"})
+    static class ListedAndMarked {
+        String jobKind;
+        @NameField String other;
+    }
+
     static class Composite {
         @Id String compositeId;
         @NameField(order = 1) String compositeVersion;
@@ -81,6 +103,25 @@ class EntityReferencesFieldTest {
     @Test
     void nameFieldsJoinASuperclassMarkInOrder() {
         assertThat(EntityReferences.nameFieldsOf(Extended.class)).containsExactly("baseName", "extendedPart");
+    }
+
+    @Test
+    void nameFieldsListedOnTheEntityTakeAnInheritedFieldInOrder() {
+        assertThat(EntityReferences.nameFieldsOf(Listed.class)).containsExactly("jobKind", "createdAt");
+    }
+
+    @Test
+    void aListedFieldTheHierarchyDoesNotDeclareIsRefused() {
+        assertThatThrownBy(() -> EntityReferences.nameFieldsOf(ListedMissing.class))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("missing");
+    }
+
+    @Test
+    void aListBesideMarksIsRefused() {
+        assertThatThrownBy(() -> EntityReferences.nameFieldsOf(ListedAndMarked.class))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("other");
     }
 
     @Test
