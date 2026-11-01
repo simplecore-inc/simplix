@@ -6,12 +6,14 @@ import dev.simplecore.simplix.core.enums.SimpliXLabeledEnum;
 import dev.simplecore.simplix.core.i18n.EntityMessageResolver;
 import dev.simplecore.simplix.web.controller.SimpliXBaseController;
 import dev.simplecore.simplix.web.controller.SimpliXDefaultSort;
+import dev.simplecore.simplix.web.controller.SimpliXListFigures;
 import dev.simplecore.simplix.web.i18n.I18nMessagesService;
 import dev.simplecore.simplix.core.entity.annotation.MappingEntity;
 import dev.simplecore.simplix.web.meta.model.EntityMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.HolderMeta;
 import dev.simplecore.simplix.web.meta.model.AccessMeta;
+import dev.simplecore.simplix.web.meta.model.AggregateMeta;
 import dev.simplecore.simplix.web.meta.model.DefaultSortMeta;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.EnumMeta;
@@ -88,6 +90,7 @@ public class DtoMetaBuilder {
         List<OperationMeta> operations = new ArrayList<>();
         Map<String, Class<?>> entityClasses = new TreeMap<>();
         Map<String, SimpliXDefaultSort> defaultSorts = new TreeMap<>();
+        Map<String, SimpliXListFigures> figures = new TreeMap<>();
         handlerMethods.values().forEach(handler -> {
             if (skip(handler)) return;
             Class<?> entity = entityOf(handler.getBeanType());
@@ -96,6 +99,9 @@ public class DtoMetaBuilder {
             SimpliXDefaultSort sort = AnnotatedElementUtils.findMergedAnnotation(
                     handler.getBeanType(), SimpliXDefaultSort.class);
             if (sort != null) defaultSorts.put(entity.getSimpleName(), sort);
+            SimpliXListFigures declared = AnnotatedElementUtils.findMergedAnnotation(
+                    handler.getBeanType(), SimpliXListFigures.class);
+            if (declared != null) figures.put(entity.getSimpleName(), declared);
         });
 
         handlerMethods.forEach((info, handler) -> {
@@ -136,7 +142,7 @@ public class DtoMetaBuilder {
                 .thenComparing(OperationMeta::method)
                 .thenComparing(OperationMeta::id));
 
-        Map<String, EntityMeta> entities = entities(entityClasses, defaultSorts, types, operations);
+        Map<String, EntityMeta> entities = entities(entityClasses, defaultSorts, figures, types, operations);
 
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
                 extensions.isEmpty() ? null : extensions, entities.isEmpty() ? null : entities);
@@ -155,6 +161,7 @@ public class DtoMetaBuilder {
      */
     private Map<String, EntityMeta> entities(Map<String, Class<?>> entityClasses,
                                              Map<String, SimpliXDefaultSort> defaultSorts,
+                                             Map<String, SimpliXListFigures> figures,
                                              Map<String, TypeMeta> types,
                                              List<OperationMeta> operations) {
         Map<String, List<HolderMeta>> holders = new TreeMap<>();
@@ -198,9 +205,25 @@ public class DtoMetaBuilder {
                     plural.isEmpty() ? null : plural,
                     description.isEmpty() ? null : description,
                     held == null ? null : List.copyOf(held),
-                    defaultSort(name, type, defaultSorts.get(name), types, operations)));
+                    defaultSort(name, type, defaultSorts.get(name), types, operations),
+                    statusCounts(figures.get(name)),
+                    aggregates(figures.get(name))));
         });
         return result;
+    }
+
+    /** The fields the entity's status counts accept, or {@code null} when it declares none. */
+    static List<String> statusCounts(SimpliXListFigures declared) {
+        if (declared == null || declared.statusCounts().length == 0) return null;
+        return List.of(declared.statusCounts());
+    }
+
+    /** The figures the entity's aggregates return, in order, or {@code null} when it declares none. */
+    static List<AggregateMeta> aggregates(SimpliXListFigures declared) {
+        if (declared == null || declared.aggregates().length == 0) return null;
+        return Arrays.stream(declared.aggregates())
+                .map(figure -> new AggregateMeta(figure.field(), figure.op()))
+                .toList();
     }
 
     /**

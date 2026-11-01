@@ -13,6 +13,8 @@ import java.util.Map;
  * {@code nameFields} are the entity fields marked {@code @NameField} in their declared order, the
  * parts a record is named by on a screen; it is absent when the entity marks none.
  * {@code defaultSort} is the order its list opens in, absent when the controller declares none.
+ * {@code statusCounts} are the fields its {@code GET /status-counts} accepts and {@code aggregates}
+ * the figures its {@code GET /aggregates} returns, in order; each is absent when none is declared.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EntityMeta(
@@ -26,4 +28,6 @@ public record EntityMeta(
         Map<String, String> plural,
         Map<String, String> description,
         List<HolderMeta> holders,
-        DefaultSortMeta defaultSort) {}
+        DefaultSortMeta defaultSort,
+        List<String> statusCounts,
+        List<AggregateMeta> aggregates) {}

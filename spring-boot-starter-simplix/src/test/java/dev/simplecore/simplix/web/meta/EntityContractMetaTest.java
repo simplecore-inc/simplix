@@ -16,6 +16,8 @@ import dev.simplecore.simplix.core.entity.annotation.MappingEntity;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.web.controller.SimpliXBaseController;
 import dev.simplecore.simplix.web.controller.SimpliXDefaultSort;
+import dev.simplecore.simplix.web.controller.SimpliXListFigures;
+import dev.simplecore.simplix.web.meta.model.AggregateMeta;
 import dev.simplecore.simplix.web.meta.model.DefaultSortMeta;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.EntityMeta;
@@ -119,6 +121,9 @@ class EntityContractMetaTest {
     }
 
     @SimpliXDefaultSort(field = "memberName")
+    @SimpliXListFigures(statusCounts = "active",
+            aggregates = {@SimpliXListFigures.Figure(field = "creditMicros", op = "sum"),
+                    @SimpliXListFigures.Figure(field = "memberId", op = "count")})
     static class MemberRestController extends SimpliXBaseController<Member, String> {
         MemberRestController() { super(null); }
 
@@ -246,6 +251,20 @@ class EntityContractMetaTest {
     void defaultSortOnASortableFieldIsPublished() throws Exception {
         assertThat(build().entities().get("Member").defaultSort())
                 .isEqualTo(new DefaultSortMeta("memberName", "desc"));
+    }
+
+    @Test
+    void listFiguresArePublishedInDeclaredOrder() throws Exception {
+        EntityMeta member = build().entities().get("Member");
+        assertThat(member.statusCounts()).containsExactly("active");
+        assertThat(member.aggregates()).containsExactly(
+                new AggregateMeta("creditMicros", "sum"), new AggregateMeta("memberId", "count"));
+    }
+
+    @Test
+    void listFiguresAreAbsentWhenUndeclared() throws Exception {
+        String grade = new ObjectMapper().writeValueAsString(build().entities().get("Grade"));
+        assertThat(grade).doesNotContain("statusCounts").doesNotContain("aggregates");
     }
 
     @Test
