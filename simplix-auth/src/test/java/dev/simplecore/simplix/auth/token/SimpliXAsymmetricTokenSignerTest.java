@@ -1,6 +1,10 @@
 package dev.simplecore.simplix.auth.token;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -87,5 +91,19 @@ class SimpliXAsymmetricTokenSignerTest {
                 b64(b.getPublic().getEncoded()), "k1")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new SimpliXAsymmetricTokenSigner(b64(a.getPrivate().getEncoded()), "", "k1"))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void aMissingKeyFileIsWrittenOnceAndItsPairSurvivesARestart(@TempDir Path dir) throws Exception {
+        Path file = dir.resolve("env/signing-key.env");
+
+        SimpliXAsymmetricTokenSigner first = SimpliXAsymmetricTokenSigner.fromKeyFile(file, "k1");
+        String token = first.sign("{\"a\":1}");
+        SimpliXAsymmetricTokenSigner restarted = SimpliXAsymmetricTokenSigner.fromKeyFile(file, "k1");
+
+        assertThat(Files.readString(file)).contains("private-key=").contains("public-key=");
+        assertThat(restarted.verify(token)).contains("{\"a\":1}");
+        assertThat(restarted.publicJwk()).isEqualTo(first.publicJwk());
+        assertThat(Files.getPosixFilePermissions(file)).hasSize(2);
     }
 }

@@ -151,6 +151,7 @@ public interface JweKeyStore {
 | `simplix.auth.stateless-token.secret` | (부팅마다 임의 생성) | `SimpliXStatelessTokenSigner`의 HMAC-SHA256 키. 서명 링크처럼 저장하지 않는 짧은 토큰을 `sign` · `verify`로 발급하고 검증합니다. 비워 두면 재시작할 때 이전 토큰이 무효가 됩니다 |
 | `simplix.auth.asymmetric-token.private-key` · `public-key` | (부팅마다 임의 생성) | `SimpliXAsymmetricTokenSigner`의 Ed25519 키 쌍(base64 DER, PKCS#8 · X.509). 공개 키만 가진 클라이언트가 서버를 호출하지 않고 검증하는 토큰을 compact JWS(`EdDSA`)로 발급하고, `publicJwk()`로 공개 키를 JWK로 내보냅니다. 비워 두면 재시작할 때 이전 토큰이 무효가 됩니다 |
 | `simplix.auth.asymmetric-token.key-id` | `default` | 토큰 헤더와 공개 키의 `kid` |
+| `simplix.auth.asymmetric-token.key-file` | (없음) | 키 쌍을 담은 properties 파일(`private-key` · `public-key`). 파일이 없으면 첫 시작 때 새 키 쌍을 소유자만 읽을 수 있게 기록하고, 지정하면 인라인 키보다 우선합니다. 개발 서버가 소스 저장소에 비공개 키를 두지 않고 재시작 뒤에도 같은 키 쌍을 쓰게 합니다 |
 
 전체 설정은 [설정 레퍼런스](docs/ko/configuration-reference.md)를 참조하세요.
 

@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
+import java.nio.file.Path;
+
 /**
  * Registers the {@link SimpliXStatelessTokenSigner} from {@code simplix.auth.stateless-token.secret} and the
  * {@link SimpliXAsymmetricTokenSigner} from {@code simplix.auth.asymmetric-token.*}.
@@ -29,7 +31,9 @@ public class SimpliXStatelessTokenAutoConfiguration {
     }
 
     /**
-     * @param privateKey base64 PKCS#8 Ed25519 private key; blank generates a per-boot pair
+     * @param keyFile a properties file holding the pair, written on first start when missing; it
+     *     wins over the inline keys
+     * @param privateKey base64 PKCS#8 Ed25519 private key; blank with no key file generates a per-boot pair
      * @param publicKey base64 X.509 Ed25519 public key
      * @param keyId the key id written into tokens and the published key
      * @return the signer
@@ -37,9 +41,13 @@ public class SimpliXStatelessTokenAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public SimpliXAsymmetricTokenSigner simpliXAsymmetricTokenSigner(
+            @Value("${simplix.auth.asymmetric-token.key-file:}") String keyFile,
             @Value("${simplix.auth.asymmetric-token.private-key:}") String privateKey,
             @Value("${simplix.auth.asymmetric-token.public-key:}") String publicKey,
             @Value("${simplix.auth.asymmetric-token.key-id:default}") String keyId) {
+        if (!keyFile.isBlank()) {
+            return SimpliXAsymmetricTokenSigner.fromKeyFile(Path.of(keyFile), keyId);
+        }
         return new SimpliXAsymmetricTokenSigner(privateKey, publicKey, keyId);
     }
 }

@@ -1,6 +1,13 @@
 package dev.simplecore.simplix.auth.token;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -15,6 +22,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * Signs payloads with Ed25519 as compact JWS tokens ({@code header.payload.signature}, {@code alg}
@@ -23,8 +31,10 @@ import java.util.Optional;
  * itself reads back.
  *
  * <p>The key pair is given as base64 DER: the private key in PKCS#8, the public key in X.509
- * SubjectPublicKeyInfo. With no keys configured a pair is generated for this boot only, which
- * suits a development server; tokens it signed stop verifying after a restart. The public key is
+ * SubjectPublicKeyInfo, or kept in a key file ({@link #fromKeyFile}) that is written with a new
+ * pair the first time it is missing, so a development server keeps its pair across restarts
+ * without the private key living in source control. With neither, a pair is generated for this
+ * boot only; tokens it signed stop verifying after a restart. The public key is
  * published as a JSON Web Key ({@code kty} {@code OKP}, {@code crv} {@code Ed25519}) through
  * {@link #publicJwk()}.
  */
@@ -68,6 +78,47 @@ public class SimpliXAsymmetricTokenSigner {
         byte[] probe = "probe".getBytes(StandardCharsets.UTF_8);
         if (!verifySignature(probe, signBytes(probe))) {
             throw new IllegalArgumentException("The Ed25519 private and public keys are not a pair");
+        }
+    }
+
+    /**
+     * Reads the pair from a properties file holding {@code private-key} and {@code public-key}, and
+     * writes a new pair there, readable by its owner only, when the file does not exist yet.
+     *
+     * @param keyFile the file; its directory is created when missing
+     * @param keyId the {@code kid} written into every token and the published key
+     * @return the signer over the file's pair
+     */
+    public static SimpliXAsymmetricTokenSigner fromKeyFile(Path keyFile, String keyId) {
+        try {
+            if (!Files.exists(keyFile)) {
+                KeyPair generated = KeyPairGenerator.getInstance(ALGORITHM).generateKeyPair();
+                Properties written = new Properties();
+                written.setProperty("private-key", Base64.getEncoder().encodeToString(generated.getPrivate().getEncoded()));
+                written.setProperty("public-key", Base64.getEncoder().encodeToString(generated.getPublic().getEncoded()));
+                Path parent = keyFile.toAbsolutePath().getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+                Files.createFile(keyFile);
+                try {
+                    Files.setPosixFilePermissions(keyFile, PosixFilePermissions.fromString("rw-------"));
+                } catch (UnsupportedOperationException e) {
+                    // A file system without POSIX permissions keeps its default access.
+                }
+                try (Writer out = Files.newBufferedWriter(keyFile, StandardCharsets.UTF_8)) {
+                    written.store(out, "Ed25519 token signing key pair, generated on first start; never commit this file");
+                }
+            }
+            Properties read = new Properties();
+            try (Reader in = Files.newBufferedReader(keyFile, StandardCharsets.UTF_8)) {
+                read.load(in);
+            }
+            return new SimpliXAsymmetricTokenSigner(read.getProperty("private-key"), read.getProperty("public-key"), keyId);
+        } catch (IOException e) {
+            throw new UncheckedIOException("The Ed25519 key file cannot be read or written: " + keyFile, e);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Ed25519 key generation unavailable", e);
         }
     }
 
