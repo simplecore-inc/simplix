@@ -121,7 +121,7 @@ class EntityContractMetaTest {
     }
 
     @SimpliXDefaultSort(field = "memberName")
-    @SimpliXListFigures(statusCounts = "active",
+    @SimpliXListFigures(statusCounts = {"active", "memberNameSortEn"},
             aggregates = {@SimpliXListFigures.Figure(field = "creditMicros", op = "sum"),
                     @SimpliXListFigures.Figure(field = "memberId", op = "count")})
     static class MemberRestController extends SimpliXBaseController<Member, String> {
@@ -256,10 +256,24 @@ class EntityContractMetaTest {
     @Test
     void listFiguresArePublishedInDeclaredOrder() throws Exception {
         EntityMeta member = build().entities().get("Member");
-        assertThat(member.statusCounts()).containsExactly("active");
+        assertThat(member.statusCounts()).containsExactly("active", "memberNameSortEn");
         assertThat(member.aggregates()).containsExactly(
                 new AggregateMeta("creditMicros", "sum"), new AggregateMeta("memberId", "count"));
     }
+
+    @Test
+    void listFiguresNamingAnUnknownFieldAreRefused() {
+        assertThatThrownBy(() -> build(new CountsNothing()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("'ghost'");
+        assertThatThrownBy(() -> build(new SumsNothing()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("'ghost'");
+    }
+
+    @SimpliXListFigures(statusCounts = "ghost")
+    static class CountsNothing extends MemberRestController {}
+
+    @SimpliXListFigures(aggregates = @SimpliXListFigures.Figure(field = "ghost", op = "sum"))
+    static class SumsNothing extends MemberRestController {}
 
     @Test
     void listFiguresAreAbsentWhenUndeclared() throws Exception {

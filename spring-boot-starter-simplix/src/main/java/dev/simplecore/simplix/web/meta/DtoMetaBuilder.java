@@ -206,24 +206,61 @@ public class DtoMetaBuilder {
                     description.isEmpty() ? null : description,
                     held == null ? null : List.copyOf(held),
                     defaultSort(name, type, defaultSorts.get(name), types, operations),
-                    statusCounts(figures.get(name)),
-                    aggregates(figures.get(name))));
+                    statusCounts(name, type, figures.get(name), types, operations),
+                    aggregates(name, type, figures.get(name), types, operations)));
         });
         return result;
     }
 
-    /** The fields the entity's status counts accept, or {@code null} when it declares none. */
-    static List<String> statusCounts(SimpliXListFigures declared) {
+    /**
+     * The fields the entity's status counts accept, or {@code null} when it declares none.
+     *
+     * @throws IllegalStateException when a field is neither an entity field nor a field of its search DTO
+     */
+    static List<String> statusCounts(String entity, Class<?> type, SimpliXListFigures declared,
+                                     Map<String, TypeMeta> types, List<OperationMeta> operations) {
         if (declared == null || declared.statusCounts().length == 0) return null;
+        for (String field : declared.statusCounts()) {
+            requireKnownField(entity, type, field, types, operations);
+        }
         return List.of(declared.statusCounts());
     }
 
-    /** The figures the entity's aggregates return, in order, or {@code null} when it declares none. */
-    static List<AggregateMeta> aggregates(SimpliXListFigures declared) {
+    /**
+     * The figures the entity's aggregates return, in order, or {@code null} when it declares none.
+     *
+     * @throws IllegalStateException when a field is neither an entity field nor a field of its search DTO
+     */
+    static List<AggregateMeta> aggregates(String entity, Class<?> type, SimpliXListFigures declared,
+                                          Map<String, TypeMeta> types, List<OperationMeta> operations) {
         if (declared == null || declared.aggregates().length == 0) return null;
+        for (SimpliXListFigures.Figure figure : declared.aggregates()) {
+            requireKnownField(entity, type, figure.field(), types, operations);
+        }
         return Arrays.stream(declared.aggregates())
                 .map(figure -> new AggregateMeta(figure.field(), figure.op()))
                 .toList();
+    }
+
+    /**
+     * A figure counts or sums an entity field or a search DTO field (a derived filter the service
+     * resolves itself); a name that is neither would answer every request with an error.
+     */
+    private static void requireKnownField(String entity, Class<?> type, String field,
+                                          Map<String, TypeMeta> types, List<OperationMeta> operations) {
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            if (Arrays.stream(current.getDeclaredFields()).anyMatch(f -> f.getName().equals(field))) return;
+        }
+        boolean searchable = operations.stream()
+                .filter(op -> entity.equals(op.entity()) && op.request().searchDto() != null)
+                .map(op -> types.get(op.request().searchDto()))
+                .filter(Objects::nonNull)
+                .flatMap(dto -> dto.fields().stream())
+                .anyMatch(f -> f.name().equals(field));
+        if (!searchable) {
+            throw new IllegalStateException("List figures of " + entity + " name '" + field
+                    + "', which is neither a field of the entity nor of its search DTO");
+        }
     }
 
     /**
