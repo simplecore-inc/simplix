@@ -149,6 +149,8 @@ public interface JweKeyStore {
 | `simplix.auth.jwe.key-rolling.enabled` | `false` | 키 롤링 활성화 |
 | `simplix.auth.oauth2.enabled` | `true` | OAuth2 활성화 |
 | `simplix.auth.stateless-token.secret` | (부팅마다 임의 생성) | `SimpliXStatelessTokenSigner`의 HMAC-SHA256 키. 서명 링크처럼 저장하지 않는 짧은 토큰을 `sign` · `verify`로 발급하고 검증합니다. 비워 두면 재시작할 때 이전 토큰이 무효가 됩니다 |
+| `simplix.auth.asymmetric-token.private-key` · `public-key` | (부팅마다 임의 생성) | `SimpliXAsymmetricTokenSigner`의 Ed25519 키 쌍(base64 DER, PKCS#8 · X.509). 공개 키만 가진 클라이언트가 서버를 호출하지 않고 검증하는 토큰을 compact JWS(`EdDSA`)로 발급하고, `publicJwk()`로 공개 키를 JWK로 내보냅니다. 비워 두면 재시작할 때 이전 토큰이 무효가 됩니다 |
+| `simplix.auth.asymmetric-token.key-id` | `default` | 토큰 헤더와 공개 키의 `kid` |
 
 전체 설정은 [설정 레퍼런스](docs/ko/configuration-reference.md)를 참조하세요.
 
