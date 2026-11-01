@@ -158,7 +158,8 @@ public class DtoMetaBuilder {
             TypeMeta dto = types.get(searchDto);
             if (dto == null) continue;
             for (FieldMeta field : dto.fields()) {
-                if (field.reference() == null || field.searchable() == null
+                // A reference by kind derives no holder: the id alone would list every kind's records.
+                if (field.reference() == null || field.reference().byKind() || field.searchable() == null
                         || field.searchable().operators().isEmpty()) continue;
                 List<HolderMeta> list = holders.computeIfAbsent(field.reference().entity(), k -> new ArrayList<>());
                 boolean known = list.stream().anyMatch(h -> h.entity().equals(operation.entity())

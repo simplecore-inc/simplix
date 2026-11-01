@@ -1,11 +1,14 @@
 package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.core.annotation.References;
+import dev.simplecore.simplix.core.annotation.ReferencesByKind;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Id;
 import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.NameFields;
 import org.junit.jupiter.api.Test;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -135,5 +138,23 @@ class EntityReferencesFieldTest {
     @Test
     void publishesTheIdentifierOtherwise() {
         assertThat(EntityReferences.resolve(Result.class, "voiceId")).isEqualTo(new ReferenceMeta("Voice", "voiceId", false));
+    }
+
+    static class Holding {
+        @Id String holdingId;
+        String ownerType;
+        @ReferencesByKind(kindField = "ownerType", kinds = {
+                @ReferencesByKind.Kind(value = "USER", entity = "UserAccount"),
+                @ReferencesByKind.Kind(value = "TEAM", entity = "Team")})
+        String ownerId;
+    }
+
+    @Test
+    void publishesTheKindFieldAndTheEntityEachKindNames() {
+        ReferenceMeta reference = EntityReferences.resolve(Holding.class, "ownerId");
+        assertThat(reference).isEqualTo(new ReferenceMeta(null, null, false, "ownerType",
+                Map.of("TEAM", "Team", "USER", "UserAccount")));
+        assertThat(reference.byKind()).isTrue();
+        assertThat(EntityReferences.resolve(Result.class, "voiceId").byKind()).isFalse();
     }
 }

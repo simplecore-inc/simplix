@@ -6,6 +6,7 @@ import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.NameFields;
 import dev.simplecore.simplix.core.annotation.References;
+import dev.simplecore.simplix.core.annotation.ReferencesByKind;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -16,6 +17,7 @@ import jakarta.persistence.OneToOne;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +51,13 @@ final class EntityReferences {
         }
         Field field = findField(entity, path);
         if (field == null || field.isAnnotationPresent(Id.class)) return null;
+
+        ReferencesByKind byKind = field.getAnnotation(ReferencesByKind.class);
+        if (byKind != null) {
+            Map<String, String> kinds = new TreeMap<>();
+            for (ReferencesByKind.Kind kind : byKind.kinds()) kinds.put(kind.value(), kind.entity());
+            return new ReferenceMeta(null, null, false, byKind.kindField(), Collections.unmodifiableMap(kinds));
+        }
 
         References declared = field.getAnnotation(References.class);
         if (declared != null) {
