@@ -42,6 +42,7 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.util.pattern.PathPatternParser;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,7 @@ class EntityContractMetaTest {
         String memberName;
         @CodeValue String memberCode;
         @MoneyValue(currency = "USD", scale = 6) Long creditMicros;
+        Instant joinedAt;
     }
 
     static class MemberDTOs {
@@ -123,7 +125,8 @@ class EntityContractMetaTest {
     @SimpliXDefaultSort(field = "memberName")
     @SimpliXListFigures(statusCounts = {"active", "memberNameSortEn"},
             aggregates = {@SimpliXListFigures.Figure(field = "creditMicros", op = "sum"),
-                    @SimpliXListFigures.Figure(field = "memberId", op = "count")})
+                    @SimpliXListFigures.Figure(field = "memberId", op = "count")},
+            timeAxis = "joinedAt")
     static class MemberRestController extends SimpliXBaseController<Member, String> {
         MemberRestController() { super(null); }
 
@@ -269,6 +272,15 @@ class EntityContractMetaTest {
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("'ghost'");
     }
 
+    @Test
+    void aTimeAxisNamingAnUnknownFieldIsRefused() {
+        assertThatThrownBy(() -> build(new SlicesNothing()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("'ghost'");
+    }
+
+    @SimpliXListFigures(timeAxis = "ghost")
+    static class SlicesNothing extends MemberRestController {}
+
     @SimpliXListFigures(statusCounts = "ghost")
     static class CountsNothing extends MemberRestController {}
 
@@ -290,12 +302,14 @@ class EntityContractMetaTest {
                     assertThat(op.defaultSort()).isEqualTo(new DefaultSortMeta("memberName", "desc"));
                     assertThat(op.statusCounts()).containsExactly("active", "memberNameSortEn");
                     assertThat(op.aggregates()).extracting(AggregateMeta::field).containsExactly("creditMicros", "memberId");
+                    assertThat(op.timeAxis()).isEqualTo("joinedAt");
                 });
         assertThat(meta.operations()).filteredOn(op -> op.path().equals("/members/{memberId}"))
                 .singleElement()
                 .satisfies(op -> {
                     assertThat(op.defaultSort()).isNull();
                     assertThat(op.statusCounts()).isNull();
+                    assertThat(op.timeAxis()).isNull();
                 });
     }
 

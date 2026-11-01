@@ -167,7 +167,8 @@ public class DtoMetaBuilder {
             if (listFigures != null) {
                 result = result.withFigures(
                         statusCounts(operation.entity(), type, listFigures, types, List.of(operation)),
-                        aggregates(operation.entity(), type, listFigures, types, List.of(operation)));
+                        aggregates(operation.entity(), type, listFigures, types, List.of(operation)),
+                        timeAxis(operation.entity(), type, listFigures));
             }
             return result;
         });
@@ -268,6 +269,23 @@ public class DtoMetaBuilder {
         return Arrays.stream(declared.aggregates())
                 .map(figure -> new AggregateMeta(figure.field(), figure.op()))
                 .toList();
+    }
+
+    /**
+     * The field the list's time range slices a window on, or {@code null} when it declares none.
+     *
+     * @throws IllegalStateException when the field is not a field of the entity, which is what a
+     *     window is measured on
+     */
+    static String timeAxis(String entity, Class<?> type, SimpliXListFigures declared) {
+        if (declared == null || declared.timeAxis().isEmpty()) return null;
+        for (Class<?> current = type; current != null && current != Object.class; current = current.getSuperclass()) {
+            if (Arrays.stream(current.getDeclaredFields()).anyMatch(f -> f.getName().equals(declared.timeAxis()))) {
+                return declared.timeAxis();
+            }
+        }
+        throw new IllegalStateException("The time axis of " + entity + " names '" + declared.timeAxis()
+                + "', which is not a field of the entity");
     }
 
     /**

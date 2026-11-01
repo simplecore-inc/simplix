@@ -12,7 +12,8 @@ import java.util.List;
  * controller's {@code @SimpliXDefaultSort}: two controllers over one entity (an operators' list and
  * a person's own) each publish theirs here, where the entity's carries only one. {@code statusCounts}
  * and {@code aggregates} are that controller's list figures from {@code @SimpliXListFigures}, on its
- * search operations for the same reason.
+ * search operations for the same reason, and {@code timeAxis} is the field its {@code GET /counts}
+ * slices a window on.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record OperationMeta(
@@ -27,25 +28,26 @@ public record OperationMeta(
         String entity,
         DefaultSortMeta defaultSort,
         List<String> statusCounts,
-        List<AggregateMeta> aggregates) {
+        List<AggregateMeta> aggregates,
+        String timeAxis) {
 
     public OperationMeta(String id, String method, String path, String tag, String summary,
                          RequestMeta request, TypeRef response, AccessMeta access) {
-        this(id, method, path, tag, summary, request, response, access, null, null, null, null);
+        this(id, method, path, tag, summary, request, response, access, null, null, null, null, null);
     }
 
     public OperationMeta(String id, String method, String path, String tag, String summary,
                          RequestMeta request, TypeRef response, AccessMeta access, String entity) {
-        this(id, method, path, tag, summary, request, response, access, entity, null, null, null);
+        this(id, method, path, tag, summary, request, response, access, entity, null, null, null, null);
     }
 
     public OperationMeta withDefaultSort(DefaultSortMeta value) {
         return new OperationMeta(id, method, path, tag, summary, request, response, access, entity, value,
-                statusCounts, aggregates);
+                statusCounts, aggregates, timeAxis);
     }
 
-    public OperationMeta withFigures(List<String> counts, List<AggregateMeta> figures) {
+    public OperationMeta withFigures(List<String> counts, List<AggregateMeta> figures, String axis) {
         return new OperationMeta(id, method, path, tag, summary, request, response, access, entity, defaultSort,
-                counts, figures);
+                counts, figures, axis);
     }
 }
