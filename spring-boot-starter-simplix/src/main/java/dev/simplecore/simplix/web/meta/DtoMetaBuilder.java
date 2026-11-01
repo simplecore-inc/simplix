@@ -90,6 +90,7 @@ public class DtoMetaBuilder {
         Map<String, Object> extensions = new LinkedHashMap<>();
         List<OperationMeta> operations = new ArrayList<>();
         Map<OperationMeta, SimpliXDefaultSort> operationSorts = new IdentityHashMap<>();
+        Map<OperationMeta, SimpliXListFigures> operationFigures = new IdentityHashMap<>();
         Map<String, Class<?>> entityClasses = new TreeMap<>();
         Map<String, SimpliXDefaultSort> defaultSorts = new TreeMap<>();
         Map<String, SimpliXListFigures> figures = new TreeMap<>();
@@ -119,6 +120,9 @@ public class DtoMetaBuilder {
                 SimpliXDefaultSort sort = operation.request().searchDto() == null ? null
                         : AnnotatedElementUtils.findMergedAnnotation(handler.getBeanType(), SimpliXDefaultSort.class);
                 if (sort != null) operationSorts.put(operation, sort);
+                SimpliXListFigures listFigures = operation.request().searchDto() == null ? null
+                        : AnnotatedElementUtils.findMergedAnnotation(handler.getBeanType(), SimpliXListFigures.class);
+                if (listFigures != null) operationFigures.put(operation, listFigures);
                 contributors.forEach(c -> c.contributeOperation(handler, operation, extensions));
             }
         });
@@ -149,12 +153,23 @@ public class DtoMetaBuilder {
 
         Map<String, EntityMeta> entities = entities(entityClasses, defaultSorts, figures, types, operations);
 
-        // Each search operation carries its own controller's order, checked against its own search DTO.
+        // Each search operation carries its own controller's order and figures, checked against its
+        // own search DTO.
         operations.replaceAll(operation -> {
             SimpliXDefaultSort sort = operationSorts.get(operation);
-            if (sort == null) return operation;
-            return operation.withDefaultSort(defaultSort(operation.entity(), entityClasses.get(operation.entity()),
-                    sort, types, List.of(operation)));
+            SimpliXListFigures listFigures = operationFigures.get(operation);
+            if (sort == null && listFigures == null) return operation;
+            Class<?> type = entityClasses.get(operation.entity());
+            OperationMeta result = operation;
+            if (sort != null) {
+                result = result.withDefaultSort(defaultSort(operation.entity(), type, sort, types, List.of(operation)));
+            }
+            if (listFigures != null) {
+                result = result.withFigures(
+                        statusCounts(operation.entity(), type, listFigures, types, List.of(operation)),
+                        aggregates(operation.entity(), type, listFigures, types, List.of(operation)));
+            }
+            return result;
         });
 
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,

@@ -282,14 +282,21 @@ class EntityContractMetaTest {
     }
 
     @Test
-    void eachSearchOperationCarriesItsOwnControllersOrder() throws Exception {
+    void eachSearchOperationCarriesItsOwnControllersListDefaults() throws Exception {
         DtoMeta meta = build();
         assertThat(meta.operations()).filteredOn(op -> op.path().equals("/members/search"))
                 .singleElement()
-                .satisfies(op -> assertThat(op.defaultSort()).isEqualTo(new DefaultSortMeta("memberName", "desc")));
+                .satisfies(op -> {
+                    assertThat(op.defaultSort()).isEqualTo(new DefaultSortMeta("memberName", "desc"));
+                    assertThat(op.statusCounts()).containsExactly("active", "memberNameSortEn");
+                    assertThat(op.aggregates()).extracting(AggregateMeta::field).containsExactly("creditMicros", "memberId");
+                });
         assertThat(meta.operations()).filteredOn(op -> op.path().equals("/members/{memberId}"))
                 .singleElement()
-                .satisfies(op -> assertThat(op.defaultSort()).isNull());
+                .satisfies(op -> {
+                    assertThat(op.defaultSort()).isNull();
+                    assertThat(op.statusCounts()).isNull();
+                });
     }
 
     @Test
