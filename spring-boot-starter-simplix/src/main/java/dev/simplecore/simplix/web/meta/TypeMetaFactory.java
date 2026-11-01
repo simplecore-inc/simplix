@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.web.meta.model.ConstraintMeta;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
+import dev.simplecore.simplix.web.meta.model.MoneyMeta;
 import dev.simplecore.simplix.web.meta.model.SearchableMeta;
 import dev.simplecore.simplix.web.meta.model.TypeMeta;
 import dev.simplecore.simplix.web.meta.model.TypeRef;
@@ -111,6 +113,8 @@ public class TypeMetaFactory {
             if (EntityReferences.isCode(type, field.name(), entityClass, path)) {
                 result = result.withFormat(FieldMeta.FORMAT_CODE);
             }
+            MoneyValue money = EntityReferences.moneyOf(type, field.name(), entityClass, path);
+            if (money != null) result = result.withMoney(new MoneyMeta(money.currency(), money.scale()));
             Object initial = FieldDefaults.of(type, field.name(), entityClass, path);
             if (initial != null) result = result.withDefaultValue(initial);
             return result;

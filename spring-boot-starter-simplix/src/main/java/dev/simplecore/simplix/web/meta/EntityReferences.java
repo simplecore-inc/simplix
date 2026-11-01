@@ -2,6 +2,7 @@ package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.NameFields;
 import dev.simplecore.simplix.core.annotation.References;
@@ -100,6 +101,19 @@ final class EntityReferences {
         if (entity == null || path == null || path.indexOf('.') >= 0) return false;
         Field mapped = findField(entity, path);
         return mapped != null && mapped.isAnnotationPresent(CodeValue.class);
+    }
+
+    /**
+     * The {@link MoneyValue} on the DTO field, or else on the entity field it maps to; null when
+     * neither carries one. A dotted path reaches into another entity, whose fields this entity's
+     * mapping does not describe.
+     */
+    static MoneyValue moneyOf(Class<?> dto, String dtoField, Class<?> entity, String path) {
+        Field own = findField(dto, dtoField);
+        if (own != null && own.isAnnotationPresent(MoneyValue.class)) return own.getAnnotation(MoneyValue.class);
+        if (entity == null || path == null || path.indexOf('.') >= 0) return null;
+        Field mapped = findField(entity, path);
+        return mapped == null ? null : mapped.getAnnotation(MoneyValue.class);
     }
 
     static String idFieldOf(Class<?> entity) {

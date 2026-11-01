@@ -6,6 +6,7 @@ import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.operator.SearchOperator;
 import dev.simplecore.simplix.core.annotation.BooleanTone;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.References;
@@ -19,6 +20,7 @@ import dev.simplecore.simplix.web.meta.model.EntityMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.HolderMeta;
 import dev.simplecore.simplix.web.meta.model.OperationMeta;
+import dev.simplecore.simplix.web.meta.model.MoneyMeta;
 import dev.simplecore.simplix.web.meta.model.TypeMeta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -70,6 +72,7 @@ class EntityContractMetaTest {
         @ManyToOne @JoinColumn(name = "grade_id", insertable = false, updatable = false) Grade grade;
         String memberName;
         @CodeValue String memberCode;
+        @MoneyValue(currency = "USD", scale = 6) Long creditMicros;
     }
 
     static class MemberDTOs {
@@ -97,6 +100,8 @@ class EntityContractMetaTest {
             public String gradeId;
             public String memberCode;
             @CodeValue public String inviteToken;
+            public Long creditMicros;
+            @MoneyValue(currency = "KRW") public Long refundAmount;
             @FieldLabel("{field.count}") public Long count;
             @FieldLabel("{field.unknown}") public Long unknown;
             @FieldLabel("Literal") public Long literal;
@@ -347,5 +352,15 @@ class EntityContractMetaTest {
         assertThat(field(detail, "inviteToken").format()).isEqualTo("code");
         assertThat(field(detail, "memberId").format()).isNull();
         assertThat(field(detail, "gradeId").format()).isNull();
+    }
+
+    @Test
+    void moneyFormatCarriesCurrencyAndScaleFromEntityFieldAndFromDerivedDtoField() throws Exception {
+        TypeMeta detail = build().types().get("MemberDetailDTO");
+        assertThat(field(detail, "creditMicros").format()).isEqualTo("money");
+        assertThat(field(detail, "creditMicros").money()).isEqualTo(new MoneyMeta("USD", 6));
+        assertThat(field(detail, "refundAmount").money()).isEqualTo(new MoneyMeta("KRW", 0));
+        assertThat(field(detail, "count").money()).isNull();
+        assertThat(field(detail, "count").format()).isNull();
     }
 }
