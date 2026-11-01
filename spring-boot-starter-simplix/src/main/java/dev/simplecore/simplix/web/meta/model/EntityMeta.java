@@ -12,6 +12,7 @@ import java.util.Map;
  * locale whose bundle lacks the key is omitted, and a key no locale carries is omitted whole.
  * {@code nameFields} are the entity fields marked {@code @NameField} in their declared order, the
  * parts a record is named by on a screen; it is absent when the entity marks none.
+ * {@code defaultSort} is the order its list opens in, absent when the controller declares none.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record EntityMeta(
@@ -24,4 +25,5 @@ public record EntityMeta(
         Map<String, String> label,
         Map<String, String> plural,
         Map<String, String> description,
-        List<HolderMeta> holders) {}
+        List<HolderMeta> holders,
+        DefaultSortMeta defaultSort) {}

@@ -15,6 +15,8 @@ import dev.simplecore.simplix.core.annotation.ToneKind;
 import dev.simplecore.simplix.core.entity.annotation.MappingEntity;
 import dev.simplecore.simplix.core.model.SimpliXApiResponse;
 import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXDefaultSort;
+import dev.simplecore.simplix.web.meta.model.DefaultSortMeta;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.EntityMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
@@ -44,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** The entity-level contract: display names, references, holders, sort aliases, entity links. */
 class EntityContractMetaTest {
@@ -115,6 +118,7 @@ class EntityContractMetaTest {
         }
     }
 
+    @SimpliXDefaultSort(field = "memberName")
     static class MemberRestController extends SimpliXBaseController<Member, String> {
         MemberRestController() { super(null); }
 
@@ -152,7 +156,7 @@ class EntityContractMetaTest {
         }
     }
 
-    static class GradeBadgeRestController extends SimpliXBaseController<GradeBadge, String> {
+        static class GradeBadgeRestController extends SimpliXBaseController<GradeBadge, String> {
         GradeBadgeRestController() { super(null); }
 
         @PostMapping("/search")
@@ -178,9 +182,12 @@ class EntityContractMetaTest {
             "field.count", Map.of("en", "Count", "ko", "건수"));
 
     private DtoMeta build() throws Exception {
+        return build(new MemberRestController());
+    }
+
+    private DtoMeta build(MemberRestController members) throws Exception {
         RequestMappingInfo.BuilderConfiguration config = new RequestMappingInfo.BuilderConfiguration();
         config.setPatternParser(new PathPatternParser());
-        MemberRestController members = new MemberRestController();
         GradeRestController grades = new GradeRestController();
         GradeBadgeRestController gradeBadges = new GradeBadgeRestController();
         Map<RequestMappingInfo, HandlerMethod> map = new LinkedHashMap<>();
@@ -234,6 +241,45 @@ class EntityContractMetaTest {
         assertThat(build().entities().get("Member").nameFields()).isNull();
         assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Member"))).doesNotContain("nameFields");
     }
+
+    @Test
+    void defaultSortOnASortableFieldIsPublished() throws Exception {
+        assertThat(build().entities().get("Member").defaultSort())
+                .isEqualTo(new DefaultSortMeta("memberName", "desc"));
+    }
+
+    @Test
+    void defaultSortIsAbsentWhenUndeclared() throws Exception {
+        assertThat(build().entities().get("Grade").defaultSort()).isNull();
+        assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Grade"))).doesNotContain("defaultSort");
+    }
+
+    @Test
+    void defaultSortOnTheIdFieldIsRefused() {
+        assertThatThrownBy(() -> build(new ById()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("id field");
+    }
+
+    @Test
+    void defaultSortOnAFieldTheSearchCannotOrderIsRefused() {
+        assertThatThrownBy(() -> build(new ByGrade()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("does not declare sortable");
+    }
+
+    @Test
+    void defaultSortWithAnUnknownDirectionIsRefused() {
+        assertThatThrownBy(() -> build(new Sideways()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("asc or desc");
+    }
+
+    @SimpliXDefaultSort(field = "memberId")
+    static class ById extends MemberRestController {}
+
+    @SimpliXDefaultSort(field = "gradeId")
+    static class ByGrade extends MemberRestController {}
+
+    @SimpliXDefaultSort(field = "memberName", direction = "up")
+    static class Sideways extends MemberRestController {}
 
     @Test
     void entityWithoutPluralOmitsIt() throws Exception {

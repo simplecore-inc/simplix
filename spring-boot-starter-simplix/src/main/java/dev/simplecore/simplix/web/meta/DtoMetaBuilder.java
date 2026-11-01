@@ -5,12 +5,14 @@ import dev.simplecore.simplix.core.annotation.Tone;
 import dev.simplecore.simplix.core.enums.SimpliXLabeledEnum;
 import dev.simplecore.simplix.core.i18n.EntityMessageResolver;
 import dev.simplecore.simplix.web.controller.SimpliXBaseController;
+import dev.simplecore.simplix.web.controller.SimpliXDefaultSort;
 import dev.simplecore.simplix.web.i18n.I18nMessagesService;
 import dev.simplecore.simplix.core.entity.annotation.MappingEntity;
 import dev.simplecore.simplix.web.meta.model.EntityMeta;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.HolderMeta;
 import dev.simplecore.simplix.web.meta.model.AccessMeta;
+import dev.simplecore.simplix.web.meta.model.DefaultSortMeta;
 import dev.simplecore.simplix.web.meta.model.DtoMeta;
 import dev.simplecore.simplix.web.meta.model.EnumMeta;
 import dev.simplecore.simplix.web.meta.model.OperationMeta;
@@ -44,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -84,10 +87,15 @@ public class DtoMetaBuilder {
         Map<String, Object> extensions = new LinkedHashMap<>();
         List<OperationMeta> operations = new ArrayList<>();
         Map<String, Class<?>> entityClasses = new TreeMap<>();
+        Map<String, SimpliXDefaultSort> defaultSorts = new TreeMap<>();
         handlerMethods.values().forEach(handler -> {
             if (skip(handler)) return;
             Class<?> entity = entityOf(handler.getBeanType());
-            if (entity != null) entityClasses.put(entity.getSimpleName(), entity);
+            if (entity == null) return;
+            entityClasses.put(entity.getSimpleName(), entity);
+            SimpliXDefaultSort sort = AnnotatedElementUtils.findMergedAnnotation(
+                    handler.getBeanType(), SimpliXDefaultSort.class);
+            if (sort != null) defaultSorts.put(entity.getSimpleName(), sort);
         });
 
         handlerMethods.forEach((info, handler) -> {
@@ -128,7 +136,7 @@ public class DtoMetaBuilder {
                 .thenComparing(OperationMeta::method)
                 .thenComparing(OperationMeta::id));
 
-        Map<String, EntityMeta> entities = entities(entityClasses, types, operations);
+        Map<String, EntityMeta> entities = entities(entityClasses, defaultSorts, types, operations);
 
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
                 extensions.isEmpty() ? null : extensions, entities.isEmpty() ? null : entities);
@@ -146,6 +154,7 @@ public class DtoMetaBuilder {
      * {@code H} a holder of {@code T}, listed by that operation filtered on the field.
      */
     private Map<String, EntityMeta> entities(Map<String, Class<?>> entityClasses,
+                                             Map<String, SimpliXDefaultSort> defaultSorts,
                                              Map<String, TypeMeta> types,
                                              List<OperationMeta> operations) {
         Map<String, List<HolderMeta>> holders = new TreeMap<>();
@@ -188,9 +197,45 @@ public class DtoMetaBuilder {
                     label.isEmpty() ? null : label,
                     plural.isEmpty() ? null : plural,
                     description.isEmpty() ? null : description,
-                    held == null ? null : List.copyOf(held)));
+                    held == null ? null : List.copyOf(held),
+                    defaultSort(name, type, defaultSorts.get(name), types, operations)));
         });
         return result;
+    }
+
+    /**
+     * The order the entity's list opens in, checked against its search DTO.
+     *
+     * @throws IllegalStateException when the field is the entity's id, is not a sortable field of
+     *                               the search DTO, or the direction is neither {@code asc} nor
+     *                               {@code desc}: a list opened that way is refused or unordered
+     */
+    static DefaultSortMeta defaultSort(String entity, Class<?> type, SimpliXDefaultSort declared,
+                                       Map<String, TypeMeta> types, List<OperationMeta> operations) {
+        if (declared == null) return null;
+        String field = declared.field();
+        String direction = declared.direction().toLowerCase(Locale.ROOT);
+        if (!direction.equals("asc") && !direction.equals("desc")) {
+            throw new IllegalStateException("Default sort of " + entity + " has direction '"
+                    + declared.direction() + "'; it must be asc or desc");
+        }
+        if (field.equals(EntityReferences.idFieldOf(type))) {
+            throw new IllegalStateException("Default sort of " + entity + " names its id field '"
+                    + field + "'; an id orders a list in no order a reader can use");
+        }
+        boolean sortable = operations.stream()
+                .filter(op -> entity.equals(op.entity()) && op.request().searchDto() != null)
+                .map(op -> types.get(op.request().searchDto()))
+                .filter(Objects::nonNull)
+                .flatMap(dto -> dto.fields().stream())
+                .filter(f -> f.name().equals(field) && f.searchable() != null)
+                .anyMatch(f -> f.searchable().sortable()
+                        || (f.searchable().sortAlias() != null && !f.searchable().sortAlias().isEmpty()));
+        if (!sortable) {
+            throw new IllegalStateException("Default sort of " + entity + " names '" + field
+                    + "', which its search DTO does not declare sortable");
+        }
+        return new DefaultSortMeta(field, direction);
     }
 
     /** Resolves a key in every language the entity and enum bundles ship. */
