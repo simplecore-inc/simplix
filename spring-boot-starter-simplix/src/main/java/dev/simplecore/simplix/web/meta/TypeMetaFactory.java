@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.web.meta;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
@@ -95,6 +96,7 @@ public class TypeMetaFactory {
             FieldMeta field = toFieldMeta(property, backing, type);
             if (field != null) fields.add(field);
         }
+        fields.addAll(writeOnlyFields(type));
 
         fields.sort(declarationOrder(type));
 
@@ -158,6 +160,25 @@ public class TypeMetaFactory {
             if (alias == null || field.searchable() == null || field.searchable().sortable()) return field;
             return field.withSearchable(field.searchable().withSortAlias(new TreeMap<>(alias)));
         });
+    }
+
+    /**
+     * The properties a client writes and the server never returns, as format {@code "secret"}: a
+     * field marked {@code @JsonProperty(access = WRITE_ONLY)} is absent from the serialized view
+     * the loop above reads, so a form generated from this document would have no input for it.
+     */
+    private List<FieldMeta> writeOnlyFields(Class<?> type) {
+        BeanDescription bean = mapper.getDeserializationConfig().introspect(mapper.constructType(type));
+        List<FieldMeta> fields = new ArrayList<>();
+        for (BeanPropertyDefinition property : bean.findProperties()) {
+            Field backing = backingField(property);
+            if (backing == null || !backing.getDeclaringClass().equals(type)) continue;
+            JsonProperty json = backing.getAnnotation(JsonProperty.class);
+            if (json == null || json.access() != JsonProperty.Access.WRITE_ONLY) continue;
+            FieldMeta field = toFieldMeta(property, backing, type);
+            if (field != null) fields.add(field.withFormat(FieldMeta.FORMAT_SECRET));
+        }
+        return fields;
     }
 
     /**

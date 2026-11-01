@@ -11,7 +11,7 @@ import java.util.Map;
  * {@code tones} maps {@code "true"} and {@code "false"} to a tone for a flag with {@code @BooleanTone}.
  * {@code format} names how a screen draws the value beyond its type: {@code "code"} for a field
  * with {@code @CodeValue}, {@code "money"} for one with {@code @MoneyValue}, whose currency and
- * scale {@code money} carries. {@code labels} is the text {@code labelKey} resolves to per language
+ * scale {@code money} carries, {@code "secret"} for one a client writes and never reads back. {@code labels} is the text {@code labelKey} resolves to per language
  * code, so a client that has no access to the server's bundles labels the field in every language.
  * {@code defaultValue} is the value a new record starts the field with: a boolean, a number, a
  * string, or an enum constant by name.
@@ -39,6 +39,12 @@ public record FieldMeta(
 
     /** The value of {@link #format()} for a field with {@code @MoneyValue}. */
     public static final String FORMAT_MONEY = "money";
+
+    /**
+     * The value of {@link #format()} for a field marked {@code @JsonProperty(access = WRITE_ONLY)}:
+     * a client writes it and no response carries it, so a form offers it empty every time.
+     */
+    public static final String FORMAT_SECRET = "secret";
 
     public FieldMeta(String name, TypeRef type, boolean required, boolean nullable,
                      String description, String labelKey, String label,

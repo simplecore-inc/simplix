@@ -61,6 +61,20 @@ class TypeMetaFactoryTest {
         public void setHidden(String hidden) { /* stored elsewhere, never read back */ }
     }
 
+    /** A key a client writes and no response returns. */
+    static class SecretDTO {
+        private String name;
+
+        @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+        @Length(max = 1024)
+        private String apiKey;
+
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+    }
+
     static class DetailDTO {
         private long version;             // primitive → required without any annotation
 
@@ -116,6 +130,14 @@ class TypeMetaFactoryTest {
     void writeOnlyPropertyIsSkippedRatherThanThrown() {
         TypeMeta meta = factory.create(WriteOnlyDTO.class);
         assertThat(meta.fields()).extracting(FieldMeta::name).containsExactly("name");
+    }
+
+    @Test
+    void writeOnlyFieldIsPublishedOnceAsSecretInDeclarationOrder() {
+        TypeMeta meta = factory.create(SecretDTO.class);
+        assertThat(meta.fields()).extracting(FieldMeta::name).containsExactly("name", "apiKey");
+        assertThat(field(meta, "apiKey").format()).isEqualTo(FieldMeta.FORMAT_SECRET);
+        assertThat(field(meta, "name").format()).isNull();
     }
 
     @Test
