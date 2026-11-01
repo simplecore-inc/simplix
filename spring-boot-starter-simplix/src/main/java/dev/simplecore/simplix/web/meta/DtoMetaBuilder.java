@@ -44,6 +44,7 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -88,6 +89,7 @@ public class DtoMetaBuilder {
     public DtoMeta build(Map<RequestMappingInfo, HandlerMethod> handlerMethods) {
         Map<String, Object> extensions = new LinkedHashMap<>();
         List<OperationMeta> operations = new ArrayList<>();
+        Map<OperationMeta, SimpliXDefaultSort> operationSorts = new IdentityHashMap<>();
         Map<String, Class<?>> entityClasses = new TreeMap<>();
         Map<String, SimpliXDefaultSort> defaultSorts = new TreeMap<>();
         Map<String, SimpliXListFigures> figures = new TreeMap<>();
@@ -114,6 +116,9 @@ public class DtoMetaBuilder {
             for (RequestMethod method : info.getMethodsCondition().getMethods()) {
                 OperationMeta operation = toOperation(path, method.name(), handler, info);
                 operations.add(operation);
+                SimpliXDefaultSort sort = operation.request().searchDto() == null ? null
+                        : AnnotatedElementUtils.findMergedAnnotation(handler.getBeanType(), SimpliXDefaultSort.class);
+                if (sort != null) operationSorts.put(operation, sort);
                 contributors.forEach(c -> c.contributeOperation(handler, operation, extensions));
             }
         });
@@ -143,6 +148,14 @@ public class DtoMetaBuilder {
                 .thenComparing(OperationMeta::id));
 
         Map<String, EntityMeta> entities = entities(entityClasses, defaultSorts, figures, types, operations);
+
+        // Each search operation carries its own controller's order, checked against its own search DTO.
+        operations.replaceAll(operation -> {
+            SimpliXDefaultSort sort = operationSorts.get(operation);
+            if (sort == null) return operation;
+            return operation.withDefaultSort(defaultSort(operation.entity(), entityClasses.get(operation.entity()),
+                    sort, types, List.of(operation)));
+        });
 
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
                 extensions.isEmpty() ? null : extensions, entities.isEmpty() ? null : entities);

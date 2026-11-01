@@ -282,6 +282,17 @@ class EntityContractMetaTest {
     }
 
     @Test
+    void eachSearchOperationCarriesItsOwnControllersOrder() throws Exception {
+        DtoMeta meta = build();
+        assertThat(meta.operations()).filteredOn(op -> op.path().equals("/members/search"))
+                .singleElement()
+                .satisfies(op -> assertThat(op.defaultSort()).isEqualTo(new DefaultSortMeta("memberName", "desc")));
+        assertThat(meta.operations()).filteredOn(op -> op.path().equals("/members/{memberId}"))
+                .singleElement()
+                .satisfies(op -> assertThat(op.defaultSort()).isNull());
+    }
+
+    @Test
     void defaultSortIsAbsentWhenUndeclared() throws Exception {
         assertThat(build().entities().get("Grade").defaultSort()).isNull();
         assertThat(new ObjectMapper().writeValueAsString(build().entities().get("Grade"))).doesNotContain("defaultSort");
