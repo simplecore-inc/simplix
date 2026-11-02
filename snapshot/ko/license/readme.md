@@ -6,7 +6,7 @@
 
 - ✔ **서명 검증** - 빌드에 내장된 공개키로만 토큰을 검증하며, 검증 키는 설정으로 바꿀 수 없음
 - ✔ **키 교체** - 검증 키를 여러 개 담아 발급자가 서명 키를 바꿔도 이전 라이선스가 살아 있음
-- ✔ **유출 키 천장** - 유출로 표시된 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없음
+- ✔ **유출 키 허용 상한** - 유출로 표시된 키로 서명된 토큰은 배포본이 이미 보유한 것보다 더 줄 수 없음
 - ✔ **온라인 활성화** - 제품 키로 라이선스 서버에 좌석을 확보하고 머신에 바인딩된 토큰 발급
 - ✔ **오프라인 활성화** - 폐쇄망 설치를 위한 활성화 요청 파일 생성과 서명된 응답 등록
 - ✔ **하트비트 갱신** - 주기적으로 새 토큰을 받아 폐기·만료·계약 변경을 배포본에 반영
@@ -309,7 +309,7 @@ public interface ProductIdentity {
 | `ActivationServerDirectory` | `serverUrl()` | 라이선스 서버 주소를 설정 대신 애플리케이션이 보관 |
 | `ContactIdentity` | `contactEmail()` | 활성화 시 담당자 주소를 함께 보고해 다른 회사 설치본에 키가 잘못 쓰이는 것을 막음 |
 | `SetupState` | `isInitialized()`, `licenseServerUrl()`, `saveLicenseServerUrl(String)` | 최초 설치 마법사와 설치 게이트 필터 활성화 |
-| `LicenseStore` + `CompromiseCeilingStore` | `load()`, `save(RegistrationRecord)`, `clear()`, `loadCeiling()`, `saveCeiling(CompromiseCeiling)` | 등록 정보와 고정된 천장을 애플리케이션이 직접 보관, 없으면 JPA 또는 파일 저장소. 둘 중 하나만 등록하면 컨텍스트가 기동하지 않습니다 |
+| `LicenseStore` + `CompromiseCeilingStore` | `load()`, `save(RegistrationRecord)`, `clear()`, `loadCeiling()`, `saveCeiling(CompromiseCeiling)` | 등록 정보와 고정된 허용 상한을 애플리케이션이 직접 보관, 없으면 JPA 또는 파일 저장소. 둘 중 하나만 등록하면 컨텍스트가 기동하지 않습니다 |
 
 ### QuotaCounter 구현 예시
 
@@ -369,7 +369,7 @@ public class DeviceRegistrationService {
 | `FileLicenseStore` | JPA 없음 | `state-path`에 상태 기록, 볼륨 마운트 필요 |
 | 직접 구현 | `LicenseStore` + `CompromiseCeilingStore` 빈 등록 | 애플리케이션이 보관 위치 결정 |
 
-DB 저장소는 `license_registration` 테이블 한 개를 사용하며 항상 한 행만 유지합니다. 유출 키 천장도 같은 행의 `compromise_ceiling` 열에 보관되는데, 등록 정보가 살아남는 만큼 정확히 같이 살아남아야 하기 때문입니다.
+DB 저장소는 `license_registration` 테이블 한 개를 사용하며 항상 한 행만 유지합니다. 유출 키 허용 상한도 같은 행의 `compromise_ceiling` 열에 보관합니다. 등록 정보가 유지되는 동안 허용 상한도 함께 유지되어야 하기 때문입니다.
 
 ## Monitoring
 
