@@ -27,7 +27,8 @@ import java.util.TreeMap;
  * Reads what an entity's mapping says about a field pointing at another entity. Three sources,
  * in order:
  * <ol>
- *     <li>{@link References} on the entity field (an id or id collection JPA does not map);</li>
+ *     <li>{@link References} on the entity field (an id or id collection JPA does not map), naming
+ *         its target by class or by a served entity's simple name;</li>
  *     <li>a scalar column that shares its join column with a {@code @ManyToOne} or
  *         {@code @OneToOne} of the same entity (the read-only id beside the association);</li>
  *     <li>a dotted path {@code association.targetId} through such an association.</li>
@@ -38,7 +39,46 @@ final class EntityReferences {
 
     private EntityReferences() {}
 
+    /**
+     * The entities a {@link References#entity()} name is looked up among: those SimpliX Meta
+     * serves, by simple name. Two served entities sharing a simple name stay recorded, so a name
+     * that could mean either is refused rather than resolved to whichever was met last.
+     */
+    static final class Directory {
+
+        static final Directory EMPTY = new Directory(List.of());
+
+        private final Map<String, List<Class<?>>> byName = new TreeMap<>();
+
+        Directory(Collection<Class<?>> entities) {
+            for (Class<?> type : entities) {
+                List<Class<?>> named = byName.computeIfAbsent(type.getSimpleName(), k -> new ArrayList<>());
+                if (!named.contains(type)) named.add(type);
+            }
+        }
+
+        /** The entity {@code name} denotes, for the field {@code declaredAt} names it from. */
+        Class<?> named(String name, String declaredAt) {
+            List<Class<?>> named = byName.getOrDefault(name, List.of());
+            if (named.isEmpty()) {
+                throw new IllegalStateException(declaredAt + " declares @References(entity = \"" + name
+                        + "\"), and SimpliX Meta serves no entity of that simple name");
+            }
+            if (named.size() > 1) {
+                List<String> classes = named.stream().map(Class::getName).sorted().toList();
+                throw new IllegalStateException(declaredAt + " declares @References(entity = \"" + name
+                        + "\"), which names more than one served entity: " + String.join(", ", classes)
+                        + "; name the target by class instead");
+            }
+            return named.get(0);
+        }
+    }
+
     static ReferenceMeta resolve(Class<?> entity, String path) {
+        return resolve(entity, path, Directory.EMPTY);
+    }
+
+    static ReferenceMeta resolve(Class<?> entity, String path, Directory entities) {
         if (entity == null || path == null || path.isEmpty()) return null;
         int dot = path.indexOf('.');
         if (dot > 0) {
@@ -61,7 +101,7 @@ final class EntityReferences {
 
         References declared = field.getAnnotation(References.class);
         if (declared != null) {
-            Class<?> target = declared.value();
+            Class<?> target = targetOf(declared, entity.getName() + "." + field.getName(), entities);
             String matched = declared.field().isEmpty() ? idFieldOf(target) : declared.field();
             return new ReferenceMeta(target.getSimpleName(), matched,
                     Collection.class.isAssignableFrom(field.getType()));
@@ -80,6 +120,25 @@ final class EntityReferences {
             }
         }
         return null;
+    }
+
+    /**
+     * The entity a {@link References} names: its class, or the served entity its simple name
+     * denotes. Exactly one of the two is set; both or neither is refused, naming the field.
+     */
+    private static Class<?> targetOf(References declared, String declaredAt, Directory entities) {
+        boolean byClass = declared.value() != void.class;
+        boolean byName = !declared.entity().isEmpty();
+        if (byClass && byName) {
+            throw new IllegalStateException(declaredAt + " declares @References with both a class ("
+                    + declared.value().getName() + ") and an entity name (\"" + declared.entity()
+                    + "\"); set exactly one");
+        }
+        if (!byClass && !byName) {
+            throw new IllegalStateException(declaredAt
+                    + " declares @References with neither a class nor an entity name; set exactly one");
+        }
+        return byClass ? declared.value() : entities.named(declared.entity(), declaredAt);
     }
 
     /**

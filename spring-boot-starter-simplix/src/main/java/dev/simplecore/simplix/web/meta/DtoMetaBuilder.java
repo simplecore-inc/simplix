@@ -92,6 +92,9 @@ public class DtoMetaBuilder {
         Map<OperationMeta, SimpliXDefaultSort> operationSorts = new IdentityHashMap<>();
         Map<OperationMeta, SimpliXListFigures> operationFigures = new IdentityHashMap<>();
         Map<String, Class<?>> entityClasses = new TreeMap<>();
+        // Every served entity, a simple name two of them share included, so a reference by name
+        // can tell an unknown name from an ambiguous one.
+        List<Class<?>> servedEntities = new ArrayList<>();
         Map<String, SimpliXDefaultSort> defaultSorts = new TreeMap<>();
         Map<String, SimpliXListFigures> figures = new TreeMap<>();
         handlerMethods.values().forEach(handler -> {
@@ -99,6 +102,7 @@ public class DtoMetaBuilder {
             Class<?> entity = entityOf(handler.getBeanType());
             if (entity == null) return;
             entityClasses.put(entity.getSimpleName(), entity);
+            if (!servedEntities.contains(entity)) servedEntities.add(entity);
             SimpliXDefaultSort sort = AnnotatedElementUtils.findMergedAnnotation(
                     handler.getBeanType(), SimpliXDefaultSort.class);
             if (sort != null) defaultSorts.put(entity.getSimpleName(), sort);
@@ -128,7 +132,7 @@ public class DtoMetaBuilder {
         });
 
         Map<String, TypeMeta> types = new LinkedHashMap<>();
-        TypeMetaFactory factory = new TypeMetaFactory(mapper, typeRefMapper, registry, entityClasses);
+        TypeMetaFactory factory = new TypeMetaFactory(mapper, typeRefMapper, registry, entityClasses, servedEntities);
         while (registry.hasPending()) {
             Class<?> type = registry.next();
             String name = MetaTypeRegistry.typeName(type);

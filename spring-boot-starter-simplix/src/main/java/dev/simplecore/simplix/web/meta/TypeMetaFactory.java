@@ -28,6 +28,7 @@ import java.lang.reflect.Method;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -60,6 +61,7 @@ public class TypeMetaFactory {
 
     private final MetaTypeRegistry registry;
     private final Map<String, Class<?>> entities;
+    private final EntityReferences.Directory directory;
 
     public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry) {
         this(mapper, typeRefMapper, registry, Map.of());
@@ -67,10 +69,21 @@ public class TypeMetaFactory {
 
     public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry,
                            Map<String, Class<?>> entities) {
+        this(mapper, typeRefMapper, registry, entities, entities.values());
+    }
+
+    /**
+     * @param entities the served entities by simple name, which a DTO container is matched to
+     * @param served every served entity, a simple name shared by two of them included, which a
+     *               {@code @References(entity = ...)} name is resolved against
+     */
+    public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry,
+                           Map<String, Class<?>> entities, Collection<Class<?>> served) {
         this.mapper = mapper;
         this.typeRefMapper = typeRefMapper;
         this.registry = registry;
         this.entities = entities;
+        this.directory = new EntityReferences.Directory(served);
     }
 
     /** The entity whose {@code <Entity>DTOs} container declares {@code type}, when the builder knows it. */
@@ -107,7 +120,7 @@ public class TypeMetaFactory {
                     ? field.searchable().entityField() : field.name();
             FieldMeta result = field;
             if (entityClass != null) {
-                ReferenceMeta reference = EntityReferences.resolve(entityClass, path);
+                ReferenceMeta reference = EntityReferences.resolve(entityClass, path, directory);
                 if (reference != null) result = result.withReference(reference);
             }
             Map<String, String> tones = EntityReferences.booleanTones(type, field.name(), entityClass, path);
