@@ -62,6 +62,14 @@ public class TypeMetaFactory {
     private final MetaTypeRegistry registry;
     private final Map<String, Class<?>> entities;
     private final EntityReferences.Directory directory;
+    private final List<UnresolvedName> unresolvedNames = new ArrayList<>();
+
+    /**
+     * A reference whose declared {@code nameField} the DTO publishing it does not carry: neither a
+     * property of that name nor a nested record reaching it. {@code type} is the DTO's type name,
+     * {@code field} its field, {@code declaredAt} the entity field declaring the name.
+     */
+    public record UnresolvedName(String type, String field, String declaredAt, String nameField) {}
 
     public TypeMetaFactory(ObjectMapper mapper, TypeRefMapper typeRefMapper, MetaTypeRegistry registry) {
         this(mapper, typeRefMapper, registry, Map.of());
@@ -121,7 +129,7 @@ public class TypeMetaFactory {
             FieldMeta result = field;
             if (entityClass != null) {
                 ReferenceMeta reference = EntityReferences.resolve(entityClass, path, directory);
-                if (reference != null) result = result.withReference(reference);
+                if (reference != null) result = result.withReference(named(reference, type, field.name(), entityClass, path));
             }
             Map<String, String> tones = EntityReferences.booleanTones(type, field.name(), entityClass, path);
             if (tones != null) result = result.withTones(tones);
@@ -150,6 +158,54 @@ public class TypeMetaFactory {
                 ? classSchema.description() : null;
 
         return new TypeMeta(type.getName(), extendsType, typeParams, description, fields, entity);
+    }
+
+    /**
+     * The reference with the {@code nameField} its entity field declares, where this DTO carries
+     * that path; where it does not, the reference goes out without one and the miss is recorded
+     * for {@link #unresolvedNames()}, since only the operations tell a response from a request body.
+     */
+    private ReferenceMeta named(ReferenceMeta reference, Class<?> type, String field, Class<?> entity, String path) {
+        String nameField = EntityReferences.declaredNameField(entity, path);
+        if (nameField == null) return reference;
+        if (carriesPath(type, nameField)) return reference.withNameField(nameField);
+        unresolvedNames.add(new UnresolvedName(MetaTypeRegistry.typeName(type), field,
+                entity.getName() + "." + path, nameField));
+        return reference;
+    }
+
+    /**
+     * Whether {@code path}, a wire name or a dotted path of wire names, reaches a value in what
+     * {@code type} serializes: each segment but the last a property holding one nested record (not
+     * a collection, a map or an array), the last a property holding a single value.
+     */
+    boolean carriesPath(Class<?> type, String path) {
+        Class<?> current = type;
+        String[] segments = path.split("\\.", -1);
+        for (int i = 0; i < segments.length; i++) {
+            if (segments[i].isEmpty() || current == null) return false;
+            // Only a record a client receives nested is stepped into, never a value's own getters.
+            if (i > 0 && (current.isPrimitive() || current.isEnum() || current.getName().startsWith("java."))) return false;
+            BeanPropertyDefinition property = serializedProperty(current, segments[i]);
+            if (property == null) return false;
+            Class<?> raw = property.getPrimaryType().getRawClass();
+            if (raw.isArray() || Collection.class.isAssignableFrom(raw) || Map.class.isAssignableFrom(raw)) return false;
+            current = raw;
+        }
+        return true;
+    }
+
+    private BeanPropertyDefinition serializedProperty(Class<?> type, String name) {
+        BeanDescription bean = mapper.getSerializationConfig().introspect(mapper.constructType(type));
+        for (BeanPropertyDefinition property : bean.findProperties()) {
+            if (property.getName().equals(name) && property.couldSerialize()) return property;
+        }
+        return null;
+    }
+
+    /** The declared name fields the DTOs built so far did not carry, in the order they were met. */
+    public List<UnresolvedName> unresolvedNames() {
+        return List.copyOf(unresolvedNames);
     }
 
     /**

@@ -123,6 +123,21 @@ final class EntityReferences {
     }
 
     /**
+     * The {@code nameField} the entity field {@code path} declares on its {@link References} or
+     * {@link ReferencesByKind}, or {@code null} when it declares none. A dotted path reaches into
+     * another entity, whose fields this entity's mapping does not describe.
+     */
+    static String declaredNameField(Class<?> entity, String path) {
+        if (entity == null || path == null || path.isEmpty() || path.indexOf('.') >= 0) return null;
+        Field field = findField(entity, path);
+        if (field == null) return null;
+        ReferencesByKind byKind = field.getAnnotation(ReferencesByKind.class);
+        String declared = byKind != null ? byKind.nameField()
+                : field.isAnnotationPresent(References.class) ? field.getAnnotation(References.class).nameField() : "";
+        return declared.isBlank() ? null : declared;
+    }
+
+    /**
      * The entity a {@link References} names: its class, or the served entity its simple name
      * denotes. Exactly one of the two is set; both or neither is refused, naming the field.
      */

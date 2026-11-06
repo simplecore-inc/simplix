@@ -41,9 +41,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -140,6 +143,7 @@ public class DtoMetaBuilder {
             types.put(name, meta);
             contributors.forEach(c -> c.contributeType(type, name, extensions));
         }
+        requireAnsweredNames(factory.unresolvedNames(), types, operations);
 
         Map<String, EnumMeta> enums = new LinkedHashMap<>();
         registry.enums().forEach((enumClass, name) -> enums.put(name, toEnumMeta(enumClass)));
@@ -179,6 +183,42 @@ public class DtoMetaBuilder {
 
         return new DtoMeta(1, new TreeMap<>(enums), new TreeMap<>(types), operations,
                 extensions.isEmpty() ? null : extensions, entities.isEmpty() ? null : entities);
+    }
+
+    /**
+     * Refuses a declared reference name that a DTO an operation answers with does not carry. A
+     * client pairs the reference with its name in every record it receives, so a response without
+     * the declared path would draw a bare key; a request body or a search DTO carries no names and
+     * is not held to it. A type counts as answered when it is reachable from a response, through
+     * type arguments, nested fields and supertypes.
+     *
+     * @throws IllegalStateException naming the entity field, the DTO and the path
+     */
+    static void requireAnsweredNames(List<TypeMetaFactory.UnresolvedName> unresolved, Map<String, TypeMeta> types,
+                                     List<OperationMeta> operations) {
+        if (unresolved.isEmpty()) return;
+        Set<String> answered = new HashSet<>();
+        Deque<TypeRef> pending = new ArrayDeque<>();
+        for (OperationMeta operation : operations) {
+            if (operation.response() != null) pending.add(operation.response());
+        }
+        while (!pending.isEmpty()) {
+            TypeRef ref = pending.pop();
+            if (ref.args() != null) pending.addAll(ref.args());
+            String name = "pick".equals(ref.kind()) ? ref.of() : "ref".equals(ref.kind()) ? ref.name() : null;
+            if (name == null || !answered.add(name)) continue;
+            TypeMeta type = types.get(name);
+            if (type == null) continue;
+            if (type.extendsType() != null) pending.add(TypeRef.ref(type.extendsType()));
+            for (FieldMeta field : type.fields()) pending.add(field.type());
+        }
+        for (TypeMetaFactory.UnresolvedName miss : unresolved) {
+            if (!answered.contains(miss.type())) continue;
+            throw new IllegalStateException(miss.declaredAt() + " declares nameField \"" + miss.nameField()
+                    + "\", and " + miss.type() + " carries " + miss.field()
+                    + " but neither a property nor a nested record path of that name; an operation answers with "
+                    + miss.type() + ", so add the property or correct the path");
+        }
     }
 
     /** The entity a {@code SimpliXBaseController} subclass serves, or {@code null} for any other controller. */

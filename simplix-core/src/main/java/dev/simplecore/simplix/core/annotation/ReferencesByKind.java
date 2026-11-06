@@ -31,6 +31,13 @@ public @interface ReferencesByKind {
     /** The entity each kind value names. */
     Kind[] kinds();
 
+    /**
+     * The property of the holding record that carries the referenced record's name, whichever kind
+     * it is ({@code actorUsername} beside an {@code actorId}); a dotted path reaches into a nested
+     * record. Read as {@link References#nameField()} is. Empty when none is carried.
+     */
+    String nameField() default "";
+
     /** One kind value and the entity it names. */
     @Documented
     @Retention(RetentionPolicy.RUNTIME)

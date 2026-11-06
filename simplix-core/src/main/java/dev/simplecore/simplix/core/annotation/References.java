@@ -42,4 +42,15 @@ public @interface References {
      * code that names a catalogue voice by its code. Empty means the referenced entity's identifier.
      */
     String field() default "";
+
+    /**
+     * The property of the holding record that carries the referenced record's name, where a screen
+     * cannot tell it from the field's own name: an {@code actorUsername} beside an {@code actorId}.
+     * A dotted path reaches into a record the holding record carries nested ({@code plan.name}
+     * beside a {@code planId}). It is a path of the DTO the reference is published on, by wire name.
+     * Every DTO an operation answers with that carries this field must resolve it, or the Meta
+     * build fails naming the field; a request body or a search DTO without it publishes none.
+     * Empty when the name is the field's own {@code <stem>Name} sibling or not carried at all.
+     */
+    String nameField() default "";
 }
