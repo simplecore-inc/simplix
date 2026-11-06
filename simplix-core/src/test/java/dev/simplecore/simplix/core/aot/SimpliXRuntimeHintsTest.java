@@ -1,5 +1,6 @@
 package dev.simplecore.simplix.core.aot;
 
+import dev.simplecore.simplix.core.repository.SimpliXJpaRepository;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
@@ -42,6 +43,17 @@ class SimpliXRuntimeHintsTest {
         TypeHint typeHint = hints.reflection().getTypeHint(
             SimpliXRepositoryFactoryBean.class
         );
+        assertThat(typeHint).isNotNull();
+        assertThat(typeHint.getMemberCategories())
+            .contains(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);
+    }
+
+    @Test
+    @DisplayName("should register the SimpliXJpaRepository base class for reflective construction")
+    void shouldRegisterJpaRepositoryBaseClass() {
+        registrar.registerHints(hints, getClass().getClassLoader());
+
+        TypeHint typeHint = hints.reflection().getTypeHint(SimpliXJpaRepository.class);
         assertThat(typeHint).isNotNull();
         assertThat(typeHint.getMemberCategories())
             .contains(MemberCategory.INVOKE_DECLARED_CONSTRUCTORS);

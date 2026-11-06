@@ -1,6 +1,7 @@
 package dev.simplecore.simplix.core.aot;
 
 import dev.simplecore.simplix.core.entity.SoftDeletable;
+import dev.simplecore.simplix.core.repository.SimpliXJpaRepository;
 import dev.simplecore.simplix.core.tree.annotation.LookupColumn;
 import dev.simplecore.simplix.core.tree.annotation.SortDirection;
 import dev.simplecore.simplix.core.tree.annotation.TreeEntityAttributes;
@@ -37,8 +38,10 @@ public class SimpliXRuntimeHints implements RuntimeHintsRegistrar {
 
     private void registerFactoryClasses(RuntimeHints hints) {
         hints.reflection().registerType(SimpliXRepositoryFactoryBean.class, ALL_ACCESS);
+        // Repository base class the factory instantiates through its constructor
+        hints.reflection().registerType(SimpliXJpaRepository.class, ALL_ACCESS);
 
-        // Private inner class — accessed via createRepositoryFactory()
+        // Private inner class, accessed via createRepositoryFactory()
         registerInnerClass(hints,
                 "dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean$SimpliXRepositoryFactory");
     }

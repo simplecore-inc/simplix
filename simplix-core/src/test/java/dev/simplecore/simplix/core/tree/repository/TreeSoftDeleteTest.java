@@ -4,6 +4,7 @@ import dev.simplecore.simplix.core.tree.entity.SoftDeleteTreeItem;
 import dev.simplecore.simplix.core.tree.factory.SimpliXRepositoryFactoryBean;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -129,6 +130,24 @@ class TreeSoftDeleteTest {
         jdbcTemplate.update("UPDATE soft_delete_tree_items SET deleted = true WHERE id = ?", grandchildA2Id);
 
         entityManager.clear();
+    }
+
+    // =================================================================================
+    // findById
+    // =================================================================================
+
+    @Nested
+    @DisplayName("findById")
+    class FindById {
+
+        @Test
+        @DisplayName("does not find a soft-deleted node while the entity's filter is enabled")
+        void hidesSoftDeletedNodeUnderFilter() {
+            entityManager.unwrap(Session.class).enableFilter("softDeleteFilter").setParameter("isDeleted", false);
+
+            assertThat(repository.findById(childBId)).isEmpty();
+            assertThat(repository.findById(childAId)).isPresent();
+        }
     }
 
     // =================================================================================
