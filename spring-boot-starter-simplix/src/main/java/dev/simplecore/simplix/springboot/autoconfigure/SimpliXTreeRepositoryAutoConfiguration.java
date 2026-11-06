@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -19,6 +19,7 @@ import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import javax.sql.DataSource;
 import java.lang.annotation.*;
 
 /**
@@ -104,11 +105,22 @@ public class SimpliXTreeRepositoryAutoConfiguration {
         return new TreeRepositoryProperties();
     }
 
+    /**
+     * The JdbcTemplate the tree repositories run their SQL through, on the application's
+     * {@link DataSource} bean: the pool the transaction manager binds, so its statements join the
+     * surrounding transaction, and the pool the context closes. With several DataSources the
+     * primary one is taken; with several and no primary none is chosen here and the application
+     * declares its own JdbcTemplate.
+     *
+     * @param dataSource the application's DataSource
+     * @return a JdbcTemplate on that DataSource
+     */
     @Bean
     @ConditionalOnMissingBean
-    public JdbcTemplate jdbcTemplate(DataSourceProperties dataSourceProperties) {
+    @ConditionalOnSingleCandidate(DataSource.class)
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
         log.info("Initializing JdbcTemplate for SimpliX Tree Repository...");
-        return new JdbcTemplate(dataSourceProperties.initializeDataSourceBuilder().build());
+        return new JdbcTemplate(dataSource);
     }
 
     /**
