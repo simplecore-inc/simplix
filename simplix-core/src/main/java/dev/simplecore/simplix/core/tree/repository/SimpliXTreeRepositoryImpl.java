@@ -6,7 +6,7 @@ import dev.simplecore.simplix.core.tree.base.TreeQueries;
 import dev.simplecore.simplix.core.tree.entity.TreeEntity;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import dev.simplecore.simplix.core.repository.SimpliXJpaRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -31,7 +31,7 @@ import java.util.Map;
  * @param <ID> The type of the entity's identifier
  */
 public class SimpliXTreeRepositoryImpl<T extends TreeEntity<T, ID>, ID>
-        extends SimpleJpaRepository<T, ID> 
+        extends SimpliXJpaRepository<T, ID>
         implements SimpliXTreeRepository<T, ID> {
 
     private final EntityManager entityManager;

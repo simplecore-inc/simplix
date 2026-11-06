@@ -16,7 +16,7 @@ import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
 import org.springframework.data.jpa.repository.support.JpaRepositoryImplementation;
-import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+import dev.simplecore.simplix.core.repository.SimpliXJpaRepository;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
@@ -232,7 +232,7 @@ public class SimpliXRepositoryFactoryBean<R extends JpaRepository<T, ID>, T, ID 
             boolean isTreeRepository = SimpliXTreeRepository.class.isAssignableFrom(metadata.getRepositoryInterface());
             boolean isTreeEntity = TreeEntity.class.isAssignableFrom(metadata.getDomainType());
 
-            return (isTreeRepository || isTreeEntity) ? SimpliXTreeRepositoryImpl.class : SimpleJpaRepository.class;
+            return (isTreeRepository || isTreeEntity) ? SimpliXTreeRepositoryImpl.class : SimpliXJpaRepository.class;
         }
 
         /**
