@@ -5,6 +5,9 @@ import dev.simplecore.simplix.web.meta.model.TypeRef;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.web.context.request.async.WebAsyncTask;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
@@ -12,6 +15,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,6 +27,8 @@ class TypeRefMapperTest {
     static class SiteListDTO { String name; }
 
     enum PlainKind { A, B }
+
+    static class SiteDeferredResult extends DeferredResult<SimpliXApiResponse<SiteListDTO>> { }
 
     static class Outer1 { static class Shared { String a; } }
     static class Outer2 { static class Shared { String b; } }
@@ -41,6 +49,15 @@ class TypeRefMapperTest {
         MultipartFile upload;
         SimpliXApiResponse<Page<SiteListDTO>> pageResponse;
         SimpliXApiResponse<Void> voidResponse;
+        DeferredResult<SimpliXApiResponse<SiteListDTO>> deferred;
+        ResponseEntity<DeferredResult<SimpliXApiResponse<List<SiteListDTO>>>> entityOfDeferred;
+        DeferredResult<ResponseEntity<SimpliXApiResponse<SiteListDTO>>> deferredOfEntity;
+        Callable<SimpliXApiResponse<SiteListDTO>> callable;
+        WebAsyncTask<SimpliXApiResponse<SiteListDTO>> asyncTask;
+        CompletableFuture<SimpliXApiResponse<SiteListDTO>> completable;
+        CompletionStage<SimpliXApiResponse<SiteListDTO>> stage;
+        SiteDeferredResult deferredSubclass;
+        DeferredResult<Void> deferredVoid;
     }
 
     private final MetaTypeRegistry registry = new MetaTypeRegistry();
@@ -88,6 +105,29 @@ class TypeRefMapperTest {
     void voidBodyCollapsesToNullArg() throws Exception {
         assertThat(map("voidResponse"))
             .isEqualTo(TypeRef.container("SimpliXApiResponse", List.of()));
+    }
+
+    @Test
+    void asyncReturnWrappersUnwrapToTheirResult() throws Exception {
+        TypeRef site = TypeRef.container("SimpliXApiResponse", List.of(TypeRef.ref("SiteListDTO")));
+        for (String field : List.of("deferred", "deferredOfEntity", "callable", "asyncTask",
+                "completable", "stage", "deferredSubclass")) {
+            assertThat(map(field)).as(field).isEqualTo(site);
+        }
+        assertThat(registry.pendingTypes()).containsExactly(SiteListDTO.class);
+    }
+
+    @Test
+    void responseEntityAroundAnAsyncWrapperUnwrapsBoth() throws Exception {
+        assertThat(map("entityOfDeferred"))
+            .isEqualTo(TypeRef.container("SimpliXApiResponse",
+                List.of(TypeRef.container("List", List.of(TypeRef.ref("SiteListDTO"))))));
+        assertThat(registry.pendingTypes()).containsExactly(SiteListDTO.class);
+    }
+
+    @Test
+    void asyncWrapperOfVoidHasNoBody() throws Exception {
+        assertThat(map("deferredVoid")).isNull();
     }
 
     @Test

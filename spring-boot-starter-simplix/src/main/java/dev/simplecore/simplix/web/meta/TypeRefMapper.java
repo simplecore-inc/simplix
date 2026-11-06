@@ -20,7 +20,7 @@ import java.util.UUID;
 
 /**
  * Maps a {@link ResolvableType} to a SimpliX Meta {@link TypeRef}. Container names are the
- * JAVA names — the CLI profile owns the TypeScript mapping.
+ * JAVA names; the CLI profile owns the TypeScript mapping.
  */
 public class TypeRefMapper {
 
@@ -29,6 +29,19 @@ public class TypeRefMapper {
                    Byte.class, Short.class, Integer.class, Long.class, BigInteger.class);
     private static final Set<Class<?>> FRACTIONAL =
             Set.of(float.class, double.class, Float.class, Double.class, BigDecimal.class);
+    /**
+     * Handler return types Spring MVC resolves to the value they carry before writing it, so the
+     * response body is the type argument, never the wrapper. {@code ListenableFuture} is named for
+     * the Spring lines that still ship it. A subtype (a {@code CompletableFuture}, a subclass of
+     * {@code DeferredResult}) is matched through its supertypes.
+     */
+    private static final List<String> RESULT_WRAPPER_NAMES = List.of(
+            "org.springframework.http.ResponseEntity",
+            "org.springframework.web.context.request.async.DeferredResult",
+            "org.springframework.web.context.request.async.WebAsyncTask",
+            "java.util.concurrent.Callable",
+            "java.util.concurrent.CompletionStage",
+            "org.springframework.util.concurrent.ListenableFuture");
     private static final Set<String> BINARY_CLASS_NAMES = Set.of(
             "org.springframework.core.io.Resource",
             "org.springframework.core.io.InputStreamResource",
@@ -40,11 +53,15 @@ public class TypeRefMapper {
         this.registry = registry;
     }
 
-    /** Returns null for void/Void — an operation with no response body. */
+    /** Returns null for void/Void: an operation with no response body. */
     public TypeRef map(ResolvableType resolvable) {
         if (resolvable.getType() instanceof TypeVariable<?> variable) {
             return TypeRef.param(variable.getName());
         }
+        return mapResolved(resolvable);
+    }
+
+    private TypeRef mapResolved(ResolvableType resolvable) {
         Class<?> raw = resolvable.resolve(Object.class);
 
         if (raw == void.class || raw == Void.class) return null;
@@ -71,8 +88,15 @@ public class TypeRefMapper {
         if (raw.isEnum()) {
             return TypeRef.enumRef(registry.registerEnum(raw));
         }
-        if (raw.getName().equals("org.springframework.http.ResponseEntity")) {
-            return map(resolvable.getGeneric(0));
+        ResolvableType wrapped = resultWrapperOf(resolvable);
+        if (wrapped != null) {
+            ResolvableType value = wrapped.getGeneric(0);
+            // A wrapper reached through a supertype (CompletableFuture -> CompletionStage<T>) hands
+            // back its own type variable, bound by the subtype's argument: map what it binds to.
+            if (value.getType() instanceof TypeVariable<?> && value.resolve() != null) {
+                return mapResolved(value);
+            }
+            return map(value);
         }
         if (Map.class.isAssignableFrom(raw)) {
             TypeRef value = map(resolvable.getGeneric(1));
@@ -95,6 +119,23 @@ public class TypeRefMapper {
         }
         // Anything else is a DTO: register it for the worklist and reference it by name.
         return TypeRef.ref(registry.register(raw));
+    }
+
+    /**
+     * The supertype of {@code type} that is one of {@link #RESULT_WRAPPER_NAMES}, or null when the
+     * type is no result wrapper. Reading the type argument from that supertype resolves it for a
+     * subtype that binds it ({@code class X extends DeferredResult<Foo>}).
+     */
+    private static ResolvableType resultWrapperOf(ResolvableType type) {
+        if (type == ResolvableType.NONE) return null;
+        Class<?> raw = type.resolve();
+        if (raw == null || raw == Object.class) return null;
+        if (RESULT_WRAPPER_NAMES.contains(raw.getName())) return type;
+        for (ResolvableType iface : type.getInterfaces()) {
+            ResolvableType found = resultWrapperOf(iface);
+            if (found != null) return found;
+        }
+        return resultWrapperOf(type.getSuperType());
     }
 
     private static boolean isAssignableToName(Class<?> type, String interfaceName) {
