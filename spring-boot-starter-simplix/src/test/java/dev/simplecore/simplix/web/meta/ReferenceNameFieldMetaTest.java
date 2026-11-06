@@ -1,5 +1,7 @@
 package dev.simplecore.simplix.web.meta;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.core.annotation.ReferencesByKind;
@@ -87,6 +89,10 @@ class ReferenceNameFieldMetaTest {
             public String reviewerId;
             public List<String> aliases;
             public Instant occurredAt;
+            @JsonIncludeProperties({"accountId"})
+            public AccountRef narrowed;
+            @JsonIgnoreProperties({"ownerName"})
+            public AccountRef trimmed;
         }
 
         static class EntryDetailDTO {
@@ -325,6 +331,11 @@ class ReferenceNameFieldMetaTest {
         assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "aliases")).isFalse();
         // A value type's own getters (an instant's epoch second) are not a nested record.
         assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "occurredAt.epochSecond")).isFalse();
+        // A nested record is read as the holding property serializes it.
+        assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "narrowed.accountId")).isTrue();
+        assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "narrowed.ownerName")).isFalse();
+        assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "trimmed.accountId")).isTrue();
+        assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "trimmed.ownerName")).isFalse();
         assertThat(factory.carriesPath(EntryDTOs.EntryListDTO.class, "missing")).isFalse();
     }
 }

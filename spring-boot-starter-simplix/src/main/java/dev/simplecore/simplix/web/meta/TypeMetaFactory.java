@@ -1,6 +1,8 @@
 package dev.simplecore.simplix.web.meta;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -177,22 +179,39 @@ public class TypeMetaFactory {
     /**
      * Whether {@code path}, a wire name or a dotted path of wire names, reaches a value in what
      * {@code type} serializes: each segment but the last a property holding one nested record (not
-     * a collection, a map or an array), the last a property holding a single value.
+     * a collection, a map or an array), the last a property holding a single value. A nested record
+     * is read as the holding property serializes it, so a segment its
+     * {@code @JsonIncludeProperties} leaves out, or its {@code @JsonIgnoreProperties} names, is not
+     * carried.
      */
     boolean carriesPath(Class<?> type, String path) {
         Class<?> current = type;
+        BeanPropertyDefinition holder = null;
         String[] segments = path.split("\\.", -1);
         for (int i = 0; i < segments.length; i++) {
-            if (segments[i].isEmpty() || current == null) return false;
+            String segment = segments[i];
+            if (segment.isEmpty() || current == null) return false;
             // Only a record a client receives nested is stepped into, never a value's own getters.
             if (i > 0 && (current.isPrimitive() || current.isEnum() || current.getName().startsWith("java."))) return false;
-            BeanPropertyDefinition property = serializedProperty(current, segments[i]);
+            if (holder != null && !holderSerializes(holder, segment)) return false;
+            BeanPropertyDefinition property = serializedProperty(current, segment);
             if (property == null) return false;
             Class<?> raw = property.getPrimaryType().getRawClass();
             if (raw.isArray() || Collection.class.isAssignableFrom(raw) || Map.class.isAssignableFrom(raw)) return false;
+            holder = property;
             current = raw;
         }
         return true;
+    }
+
+    /** Whether the nested record a property holds is serialized with {@code name} by that property. */
+    private static boolean holderSerializes(BeanPropertyDefinition holder, String name) {
+        AnnotatedMember member = holder.getPrimaryMember();
+        if (member == null) return true;
+        JsonIncludeProperties included = member.getAnnotation(JsonIncludeProperties.class);
+        if (included != null && !Arrays.asList(included.value()).contains(name)) return false;
+        JsonIgnoreProperties ignored = member.getAnnotation(JsonIgnoreProperties.class);
+        return ignored == null || !Arrays.asList(ignored.value()).contains(name);
     }
 
     private BeanPropertyDefinition serializedProperty(Class<?> type, String name) {
