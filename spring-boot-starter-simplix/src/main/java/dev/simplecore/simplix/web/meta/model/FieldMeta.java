@@ -17,7 +17,9 @@ import java.util.Map;
  * {@code @DurationValue}, {@code "secret"} for one a client writes and never reads back. {@code labels} is the text {@code labelKey} resolves to per language
  * code, so a client that has no access to the server's bundles labels the field in every language.
  * {@code defaultValue} is the value a new record starts the field with: a boolean, a number, a
- * string, or an enum constant by name.
+ * string, or an enum constant by name. {@code verbOnly} is {@code true} for a field with
+ * {@code @VerbOnly}: its value moves only through a verb of its own, so a form leaves it out, and
+ * absent otherwise.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record FieldMeta(
@@ -35,7 +37,8 @@ public record FieldMeta(
         String format,
         Map<String, String> labels,
         Object defaultValue,
-        MoneyMeta money) {
+        MoneyMeta money,
+        Boolean verbOnly) {
 
     /** The value of {@link #format()} for a field with {@code @CodeValue}. */
     public static final String FORMAT_CODE = "code";
@@ -67,41 +70,47 @@ public record FieldMeta(
     public FieldMeta(String name, TypeRef type, boolean required, boolean nullable,
                      String description, String labelKey, String label,
                      List<ConstraintMeta> constraints, SearchableMeta searchable) {
-        this(name, type, required, nullable, description, labelKey, label, constraints, searchable, null, null, null, null, null, null);
+        this(name, type, required, nullable, description, labelKey, label, constraints, searchable, null, null, null, null, null, null, null);
     }
 
     public FieldMeta withReference(ReferenceMeta value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, value, tones, format, labels, defaultValue, money);
+                constraints, searchable, value, tones, format, labels, defaultValue, money, verbOnly);
     }
 
     public FieldMeta withTones(Map<String, String> value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, reference, value, format, labels, defaultValue, money);
+                constraints, searchable, reference, value, format, labels, defaultValue, money, verbOnly);
     }
 
     public FieldMeta withSearchable(SearchableMeta value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, value, reference, tones, format, labels, defaultValue, money);
+                constraints, value, reference, tones, format, labels, defaultValue, money, verbOnly);
     }
 
     public FieldMeta withFormat(String value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, reference, tones, value, labels, defaultValue, money);
+                constraints, searchable, reference, tones, value, labels, defaultValue, money, verbOnly);
     }
 
     public FieldMeta withLabels(Map<String, String> value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, reference, tones, format, value, defaultValue, money);
+                constraints, searchable, reference, tones, format, value, defaultValue, money, verbOnly);
     }
 
     public FieldMeta withDefaultValue(Object value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, reference, tones, format, labels, value, money);
+                constraints, searchable, reference, tones, format, labels, value, money, verbOnly);
+    }
+
+    /** The field with {@code verbOnly: true}: its value moves only through a verb, never a form. */
+    public FieldMeta asVerbOnly() {
+        return new FieldMeta(name, type, required, nullable, description, labelKey, label,
+                constraints, searchable, reference, tones, format, labels, defaultValue, money, Boolean.TRUE);
     }
 
     public FieldMeta withMoney(MoneyMeta value) {
         return new FieldMeta(name, type, required, nullable, description, labelKey, label,
-                constraints, searchable, reference, tones, FORMAT_MONEY, labels, defaultValue, value);
+                constraints, searchable, reference, tones, FORMAT_MONEY, labels, defaultValue, value, verbOnly);
     }
 }

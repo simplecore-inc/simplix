@@ -11,6 +11,7 @@ import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.NameFields;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.core.annotation.ReferencesByKind;
+import dev.simplecore.simplix.core.annotation.VerbOnly;
 import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Column;
@@ -243,6 +244,18 @@ final class EntityReferences {
             if (field.isAnnotationPresent(kind)) return true;
         }
         return false;
+    }
+
+    /**
+     * Whether the DTO field, or else the entity field it maps to, carries {@link VerbOnly}. A dotted
+     * path reaches into another entity, whose fields this entity's mapping does not describe.
+     */
+    static boolean isVerbOnly(Class<?> dto, String dtoField, Class<?> entity, String path) {
+        Field own = findField(dto, dtoField);
+        if (own != null && own.isAnnotationPresent(VerbOnly.class)) return true;
+        if (entity == null || path == null || path.indexOf('.') >= 0) return false;
+        Field mapped = findField(entity, path);
+        return mapped != null && mapped.isAnnotationPresent(VerbOnly.class);
     }
 
     static String idFieldOf(Class<?> entity) {

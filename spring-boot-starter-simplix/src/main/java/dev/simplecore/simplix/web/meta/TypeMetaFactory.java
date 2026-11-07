@@ -144,6 +144,10 @@ public class TypeMetaFactory {
             }
             Object initial = FieldDefaults.of(type, field.name(), entityClass, path);
             if (initial != null) result = result.withDefaultValue(initial);
+            if (EntityReferences.isVerbOnly(type, field.name(), entityClass, path)) {
+                result = result.asVerbOnly();
+                requireNotDemanded(type, result);
+            }
             return result;
         });
         withLocaleSortAliases(fields);
@@ -162,6 +166,19 @@ public class TypeMetaFactory {
                 ? classSchema.description() : null;
 
         return new TypeMeta(type.getName(), extendsType, typeParams, description, fields, entity);
+    }
+
+    /**
+     * A verb-only field is left out of every form and the server ignores it on a create and an
+     * update, so a DTO that requires a client to send it asks for a value nobody can supply.
+     *
+     * @throws IllegalStateException naming the DTO field
+     */
+    private static void requireNotDemanded(Class<?> type, FieldMeta field) {
+        if (!field.required()) return;
+        throw new IllegalStateException(type.getName() + "." + field.name()
+                + " is @VerbOnly and also required; a form leaves a verb-only field out and the server"
+                + " ignores it on a create and an update, so drop the requirement and let the entity default start it");
     }
 
     /**
