@@ -5,7 +5,11 @@ import dev.simplecore.searchable.core.annotation.SearchableField;
 import dev.simplecore.searchable.core.condition.SearchCondition;
 import dev.simplecore.searchable.core.condition.operator.SearchOperator;
 import dev.simplecore.simplix.core.annotation.BooleanTone;
+import dev.simplecore.simplix.core.annotation.BytesValue;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.CreditValue;
+import dev.simplecore.simplix.core.annotation.DurationValue;
+import dev.simplecore.simplix.core.annotation.ExcerptValue;
 import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.FieldLabel;
 import dev.simplecore.simplix.core.annotation.NameField;
@@ -67,6 +71,8 @@ class EntityContractMetaTest {
     enum MemberStanding {
         @Tone(ToneKind.SUCCESS) ACTIVE,
         @Tone(ToneKind.DANGER) SUSPENDED,
+        @Tone(ToneKind.PENDING) INVITED,
+        @Tone(ToneKind.PROCESSING) MOVING,
         UNKNOWN
     }
 
@@ -79,6 +85,12 @@ class EntityContractMetaTest {
         String memberName;
         @CodeValue String memberCode;
         @MoneyValue(currency = "USD", scale = 6) Long creditMicros;
+        @CreditValue Long creditBalance;
+        @CreditValue(signed = true) Long lastCreditChange;
+        @ExcerptValue String lastError;
+        @BytesValue Long photoBytes;
+        @DurationValue Long sessionMs;
+        String syncKey;
         Instant joinedAt;
     }
 
@@ -109,6 +121,15 @@ class EntityContractMetaTest {
             @CodeValue public String inviteToken;
             public Long creditMicros;
             @MoneyValue(currency = "KRW") public Long refundAmount;
+            public Long creditBalance;
+            public Long lastCreditChange;
+            public String lastError;
+            public Long photoBytes;
+            public Long sessionMs;
+            @ExcerptValue public String syncKey;
+            @CreditValue(signed = true) public Long creditTotal;
+            @BytesValue public Long exportBytes;
+            @DurationValue public Long reviewMs;
             @FieldLabel("{field.count}") public Long count;
             @FieldLabel("{field.unknown}") public Long unknown;
             @FieldLabel("Literal") public Long literal;
@@ -443,7 +464,7 @@ class EntityContractMetaTest {
         DtoMeta meta = build();
         assertThat(meta.enums().get("MemberStanding").values())
                 .extracting(v -> v.name() + ":" + v.tone())
-                .containsExactly("ACTIVE:success", "SUSPENDED:danger", "UNKNOWN:null");
+                .containsExactly("ACTIVE:success", "SUSPENDED:danger", "INVITED:pending", "MOVING:processing", "UNKNOWN:null");
     }
 
     @Test
@@ -473,5 +494,48 @@ class EntityContractMetaTest {
         assertThat(field(detail, "refundAmount").money()).isEqualTo(new MoneyMeta("KRW", 0));
         assertThat(field(detail, "count").money()).isNull();
         assertThat(field(detail, "count").format()).isNull();
+    }
+
+    @Test
+    void figureFormatsFromEntityField() throws Exception {
+        TypeMeta detail = build().types().get("MemberDetailDTO");
+        assertThat(field(detail, "creditBalance").format()).isEqualTo("credits");
+        assertThat(field(detail, "lastCreditChange").format()).isEqualTo("signedCredits");
+        assertThat(field(detail, "lastError").format()).isEqualTo("excerpt");
+        assertThat(field(detail, "photoBytes").format()).isEqualTo("bytes");
+        assertThat(field(detail, "sessionMs").format()).isEqualTo("duration");
+        assertThat(field(detail, "creditBalance").money()).isNull();
+    }
+
+    @Test
+    void figureFormatsFromDerivedDtoField() throws Exception {
+        TypeMeta detail = build().types().get("MemberDetailDTO");
+        assertThat(field(detail, "syncKey").format()).isEqualTo("excerpt");
+        assertThat(field(detail, "creditTotal").format()).isEqualTo("signedCredits");
+        assertThat(field(detail, "exportBytes").format()).isEqualTo("bytes");
+        assertThat(field(detail, "reviewMs").format()).isEqualTo("duration");
+    }
+
+    static class Overrides {
+        @CodeValue String lastError;
+        @CreditValue @ExcerptValue String both;
+        @CreditValue @MoneyValue(currency = "USD") Long amount;
+        String plain;
+    }
+
+    @Test
+    void aDtoFieldsOwnFormatDecidesOverItsEntityField() {
+        assertThat(EntityReferences.formatOf(Overrides.class, "lastError", Member.class, "lastError")).isEqualTo("code");
+        assertThat(EntityReferences.formatOf(Overrides.class, "plain", Member.class, "lastError")).isEqualTo("excerpt");
+        assertThat(EntityReferences.formatOf(Overrides.class, "plain", Member.class, "memberName")).isNull();
+    }
+
+    @Test
+    void aFieldDeclaringTwoValueFormatsIsRefusedByName() {
+        assertThatThrownBy(() -> EntityReferences.formatOf(Overrides.class, "both", null, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Overrides.both").hasMessageContaining("@CreditValue").hasMessageContaining("@ExcerptValue");
+        assertThatThrownBy(() -> EntityReferences.formatOf(Overrides.class, "amount", null, null))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("@MoneyValue");
     }
 }

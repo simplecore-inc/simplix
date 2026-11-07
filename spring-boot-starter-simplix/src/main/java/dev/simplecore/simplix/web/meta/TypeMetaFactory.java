@@ -135,11 +135,13 @@ public class TypeMetaFactory {
             }
             Map<String, String> tones = EntityReferences.booleanTones(type, field.name(), entityClass, path);
             if (tones != null) result = result.withTones(tones);
-            if (EntityReferences.isCode(type, field.name(), entityClass, path)) {
-                result = result.withFormat(FieldMeta.FORMAT_CODE);
+            String format = EntityReferences.formatOf(type, field.name(), entityClass, path);
+            if (FieldMeta.FORMAT_MONEY.equals(format)) {
+                MoneyValue money = EntityReferences.moneyOf(type, field.name(), entityClass, path);
+                result = result.withMoney(new MoneyMeta(money.currency(), money.scale()));
+            } else if (format != null) {
+                result = result.withFormat(format);
             }
-            MoneyValue money = EntityReferences.moneyOf(type, field.name(), entityClass, path);
-            if (money != null) result = result.withMoney(new MoneyMeta(money.currency(), money.scale()));
             Object initial = FieldDefaults.of(type, field.name(), entityClass, path);
             if (initial != null) result = result.withDefaultValue(initial);
             return result;

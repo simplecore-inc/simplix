@@ -1,12 +1,17 @@
 package dev.simplecore.simplix.web.meta;
 
 import dev.simplecore.simplix.core.annotation.BooleanTone;
+import dev.simplecore.simplix.core.annotation.BytesValue;
 import dev.simplecore.simplix.core.annotation.CodeValue;
+import dev.simplecore.simplix.core.annotation.CreditValue;
+import dev.simplecore.simplix.core.annotation.DurationValue;
+import dev.simplecore.simplix.core.annotation.ExcerptValue;
 import dev.simplecore.simplix.core.annotation.MoneyValue;
 import dev.simplecore.simplix.core.annotation.NameField;
 import dev.simplecore.simplix.core.annotation.NameFields;
 import dev.simplecore.simplix.core.annotation.References;
 import dev.simplecore.simplix.core.annotation.ReferencesByKind;
+import dev.simplecore.simplix.web.meta.model.FieldMeta;
 import dev.simplecore.simplix.web.meta.model.ReferenceMeta;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
@@ -14,6 +19,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -174,29 +180,69 @@ final class EntityReferences {
         return tones;
     }
 
+    /** The annotations that each name how a screen draws a field's value, one {@code format} apiece. */
+    private static final List<Class<? extends Annotation>> FORMAT_ANNOTATIONS = List.of(
+            CodeValue.class, MoneyValue.class, CreditValue.class, ExcerptValue.class,
+            BytesValue.class, DurationValue.class);
+
     /**
-     * Whether the DTO field, or the entity field it maps to, carries {@link CodeValue}. A dotted
-     * path reaches into another entity, whose fields this entity's mapping does not describe.
+     * The {@code format} a field publishes, named by the one format annotation it carries:
+     * {@link CodeValue} {@code "code"}, {@link MoneyValue} {@code "money"}, {@link CreditValue}
+     * {@code "credits"} or {@code "signedCredits"}, {@link ExcerptValue} {@code "excerpt"},
+     * {@link BytesValue} {@code "bytes"}, {@link DurationValue} {@code "duration"}. The DTO field
+     * decides when it carries one, which lets a DTO describe a value its entity column does not;
+     * otherwise the entity field it maps to decides. A dotted path reaches into another entity, whose
+     * fields this entity's mapping does not describe. {@code null} when neither carries one.
+     *
+     * @throws IllegalStateException when the deciding field carries more than one, naming it
      */
-    static boolean isCode(Class<?> dto, String dtoField, Class<?> entity, String path) {
-        Field own = findField(dto, dtoField);
-        if (own != null && own.isAnnotationPresent(CodeValue.class)) return true;
-        if (entity == null || path == null || path.indexOf('.') >= 0) return false;
-        Field mapped = findField(entity, path);
-        return mapped != null && mapped.isAnnotationPresent(CodeValue.class);
+    static String formatOf(Class<?> dto, String dtoField, Class<?> entity, String path) {
+        Field deciding = formatField(dto, dtoField, entity, path);
+        if (deciding == null) return null;
+        List<Annotation> found = new ArrayList<>();
+        for (Class<? extends Annotation> kind : FORMAT_ANNOTATIONS) {
+            Annotation one = deciding.getAnnotation(kind);
+            if (one != null) found.add(one);
+        }
+        if (found.size() > 1) {
+            List<String> names = found.stream().map(a -> "@" + a.annotationType().getSimpleName()).toList();
+            throw new IllegalStateException(deciding.getDeclaringClass().getName() + "." + deciding.getName()
+                    + " declares more than one value format (" + String.join(", ", names)
+                    + "); a field is drawn one way, so keep exactly one");
+        }
+        Annotation only = found.get(0);
+        if (only instanceof CodeValue) return FieldMeta.FORMAT_CODE;
+        if (only instanceof MoneyValue) return FieldMeta.FORMAT_MONEY;
+        if (only instanceof CreditValue credit) return credit.signed() ? FieldMeta.FORMAT_SIGNED_CREDITS : FieldMeta.FORMAT_CREDITS;
+        if (only instanceof ExcerptValue) return FieldMeta.FORMAT_EXCERPT;
+        if (only instanceof BytesValue) return FieldMeta.FORMAT_BYTES;
+        return FieldMeta.FORMAT_DURATION;
     }
 
     /**
-     * The {@link MoneyValue} on the DTO field, or else on the entity field it maps to; null when
-     * neither carries one. A dotted path reaches into another entity, whose fields this entity's
-     * mapping does not describe.
+     * The {@link MoneyValue} of the field {@link #formatOf} reads; null when that field is not
+     * money. A dotted path reaches into another entity, whose fields this entity's mapping does not
+     * describe.
      */
     static MoneyValue moneyOf(Class<?> dto, String dtoField, Class<?> entity, String path) {
+        Field deciding = formatField(dto, dtoField, entity, path);
+        return deciding == null ? null : deciding.getAnnotation(MoneyValue.class);
+    }
+
+    /** The DTO field when it carries a format annotation, else the entity field it maps to when that does. */
+    private static Field formatField(Class<?> dto, String dtoField, Class<?> entity, String path) {
         Field own = findField(dto, dtoField);
-        if (own != null && own.isAnnotationPresent(MoneyValue.class)) return own.getAnnotation(MoneyValue.class);
+        if (own != null && carriesFormat(own)) return own;
         if (entity == null || path == null || path.indexOf('.') >= 0) return null;
         Field mapped = findField(entity, path);
-        return mapped == null ? null : mapped.getAnnotation(MoneyValue.class);
+        return mapped != null && carriesFormat(mapped) ? mapped : null;
+    }
+
+    private static boolean carriesFormat(Field field) {
+        for (Class<? extends Annotation> kind : FORMAT_ANNOTATIONS) {
+            if (field.isAnnotationPresent(kind)) return true;
+        }
+        return false;
     }
 
     static String idFieldOf(Class<?> entity) {

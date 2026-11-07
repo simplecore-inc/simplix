@@ -11,7 +11,10 @@ import java.util.Map;
  * {@code tones} maps {@code "true"} and {@code "false"} to a tone for a flag with {@code @BooleanTone}.
  * {@code format} names how a screen draws the value beyond its type: {@code "code"} for a field
  * with {@code @CodeValue}, {@code "money"} for one with {@code @MoneyValue}, whose currency and
- * scale {@code money} carries, {@code "secret"} for one a client writes and never reads back. {@code labels} is the text {@code labelKey} resolves to per language
+ * scale {@code money} carries, {@code "credits"} and {@code "signedCredits"} for one with
+ * {@code @CreditValue}, {@code "excerpt"} for one with {@code @ExcerptValue}, {@code "bytes"} for
+ * one with {@code @BytesValue}, {@code "duration"} (milliseconds) for one with
+ * {@code @DurationValue}, {@code "secret"} for one a client writes and never reads back. {@code labels} is the text {@code labelKey} resolves to per language
  * code, so a client that has no access to the server's bundles labels the field in every language.
  * {@code defaultValue} is the value a new record starts the field with: a boolean, a number, a
  * string, or an enum constant by name.
@@ -39,6 +42,21 @@ public record FieldMeta(
 
     /** The value of {@link #format()} for a field with {@code @MoneyValue}. */
     public static final String FORMAT_MONEY = "money";
+
+    /** The value of {@link #format()} for a field with {@code @CreditValue}: an unsigned credit amount. */
+    public static final String FORMAT_CREDITS = "credits";
+
+    /** The value of {@link #format()} for a field with {@code @CreditValue(signed = true)}: a ledger amount. */
+    public static final String FORMAT_SIGNED_CREDITS = "signedCredits";
+
+    /** The value of {@link #format()} for a field with {@code @ExcerptValue}: machine text drawn whole. */
+    public static final String FORMAT_EXCERPT = "excerpt";
+
+    /** The value of {@link #format()} for a field with {@code @BytesValue}: a size in bytes. */
+    public static final String FORMAT_BYTES = "bytes";
+
+    /** The value of {@link #format()} for a field with {@code @DurationValue}: milliseconds. */
+    public static final String FORMAT_DURATION = "duration";
 
     /**
      * The value of {@link #format()} for a field marked {@code @JsonProperty(access = WRITE_ONLY)}:
