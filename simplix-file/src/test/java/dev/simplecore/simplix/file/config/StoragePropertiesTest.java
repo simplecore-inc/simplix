@@ -2,6 +2,7 @@ package dev.simplecore.simplix.file.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.util.unit.DataSize;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -86,5 +87,42 @@ class StoragePropertiesTest {
         properties.setProvider("s3");
 
         assertThat(properties.getProvider()).isEqualTo("s3");
+    }
+
+    @Test
+    @DisplayName("Should default the multipart part size to 8 MB")
+    void shouldDefaultMultipartPartSize() {
+        StorageProperties.S3StorageConfig s3 = new StorageProperties().getS3();
+
+        assertThat(s3.getMultipartPartSize()).isEqualTo(DataSize.ofMegabytes(8));
+        assertThat(s3.effectivePartSizeBytes()).isEqualTo(8 * 1024 * 1024);
+    }
+
+    @Test
+    @DisplayName("Should copy every S3 setting")
+    void shouldCopyEverySetting() {
+        StorageProperties.S3StorageConfig s3 = new StorageProperties.S3StorageConfig();
+        s3.setEndpoint("http://e");
+        s3.setAccessKey("a");
+        s3.setSecretKey("s");
+        s3.setBucket("b");
+        s3.setRegion("r");
+        s3.setPathStyleAccess(false);
+        s3.setPublicUrlPrefix("p");
+        s3.setPresignedUrlExpiration(7);
+        s3.setMultipartPartSize(DataSize.ofMegabytes(9));
+
+        StorageProperties.S3StorageConfig copy = s3.copy();
+        s3.setBucket("changed");
+
+        assertThat(copy.getBucket()).isEqualTo("b");
+        assertThat(copy.getEndpoint()).isEqualTo("http://e");
+        assertThat(copy.getAccessKey()).isEqualTo("a");
+        assertThat(copy.getSecretKey()).isEqualTo("s");
+        assertThat(copy.getRegion()).isEqualTo("r");
+        assertThat(copy.isPathStyleAccess()).isFalse();
+        assertThat(copy.getPublicUrlPrefix()).isEqualTo("p");
+        assertThat(copy.getPresignedUrlExpiration()).isEqualTo(7);
+        assertThat(copy.getMultipartPartSize()).isEqualTo(DataSize.ofMegabytes(9));
     }
 }

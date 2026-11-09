@@ -31,6 +31,10 @@ public class StorageException extends RuntimeException {
         PERMISSION_DENIED,
         CHECKSUM_CALCULATION_FAILED,
         INVALID_PATH,
-        STORAGE_FULL
+        STORAGE_FULL,
+        /** The storage settings are missing or unusable; the message names what is missing. */
+        NOT_CONFIGURED,
+        /** The storage implementation does not offer the requested operation. */
+        UNSUPPORTED_OPERATION
     }
 }

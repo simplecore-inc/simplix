@@ -7,6 +7,7 @@ import dev.simplecore.simplix.file.infrastructure.image.ImageProcessingService;
 import dev.simplecore.simplix.file.infrastructure.image.ProcessedImage;
 import dev.simplecore.simplix.file.infrastructure.storage.FileStorageService;
 import dev.simplecore.simplix.file.infrastructure.storage.StoredFileInfo;
+import dev.simplecore.simplix.file.infrastructure.storage.StoredObjectInfo;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,19 +17,19 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
 import java.util.HexFormat;
-import java.util.UUID;
 
 /**
  * Local filesystem implementation of FileStorageService.
@@ -44,6 +45,8 @@ public class LocalFileStorageService implements FileStorageService {
     private final StorageProperties storageProperties;
     private final FileProperties fileProperties;
     private final ImageProcessingService imageProcessingService;
+
+    private static final int CHECKSUM_BUFFER_BYTES = 64 * 1024;
 
     private Path basePath;
     private Path thumbnailPath;
@@ -83,20 +86,15 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public StoredFileInfo store(InputStream inputStream, String originalName, String mimeType, String directory) {
         // Created before anything is written, so a platform without SHA-256 leaves no file behind
-        MessageDigest digest = newSha256Digest();
+        MessageDigest digest = Digests.sha256();
         try {
-            // Generate unique filename
-            String extension = StoredFileInfo.extractExtension(originalName);
-            String storedName = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
+            StoredKey key = StoredKey.create(directory, originalName);
+            String extension = key.extension();
+            String storedName = key.storedName();
+            String storedPath = key.storedPath();
 
-            // Build storage path with date-based directory
-            String datePath = buildDatePath();
-            String fullDirectory = directory != null ? directory + "/" + datePath : datePath;
-            Path targetDir = basePath.resolve(fullDirectory);
-            Files.createDirectories(targetDir);
-
-            Path targetPath = targetDir.resolve(storedName);
-            String storedPath = fullDirectory + "/" + storedName;
+            Path targetPath = basePath.resolve(storedPath);
+            Files.createDirectories(targetPath.getParent());
 
             // Stream the upload to disk and hash it on the way, so memory holds one copy buffer
             // however large the file is. The caller owns the stream, so the wrapper is not closed.
@@ -232,6 +230,63 @@ public class LocalFileStorageService implements FileStorageService {
     }
 
     @Override
+    public StoredObjectInfo describe(String storedPath, boolean withChecksum) {
+        Path filePath = basePath.resolve(storedPath).normalize();
+        if (!filePath.startsWith(basePath)) {
+            throw new StorageException(
+                StorageException.StorageErrorCode.INVALID_PATH,
+                "Invalid storage path: " + storedPath
+            );
+        }
+
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
+            if (!attributes.isRegularFile()) {
+                throw new StorageException(
+                    StorageException.StorageErrorCode.PATH_NOT_FOUND,
+                    "File not found: " + storedPath
+                );
+            }
+
+            String checksum = null;
+            long size = attributes.size();
+            if (withChecksum) {
+                MessageDigest digest = Digests.sha256();
+                byte[] buffer = new byte[CHECKSUM_BUFFER_BYTES];
+                long counted = 0;
+                try (InputStream in = Files.newInputStream(filePath)) {
+                    int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        digest.update(buffer, 0, read);
+                        counted += read;
+                    }
+                }
+                size = counted;
+                checksum = HexFormat.of().formatHex(digest.digest());
+            }
+
+            return new StoredObjectInfo(
+                storedPath,
+                size,
+                Files.probeContentType(filePath),
+                attributes.lastModifiedTime().toInstant(),
+                checksum
+            );
+        } catch (NoSuchFileException e) {
+            throw new StorageException(
+                StorageException.StorageErrorCode.PATH_NOT_FOUND,
+                "File not found: " + storedPath
+            );
+        } catch (IOException e) {
+            throw new StorageException(
+                StorageException.StorageErrorCode.READ_FAILED,
+                "Failed to read file: " + storedPath,
+                e
+            );
+        }
+    }
+
+    @Override
     public String getPublicUrl(String storedPath) {
         String prefix = storageProperties.getLocal().getPublicUrlPrefix();
         if (!prefix.endsWith("/")) {
@@ -289,11 +344,6 @@ public class LocalFileStorageService implements FileStorageService {
 
     // ==================== Private Methods ====================
 
-    private String buildDatePath() {
-        LocalDate now = LocalDate.now();
-        return String.format("%d/%02d/%02d", now.getYear(), now.getMonthValue(), now.getDayOfMonth());
-    }
-
     private String buildThumbnailKey(String storedPath, int width, int height) {
         return width + "x" + height + "/" + storedPath;
     }
@@ -306,18 +356,6 @@ public class LocalFileStorageService implements FileStorageService {
             Files.deleteIfExists(path);
         } catch (IOException e) {
             log.warn("Failed to remove partially stored file: {}", path, e);
-        }
-    }
-
-    private MessageDigest newSha256Digest() {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new StorageException(
-                StorageException.StorageErrorCode.CHECKSUM_CALCULATION_FAILED,
-                "Failed to calculate checksum",
-                e
-            );
         }
     }
 }

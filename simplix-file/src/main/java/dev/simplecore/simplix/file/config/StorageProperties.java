@@ -3,7 +3,12 @@ package dev.simplecore.simplix.file.config;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
+import org.springframework.util.unit.DataSize;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Storage configuration properties for file upload system.
@@ -24,6 +29,7 @@ import org.springframework.validation.annotation.Validated;
  *         bucket: my-bucket
  *         region: us-east-1
  *         path-style-access: true  # Required for MinIO/RustFS
+ *         multipart-part-size: 8MB  # Upload part size, between 5MB and 512MB
  * }</pre>
  */
 @Getter
@@ -113,5 +119,71 @@ public class StorageProperties {
          * Presigned URL expiration time in minutes (default: 60)
          */
         private int presignedUrlExpiration = 60;
+
+        /**
+         * Size of one part of a multipart upload, and so the most memory one {@code store} call
+         * holds. A stream smaller than one part is sent in a single request. Values outside
+         * {@link #MIN_PART_SIZE} to {@link #MAX_PART_SIZE} are moved to the nearest bound (S3
+         * refuses parts under 5 MB). Default: 8 MB.
+         */
+        private DataSize multipartPartSize = DataSize.ofMegabytes(8);
+
+        /** Smallest part S3 accepts for any part but the last. */
+        public static final DataSize MIN_PART_SIZE = DataSize.ofMegabytes(5);
+
+        /** Largest part size this module buffers in memory. */
+        public static final DataSize MAX_PART_SIZE = DataSize.ofMegabytes(512);
+
+        /**
+         * Names of the settings that must be present before the storage can be used.
+         * <p>
+         * The module authenticates with a static access key and secret key, so all three of bucket,
+         * access key and secret key are required. Only the names are returned, never a value.
+         *
+         * @return the missing setting names in property notation, empty when the configuration is complete
+         */
+        public List<String> missingSettings() {
+            List<String> missing = new ArrayList<>();
+            if (!StringUtils.hasText(bucket)) {
+                missing.add("bucket");
+            }
+            if (!StringUtils.hasText(accessKey)) {
+                missing.add("access-key");
+            }
+            if (!StringUtils.hasText(secretKey)) {
+                missing.add("secret-key");
+            }
+            return missing;
+        }
+
+        /**
+         * The part size in bytes after it is moved into the supported range.
+         *
+         * @return the effective part size in bytes
+         */
+        public int effectivePartSizeBytes() {
+            long bytes = multipartPartSize == null ? MIN_PART_SIZE.toBytes() : multipartPartSize.toBytes();
+            return (int) Math.max(MIN_PART_SIZE.toBytes(), Math.min(MAX_PART_SIZE.toBytes(), bytes));
+        }
+
+        /**
+         * An independent copy, so a caller can keep the settings it built a client for while the
+         * source goes on editing its own object.
+         *
+         * @return a copy holding the same values
+         */
+        public S3StorageConfig copy() {
+            S3StorageConfig copy = new S3StorageConfig();
+            copy.endpoint = endpoint;
+            copy.accessKey = accessKey;
+            copy.secretKey = secretKey;
+            copy.bucket = bucket;
+            copy.region = region;
+            copy.pathStyleAccess = pathStyleAccess;
+            copy.publicUrlPrefix = publicUrlPrefix;
+            copy.presignedUrlExpiration = presignedUrlExpiration;
+            copy.multipartPartSize = multipartPartSize;
+            return copy;
+        }
     }
 }

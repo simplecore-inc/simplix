@@ -5,6 +5,7 @@ import dev.simplecore.simplix.file.config.StorageProperties;
 import dev.simplecore.simplix.file.infrastructure.exception.StorageException;
 import dev.simplecore.simplix.file.infrastructure.image.ImageProcessingService;
 import dev.simplecore.simplix.file.infrastructure.image.ProcessedImage;
+import dev.simplecore.simplix.file.infrastructure.storage.StorageConfigurationSource;
 import dev.simplecore.simplix.file.infrastructure.storage.StoredFileInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,8 +27,6 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequ
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,10 +39,6 @@ import static org.mockito.Mockito.*;
 @DisplayName("S3FileStorageService")
 class S3FileStorageServiceTest {
 
-    @Mock
-    private StorageProperties storageProperties;
-
-    @Mock
     private StorageProperties.S3StorageConfig s3Config;
 
     @Mock
@@ -64,25 +59,39 @@ class S3FileStorageServiceTest {
     private S3FileStorageService service;
 
     @BeforeEach
-    void setUp() throws Exception {
-        lenient().when(storageProperties.getS3()).thenReturn(s3Config);
-        lenient().when(s3Config.getBucket()).thenReturn("test-bucket");
-        lenient().when(s3Config.getRegion()).thenReturn("us-east-1");
-        lenient().when(s3Config.getPresignedUrlExpiration()).thenReturn(60);
+    void setUp() {
+        s3Config = new StorageProperties.S3StorageConfig();
+        s3Config.setBucket("test-bucket");
+        s3Config.setAccessKey("test-access");
+        s3Config.setSecretKey("test-secret");
+        s3Config.setRegion("us-east-1");
+        s3Config.setPresignedUrlExpiration(60);
         lenient().when(fileProperties.getThumbnail()).thenReturn(thumbnailConfig);
         lenient().when(thumbnailConfig.getS3Prefix()).thenReturn("thumbnails");
 
-        service = new S3FileStorageService(storageProperties, fileProperties, imageProcessingService);
+        StorageConfigurationSource source = new StorageConfigurationSource() {
+            @Override
+            public StorageProperties.S3StorageConfig s3() {
+                return s3Config;
+            }
 
-        // Inject mock S3Client via reflection since init() creates the actual client
-        Field s3ClientField = S3FileStorageService.class.getDeclaredField("s3Client");
-        s3ClientField.setAccessible(true);
-        s3ClientField.set(service, s3Client);
+            @Override
+            public long revision() {
+                return 0;
+            }
+        };
+        S3ClientFactory factory = new S3ClientFactory() {
+            @Override
+            public S3Client createClient(StorageProperties.S3StorageConfig config) {
+                return s3Client;
+            }
 
-        // Inject mock S3Presigner via reflection
-        Field s3PresignerField = S3FileStorageService.class.getDeclaredField("s3Presigner");
-        s3PresignerField.setAccessible(true);
-        s3PresignerField.set(service, s3Presigner);
+            @Override
+            public S3Presigner createPresigner(StorageProperties.S3StorageConfig config) {
+                return s3Presigner;
+            }
+        };
+        service = new S3FileStorageService(source, fileProperties, imageProcessingService, factory);
     }
 
     @Nested
@@ -97,10 +106,7 @@ class S3FileStorageServiceTest {
             when(s3Client.createBucket(any(CreateBucketRequest.class)))
                 .thenReturn(CreateBucketResponse.builder().build());
 
-            // Call ensureBucketExists via reflection
-            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
-            method.setAccessible(true);
-            method.invoke(service);
+            service.ensureBucketExists(s3Client, "test-bucket");
 
             verify(s3Client).createBucket(any(CreateBucketRequest.class));
         }
@@ -111,9 +117,7 @@ class S3FileStorageServiceTest {
             when(s3Client.headBucket(any(HeadBucketRequest.class)))
                 .thenReturn(HeadBucketResponse.builder().build());
 
-            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
-            method.setAccessible(true);
-            method.invoke(service);
+            service.ensureBucketExists(s3Client, "test-bucket");
 
             verify(s3Client, never()).createBucket(any(CreateBucketRequest.class));
         }
@@ -134,10 +138,8 @@ class S3FileStorageServiceTest {
                     .statusCode(403)
                     .build());
 
-            Method method = S3FileStorageService.class.getDeclaredMethod("ensureBucketExists");
-            method.setAccessible(true);
             // Should not throw, just log warning
-            method.invoke(service);
+            service.ensureBucketExists(s3Client, "test-bucket");
 
             verify(s3Client, never()).createBucket(any(CreateBucketRequest.class));
         }
@@ -423,7 +425,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should use public URL prefix when set")
         void shouldUsePublicUrlPrefixWhenSet() {
-            when(s3Config.getPublicUrlPrefix()).thenReturn("https://cdn.example.com");
+            s3Config.setPublicUrlPrefix("https://cdn.example.com");
 
             String url = service.getPublicUrl("images/photo.jpg");
 
@@ -433,7 +435,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should add trailing slash to prefix if missing")
         void shouldAddTrailingSlashToPrefixIfMissing() {
-            when(s3Config.getPublicUrlPrefix()).thenReturn("https://cdn.example.com");
+            s3Config.setPublicUrlPrefix("https://cdn.example.com");
 
             String url = service.getPublicUrl("path/file.txt");
 
@@ -443,7 +445,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should handle prefix ending with slash")
         void shouldHandlePrefixEndingWithSlash() {
-            when(s3Config.getPublicUrlPrefix()).thenReturn("https://cdn.example.com/");
+            s3Config.setPublicUrlPrefix("https://cdn.example.com/");
 
             String url = service.getPublicUrl("path/file.txt");
 
@@ -453,7 +455,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should generate presigned URL when public URL prefix is null")
         void shouldGeneratePresignedUrlWhenPublicUrlPrefixIsNull() throws Exception {
-            when(s3Config.getPublicUrlPrefix()).thenReturn(null);
+            s3Config.setPublicUrlPrefix(null);
 
             PresignedGetObjectRequest presignedRequest = mock(PresignedGetObjectRequest.class);
             when(presignedRequest.url()).thenReturn(new URL("https://s3.amazonaws.com/test-bucket/path/file.txt?X-Amz-Signature=abc"));
@@ -469,7 +471,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should generate presigned URL when public URL prefix is empty")
         void shouldGeneratePresignedUrlWhenPublicUrlPrefixIsEmpty() throws Exception {
-            when(s3Config.getPublicUrlPrefix()).thenReturn("");
+            s3Config.setPublicUrlPrefix("");
 
             PresignedGetObjectRequest presignedRequest = mock(PresignedGetObjectRequest.class);
             when(presignedRequest.url()).thenReturn(new URL("https://s3.amazonaws.com/test-bucket/path/file.txt?signed=true"));
@@ -585,7 +587,7 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should build thumbnail URL using public URL prefix")
         void shouldBuildThumbnailUrlUsingPublicUrlPrefix() {
-            when(s3Config.getPublicUrlPrefix()).thenReturn("https://cdn.example.com");
+            s3Config.setPublicUrlPrefix("https://cdn.example.com");
 
             String url = service.getThumbnailUrl("images/photo.jpg", 128, 128);
 
@@ -600,6 +602,8 @@ class S3FileStorageServiceTest {
         @Test
         @DisplayName("Should close S3 client and presigner on cleanup")
         void shouldCloseS3ClientAndPresignerOnCleanup() {
+            service.init();
+
             service.cleanup();
 
             verify(s3Client).close();
@@ -607,18 +611,12 @@ class S3FileStorageServiceTest {
         }
 
         @Test
-        @DisplayName("Should handle null S3 client on cleanup")
-        void shouldHandleNullS3ClientOnCleanup() throws Exception {
-            Field s3ClientField = S3FileStorageService.class.getDeclaredField("s3Client");
-            s3ClientField.setAccessible(true);
-            s3ClientField.set(service, null);
-
-            Field s3PresignerField = S3FileStorageService.class.getDeclaredField("s3Presigner");
-            s3PresignerField.setAccessible(true);
-            s3PresignerField.set(service, null);
-
-            // Should not throw
+        @DisplayName("Should do nothing on cleanup when no client was ever built")
+        void shouldDoNothingOnCleanupWhenNoClientWasBuilt() {
             service.cleanup();
+
+            verify(s3Client, never()).close();
+            verify(s3Presigner, never()).close();
         }
     }
 }

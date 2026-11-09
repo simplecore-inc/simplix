@@ -1,8 +1,11 @@
 package dev.simplecore.simplix.file.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import dev.simplecore.simplix.file.infrastructure.storage.StorageConfigurationSource;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
@@ -18,6 +21,10 @@ import org.springframework.context.annotation.ComponentScan;
  *   <li>File validation utilities</li>
  *   <li>FileCategory enum for file type classification</li>
  * </ul>
+ * <p>
+ * The S3 settings are read through a {@link StorageConfigurationSource}. The default bean reads
+ * {@code simplix.file.storage.s3.*}; an application that keeps the settings elsewhere (a database
+ * table an operator edits) declares its own bean of that type and the default backs off.
  * <p>
  * Entity and repository implementations should be in the domain module,
  * while services that use repositories should be in the application layer.
@@ -49,5 +56,15 @@ import org.springframework.context.annotation.ComponentScan;
     ImageProperties.class
 })
 public class FileAutoConfiguration {
-    // Configuration properties are automatically bound
+
+    /**
+     * Default settings source: the bound properties, with a revision that never changes.
+     * Declared here rather than as a scanned component so that {@code @ConditionalOnMissingBean}
+     * sees the application's own bean.
+     */
+    @Bean
+    @ConditionalOnMissingBean(StorageConfigurationSource.class)
+    public StorageConfigurationSource storageConfigurationSource(StorageProperties storageProperties) {
+        return new PropertiesStorageConfigurationSource(storageProperties);
+    }
 }

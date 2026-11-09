@@ -57,7 +57,9 @@ class StorageExceptionTest {
             StorageErrorCode.PERMISSION_DENIED,
             StorageErrorCode.CHECKSUM_CALCULATION_FAILED,
             StorageErrorCode.INVALID_PATH,
-            StorageErrorCode.STORAGE_FULL
+            StorageErrorCode.STORAGE_FULL,
+            StorageErrorCode.NOT_CONFIGURED,
+            StorageErrorCode.UNSUPPORTED_OPERATION
         );
     }
 }

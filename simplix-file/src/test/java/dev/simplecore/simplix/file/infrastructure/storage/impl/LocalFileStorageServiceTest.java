@@ -7,6 +7,7 @@ import dev.simplecore.simplix.file.infrastructure.exception.StorageException;
 import dev.simplecore.simplix.file.infrastructure.image.ImageProcessingService;
 import dev.simplecore.simplix.file.infrastructure.image.ProcessedImage;
 import dev.simplecore.simplix.file.infrastructure.storage.StoredFileInfo;
+import dev.simplecore.simplix.file.infrastructure.storage.StoredObjectInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +24,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -630,6 +632,85 @@ class LocalFileStorageServiceTest {
      * that buffers the whole upload cannot pass. With {@code failAtEnd} the stream throws where
      * it would otherwise report the end, which models an upload that breaks part way.
      */
+    @Nested
+    @DisplayName("describe()")
+    class Describe {
+
+        @Test
+        @DisplayName("Should report size, time and the SHA-256 of a stored file")
+        void shouldDescribeStoredFile() throws Exception {
+            byte[] content = "hello describe".getBytes(StandardCharsets.UTF_8);
+            StoredFileInfo stored = service.store(new ByteArrayInputStream(content), "note.txt", "text/plain", "docs");
+
+            StoredObjectInfo info = service.describe(stored.storedPath());
+
+            assertThat(info.storedPath()).isEqualTo(stored.storedPath());
+            assertThat(info.size()).isEqualTo(content.length);
+            assertThat(info.checksum()).isEqualTo(stored.checksum());
+            assertThat(info.lastModified()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Should skip the checksum when asked for the metadata alone")
+        void shouldSkipChecksum() {
+            StoredFileInfo stored = service.store(
+                new ByteArrayInputStream(new byte[]{1, 2, 3}), "a.bin", "application/octet-stream", "docs");
+
+            StoredObjectInfo info = service.describe(stored.storedPath(), false);
+
+            assertThat(info.size()).isEqualTo(3);
+            assertThat(info.checksum()).isNull();
+        }
+
+        @Test
+        @DisplayName("Should throw PATH_NOT_FOUND for a missing file and for a directory")
+        void shouldThrowNotFound() {
+            for (String path : List.of("no/such/file.bin", "docs")) {
+                assertThatThrownBy(() -> service.describe(path))
+                    .isInstanceOf(StorageException.class)
+                    .satisfies(e -> assertThat(((StorageException) e).getErrorCode())
+                        .isEqualTo(StorageException.StorageErrorCode.PATH_NOT_FOUND));
+            }
+        }
+
+        @Test
+        @DisplayName("Should refuse a path that leaves the storage directory")
+        void shouldRefuseTraversal() {
+            assertThatThrownBy(() -> service.describe("../outside.txt"))
+                .isInstanceOf(StorageException.class)
+                .satisfies(e -> assertThat(((StorageException) e).getErrorCode())
+                    .isEqualTo(StorageException.StorageErrorCode.INVALID_PATH));
+        }
+    }
+
+    @Nested
+    @DisplayName("direct upload and download URLs")
+    class DirectUploadAndDownload {
+
+        @Test
+        @DisplayName("Should not support direct upload and say so with UNSUPPORTED_OPERATION")
+        void shouldNotSupportDirectUpload() {
+            assertThat(service.supportsDirectUpload()).isFalse();
+            assertThatThrownBy(() -> service.createDirectUpload("d", "a.bin", "x/y", 1, Duration.ofMinutes(1)))
+                .isInstanceOf(StorageException.class)
+                .satisfies(e -> assertThat(((StorageException) e).getErrorCode())
+                    .isEqualTo(StorageException.StorageErrorCode.UNSUPPORTED_OPERATION));
+        }
+
+        @Test
+        @DisplayName("Should return the public URL for a download URL, whatever lifetime and name are given")
+        void shouldReturnPublicUrl() {
+            assertThat(service.getDownloadUrl("2026/11/09/a.bin", Duration.ofMinutes(5), "x.bin"))
+                .isEqualTo("/files/2026/11/09/a.bin");
+        }
+
+        @Test
+        @DisplayName("Should be configured")
+        void shouldBeConfigured() {
+            assertThat(service.isConfigured()).isTrue();
+        }
+    }
+
     private static final class GeneratedStream extends InputStream {
 
         private final long length;
