@@ -25,7 +25,7 @@ class DownloadFileNamesTest {
     @Test
     @DisplayName("Should encode non-ASCII as UTF-8 and use underscores in the fallback")
     void shouldEncodeUtf8() {
-        String value = DownloadFileNames.attachment("café 한글.txt");
+        String value = DownloadFileNames.attachment("caf\u00E9 \uD55C\uAE00.txt");
 
         assertThat(value).contains("filename*=UTF-8''caf%C3%A9%20%ED%95%9C%EA%B8%80.txt");
         assertThat(value).startsWith("attachment; filename=\"caf_ __.txt\";");

@@ -192,7 +192,7 @@ class S3PresignTest {
         @Test
         @DisplayName("Should percent-encode a Korean name and give an ASCII fallback")
         void shouldEncodeNonAscii() {
-            String name = "스테이지보이스 1.0.exe";
+            String name = "\uC2A4\uD14C\uC774\uC9C0\uBCF4\uC774\uC2A4 1.0.exe";
             String url = service.getDownloadUrl("a/b.exe", Duration.ofMinutes(5), name);
 
             String disposition = query(url).get("response-content-disposition");

@@ -111,7 +111,7 @@ class S3EndToEndTest {
             new ByteArrayInputStream("hello".getBytes()), "a.txt", "text/plain", "e2e");
 
         String url = service.getDownloadUrl(stored.storedPath(), Duration.ofMinutes(2),
-            "스테이지 \"v1\".txt");
+            "\uC2A4\uD14C\uC774\uC9C0 \"v1\".txt");
         HttpResponse<String> response = http.send(
             HttpRequest.newBuilder(URI.create(url)).GET().build(), HttpResponse.BodyHandlers.ofString());
 
