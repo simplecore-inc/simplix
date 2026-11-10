@@ -247,6 +247,7 @@ simplix:
         path-style-access: true            # MinIO/RustFS 필수
         public-url-prefix:                 # 공개 URL (없으면 presigned URL)
         presigned-url-expiration: 60       # Presigned URL 만료 시간 (분)
+        multipart-part-size: 8MB           # 멀티파트 업로드 파트 크기 (5MB~512MB)
 ```
 
 ### 이미지 처리 설정 (`simplix.file.image.*`)
@@ -343,6 +344,7 @@ simplix:
 - `FileValidator`
 - `ImageProcessingService` (AwtImageProcessingService)
 - `FileStorageService` (Local 또는 S3)
+- `StorageConfigurationSource` (S3 설정을 읽는 소스, 애플리케이션이 대체 가능)
 - `FileProcessingService` (DefaultFileProcessingService)
 
 ---
